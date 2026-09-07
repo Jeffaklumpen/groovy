@@ -1372,7 +1372,6 @@ var carouselRecords = [];
 var carouselSpacing = 430;
 
 function setView(view) {
-
 if (view === "carousel") {
 startCarousel();
 } else {
@@ -1390,11 +1389,8 @@ document.querySelectorAll(".view-button")[0].classList.add("active");
 }
 }
 
-
 function startCarousel() {
-
 carouselActive = true;
-
 document.body.classList.add("carousel-mode");
 
 carouselRecords = Array.from(
@@ -1407,13 +1403,10 @@ carouselVelocity = 0;
 positionCarousel();
 
 carouselRecords.forEach(function(record) {
-
 record.addEventListener("pointerdown", carouselPointerDown);
 record.addEventListener("pointermove", carouselPointerMove);
 record.addEventListener("pointerup", carouselPointerUp);
 record.addEventListener("pointercancel", carouselPointerUp);
-record.addEventListener("pointerleave", carouselPointerUp);
-
 });
 
 document.querySelector(".collection").addEventListener(
@@ -1425,11 +1418,8 @@ carouselWheel,
 requestCarouselAnimation();
 }
 
-
 function stopCarousel() {
-
 carouselActive = false;
-
 document.body.classList.remove("carousel-mode");
 
 if (carouselAnimation) {
@@ -1438,13 +1428,12 @@ carouselAnimation = null;
 }
 
 carouselRecords.forEach(function(record) {
-
 record.removeEventListener("pointerdown", carouselPointerDown);
 record.removeEventListener("pointermove", carouselPointerMove);
 record.removeEventListener("pointerup", carouselPointerUp);
 record.removeEventListener("pointercancel", carouselPointerUp);
-record.removeEventListener("pointerleave", carouselPointerUp);
-
+record.classList.remove("center");
+record.style.transform = "";
 });
 
 var collection = document.querySelector(".collection");
@@ -1454,9 +1443,7 @@ collection.removeEventListener("wheel", carouselWheel);
 }
 }
 
-
 function carouselPointerDown(event) {
-
 carouselDragging = true;
 
 carouselStartX = event.clientX;
@@ -1471,12 +1458,9 @@ carouselAnimation = null;
 }
 
 event.currentTarget.setPointerCapture(event.pointerId);
-
 }
 
-
 function carouselPointerMove(event) {
-
 if (!carouselDragging) {
 return;
 }
@@ -1497,25 +1481,18 @@ carouselLastTime = now;
 positionCarousel();
 
 event.preventDefault();
-
 }
 
-
 function carouselPointerUp() {
-
 if (!carouselDragging) {
 return;
 }
 
 carouselDragging = false;
-
 requestCarouselAnimation();
-
 }
 
-
 function carouselWheel(event) {
-
 if (!carouselActive) {
 return;
 }
@@ -1530,33 +1507,26 @@ Math.min(35, carouselVelocity)
 );
 
 requestCarouselAnimation();
-
 }
 
-
 function requestCarouselAnimation() {
-
 if (carouselAnimation) {
 return;
 }
 
 function animate() {
-
 if (!carouselActive) {
 carouselAnimation = null;
 return;
 }
 
 if (!carouselDragging) {
-
 carouselPosition += carouselVelocity;
-
 carouselVelocity *= 0.94;
 
 if (Math.abs(carouselVelocity) < 0.05) {
 carouselVelocity = 0;
 }
-
 }
 
 positionCarousel();
@@ -1565,33 +1535,22 @@ if (
 carouselDragging ||
 Math.abs(carouselVelocity) > 0.05
 ) {
-
-carouselAnimation =
-requestAnimationFrame(animate);
-
+carouselAnimation = requestAnimationFrame(animate);
 } else {
-
 carouselAnimation = null;
-
+}
 }
 
+carouselAnimation = requestAnimationFrame(animate);
 }
-
-carouselAnimation =
-requestAnimationFrame(animate);
-}
-
 
 function positionCarousel() {
-
 if (!carouselRecords.length) {
 return;
 }
 
 var center = window.innerWidth / 2;
-
-var totalWidth =
-carouselRecords.length * carouselSpacing;
+var totalWidth = carouselRecords.length * carouselSpacing;
 
 carouselRecords.forEach(function(record, index) {
 
@@ -1605,14 +1564,17 @@ x = ((x + totalWidth / 2) % totalWidth + totalWidth) % totalWidth - totalWidth /
 
 x += center - 180;
 
+var recordCenter = x + 180;
+var distance = Math.abs(recordCenter - center);
+
+var scale = 1;
+
+if (distance < 500) {
+scale = 1 + (1 - distance / 500) * 0.12;
+}
+
 record.style.transform =
-"translate3d(" + x + "px,0,0)";
-
-var recordCenter =
-x + 180;
-
-var distance =
-Math.abs(recordCenter - center);
+"translate3d(" + x + "px,0,0) scale(" + scale + ")";
 
 if (distance < 190) {
 record.classList.add("center");
@@ -1621,18 +1583,13 @@ record.classList.remove("center");
 }
 
 });
-
 }
 
-
 window.addEventListener("resize", function() {
-
 if (carouselActive) {
 positionCarousel();
 }
-
 });
-</script>
 
 </body>
 </html>
