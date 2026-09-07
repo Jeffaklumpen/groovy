@@ -317,6 +317,144 @@
             color: #777;
         }
 
+        /* =========================
+           ALBUM VIEWER
+        ========================= */
+        
+        .album-viewer{
+        display:none;
+        position:fixed;
+        inset:0;
+        z-index:10000;
+        background:rgba(0,0,0,.92);
+        align-items:center;
+        justify-content:center;
+        padding:30px;
+        }
+        
+        .album-viewer.active{
+        display:flex;
+        }
+        
+        .album-viewer-inner{
+        position:relative;
+        width:min(80vw,700px);
+        height:min(80vw,700px);
+        max-height:80vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        perspective:1200px;
+        }
+        
+        .album-viewer-image{
+        max-width:100%;
+        max-height:100%;
+        width:auto;
+        height:auto;
+        display:block;
+        object-fit:contain;
+        box-shadow:0 20px 60px rgba(0,0,0,.7);
+        transform-style:preserve-3d;
+        backface-visibility:hidden;
+        -webkit-backface-visibility:hidden;
+        }
+        
+        .album-viewer-image.flip-next{
+        animation:flipNext .45s ease;
+        }
+        
+        .album-viewer-image.flip-prev{
+        animation:flipPrev .45s ease;
+        }
+        
+        @keyframes flipNext{
+        0%{transform:rotateY(0deg)}
+        50%{transform:rotateY(90deg)}
+        100%{transform:rotateY(0deg)}
+        }
+        
+        @keyframes flipPrev{
+        0%{transform:rotateY(0deg)}
+        50%{transform:rotateY(-90deg)}
+        100%{transform:rotateY(0deg)}
+        }
+        
+        .album-viewer-close{
+        position:absolute;
+        top:-18px;
+        right:-18px;
+        width:42px;
+        height:42px;
+        border:0;
+        border-radius:50%;
+        background:rgba(20,20,22,.95);
+        color:#fff;
+        font-size:28px;
+        line-height:42px;
+        text-align:center;
+        cursor:pointer;
+        z-index:3;
+        }
+        
+        .album-viewer-arrow{
+        position:fixed;
+        top:50%;
+        transform:translateY(-50%);
+        width:55px;
+        height:90px;
+        border:0;
+        background:rgba(20,20,22,.75);
+        color:#fff;
+        font-size:42px;
+        cursor:pointer;
+        z-index:2;
+        border-radius:8px;
+        }
+        
+        .album-viewer-prev{
+        left:25px;
+        }
+        
+        .album-viewer-next{
+        right:25px;
+        }
+        
+        .album-viewer-arrow:hover,
+        .album-viewer-close:hover{
+        background:rgba(50,50,52,.95);
+        }
+        
+        @media screen and (max-width:600px){
+        .album-viewer{
+        padding:15px;
+        }
+        
+        .album-viewer-inner{
+        width:88vw;
+        height:82vh;
+        }
+        
+        .album-viewer-arrow{
+        width:45px;
+        height:70px;
+        font-size:32px;
+        }
+        
+        .album-viewer-prev{
+        left:8px;
+        }
+        
+        .album-viewer-next{
+        right:8px;
+        }
+        
+        .album-viewer-close{
+        top:-12px;
+        right:-8px;
+        }
+        }
+
     </style>
 </head>
 
@@ -1070,7 +1208,16 @@
         
     </main>
 
+<div class="album-viewer" id="albumViewer">
+    <button class="album-viewer-arrow album-viewer-prev" id="albumPrev">‹</button>
 
+    <div class="album-viewer-inner" id="albumViewerInner">
+        <button class="album-viewer-close" id="albumClose">×</button>
+        <img class="album-viewer-image" id="albumViewerImage" src="" alt="">
+    </div>
+
+    <button class="album-viewer-arrow album-viewer-next" id="albumNext">›</button>
+</div>
 
     <!-- =========================
          SCREENSAVER
@@ -1215,6 +1362,102 @@
         window.onload = function () {
             resetIdleTimer();
         };
+
+/* =========================
+   ALBUM VIEWER
+========================= */
+
+var albumViewer=document.getElementById("albumViewer");
+var albumViewerImage=document.getElementById("albumViewerImage");
+var albumClose=document.getElementById("albumClose");
+var albumPrev=document.getElementById("albumPrev");
+var albumNext=document.getElementById("albumNext");
+
+var currentAlbum=0;
+var currentSide=0;
+
+var albums=Array.from(document.querySelectorAll(".record")).map(function(record){
+var image=record.querySelector(".cover");
+return{
+front:image ? image.getAttribute("src") : "",
+back:image ? image.getAttribute("src").replace(/(\.[^.]+)$/,"_back$1") : "",
+title:image ? image.getAttribute("alt") : ""
+};
+});
+
+document.querySelectorAll(".record").forEach(function(record,index){
+record.addEventListener("click",function(){
+currentAlbum=index;
+currentSide=0;
+showAlbum(false);
+});
+});
+
+function showAlbum(animate,direction){
+var album=albums[currentAlbum];
+var source=currentSide===0?album.front:album.back;
+
+if(!source)return;
+
+albumViewerImage.classList.remove("flip-next","flip-prev");
+
+if(animate){
+void albumViewerImage.offsetWidth;
+albumViewerImage.classList.add(direction==="prev"?"flip-prev":"flip-next");
+}
+
+albumViewerImage.src=source;
+albumViewerImage.alt=album.title;
+albumViewer.classList.add("active");
+document.body.style.overflow="hidden";
+}
+
+function changeSide(direction){
+currentSide=currentSide===0?1:0;
+showAlbum(true,direction);
+}
+
+function closeAlbum(){
+albumViewer.classList.remove("active");
+document.body.style.overflow="";
+}
+
+albumNext.addEventListener("click",function(event){
+event.stopPropagation();
+changeSide("next");
+});
+
+albumPrev.addEventListener("click",function(event){
+event.stopPropagation();
+changeSide("prev");
+});
+
+albumClose.addEventListener("click",function(event){
+event.stopPropagation();
+closeAlbum();
+});
+
+albumViewer.addEventListener("click",function(event){
+if(event.target===albumViewer){
+closeAlbum();
+}
+});
+
+document.addEventListener("keydown",function(event){
+if(!albumViewer.classList.contains("active"))return;
+
+if(event.key==="Escape"){
+closeAlbum();
+}
+
+if(event.key==="ArrowRight"){
+changeSide("next");
+}
+
+if(event.key==="ArrowLeft"){
+changeSide("prev");
+}
+});
     </script>
 
 </body>
