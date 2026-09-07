@@ -317,12 +317,149 @@
             color: #777;
         }
 
+        /* =========================
+           VIEW SWITCHER
+        ========================== */
+        
+        .view-switcher {
+        position: fixed;
+        top: 22px;
+        right: 25px;
+        z-index: 10000;
+        display: flex;
+        gap: 4px;
+        background: rgba(25,25,27,0.9);
+        padding: 4px;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        backdrop-filter: blur(12px);
+        }
+        
+        .view-button {
+        width: 38px;
+        height: 34px;
+        border: 0;
+        background: transparent;
+        color: #777;
+        font-size: 18px;
+        cursor: pointer;
+        border-radius: 5px;
+        }
+        
+        .view-button.active {
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+        }
+        
+        
+        /* =========================
+           CAROUSEL VIEW
+        ========================== */
+        
+        body.carousel-mode {
+        overflow: hidden;
+        padding: 0;
+        }
+        
+        body.carousel-mode .header {
+        display: none;
+        }
+        
+        body.carousel-mode .collection {
+        position: fixed;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        max-width: none;
+        height: 470px;
+        transform: translateY(-50%);
+        overflow: hidden;
+        margin: 0;
+        touch-action: pan-y;
+        }
+        
+        body.carousel-mode .record {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 360px;
+        margin: 0;
+        float: none;
+        will-change: transform;
+        transition: transform 0.08s linear;
+        }
+        
+        body.carousel-mode .cover-wrapper {
+        width: 360px;
+        height: 360px;
+        padding-bottom: 0;
+        }
+        
+        body.carousel-mode .info {
+        padding-top: 16px;
+        text-align: center;
+        }
+        
+        body.carousel-mode .artist {
+        font-size: 19px;
+        }
+        
+        body.carousel-mode .album {
+        font-size: 16px;
+        }
+        
+        body.carousel-mode .year {
+        font-size: 13px;
+        }
+        
+        body.carousel-mode .record.center {
+        transform: scale(1.08);
+        z-index: 10;
+        }
+        
+        body.carousel-mode .record:not(.center) {
+        opacity: 0.65;
+        }
+        
+        @media screen and (max-width: 600px) {
+        
+        .view-switcher {
+        top: 12px;
+        right: 12px;
+        }
+        
+        body.carousel-mode .collection {
+        height: 390px;
+        }
+        
+        body.carousel-mode .record {
+        width: 280px;
+        }
+        
+        body.carousel-mode .cover-wrapper {
+        width: 280px;
+        height: 280px;
+        }
+        
+        body.carousel-mode .artist {
+        font-size: 16px;
+        }
+        
+        body.carousel-mode .album {
+        font-size: 14px;
+        }
+        }
+
     </style>
 </head>
 
 <body>
 
     <header class="header">
+        <div class="view-switcher">
+            <button class="view-button active" onclick="setView('grid')">▦</button>
+            <button class="view-button" onclick="setView('carousel')">◉</button>
+        </div>
         <h1 class="title">
             VINYLSKIVOR
         </h1>
@@ -1216,6 +1353,286 @@
             resetIdleTimer();
         };
     </script>
+
+<script>
+    
+/* =========================
+   VIEW SWITCHER
+========================== */
+
+var carouselActive = false;
+var carouselPosition = 0;
+var carouselVelocity = 0;
+var carouselAnimation = null;
+var carouselDragging = false;
+var carouselStartX = 0;
+var carouselLastX = 0;
+var carouselLastTime = 0;
+var carouselRecords = [];
+var carouselSpacing = 430;
+
+function setView(view) {
+
+if (view === "carousel") {
+startCarousel();
+} else {
+stopCarousel();
+}
+
+document.querySelectorAll(".view-button").forEach(function(button) {
+button.classList.remove("active");
+});
+
+if (view === "carousel") {
+document.querySelectorAll(".view-button")[1].classList.add("active");
+} else {
+document.querySelectorAll(".view-button")[0].classList.add("active");
+}
+}
+
+
+function startCarousel() {
+
+carouselActive = true;
+
+document.body.classList.add("carousel-mode");
+
+carouselRecords = Array.from(
+document.querySelectorAll(".collection .record")
+);
+
+carouselPosition = 0;
+carouselVelocity = 0;
+
+positionCarousel();
+
+carouselRecords.forEach(function(record) {
+
+record.addEventListener("pointerdown", carouselPointerDown);
+record.addEventListener("pointermove", carouselPointerMove);
+record.addEventListener("pointerup", carouselPointerUp);
+record.addEventListener("pointercancel", carouselPointerUp);
+record.addEventListener("pointerleave", carouselPointerUp);
+
+});
+
+document.querySelector(".collection").addEventListener(
+"wheel",
+carouselWheel,
+{ passive: false }
+);
+
+requestCarouselAnimation();
+}
+
+
+function stopCarousel() {
+
+carouselActive = false;
+
+document.body.classList.remove("carousel-mode");
+
+if (carouselAnimation) {
+cancelAnimationFrame(carouselAnimation);
+carouselAnimation = null;
+}
+
+carouselRecords.forEach(function(record) {
+
+record.removeEventListener("pointerdown", carouselPointerDown);
+record.removeEventListener("pointermove", carouselPointerMove);
+record.removeEventListener("pointerup", carouselPointerUp);
+record.removeEventListener("pointercancel", carouselPointerUp);
+record.removeEventListener("pointerleave", carouselPointerUp);
+
+});
+
+var collection = document.querySelector(".collection");
+
+if (collection) {
+collection.removeEventListener("wheel", carouselWheel);
+}
+}
+
+
+function carouselPointerDown(event) {
+
+carouselDragging = true;
+
+carouselStartX = event.clientX;
+carouselLastX = event.clientX;
+carouselLastTime = performance.now();
+
+carouselVelocity = 0;
+
+if (carouselAnimation) {
+cancelAnimationFrame(carouselAnimation);
+carouselAnimation = null;
+}
+
+event.currentTarget.setPointerCapture(event.pointerId);
+
+}
+
+
+function carouselPointerMove(event) {
+
+if (!carouselDragging) {
+return;
+}
+
+var now = performance.now();
+var deltaX = event.clientX - carouselLastX;
+var deltaTime = now - carouselLastTime;
+
+carouselPosition += deltaX;
+
+if (deltaTime > 0) {
+carouselVelocity = deltaX / deltaTime * 16;
+}
+
+carouselLastX = event.clientX;
+carouselLastTime = now;
+
+positionCarousel();
+
+event.preventDefault();
+
+}
+
+
+function carouselPointerUp() {
+
+if (!carouselDragging) {
+return;
+}
+
+carouselDragging = false;
+
+requestCarouselAnimation();
+
+}
+
+
+function carouselWheel(event) {
+
+if (!carouselActive) {
+return;
+}
+
+event.preventDefault();
+
+carouselVelocity += event.deltaY * -0.35;
+
+carouselVelocity = Math.max(
+-35,
+Math.min(35, carouselVelocity)
+);
+
+requestCarouselAnimation();
+
+}
+
+
+function requestCarouselAnimation() {
+
+if (carouselAnimation) {
+return;
+}
+
+function animate() {
+
+if (!carouselActive) {
+carouselAnimation = null;
+return;
+}
+
+if (!carouselDragging) {
+
+carouselPosition += carouselVelocity;
+
+carouselVelocity *= 0.94;
+
+if (Math.abs(carouselVelocity) < 0.05) {
+carouselVelocity = 0;
+}
+
+}
+
+positionCarousel();
+
+if (
+carouselDragging ||
+Math.abs(carouselVelocity) > 0.05
+) {
+
+carouselAnimation =
+requestAnimationFrame(animate);
+
+} else {
+
+carouselAnimation = null;
+
+}
+
+}
+
+carouselAnimation =
+requestAnimationFrame(animate);
+}
+
+
+function positionCarousel() {
+
+if (!carouselRecords.length) {
+return;
+}
+
+var center = window.innerWidth / 2;
+
+var totalWidth =
+carouselRecords.length * carouselSpacing;
+
+carouselRecords.forEach(function(record, index) {
+
+var x =
+center -
+180 +
+carouselPosition +
+index * carouselSpacing;
+
+x = ((x + totalWidth / 2) % totalWidth + totalWidth) % totalWidth - totalWidth / 2;
+
+x += center - 180;
+
+record.style.transform =
+"translate3d(" + x + "px,0,0)";
+
+var recordCenter =
+x + 180;
+
+var distance =
+Math.abs(recordCenter - center);
+
+if (distance < 190) {
+record.classList.add("center");
+} else {
+record.classList.remove("center");
+}
+
+});
+
+}
+
+
+window.addEventListener("resize", function() {
+
+if (carouselActive) {
+positionCarousel();
+}
+
+});
+</script>
 
 </body>
 </html>
