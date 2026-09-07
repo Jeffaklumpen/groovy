@@ -1,321 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <title>Vinylskivor</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Vinylskivor</title>
 
-    <style>
+<style>
 
-        * {
-            box-sizing: border-box;
-        }
+* {
+box-sizing: border-box;
+}
 
-        html, body {
-            margin: 0;
-            padding: 0;
-            min-height: 100%;
-        }
+html, body {
+margin: 0;
+padding: 0;
+min-height: 100%;
+}
 
-        body {
-            background: #0b0b0c;
-            color: #f5f5f5;
-            font-family: -apple-system, BlinkMacSystemFont,
-                         "Helvetica Neue", Arial, sans-serif;
-            padding: 28px;
-        }
-
-        /* =========================
-           HEADER
-        ========================= */
-
-        .header {
-            max-width: 1400px;
-            margin: 0 auto 35px auto;
-            border-bottom: 1px solid rgba(255,255,255,0.12);
-            padding-bottom: 22px;
-        }
-
-        .title {
-            font-size: 34px;
-            font-weight: 600;
-            letter-spacing: 3px;
-            margin: 0;
-        }
-
-        .subtitle {
-            margin-top: 8px;
-            color: #999;
-            font-size: 14px;
-            letter-spacing: 1px;
-        }
-
-
-        /* =========================
-           COLLECTION
-        ========================= */
-
-        .collection {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .record {
-            float: left;
-            width: 23.5%;
-            margin-right: 2%;
-            margin-bottom: 38px;
-        }
-
-        .record:nth-child(4n) {
-            margin-right: 0;
-        }
-
-        .collection:after {
-            content: "";
-            display: table;
-            clear: both;
-        }
-
-        /* =========================
-           COVER
-        ========================= */
-
-        .cover-wrapper {
-            position: relative;
-            width: 100%;
-            height: 0;
-            padding-bottom: 100%;
-            overflow: hidden;
-            background: #1c1c1e;
-            box-shadow:
-                0 12px 30px rgba(0,0,0,0.45);
-        }
-
-        .cover {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        .cover-text {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            width: 100%;
-            margin-top: -7px;
-        }
-
-        /* =========================
-           NUMBER
-        ========================= */
-
-        .number {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.78);
-            padding: 5px 8px;
-            font-size: 13px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        /* =========================
-           TEXT
-        ========================= */
-
-        .info {
-            padding-top: 12px;
-        }
-
-        .artist {
-            font-size: 17px;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .album {
-            margin-top: 4px;
-            font-size: 15px;
-            color: #c0c0c0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .year {
-            margin-top: 5px;
-            font-size: 13px;
-            color: #777;
-        }
-
-        /* =========================
-           TABLET / IPAD
-        ========================= */
-
-        @media screen and (max-width: 1100px) {
-
-            body {
-                padding: 20px;
-            }
-
-            .header {
-                margin-bottom: 25px;
-            }
-
-            .title {
-                font-size: 28px;
-            }
-
-            .record {
-                width: 23.5%;
-                margin-right: 2%;
-            }
-
-            .artist {
-                font-size: 15px;
-            }
-
-            .album {
-                font-size: 13px;
-            }
-
-            .year {
-                font-size: 12px;
-            }
-        }
-
-        /* =========================
-           PHONE
-        ========================= */
-
-        @media screen and (max-width: 600px) {
-
-            body {
-                padding: 15px;
-            }
-
-            .title {
-                font-size: 23px;
-            }
-
-            .record {
-                width: 48%;
-
-                margin-right: 4%;
-
-                margin-bottom: 28px;
-            }
-
-            .record:nth-child(4n) {
-                margin-right: 4%;
-            }
-
-            .record:nth-child(2n) {
-                margin-right: 0;
-            }
-
-        }
-
-        /* =========================
-           SCREENSAVER
-        ========================= */
-
-        #screensaver {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #0b0b0c;
-            z-index: 9999;
-            overflow: hidden;
-        }
-
-        #screensaver.active {
-            display: block;
-        }
-
-        .screensaver-track {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            white-space: nowrap;
-            font-size: 0;
-        }
-
-        .screensaver-record {
-            display: inline-block;
-            vertical-align: top;
-            width: 320px;
-            margin-right: 80px;
-            text-align: center;
-            white-space: normal;
-        }
-
-        .screensaver-cover-wrapper {
-            position: relative;
-            width: 320px;
-            height: 320px;
-            overflow: hidden;
-            background: #1c1c1e;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.55);
-        }
-
-        .screensaver-cover {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .screensaver-number {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(0,0,0,0.78);
-            padding: 6px 9px;
-            font-size: 13px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        .screensaver-info {
-            padding-top: 16px;
-        }
-
-        .screensaver-artist {
-            font-size: 19px;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .screensaver-album {
-            margin-top: 5px;
-            font-size: 16px;
-            color: #c0c0c0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .screensaver-year {
-            margin-top: 6px;
-            font-size: 13px;
-            color: #777;
-        }
+body {
+background: #0b0b0c;
+color: #f5f5f5;
+font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+padding: 28px;
+}
 
 /* =========================
    VIEW SWITCHER
@@ -352,7 +61,263 @@ color: #fff;
 }
 
 /* =========================
-   CAROUSEL VIEW
+   HEADER
+========================== */
+
+.header {
+max-width: 1400px;
+margin: 0 auto 35px auto;
+border-bottom: 1px solid rgba(255,255,255,0.12);
+padding-bottom: 22px;
+}
+
+.title {
+font-size: 34px;
+font-weight: 600;
+letter-spacing: 3px;
+margin: 0;
+}
+
+.subtitle {
+margin-top: 8px;
+color: #999;
+font-size: 14px;
+letter-spacing: 1px;
+}
+
+/* =========================
+   COLLECTION
+========================== */
+
+.collection {
+max-width: 1400px;
+margin: 0 auto;
+}
+
+.record {
+float: left;
+width: 23.5%;
+margin-right: 2%;
+margin-bottom: 38px;
+}
+
+.record:nth-child(4n) {
+margin-right: 0;
+}
+
+.collection:after {
+content: "";
+display: table;
+clear: both;
+}
+
+/* =========================
+   COVER
+========================== */
+
+.cover-wrapper {
+position: relative;
+width: 100%;
+height: 0;
+padding-bottom: 100%;
+overflow: hidden;
+background: #1c1c1e;
+box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+}
+
+.cover {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+object-fit: cover;
+display: block;
+}
+
+/* =========================
+   NUMBER
+========================== */
+
+.number {
+position: absolute;
+top: 10px;
+left: 10px;
+background: rgba(0,0,0,0.78);
+padding: 5px 8px;
+font-size: 13px;
+font-weight: bold;
+letter-spacing: 1px;
+}
+
+/* =========================
+   TEXT
+========================== */
+
+.info {
+padding-top: 12px;
+}
+
+.artist {
+font-size: 17px;
+font-weight: 600;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.album {
+margin-top: 4px;
+font-size: 15px;
+color: #c0c0c0;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.year {
+margin-top: 5px;
+font-size: 13px;
+color: #777;
+}
+
+/* =========================
+   TABLET
+========================== */
+
+@media screen and (max-width: 1100px) {
+
+body {
+padding: 20px;
+}
+
+.header {
+margin-bottom: 25px;
+}
+
+.title {
+font-size: 28px;
+}
+
+.record {
+width: 23.5%;
+margin-right: 2%;
+}
+
+.artist {
+font-size: 15px;
+}
+
+.album {
+font-size: 13px;
+}
+
+.year {
+font-size: 12px;
+}
+
+}
+
+/* =========================
+   PHONE
+========================== */
+
+@media screen and (max-width: 600px) {
+
+body {
+padding: 15px;
+}
+
+.title {
+font-size: 23px;
+}
+
+.record {
+width: 48%;
+margin-right: 4%;
+margin-bottom: 28px;
+}
+
+.record:nth-child(4n) {
+margin-right: 4%;
+}
+
+.record:nth-child(2n) {
+margin-right: 0;
+}
+
+.view-switcher {
+top: 12px;
+right: 12px;
+}
+
+/* =========================
+   CAROUSEL
+========================== */
+
+body.carousel-mode {
+overflow: hidden;
+padding: 0;
+}
+
+body.carousel-mode .header {
+display: none;
+}
+
+body.carousel-mode .collection {
+position: fixed;
+top: 50%;
+left: 0;
+width: 100%;
+max-width: none;
+height: 390px;
+transform: translateY(-50%);
+overflow: hidden;
+margin: 0;
+touch-action: pan-y;
+}
+
+body.carousel-mode .record {
+position: absolute;
+top: 0;
+left: 0;
+width: 280px;
+margin: 0;
+float: none;
+will-change: transform;
+transform-origin: center top;
+transition: transform 0.08s linear;
+}
+
+body.carousel-mode .cover-wrapper {
+width: 280px;
+height: 280px;
+padding-bottom: 0;
+}
+
+body.carousel-mode .info {
+padding-top: 16px;
+text-align: center;
+}
+
+body.carousel-mode .artist {
+font-size: 16px;
+}
+
+body.carousel-mode .album {
+font-size: 14px;
+}
+
+body.carousel-mode .year {
+font-size: 13px;
+}
+
+}
+
+@media screen and (min-width: 601px) {
+
+/* =========================
+   CAROUSEL
 ========================== */
 
 body.carousel-mode {
@@ -385,6 +350,7 @@ width: 360px;
 margin: 0;
 float: none;
 will-change: transform;
+transform-origin: center top;
 transition: transform 0.08s linear;
 }
 
@@ -411,61 +377,131 @@ body.carousel-mode .year {
 font-size: 13px;
 }
 
-body.carousel-mode .record.center {
-z-index: 10;
 }
 
-@media screen and (max-width: 600px) {
+/* =========================
+   SCREENSAVER
+========================== */
 
-.view-switcher {
+#screensaver {
+display: none;
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: #0b0b0c;
+z-index: 9999;
+overflow: hidden;
+}
+
+#screensaver.active {
+display: block;
+}
+
+.screensaver-track {
+position: absolute;
+top: 50%;
+left: 0;
+white-space: nowrap;
+font-size: 0;
+}
+
+.screensaver-record {
+display: inline-block;
+vertical-align: top;
+width: 320px;
+margin-right: 80px;
+text-align: center;
+white-space: normal;
+}
+
+.screensaver-cover-wrapper {
+position: relative;
+width: 320px;
+height: 320px;
+overflow: hidden;
+background: #1c1c1e;
+box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+}
+
+.screensaver-cover {
+display: block;
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+
+.screensaver-number {
+position: absolute;
 top: 12px;
-right: 12px;
+left: 12px;
+background: rgba(0,0,0,0.78);
+padding: 6px 9px;
+font-size: 13px;
+font-weight: bold;
+letter-spacing: 1px;
 }
 
-body.carousel-mode .collection {
-height: 390px;
+.screensaver-info {
+padding-top: 16px;
 }
 
-body.carousel-mode .record {
-width: 280px;
+.screensaver-artist {
+font-size: 19px;
+font-weight: 600;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
 }
 
-body.carousel-mode .cover-wrapper {
-width: 280px;
-height: 280px;
-}
-
-body.carousel-mode .artist {
+.screensaver-album {
+margin-top: 5px;
 font-size: 16px;
+color: #c0c0c0;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
 }
 
-body.carousel-mode .album {
-font-size: 14px;
+.screensaver-year {
+margin-top: 6px;
+font-size: 13px;
+color: #777;
 }
-}
-    </style>
+
+</style>
 </head>
 
 <body>
 
-    <header class="header">
-        <div class="view-switcher">
-            <button class="view-button active" onclick="setView('grid')">▦</button>
-            <button class="view-button" onclick="setView('carousel')">◉</button>
-        </div>
-        <h1 class="title">
-            VINYLSKIVOR
-        </h1>
-        <div class="subtitle">
-            49 SKIVOR
-        </div>
-    </header>
+<!-- =========================
+     VIEW SWITCHER
+========================== -->
 
-    <main class="collection">
+<div class="view-switcher">
+<button class="view-button active" onclick="setView('grid')">▦</button>
+<button class="view-button" onclick="setView('carousel')">◉</button>
+</div>
+
+<header class="header">
+
+<h1 class="title">
+VINYLSKIVOR
+</h1>
+
+<div class="subtitle">
+49 SKIVOR
+</div>
+
+</header>
+
+<main class="collection">
 
 <!-- =========================
-          RECORD 01
+     RECORD 01
 ========================== -->
+
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/abba_the_album.jpg" alt="ABBA - The Album">
@@ -478,9 +514,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 02
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/abba_super_trouper.jpg" alt="ABBA - Super Trouper">
@@ -493,9 +526,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 03
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/a-ha_hunting_high_and_low.jpg" alt="A-ha - Hunting High And Low">
@@ -508,12 +538,9 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 04
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
-<img class="cover" src="covers/alan_parson_i_robot.jpg" alt="The Alan Parson Project - I Robot">
+<img class="cover" src="covers/alan_parson_i_robot.jpg">
 <div class="number">04</div>
 </div>
 <div class="info">
@@ -523,12 +550,9 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 05
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
-<img class="cover" src="covers/alan_parson_turn_of_a_friendly_card.jpg" alt="The Alan Parson Project - The Turn Of A Friendly Card">
+<img class="cover" src="covers/alan_parson_turn_of_a_friendly_card.jpg">
 <div class="number">05</div>
 </div>
 <div class="info">
@@ -538,9 +562,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 06
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/andrew_lloyd_webber_phantom.jpg">
@@ -553,9 +574,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 07
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/art_garfunkel_fate_for_breakfast.jpg">
@@ -568,9 +586,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 08
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/beatles_help.jpg">
@@ -583,9 +598,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 09
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/chess.jpg">
@@ -598,9 +610,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 10
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/hollow_knight.jpg">
@@ -613,9 +622,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 11
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/minecraft.jpg">
@@ -628,9 +634,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 12
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/time.jpg">
@@ -643,9 +646,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 13
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/lets_dance.jpg">
@@ -658,9 +658,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 14
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/dire_straits.jpg">
@@ -673,9 +670,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 15
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/hotel_california.jpg">
@@ -688,9 +682,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 16
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/discovery.jpg">
@@ -703,9 +694,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 17
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/out_of_the_blue.jpg">
@@ -718,9 +706,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 18
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/elton_john.jpg">
@@ -733,9 +718,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 19
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/final_countdown.jpg">
@@ -748,9 +730,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 20
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/sweet_dreams.jpg">
@@ -763,9 +742,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 21
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/palomino.jpg">
@@ -778,9 +754,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 22
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/behind_the_mask.jpg">
@@ -793,9 +766,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 23
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/tusk.jpg">
@@ -808,9 +778,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 24
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/muddy_boots.jpg">
@@ -823,9 +790,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 25
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/war_of_the_worlds.jpg">
@@ -838,9 +802,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 26
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/best_of_jethro_tull.jpg">
@@ -853,9 +814,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 27
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/stranger_in_the_city.jpg">
@@ -868,9 +826,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 28
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/blaze_of_glory.jpg">
@@ -883,9 +838,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 29
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/frontiers.jpg">
@@ -898,9 +850,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 30
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/koto_greatest_hits_remixes.jpg">
@@ -913,9 +862,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 31
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/world_machine.jpg">
@@ -928,9 +874,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 32
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/full_moon.jpg">
@@ -943,9 +886,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 33
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/cargo.jpg">
@@ -958,9 +898,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 34
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/bad.jpg">
@@ -973,9 +910,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 35
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/sweet_gingerbread_man.jpg">
@@ -988,9 +922,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 36
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/origin_of_symmetry.jpg">
@@ -1003,9 +934,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 37
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/the_resistance.jpg">
@@ -1018,9 +946,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 38
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/the_wow_signal.jpg">
@@ -1033,9 +958,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 39
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/dark_side_of_the_moon.jpg">
@@ -1048,9 +970,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 40
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/the_wall.jpg">
@@ -1063,9 +982,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 41
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/whenever_you_need_somebody.jpg">
@@ -1078,9 +994,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 42
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/journey_to_the_centre_of_the_earth.jpg">
@@ -1093,9 +1006,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 43
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/the_myths_and_legends_of_king_arthur.jpg">
@@ -1108,9 +1018,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 44
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/the_best_of_rod_stewart.jpg">
@@ -1123,9 +1030,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 45
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/bridge_over_troubled_water.jpg">
@@ -1138,9 +1042,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 46
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/knee_deep_in_the_hoopla.jpg">
@@ -1153,9 +1054,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 47
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/just_supposin.jpg">
@@ -1168,9 +1066,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 48
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/toto.jpg">
@@ -1183,9 +1078,6 @@ font-size: 14px;
 </div>
 </article>
 
-<!-- =========================
-          RECORD 49
-========================== -->
 <article class="record">
 <div class="cover-wrapper">
 <img class="cover" src="covers/toto_iv.jpg">
@@ -1197,158 +1089,163 @@ font-size: 14px;
 <div class="year">1982</div>
 </div>
 </article>
-        
-    </main>
 
+</main>
 
+<!-- =========================
+     SCREENSAVER
+========================== -->
 
-    <!-- =========================
-         SCREENSAVER
-    ========================== -->
-
-    <div id="screensaver">
-        <div class="screensaver-track" id="screensaverTrack"></div>
-    </div>
-
-
-    <script>
-        /* =========================
-           SCREENSAVER SCRIPT
-        ========================= */
-
-        var IDLE_TIME = 60000;       // 10 seconds for testing
-        var SCROLL_SPEED = 1;        // pixels per tick
-        var SCROLL_INTERVAL = 30;    // milliseconds
-
-        var idleTimer = null;
-        var scrollTimer = null;
-        var scrollPosition = 0;
-        var loopWidth = 0;
-
-        function buildScreensaver() {
-            var collection = document.getElementsByClassName("record");
-            var track = document.getElementById("screensaverTrack");
-            var html = "";
-            var i;
-            var record;
-            var image;
-            var number;
-            var artist;
-            var album;
-            var year;
-
-            for (i = 0; i < collection.length; i++) {
-                record = collection[i];
-
-                image = record.getElementsByClassName("cover")[0];
-                number = record.getElementsByClassName("number")[0];
-                artist = record.getElementsByClassName("artist")[0];
-                album = record.getElementsByClassName("album")[0];
-                year = record.getElementsByClassName("year")[0];
-
-                if (!image || !artist || !album || !year) {
-                    continue;
-                }
-
-                html += '<div class="screensaver-record">';
-                html += '<div class="screensaver-cover-wrapper">';
-                html += '<img class="screensaver-cover" src="' + image.getAttribute("src") + '" alt="">';
-
-                if (number) {
-                    html += '<div class="screensaver-number">' + number.innerHTML + '</div>';
-                }
-
-                html += '</div>';
-                html += '<div class="screensaver-info">';
-                html += '<div class="screensaver-artist">' + artist.innerHTML + '</div>';
-                html += '<div class="screensaver-album">' + album.innerHTML + '</div>';
-                html += '<div class="screensaver-year">' + year.innerHTML + '</div>';
-                html += '</div>';
-                html += '</div>';
-            }
-
-            /* Two copies = seamless continuous loop */
-            track.innerHTML = html + html;
-        }
-
-        function startScreensaver() {
-            var screensaver = document.getElementById("screensaver");
-            var track = document.getElementById("screensaverTrack");
-            var firstRecord;
-            var recordWidth;
-            var marginRight;
-            var count;
-
-            buildScreensaver();
-
-            screensaver.className = "active";
-
-            firstRecord = track.getElementsByClassName("screensaver-record")[0];
-
-            if (!firstRecord) {
-                return;
-            }
-
-            recordWidth = firstRecord.offsetWidth;
-            marginRight = 80;
-            count = track.getElementsByClassName("screensaver-record").length / 2;
-
-            loopWidth = (recordWidth + marginRight) * count;
-
-            /* Start with the first album centered */
-            scrollPosition = Math.floor((window.innerWidth - recordWidth) / 2);
-
-            track.style.left = scrollPosition + "px";
-            track.style.top = Math.floor((window.innerHeight - 390) / 2) + "px";
-
-            clearInterval(scrollTimer);
-
-            scrollTimer = setInterval(function () {
-                scrollPosition = scrollPosition - SCROLL_SPEED;
-
-                if (scrollPosition <= -loopWidth) {
-                    scrollPosition = scrollPosition + loopWidth;
-                }
-
-                track.style.left = scrollPosition + "px";
-            }, SCROLL_INTERVAL);
-        }
-
-        function stopScreensaver() {
-            var screensaver = document.getElementById("screensaver");
-
-            clearInterval(scrollTimer);
-            scrollTimer = null;
-
-            screensaver.className = "";
-        }
-
-        function resetIdleTimer() {
-            clearTimeout(idleTimer);
-
-            idleTimer = setTimeout(function () {
-                startScreensaver();
-            }, IDLE_TIME);
-        }
-
-        function userActivity() {
-            if (scrollTimer !== null) {
-                stopScreensaver();
-            }
-
-            resetIdleTimer();
-        }
-
-        document.addEventListener("touchstart", userActivity, false);
-        document.addEventListener("mousedown", userActivity, false);
-
-        window.onload = function () {
-            resetIdleTimer();
-        };
-    </script>
+<div id="screensaver">
+<div class="screensaver-track" id="screensaverTrack"></div>
+</div>
 
 <script>
-    
+
+/* =========================
+   SCREENSAVER
+========================== */
+
+var IDLE_TIME = 60000;
+var SCROLL_SPEED = 1;
+var SCROLL_INTERVAL = 30;
+
+var idleTimer = null;
+var scrollTimer = null;
+var scrollPosition = 0;
+var loopWidth = 0;
+
+function buildScreensaver() {
+
+var collection = document.getElementsByClassName("record");
+var track = document.getElementById("screensaverTrack");
+var html = "";
+var i;
+var record;
+var image;
+var number;
+var artist;
+var album;
+var year;
+
+for (i = 0; i < collection.length; i++) {
+
+record = collection[i];
+
+image = record.getElementsByClassName("cover")[0];
+number = record.getElementsByClassName("number")[0];
+artist = record.getElementsByClassName("artist")[0];
+album = record.getElementsByClassName("album")[0];
+year = record.getElementsByClassName("year")[0];
+
+if (!image || !artist || !album || !year) {
+continue;
+}
+
+html += '<div class="screensaver-record">';
+html += '<div class="screensaver-cover-wrapper">';
+html += '<img class="screensaver-cover" src="' + image.getAttribute("src") + '" alt="">';
+
+if (number) {
+html += '<div class="screensaver-number">' + number.innerHTML + '</div>';
+}
+
+html += '</div>';
+html += '<div class="screensaver-info">';
+html += '<div class="screensaver-artist">' + artist.innerHTML + '</div>';
+html += '<div class="screensaver-album">' + album.innerHTML + '</div>';
+html += '<div class="screensaver-year">' + year.innerHTML + '</div>';
+html += '</div>';
+html += '</div>';
+
+}
+
+track.innerHTML = html + html;
+}
+
+function startScreensaver() {
+
+var screensaver = document.getElementById("screensaver");
+var track = document.getElementById("screensaverTrack");
+var firstRecord;
+var recordWidth;
+var marginRight;
+var count;
+
+if (carouselActive) {
+return;
+}
+
+buildScreensaver();
+
+screensaver.className = "active";
+
+firstRecord = track.getElementsByClassName("screensaver-record")[0];
+
+if (!firstRecord) {
+return;
+}
+
+recordWidth = firstRecord.offsetWidth;
+marginRight = 80;
+count = track.getElementsByClassName("screensaver-record").length / 2;
+
+loopWidth = (recordWidth + marginRight) * count;
+
+scrollPosition = Math.floor((window.innerWidth - recordWidth) / 2);
+
+track.style.left = scrollPosition + "px";
+track.style.top = Math.floor((window.innerHeight - 390) / 2) + "px";
+
+clearInterval(scrollTimer);
+
+scrollTimer = setInterval(function() {
+
+scrollPosition -= SCROLL_SPEED;
+
+if (scrollPosition <= -loopWidth) {
+scrollPosition += loopWidth;
+}
+
+track.style.left = scrollPosition + "px";
+
+}, SCROLL_INTERVAL);
+
+}
+
+function stopScreensaver() {
+
+var screensaver = document.getElementById("screensaver");
+
+clearInterval(scrollTimer);
+scrollTimer = null;
+
+screensaver.className = "";
+}
+
+function resetIdleTimer() {
+
+clearTimeout(idleTimer);
+
+idleTimer = setTimeout(function() {
+startScreensaver();
+}, IDLE_TIME);
+
+}
+
+function userActivity() {
+
+if (scrollTimer !== null) {
+stopScreensaver();
+}
+
+resetIdleTimer();
+
+}
+
+document.addEventListener("touchstart", userActivity, false);
+document.addEventListener("mousedown", userActivity, false);
+
 /* =========================
    VIEW SWITCHER
 ========================== */
@@ -1358,32 +1255,47 @@ var carouselPosition = 0;
 var carouselVelocity = 0;
 var carouselAnimation = null;
 var carouselDragging = false;
-var carouselStartX = 0;
 var carouselLastX = 0;
 var carouselLastTime = 0;
 var carouselRecords = [];
 var carouselSpacing = 430;
 
 function setView(view) {
+
 if (view === "carousel") {
 startCarousel();
 } else {
 stopCarousel();
 }
 
-document.querySelectorAll(".view-button").forEach(function(button) {
+var buttons = document.querySelectorAll(".view-button");
+
+buttons.forEach(function(button) {
 button.classList.remove("active");
 });
 
 if (view === "carousel") {
-document.querySelectorAll(".view-button")[1].classList.add("active");
+buttons[1].classList.add("active");
 } else {
-document.querySelectorAll(".view-button")[0].classList.add("active");
-}
+buttons[0].classList.add("active");
 }
 
+}
+
+/* =========================
+   START CAROUSEL
+========================== */
+
 function startCarousel() {
+
+if (carouselActive) {
+return;
+}
+
+stopScreensaver();
+
 carouselActive = true;
+
 document.body.classList.add("carousel-mode");
 
 carouselRecords = Array.from(
@@ -1396,23 +1308,38 @@ carouselVelocity = 0;
 positionCarousel();
 
 carouselRecords.forEach(function(record) {
+
 record.addEventListener("pointerdown", carouselPointerDown);
 record.addEventListener("pointermove", carouselPointerMove);
 record.addEventListener("pointerup", carouselPointerUp);
 record.addEventListener("pointercancel", carouselPointerUp);
+
 });
 
-document.querySelector(".collection").addEventListener(
+var collection = document.querySelector(".collection");
+
+collection.addEventListener(
 "wheel",
 carouselWheel,
 { passive: false }
 );
 
 requestCarouselAnimation();
+
 }
 
+/* =========================
+   STOP CAROUSEL
+========================== */
+
 function stopCarousel() {
+
+if (!carouselActive) {
+return;
+}
+
 carouselActive = false;
+
 document.body.classList.remove("carousel-mode");
 
 if (carouselAnimation) {
@@ -1420,13 +1347,17 @@ cancelAnimationFrame(carouselAnimation);
 carouselAnimation = null;
 }
 
+carouselDragging = false;
+
 carouselRecords.forEach(function(record) {
+
 record.removeEventListener("pointerdown", carouselPointerDown);
 record.removeEventListener("pointermove", carouselPointerMove);
 record.removeEventListener("pointerup", carouselPointerUp);
 record.removeEventListener("pointercancel", carouselPointerUp);
-record.classList.remove("center");
+
 record.style.transform = "";
+
 });
 
 var collection = document.querySelector(".collection");
@@ -1434,12 +1365,17 @@ var collection = document.querySelector(".collection");
 if (collection) {
 collection.removeEventListener("wheel", carouselWheel);
 }
+
 }
 
+/* =========================
+   CAROUSEL DRAG
+========================== */
+
 function carouselPointerDown(event) {
+
 carouselDragging = true;
 
-carouselStartX = event.clientX;
 carouselLastX = event.clientX;
 carouselLastTime = performance.now();
 
@@ -1451,9 +1387,15 @@ carouselAnimation = null;
 }
 
 event.currentTarget.setPointerCapture(event.pointerId);
+
 }
 
+/* =========================
+   CAROUSEL MOVE
+========================== */
+
 function carouselPointerMove(event) {
+
 if (!carouselDragging) {
 return;
 }
@@ -1474,18 +1416,31 @@ carouselLastTime = now;
 positionCarousel();
 
 event.preventDefault();
+
 }
 
+/* =========================
+   CAROUSEL RELEASE
+========================== */
+
 function carouselPointerUp() {
+
 if (!carouselDragging) {
 return;
 }
 
 carouselDragging = false;
+
 requestCarouselAnimation();
+
 }
 
+/* =========================
+   CAROUSEL WHEEL
+========================== */
+
 function carouselWheel(event) {
+
 if (!carouselActive) {
 return;
 }
@@ -1500,26 +1455,36 @@ Math.min(35, carouselVelocity)
 );
 
 requestCarouselAnimation();
+
 }
 
+/* =========================
+   CAROUSEL ANIMATION
+========================== */
+
 function requestCarouselAnimation() {
+
 if (carouselAnimation) {
 return;
 }
 
 function animate() {
+
 if (!carouselActive) {
 carouselAnimation = null;
 return;
 }
 
 if (!carouselDragging) {
+
 carouselPosition += carouselVelocity;
+
 carouselVelocity *= 0.94;
 
 if (Math.abs(carouselVelocity) < 0.05) {
 carouselVelocity = 0;
 }
+
 }
 
 positionCarousel();
@@ -1528,61 +1493,200 @@ if (
 carouselDragging ||
 Math.abs(carouselVelocity) > 0.05
 ) {
-carouselAnimation = requestAnimationFrame(animate);
+
+carouselAnimation =
+requestAnimationFrame(animate);
+
 } else {
+
 carouselAnimation = null;
-}
+
 }
 
-carouselAnimation = requestAnimationFrame(animate);
 }
+
+carouselAnimation =
+requestAnimationFrame(animate);
+
+}
+
+/* =========================
+   POSITION CAROUSEL
+========================== */
 
 function positionCarousel() {
+
 if (!carouselRecords.length) {
 return;
 }
 
 var center = window.innerWidth / 2;
-var totalWidth = carouselRecords.length * carouselSpacing;
+
+var recordWidth =
+window.innerWidth <= 600 ? 280 : 360;
+
+var totalWidth =
+carouselRecords.length * carouselSpacing;
 
 carouselRecords.forEach(function(record, index) {
 
 var x =
 center -
-180 +
+recordWidth / 2 +
 carouselPosition +
 index * carouselSpacing;
 
-x = ((x + totalWidth / 2) % totalWidth + totalWidth) % totalWidth - totalWidth / 2;
+x =
+((x + totalWidth / 2) % totalWidth + totalWidth) %
+totalWidth - totalWidth / 2;
 
-x += center - 180;
+x += center - recordWidth / 2;
 
-var recordCenter = x + 180;
-var distance = Math.abs(recordCenter - center);
+var recordCenter =
+x + recordWidth / 2;
+
+var distance =
+Math.abs(recordCenter - center);
 
 var scale = 1;
 
 if (distance < 500) {
-scale = 1 + (1 - distance / 500) * 0.12;
+scale =
+1 + (1 - distance / 500) * 0.12;
 }
 
 record.style.transform =
-"translate3d(" + x + "px,0,0) scale(" + scale + ")";
+"translate3d(" +
+x +
+"px,0,0) scale(" +
+scale +
+")";
 
-if (distance < 190) {
+if (distance < recordWidth / 2) {
 record.classList.add("center");
 } else {
 record.classList.remove("center");
 }
 
 });
+
 }
 
+/* =========================
+   SMOOTH GRID SCROLL
+========================== */
+
+var smoothScrollTarget = window.scrollY;
+var smoothScrollVelocity = 0;
+var smoothScrollAnimation = null;
+
+function smoothGridScroll(event) {
+
+if (carouselActive) {
+return;
+}
+
+if (document.getElementById("screensaver").classList.contains("active")) {
+return;
+}
+
+event.preventDefault();
+
+smoothScrollVelocity += event.deltaY * 0.55;
+
+smoothScrollVelocity = Math.max(
+-80,
+Math.min(80, smoothScrollVelocity)
+);
+
+smoothScrollTarget += smoothScrollVelocity;
+
+var maxScroll =
+document.documentElement.scrollHeight -
+window.innerHeight;
+
+smoothScrollTarget =
+Math.max(
+0,
+Math.min(maxScroll, smoothScrollTarget)
+);
+
+if (!smoothScrollAnimation) {
+requestSmoothScroll();
+}
+
+}
+
+function requestSmoothScroll() {
+
+function animateSmoothScroll() {
+
+var current = window.scrollY;
+
+var difference =
+smoothScrollTarget - current;
+
+var movement =
+difference * 0.12;
+
+window.scrollTo(
+0,
+current + movement
+);
+
+smoothScrollVelocity *= 0.88;
+
+if (
+Math.abs(difference) > 0.5 ||
+Math.abs(smoothScrollVelocity) > 0.2
+) {
+
+smoothScrollAnimation =
+requestAnimationFrame(animateSmoothScroll);
+
+} else {
+
+window.scrollTo(0, smoothScrollTarget);
+smoothScrollAnimation = null;
+
+}
+
+}
+
+smoothScrollAnimation =
+requestAnimationFrame(animateSmoothScroll);
+
+}
+
+window.addEventListener(
+"wheel",
+smoothGridScroll,
+{ passive: false }
+);
+
+/* =========================
+   RESIZE
+========================== */
+
 window.addEventListener("resize", function() {
+
 if (carouselActive) {
 positionCarousel();
 }
+
+smoothScrollTarget = window.scrollY;
+
 });
+
+/* =========================
+   START
+========================== */
+
+window.onload = function() {
+smoothScrollTarget = window.scrollY;
+resetIdleTimer();
+};
+
 </script>
 
 </body>
