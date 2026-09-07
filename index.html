@@ -317,12 +317,164 @@
             color: #777;
         }
 
+        /* =========================
+           VIEW SWITCHER
+        ========================= */
+        
+        .view-switcher{
+        position:fixed;
+        top:22px;
+        right:25px;
+        z-index:10000;
+        display:flex;
+        gap:4px;
+        background:rgba(25,25,27,.92);
+        padding:4px;
+        border:1px solid rgba(255,255,255,.1);
+        border-radius:8px;
+        backdrop-filter:blur(12px);
+        -webkit-backdrop-filter:blur(12px)
+        }
+        
+        .view-button{
+        width:38px;
+        height:34px;
+        border:0;
+        background:transparent;
+        color:#777;
+        font-size:18px;
+        cursor:pointer;
+        border-radius:5px;
+        -webkit-tap-highlight-color:transparent
+        }
+        
+        .view-button.active{
+        background:rgba(255,255,255,.1);
+        color:#fff
+        }
+        
+        /* =========================
+           CAROUSEL
+        ========================= */
+        
+        body.carousel-mode{
+        overflow:hidden;
+        padding:0
+        }
+        
+        body.carousel-mode .header{
+        display:none
+        }
+        
+        body.carousel-mode .collection{
+        position:fixed;
+        top:50%;
+        left:0;
+        width:100%;
+        max-width:none;
+        height:520px;
+        margin:0;
+        transform:translateY(-50%);
+        overflow:hidden;
+        touch-action:none;
+        user-select:none;
+        -webkit-user-select:none;
+        -webkit-touch-callout:none
+        }
+        
+        body.carousel-mode .record{
+        position:absolute;
+        top:20px;
+        left:0;
+        width:360px;
+        margin:0;
+        float:none;
+        will-change:transform;
+        transform-origin:center top
+        }
+        
+        body.carousel-mode .cover-wrapper{
+        width:360px;
+        height:360px;
+        padding-bottom:0
+        }
+        
+        body.carousel-mode .info{
+        padding-top:15px;
+        text-align:center;
+        width:100%
+        }
+        
+        body.carousel-mode .artist{
+        font-size:18px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        width:100%
+        }
+        
+        body.carousel-mode .album{
+        font-size:15px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        width:100%
+        }
+        
+        body.carousel-mode .year{
+        font-size:13px;
+        margin-top:5px
+        }
+        
+        /* =========================
+           MOBILE CAROUSEL
+        ========================= */
+        
+        @media screen and (max-width:600px){
+        
+        .view-switcher{
+        top:12px;
+        right:12px
+        }
+        
+        body.carousel-mode .collection{
+        height:440px
+        }
+        
+        body.carousel-mode .record{
+        top:15px;
+        width:280px
+        }
+        
+        body.carousel-mode .cover-wrapper{
+        width:280px;
+        height:280px
+        }
+        
+        body.carousel-mode .artist{
+        font-size:16px
+        }
+        
+        body.carousel-mode .album{
+        font-size:14px
+        }
+        
+        body.carousel-mode .year{
+        font-size:13px
+        }
+        
+        }
+
     </style>
 </head>
 
 <body>
 
     <header class="header">
+        <div class="view-switcher">
+            <button class="view-button active" onclick="setView('grid')">▦</button>
+            <button class="view-button" onclick="setView('carousel')">◉</button>
+        </div>
         <h1 class="title">
             VINYLSKIVOR
         </h1>
@@ -1070,152 +1222,611 @@
         
     </main>
 
+<script>
+/* =========================
+   SCREENSAVER
+========================= */
+
+var IDLE_TIME=60000;
+var SCROLL_SPEED=1;
+var SCROLL_INTERVAL=30;
+
+var idleTimer=null;
+var scrollTimer=null;
+var scrollPosition=0;
+var loopWidth=0;
+
+function buildScreensaver(){
+var collection=document.getElementsByClassName("record");
+var track=document.getElementById("screensaverTrack");
+var html="";
+var i,record,image,number,artist,album,year;
+
+for(i=0;i<collection.length;i++){
+record=collection[i];
+image=record.getElementsByClassName("cover")[0];
+number=record.getElementsByClassName("number")[0];
+artist=record.getElementsByClassName("artist")[0];
+album=record.getElementsByClassName("album")[0];
+year=record.getElementsByClassName("year")[0];
+
+if(!image||!artist||!album||!year)continue;
+
+html+='<div class="screensaver-record">';
+html+='<div class="screensaver-cover-wrapper">';
+html+='<img class="screensaver-cover" src="'+image.getAttribute("src")+'" alt="">';
+
+if(number)html+='<div class="screensaver-number">'+number.innerHTML+'</div>';
+
+html+='</div>';
+html+='<div class="screensaver-info">';
+html+='<div class="screensaver-artist">'+artist.innerHTML+'</div>';
+html+='<div class="screensaver-album">'+album.innerHTML+'</div>';
+html+='<div class="screensaver-year">'+year.innerHTML+'</div>';
+html+='</div>';
+html+='</div>';
+}
+
+track.innerHTML=html+html
+}
+
+function startScreensaver(){
+if(carouselActive)return;
+
+var screensaver=document.getElementById("screensaver");
+var track=document.getElementById("screensaverTrack");
+var firstRecord,recordWidth,count;
+
+buildScreensaver();
+screensaver.className="active";
+
+firstRecord=track.getElementsByClassName("screensaver-record")[0];
+
+if(!firstRecord)return;
+
+recordWidth=firstRecord.offsetWidth;
+count=track.getElementsByClassName("screensaver-record").length/2;
+loopWidth=(recordWidth+80)*count;
+
+scrollPosition=Math.floor((window.innerWidth-recordWidth)/2);
+
+track.style.left=scrollPosition+"px";
+track.style.top=Math.floor((window.innerHeight-390)/2)+"px";
+
+clearInterval(scrollTimer);
+
+scrollTimer=setInterval(function(){
+scrollPosition-=SCROLL_SPEED;
+
+if(scrollPosition<=-loopWidth){
+scrollPosition+=loopWidth
+}
+
+track.style.left=scrollPosition+"px"
+},SCROLL_INTERVAL)
+}
+
+function stopScreensaver(){
+var screensaver=document.getElementById("screensaver");
+
+clearInterval(scrollTimer);
+scrollTimer=null;
+
+screensaver.className=""
+}
+
+function resetIdleTimer(){
+clearTimeout(idleTimer);
+
+idleTimer=setTimeout(function(){
+startScreensaver()
+},IDLE_TIME)
+}
+
+function userActivity(){
+if(scrollTimer!==null)stopScreensaver();
+resetIdleTimer()
+}
+
+document.addEventListener("touchstart",userActivity,false);
+document.addEventListener("mousedown",userActivity,false);
 
 
-    <!-- =========================
-         SCREENSAVER
-    ========================== -->
+/* =========================
+   VIEW SWITCHER
+========================= */
 
-    <div id="screensaver">
-        <div class="screensaver-track" id="screensaverTrack"></div>
-    </div>
+var carouselActive=false;
+var carouselPosition=0;
+var carouselVelocity=0;
+var carouselAnimation=null;
+var carouselDragging=false;
+var carouselLastX=0;
+var carouselLastTime=0;
+var carouselPointerId=null;
+var carouselCollection=null;
+var carouselRecords=[];
+var carouselSpacing=430;
+
+function setView(view){
+
+if(view==="carousel"){
+startCarousel()
+}else{
+stopCarousel()
+}
+
+var buttons=document.querySelectorAll(".view-button");
+
+buttons.forEach(function(button){
+button.classList.remove("active")
+});
+
+if(view==="carousel"){
+buttons[1].classList.add("active")
+}else{
+buttons[0].classList.add("active")
+}
+
+resetIdleTimer()
+}
 
 
-    <script>
-        /* =========================
-           SCREENSAVER SCRIPT
-        ========================= */
+/* =========================
+   START CAROUSEL
+========================= */
 
-        var IDLE_TIME = 60000;       // 10 seconds for testing
-        var SCROLL_SPEED = 1;        // pixels per tick
-        var SCROLL_INTERVAL = 30;    // milliseconds
+function startCarousel(){
 
-        var idleTimer = null;
-        var scrollTimer = null;
-        var scrollPosition = 0;
-        var loopWidth = 0;
+if(carouselActive)return;
 
-        function buildScreensaver() {
-            var collection = document.getElementsByClassName("record");
-            var track = document.getElementById("screensaverTrack");
-            var html = "";
-            var i;
-            var record;
-            var image;
-            var number;
-            var artist;
-            var album;
-            var year;
+stopScreensaver();
 
-            for (i = 0; i < collection.length; i++) {
-                record = collection[i];
+carouselActive=true;
 
-                image = record.getElementsByClassName("cover")[0];
-                number = record.getElementsByClassName("number")[0];
-                artist = record.getElementsByClassName("artist")[0];
-                album = record.getElementsByClassName("album")[0];
-                year = record.getElementsByClassName("year")[0];
+document.body.classList.add("carousel-mode");
 
-                if (!image || !artist || !album || !year) {
-                    continue;
-                }
+carouselCollection=document.querySelector(".collection");
 
-                html += '<div class="screensaver-record">';
-                html += '<div class="screensaver-cover-wrapper">';
-                html += '<img class="screensaver-cover" src="' + image.getAttribute("src") + '" alt="">';
+carouselRecords=Array.from(
+carouselCollection.querySelectorAll(".record")
+);
 
-                if (number) {
-                    html += '<div class="screensaver-number">' + number.innerHTML + '</div>';
-                }
+carouselPosition=0;
+carouselVelocity=0;
+carouselDragging=false;
 
-                html += '</div>';
-                html += '<div class="screensaver-info">';
-                html += '<div class="screensaver-artist">' + artist.innerHTML + '</div>';
-                html += '<div class="screensaver-album">' + album.innerHTML + '</div>';
-                html += '<div class="screensaver-year">' + year.innerHTML + '</div>';
-                html += '</div>';
-                html += '</div>';
-            }
+positionCarousel();
 
-            /* Two copies = seamless continuous loop */
-            track.innerHTML = html + html;
-        }
+carouselCollection.addEventListener(
+"pointerdown",
+carouselPointerDown
+);
 
-        function startScreensaver() {
-            var screensaver = document.getElementById("screensaver");
-            var track = document.getElementById("screensaverTrack");
-            var firstRecord;
-            var recordWidth;
-            var marginRight;
-            var count;
+carouselCollection.addEventListener(
+"pointermove",
+carouselPointerMove
+);
 
-            buildScreensaver();
+carouselCollection.addEventListener(
+"pointerup",
+carouselPointerUp
+);
 
-            screensaver.className = "active";
+carouselCollection.addEventListener(
+"pointercancel",
+carouselPointerUp
+);
 
-            firstRecord = track.getElementsByClassName("screensaver-record")[0];
+carouselCollection.addEventListener(
+"wheel",
+carouselWheel,
+{passive:false}
+)
+}
 
-            if (!firstRecord) {
-                return;
-            }
 
-            recordWidth = firstRecord.offsetWidth;
-            marginRight = 80;
-            count = track.getElementsByClassName("screensaver-record").length / 2;
+/* =========================
+   STOP CAROUSEL
+========================= */
 
-            loopWidth = (recordWidth + marginRight) * count;
+function stopCarousel(){
 
-            /* Start with the first album centered */
-            scrollPosition = Math.floor((window.innerWidth - recordWidth) / 2);
+if(!carouselActive)return;
 
-            track.style.left = scrollPosition + "px";
-            track.style.top = Math.floor((window.innerHeight - 390) / 2) + "px";
+carouselActive=false;
 
-            clearInterval(scrollTimer);
+document.body.classList.remove("carousel-mode");
 
-            scrollTimer = setInterval(function () {
-                scrollPosition = scrollPosition - SCROLL_SPEED;
+if(carouselAnimation){
+cancelAnimationFrame(carouselAnimation);
+carouselAnimation=null
+}
 
-                if (scrollPosition <= -loopWidth) {
-                    scrollPosition = scrollPosition + loopWidth;
-                }
+carouselDragging=false;
 
-                track.style.left = scrollPosition + "px";
-            }, SCROLL_INTERVAL);
-        }
+if(carouselCollection){
 
-        function stopScreensaver() {
-            var screensaver = document.getElementById("screensaver");
+carouselCollection.removeEventListener(
+"pointerdown",
+carouselPointerDown
+);
 
-            clearInterval(scrollTimer);
-            scrollTimer = null;
+carouselCollection.removeEventListener(
+"pointermove",
+carouselPointerMove
+);
 
-            screensaver.className = "";
-        }
+carouselCollection.removeEventListener(
+"pointerup",
+carouselPointerUp
+);
 
-        function resetIdleTimer() {
-            clearTimeout(idleTimer);
+carouselCollection.removeEventListener(
+"pointercancel",
+carouselPointerUp
+);
 
-            idleTimer = setTimeout(function () {
-                startScreensaver();
-            }, IDLE_TIME);
-        }
+carouselCollection.removeEventListener(
+"wheel",
+carouselWheel
+)
+}
 
-        function userActivity() {
-            if (scrollTimer !== null) {
-                stopScreensaver();
-            }
+carouselRecords.forEach(function(record){
+record.style.transform="";
+});
 
-            resetIdleTimer();
-        }
+carouselCollection=null;
+carouselRecords=[]
+}
 
-        document.addEventListener("touchstart", userActivity, false);
-        document.addEventListener("mousedown", userActivity, false);
 
-        window.onload = function () {
-            resetIdleTimer();
-        };
-    </script>
+/* =========================
+   DRAG
+========================= */
+
+function carouselPointerDown(event){
+
+if(!carouselActive)return;
+
+carouselDragging=true;
+
+carouselPointerId=event.pointerId;
+
+carouselLastX=event.clientX;
+carouselLastTime=performance.now();
+
+carouselVelocity=0;
+
+if(carouselAnimation){
+cancelAnimationFrame(carouselAnimation);
+carouselAnimation=null
+}
+
+try{
+event.currentTarget.setPointerCapture(event.pointerId)
+}catch(error){}
+
+event.preventDefault()
+}
+
+function carouselPointerMove(event){
+
+if(!carouselActive||!carouselDragging)return;
+
+if(
+carouselPointerId!==null &&
+event.pointerId!==carouselPointerId
+)return;
+
+var now=performance.now();
+
+var deltaX=event.clientX-carouselLastX;
+var deltaTime=now-carouselLastTime;
+
+carouselPosition+=deltaX;
+
+if(deltaTime>0){
+carouselVelocity=(deltaX/deltaTime)*16
+}
+
+carouselVelocity=Math.max(
+-40,
+Math.min(40,carouselVelocity)
+);
+
+carouselLastX=event.clientX;
+carouselLastTime=now;
+
+positionCarousel();
+
+event.preventDefault()
+}
+
+function carouselPointerUp(event){
+
+if(!carouselDragging)return;
+
+carouselDragging=false;
+
+try{
+
+if(
+event.currentTarget &&
+event.currentTarget.hasPointerCapture(event.pointerId)
+){
+event.currentTarget.releasePointerCapture(
+event.pointerId
+)
+}
+
+}catch(error){}
+
+carouselPointerId=null;
+
+requestCarouselAnimation()
+}
+
+
+/* =========================
+   MOUSE WHEEL
+========================= */
+
+function carouselWheel(event){
+
+if(!carouselActive)return;
+
+event.preventDefault();
+
+carouselVelocity+=event.deltaY*-0.35;
+
+carouselVelocity=Math.max(
+-35,
+Math.min(35,carouselVelocity)
+);
+
+requestCarouselAnimation()
+}
+
+
+/* =========================
+   INERTIA
+========================= */
+
+function requestCarouselAnimation(){
+
+if(carouselAnimation)return;
+
+function animate(){
+
+if(!carouselActive){
+carouselAnimation=null;
+return
+}
+
+if(!carouselDragging){
+
+carouselPosition+=carouselVelocity;
+
+carouselVelocity*=0.94;
+
+if(Math.abs(carouselVelocity)<0.05){
+carouselVelocity=0
+}
+
+}
+
+positionCarousel();
+
+if(
+carouselDragging ||
+Math.abs(carouselVelocity)>0.05
+){
+
+carouselAnimation=
+requestAnimationFrame(animate)
+
+}else{
+
+carouselAnimation=null
+
+}
+
+}
+
+carouselAnimation=
+requestAnimationFrame(animate)
+}
+
+
+/* =========================
+   POSITION CAROUSEL
+========================= */
+
+function positionCarousel(){
+
+if(!carouselRecords.length)return;
+
+var mobile=window.innerWidth<=600;
+
+var recordWidth=mobile?280:360;
+
+var center=window.innerWidth/2;
+
+var totalWidth=
+carouselRecords.length*carouselSpacing;
+
+carouselRecords.forEach(function(record,index){
+
+var baseX=
+index*carouselSpacing+
+carouselPosition;
+
+var x=
+((baseX%totalWidth)+totalWidth)%totalWidth;
+
+if(x>totalWidth/2){
+x-=totalWidth
+}
+
+x+=center-recordWidth/2;
+
+var recordCenter=
+x+recordWidth/2;
+
+var distance=
+Math.abs(recordCenter-center);
+
+/* Max 12% större */
+var scale=1;
+
+if(distance<500){
+
+scale=
+1+
+(1-distance/500)*0.12;
+
+}
+
+/* Hela record skalas */
+record.style.transform=
+"translate3d("+
+x+
+"px,0,0) scale("+
+scale+
+")";
+
+});
+
+}
+
+
+/* =========================
+   SMOOTH GRID SCROLL
+========================= */
+
+var smoothScrollTarget=window.scrollY;
+var smoothScrollVelocity=0;
+var smoothScrollAnimation=null;
+
+function smoothGridScroll(event){
+
+if(carouselActive)return;
+
+var screensaver=
+document.getElementById("screensaver");
+
+if(
+screensaver &&
+screensaver.classList.contains("active")
+)return;
+
+event.preventDefault();
+
+smoothScrollVelocity+=event.deltaY*0.55;
+
+smoothScrollVelocity=Math.max(
+-80,
+Math.min(80,smoothScrollVelocity)
+);
+
+smoothScrollTarget+=smoothScrollVelocity;
+
+var maxScroll=
+document.documentElement.scrollHeight-
+window.innerHeight;
+
+smoothScrollTarget=Math.max(
+0,
+Math.min(maxScroll,smoothScrollTarget)
+);
+
+if(!smoothScrollAnimation){
+requestSmoothScroll()
+}
+
+}
+
+function requestSmoothScroll(){
+
+function animateSmoothScroll(){
+
+var current=window.scrollY;
+
+var difference=
+smoothScrollTarget-current;
+
+var movement=
+difference*0.12;
+
+window.scrollTo(
+0,
+current+movement
+);
+
+smoothScrollVelocity*=0.88;
+
+if(
+Math.abs(difference)>0.5 ||
+Math.abs(smoothScrollVelocity)>0.2
+){
+
+smoothScrollAnimation=
+requestAnimationFrame(animateSmoothScroll)
+
+}else{
+
+window.scrollTo(
+0,
+smoothScrollTarget
+);
+
+smoothScrollAnimation=null
+
+}
+
+}
+
+smoothScrollAnimation=
+requestAnimationFrame(animateSmoothScroll)
+}
+
+window.addEventListener(
+"wheel",
+smoothGridScroll,
+{passive:false}
+);
+
+
+/* =========================
+   RESIZE
+========================= */
+
+window.addEventListener("resize",function(){
+
+if(carouselActive){
+positionCarousel()
+}
+
+smoothScrollTarget=window.scrollY
+
+});
+
+
+/* =========================
+   START
+========================= */
+
+window.onload=function(){
+
+smoothScrollTarget=window.scrollY;
+
+resetIdleTimer()
+
+};
+
+</script>
 
 </body>
 </html>
