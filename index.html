@@ -67,6 +67,9 @@
             width: 23.5%;
             margin-right: 2%;
             margin-bottom: 38px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .record:nth-child(4n) {
@@ -410,6 +413,14 @@
         cursor:pointer;
         z-index:2;
         border-radius:8px;
+        }
+
+        .album-viewer-arrow,
+        .album-viewer-close{
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         
         .album-viewer-prev{
@@ -1386,11 +1397,22 @@ title:image ? image.getAttribute("alt") : ""
 });
 
 document.querySelectorAll(".record").forEach(function(record,index){
-record.addEventListener("click",function(){
+record.style.cursor="pointer";
+record.style.webkitTapHighlightColor="transparent";
+
+record.addEventListener("click",function(event){
+event.preventDefault();
 currentAlbum=index;
 currentSide=0;
 showAlbum(false);
 });
+
+record.addEventListener("touchend",function(event){
+event.preventDefault();
+currentAlbum=index;
+currentSide=0;
+showAlbum(false);
+},{passive:false});
 });
 
 function showAlbum(animate,direction){
