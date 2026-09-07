@@ -22,73 +22,107 @@
             color: #f5f5f5;
             font-family: -apple-system, BlinkMacSystemFont,
                          "Helvetica Neue", Arial, sans-serif;
+
             padding: 28px;
         }
 
-        /* HEADER */
+
+        /* =========================
+           HEADER
+        ========================= */
 
         .header {
             max-width: 1400px;
+
             margin: 0 auto 35px auto;
+
             border-bottom: 1px solid rgba(255,255,255,0.12);
+
             padding-bottom: 22px;
         }
 
         .title {
             font-size: 34px;
+
             font-weight: 600;
+
             letter-spacing: 3px;
+
             margin: 0;
         }
 
         .subtitle {
             margin-top: 8px;
+
             color: #999;
+
             font-size: 14px;
+
             letter-spacing: 1px;
         }
 
 
-        /* COLLECTION */
+        /* =========================
+           COLLECTION
+        ========================= */
 
         .collection {
             max-width: 1400px;
+
             margin: 0 auto;
-            text-align: left;
-        }
-
-
-        /* RECORD */
-
-        .record {
-            display: inline-block;
-            vertical-align: top;
-
-            width: 23%;
-            margin-right: 2.3%;
-            margin-bottom: 34px;
-
-            min-width: 0;
         }
 
         /*
-         * Var fjärde skiva börjar en ny rad.
-         * Detta ersätter modern CSS Grid och fungerar
-         * bättre på gamla Safari-versioner.
+         * Fyra kolumner.
+         *
+         * Vi använder float istället för CSS Grid
+         * eftersom detta fungerar mycket bättre
+         * på Safari i iOS 9.
+         */
+
+        .record {
+            float: left;
+
+            width: 23.5%;
+
+            margin-right: 2%;
+
+            margin-bottom: 38px;
+        }
+
+        /*
+         * Var fjärde album får ingen högermarginal.
          */
 
         .record:nth-child(4n) {
             margin-right: 0;
         }
 
+        /*
+         * Viktigt:
+         * collection måste rensa floats.
+         */
 
-        /* COVER */
+        .collection:after {
+            content: "";
+
+            display: table;
+
+            clear: both;
+        }
+
+
+        /* =========================
+           COVER
+        ========================= */
 
         .cover-wrapper {
             position: relative;
 
             width: 100%;
+
             height: 0;
+
             padding-bottom: 100%;
 
             overflow: hidden;
@@ -108,8 +142,6 @@
             width: 100%;
             height: 100%;
 
-            display: table;
-
             background: linear-gradient(
                 135deg,
                 #303030,
@@ -118,21 +150,35 @@
 
             color: #777;
 
-            font-size: 14px;
+            font-size: 13px;
+
             letter-spacing: 2px;
 
             text-align: center;
+
+            line-height: 100%;
         }
 
-        .cover:before {
-            content: "";
+        /*
+         * Centrerar texten i omslaget.
+         */
 
-            display: table-cell;
-            vertical-align: middle;
+        .cover-text {
+            position: absolute;
+
+            top: 50%;
+
+            left: 0;
+
+            width: 100%;
+
+            margin-top: -7px;
         }
 
 
-        /* NUMBER */
+        /* =========================
+           NUMBER
+        ========================= */
 
         .number {
             position: absolute;
@@ -140,18 +186,21 @@
             top: 10px;
             left: 10px;
 
-            background: rgba(0,0,0,0.75);
+            background: rgba(0,0,0,0.78);
 
             padding: 5px 8px;
 
             font-size: 13px;
+
             font-weight: bold;
 
             letter-spacing: 1px;
         }
 
 
-        /* TEXT */
+        /* =========================
+           TEXT
+        ========================= */
 
         .info {
             padding-top: 12px;
@@ -159,10 +208,13 @@
 
         .artist {
             font-size: 17px;
+
             font-weight: 600;
 
             white-space: nowrap;
+
             overflow: hidden;
+
             text-overflow: ellipsis;
         }
 
@@ -170,10 +222,13 @@
             margin-top: 4px;
 
             font-size: 15px;
+
             color: #c0c0c0;
 
             white-space: nowrap;
+
             overflow: hidden;
+
             text-overflow: ellipsis;
         }
 
@@ -181,7 +236,78 @@
             margin-top: 5px;
 
             font-size: 13px;
+
             color: #777;
+        }
+
+
+        /* =========================
+           TABLET / IPAD
+        ========================= */
+
+        @media screen and (max-width: 1100px) {
+
+            body {
+                padding: 20px;
+            }
+
+            .header {
+                margin-bottom: 25px;
+            }
+
+            .title {
+                font-size: 28px;
+            }
+
+            .record {
+                width: 23.5%;
+                margin-right: 2%;
+            }
+
+            .artist {
+                font-size: 15px;
+            }
+
+            .album {
+                font-size: 13px;
+            }
+
+            .year {
+                font-size: 12px;
+            }
+        }
+
+
+        /* =========================
+           PHONE
+        ========================= */
+
+        @media screen and (max-width: 600px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .title {
+                font-size: 23px;
+            }
+
+            .record {
+                width: 48%;
+
+                margin-right: 4%;
+
+                margin-bottom: 28px;
+            }
+
+            .record:nth-child(4n) {
+                margin-right: 4%;
+            }
+
+            .record:nth-child(2n) {
+                margin-right: 0;
+            }
+
         }
 
     </style>
@@ -208,14 +334,20 @@
     <main class="collection">
 
 
-        <!-- RECORD 01 -->
+        <!-- =========================
+             RECORD 01
+        ========================== -->
 
         <article class="record">
 
             <div class="cover-wrapper">
 
                 <div class="cover">
-                    ALBUM COVER
+
+                    <div class="cover-text">
+                        ALBUM COVER
+                    </div>
+
                 </div>
 
                 <div class="number">
@@ -244,14 +376,20 @@
 
 
 
-        <!-- RECORD 02 -->
+        <!-- =========================
+             RECORD 02
+        ========================== -->
 
         <article class="record">
 
             <div class="cover-wrapper">
 
                 <div class="cover">
-                    ALBUM COVER
+
+                    <div class="cover-text">
+                        ALBUM COVER
+                    </div>
+
                 </div>
 
                 <div class="number">
@@ -280,14 +418,20 @@
 
 
 
-        <!-- RECORD 03 -->
+        <!-- =========================
+             RECORD 03
+        ========================== -->
 
         <article class="record">
 
             <div class="cover-wrapper">
 
                 <div class="cover">
-                    ALBUM COVER
+
+                    <div class="cover-text">
+                        ALBUM COVER
+                    </div>
+
                 </div>
 
                 <div class="number">
@@ -316,14 +460,20 @@
 
 
 
-        <!-- RECORD 04 -->
+        <!-- =========================
+             RECORD 04
+        ========================== -->
 
         <article class="record">
 
             <div class="cover-wrapper">
 
                 <div class="cover">
-                    ALBUM COVER
+
+                    <div class="cover-text">
+                        ALBUM COVER
+                    </div>
+
                 </div>
 
                 <div class="number">
