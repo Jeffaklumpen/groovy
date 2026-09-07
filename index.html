@@ -24,7 +24,6 @@
             color: #f5f5f5;
             font-family: -apple-system, BlinkMacSystemFont,
                          "Helvetica Neue", Arial, sans-serif;
-
             padding: 28px;
         }
 
@@ -35,31 +34,22 @@
 
         .header {
             max-width: 1400px;
-
             margin: 0 auto 35px auto;
-
             border-bottom: 1px solid rgba(255,255,255,0.12);
-
             padding-bottom: 22px;
         }
 
         .title {
             font-size: 34px;
-
             font-weight: 600;
-
             letter-spacing: 3px;
-
             margin: 0;
         }
 
         .subtitle {
             margin-top: 8px;
-
             color: #999;
-
             font-size: 14px;
-
             letter-spacing: 1px;
         }
 
@@ -70,46 +60,23 @@
 
         .collection {
             max-width: 1400px;
-
             margin: 0 auto;
         }
 
-        /*
-         * Fyra kolumner.
-         *
-         * Vi använder float istället för CSS Grid
-         * eftersom detta fungerar mycket bättre
-         * på Safari i iOS 9.
-         */
-
         .record {
             float: left;
-
             width: 23.5%;
-
             margin-right: 2%;
-
             margin-bottom: 38px;
         }
-
-        /*
-         * Var fjärde album får ingen högermarginal.
-         */
 
         .record:nth-child(4n) {
             margin-right: 0;
         }
 
-        /*
-         * Viktigt:
-         * collection måste rensa floats.
-         */
-
         .collection:after {
             content: "";
-
             display: table;
-
             clear: both;
         }
 
@@ -120,50 +87,32 @@
 
         .cover-wrapper {
             position: relative;
-
             width: 100%;
-
             height: 0;
-
             padding-bottom: 100%;
-
             overflow: hidden;
-
             background: #1c1c1e;
-
             box-shadow:
                 0 12px 30px rgba(0,0,0,0.45);
         }
 
-.cover {
-    position: absolute;
-
-    top: 0;
-    left: 0;
-
-    width: 100%;
-    height: 100%;
-
-    object-fit: cover;
-    display: block;
-}
-
-        /*
-         * Centrerar texten i omslaget.
-         */
+        .cover {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
 
         .cover-text {
             position: absolute;
-
             top: 50%;
-
             left: 0;
-
             width: 100%;
-
             margin-top: -7px;
         }
-
 
         /* =========================
            NUMBER
@@ -171,18 +120,12 @@
 
         .number {
             position: absolute;
-
             top: 10px;
             left: 10px;
-
             background: rgba(0,0,0,0.78);
-
             padding: 5px 8px;
-
             font-size: 13px;
-
             font-weight: bold;
-
             letter-spacing: 1px;
         }
 
@@ -197,38 +140,26 @@
 
         .artist {
             font-size: 17px;
-
             font-weight: 600;
-
             white-space: nowrap;
-
             overflow: hidden;
-
             text-overflow: ellipsis;
         }
 
         .album {
             margin-top: 4px;
-
             font-size: 15px;
-
             color: #c0c0c0;
-
             white-space: nowrap;
-
             overflow: hidden;
-
             text-overflow: ellipsis;
         }
 
         .year {
             margin-top: 5px;
-
             font-size: 13px;
-
             color: #777;
         }
-
 
         /* =========================
            TABLET / IPAD
@@ -301,10 +232,11 @@
 
 
         /* =========================
-           VINYL SCREENSAVER
+           SCREENSAVER
         ========================= */
 
         #screensaver {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
@@ -312,7 +244,6 @@
             height: 100%;
             background: #0b0b0c;
             z-index: 9999;
-            display: none;
             overflow: hidden;
         }
 
@@ -324,35 +255,32 @@
             position: absolute;
             top: 50%;
             left: 0;
-            height: 0;
             white-space: nowrap;
             font-size: 0;
-            will-change: transform;
         }
 
         .screensaver-record {
             display: inline-block;
             vertical-align: top;
-            width: 300px;
+            width: 320px;
             margin-right: 80px;
-            white-space: normal;
             text-align: center;
-            transform: translateY(-50%);
+            white-space: normal;
         }
 
         .screensaver-cover-wrapper {
             position: relative;
-            width: 300px;
-            height: 300px;
+            width: 320px;
+            height: 320px;
             overflow: hidden;
             background: #1c1c1e;
             box-shadow: 0 16px 40px rgba(0,0,0,0.55);
         }
 
         .screensaver-cover {
+            display: block;
             width: 100%;
             height: 100%;
-            display: block;
             object-fit: cover;
         }
 
@@ -365,7 +293,6 @@
             font-size: 13px;
             font-weight: bold;
             letter-spacing: 1px;
-            color: #fff;
         }
 
         .screensaver-info {
@@ -393,26 +320,6 @@
             margin-top: 6px;
             font-size: 13px;
             color: #777;
-        }
-
-        @media screen and (max-width: 600px) {
-            .screensaver-record {
-                width: 220px;
-                margin-right: 55px;
-            }
-
-            .screensaver-cover-wrapper {
-                width: 220px;
-                height: 220px;
-            }
-
-            .screensaver-artist {
-                font-size: 16px;
-            }
-
-            .screensaver-album {
-                font-size: 14px;
-            }
         }
 
     </style>
@@ -1113,6 +1020,152 @@
         
     </main>
 
+
+
+    <!-- =========================
+         SCREENSAVER
+    ========================== -->
+
+    <div id="screensaver">
+        <div class="screensaver-track" id="screensaverTrack"></div>
+    </div>
+
+
+    <script>
+        /* =========================
+           SCREENSAVER SCRIPT
+        ========================= */
+
+        var IDLE_TIME = 10000;       // 10 seconds for testing
+        var SCROLL_SPEED = 1;        // pixels per tick
+        var SCROLL_INTERVAL = 30;    // milliseconds
+
+        var idleTimer = null;
+        var scrollTimer = null;
+        var scrollPosition = 0;
+        var loopWidth = 0;
+
+        function buildScreensaver() {
+            var collection = document.getElementsByClassName("record");
+            var track = document.getElementById("screensaverTrack");
+            var html = "";
+            var i;
+            var record;
+            var image;
+            var number;
+            var artist;
+            var album;
+            var year;
+
+            for (i = 0; i < collection.length; i++) {
+                record = collection[i];
+
+                image = record.getElementsByClassName("cover")[0];
+                number = record.getElementsByClassName("number")[0];
+                artist = record.getElementsByClassName("artist")[0];
+                album = record.getElementsByClassName("album")[0];
+                year = record.getElementsByClassName("year")[0];
+
+                if (!image || !artist || !album || !year) {
+                    continue;
+                }
+
+                html += '<div class="screensaver-record">';
+                html += '<div class="screensaver-cover-wrapper">';
+                html += '<img class="screensaver-cover" src="' + image.getAttribute("src") + '" alt="">';
+
+                if (number) {
+                    html += '<div class="screensaver-number">' + number.innerHTML + '</div>';
+                }
+
+                html += '</div>';
+                html += '<div class="screensaver-info">';
+                html += '<div class="screensaver-artist">' + artist.innerHTML + '</div>';
+                html += '<div class="screensaver-album">' + album.innerHTML + '</div>';
+                html += '<div class="screensaver-year">' + year.innerHTML + '</div>';
+                html += '</div>';
+                html += '</div>';
+            }
+
+            /* Two copies = seamless continuous loop */
+            track.innerHTML = html + html;
+        }
+
+        function startScreensaver() {
+            var screensaver = document.getElementById("screensaver");
+            var track = document.getElementById("screensaverTrack");
+            var firstRecord;
+            var recordWidth;
+            var marginRight;
+            var count;
+
+            buildScreensaver();
+
+            screensaver.className = "active";
+
+            firstRecord = track.getElementsByClassName("screensaver-record")[0];
+
+            if (!firstRecord) {
+                return;
+            }
+
+            recordWidth = firstRecord.offsetWidth;
+            marginRight = 80;
+            count = track.getElementsByClassName("screensaver-record").length / 2;
+
+            loopWidth = (recordWidth + marginRight) * count;
+
+            /* Start with the first album centered */
+            scrollPosition = Math.floor((window.innerWidth - recordWidth) / 2);
+
+            track.style.left = scrollPosition + "px";
+            track.style.top = Math.floor((window.innerHeight - 390) / 2) + "px";
+
+            clearInterval(scrollTimer);
+
+            scrollTimer = setInterval(function () {
+                scrollPosition = scrollPosition - SCROLL_SPEED;
+
+                if (scrollPosition <= -loopWidth) {
+                    scrollPosition = scrollPosition + loopWidth;
+                }
+
+                track.style.left = scrollPosition + "px";
+            }, SCROLL_INTERVAL);
+        }
+
+        function stopScreensaver() {
+            var screensaver = document.getElementById("screensaver");
+
+            clearInterval(scrollTimer);
+            scrollTimer = null;
+
+            screensaver.className = "";
+        }
+
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+
+            idleTimer = setTimeout(function () {
+                startScreensaver();
+            }, IDLE_TIME);
+        }
+
+        function userActivity() {
+            if (scrollTimer !== null) {
+                stopScreensaver();
+            }
+
+            resetIdleTimer();
+        }
+
+        document.addEventListener("touchstart", userActivity, false);
+        document.addEventListener("mousedown", userActivity, false);
+
+        window.onload = function () {
+            resetIdleTimer();
+        };
+    </script>
 
 </body>
 </html>
