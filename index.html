@@ -252,7 +252,7 @@ right: 12px;
 }
 
 /* =========================
-   CAROUSEL
+   CAROUSEL VIEW
 ========================== */
 
 body.carousel-mode {
@@ -270,81 +270,19 @@ top: 50%;
 left: 0;
 width: 100%;
 max-width: none;
-height: 390px;
+height: 520px;
 transform: translateY(-50%);
 overflow: hidden;
 margin: 0;
-touch-action: pan-y;
+touch-action: none;
+user-select: none;
+-webkit-user-select: none;
+-webkit-touch-callout: none;
 }
 
 body.carousel-mode .record {
 position: absolute;
-top: 0;
-left: 0;
-width: 280px;
-margin: 0;
-float: none;
-will-change: transform;
-transform-origin: center top;
-transition: transform 0.08s linear;
-}
-
-body.carousel-mode .cover-wrapper {
-width: 280px;
-height: 280px;
-padding-bottom: 0;
-}
-
-body.carousel-mode .info {
-padding-top: 16px;
-text-align: center;
-}
-
-body.carousel-mode .artist {
-font-size: 16px;
-}
-
-body.carousel-mode .album {
-font-size: 14px;
-}
-
-body.carousel-mode .year {
-font-size: 13px;
-}
-
-}
-
-@media screen and (min-width: 601px) {
-
-/* =========================
-   CAROUSEL
-========================== */
-
-body.carousel-mode {
-overflow: hidden;
-padding: 0;
-}
-
-body.carousel-mode .header {
-display: none;
-}
-
-body.carousel-mode .collection {
-position: fixed;
-top: 50%;
-left: 0;
-width: 100%;
-max-width: none;
-height: 470px;
-transform: translateY(-50%);
-overflow: hidden;
-margin: 0;
-touch-action: pan-y;
-}
-
-body.carousel-mode .record {
-position: absolute;
-top: 0;
+top: 20px;
 left: 0;
 width: 360px;
 margin: 0;
@@ -375,6 +313,41 @@ font-size: 16px;
 
 body.carousel-mode .year {
 font-size: 13px;
+margin-top: 6px;
+}
+
+/* =========================
+   MOBILE CAROUSEL
+========================== */
+
+@media screen and (max-width: 600px) {
+
+body.carousel-mode .collection {
+height: 440px;
+touch-action: none;
+}
+
+body.carousel-mode .record {
+top: 15px;
+width: 280px;
+}
+
+body.carousel-mode .cover-wrapper {
+width: 280px;
+height: 280px;
+}
+
+body.carousel-mode .artist {
+font-size: 16px;
+}
+
+body.carousel-mode .album {
+font-size: 14px;
+}
+
+body.carousel-mode .year {
+font-size: 13px;
+margin-top: 6px;
 }
 
 }
@@ -1116,31 +1089,20 @@ var scrollPosition = 0;
 var loopWidth = 0;
 
 function buildScreensaver() {
-
 var collection = document.getElementsByClassName("record");
 var track = document.getElementById("screensaverTrack");
 var html = "";
-var i;
-var record;
-var image;
-var number;
-var artist;
-var album;
-var year;
+var i, record, image, number, artist, album, year;
 
 for (i = 0; i < collection.length; i++) {
-
 record = collection[i];
-
 image = record.getElementsByClassName("cover")[0];
 number = record.getElementsByClassName("number")[0];
 artist = record.getElementsByClassName("artist")[0];
 album = record.getElementsByClassName("album")[0];
 year = record.getElementsByClassName("year")[0];
 
-if (!image || !artist || !album || !year) {
-continue;
-}
+if (!image || !artist || !album || !year) continue;
 
 html += '<div class="screensaver-record">';
 html += '<div class="screensaver-cover-wrapper">';
@@ -1157,14 +1119,12 @@ html += '<div class="screensaver-album">' + album.innerHTML + '</div>';
 html += '<div class="screensaver-year">' + year.innerHTML + '</div>';
 html += '</div>';
 html += '</div>';
-
 }
 
 track.innerHTML = html + html;
 }
 
 function startScreensaver() {
-
 var screensaver = document.getElementById("screensaver");
 var track = document.getElementById("screensaverTrack");
 var firstRecord;
@@ -1172,26 +1132,20 @@ var recordWidth;
 var marginRight;
 var count;
 
-if (carouselActive) {
-return;
-}
+if (carouselActive) return;
 
 buildScreensaver();
-
 screensaver.className = "active";
 
 firstRecord = track.getElementsByClassName("screensaver-record")[0];
 
-if (!firstRecord) {
-return;
-}
+if (!firstRecord) return;
 
 recordWidth = firstRecord.offsetWidth;
 marginRight = 80;
 count = track.getElementsByClassName("screensaver-record").length / 2;
 
 loopWidth = (recordWidth + marginRight) * count;
-
 scrollPosition = Math.floor((window.innerWidth - recordWidth) / 2);
 
 track.style.left = scrollPosition + "px";
@@ -1200,7 +1154,6 @@ track.style.top = Math.floor((window.innerHeight - 390) / 2) + "px";
 clearInterval(scrollTimer);
 
 scrollTimer = setInterval(function() {
-
 scrollPosition -= SCROLL_SPEED;
 
 if (scrollPosition <= -loopWidth) {
@@ -1208,13 +1161,10 @@ scrollPosition += loopWidth;
 }
 
 track.style.left = scrollPosition + "px";
-
 }, SCROLL_INTERVAL);
-
 }
 
 function stopScreensaver() {
-
 var screensaver = document.getElementById("screensaver");
 
 clearInterval(scrollTimer);
@@ -1224,23 +1174,19 @@ screensaver.className = "";
 }
 
 function resetIdleTimer() {
-
 clearTimeout(idleTimer);
 
 idleTimer = setTimeout(function() {
 startScreensaver();
 }, IDLE_TIME);
-
 }
 
 function userActivity() {
-
 if (scrollTimer !== null) {
 stopScreensaver();
 }
 
 resetIdleTimer();
-
 }
 
 document.addEventListener("touchstart", userActivity, false);
@@ -1261,7 +1207,6 @@ var carouselRecords = [];
 var carouselSpacing = 430;
 
 function setView(view) {
-
 if (view === "carousel") {
 startCarousel();
 } else {
@@ -1279,7 +1224,6 @@ buttons[1].classList.add("active");
 } else {
 buttons[0].classList.add("active");
 }
-
 }
 
 /* =========================
@@ -1287,15 +1231,11 @@ buttons[0].classList.add("active");
 ========================== */
 
 function startCarousel() {
-
-if (carouselActive) {
-return;
-}
+if (carouselActive) return;
 
 stopScreensaver();
 
 carouselActive = true;
-
 document.body.classList.add("carousel-mode");
 
 carouselRecords = Array.from(
@@ -1304,28 +1244,28 @@ document.querySelectorAll(".collection .record")
 
 carouselPosition = 0;
 carouselVelocity = 0;
+carouselDragging = false;
 
 positionCarousel();
 
 carouselRecords.forEach(function(record) {
-
 record.addEventListener("pointerdown", carouselPointerDown);
 record.addEventListener("pointermove", carouselPointerMove);
 record.addEventListener("pointerup", carouselPointerUp);
 record.addEventListener("pointercancel", carouselPointerUp);
-
 });
 
 var collection = document.querySelector(".collection");
 
+if (collection) {
 collection.addEventListener(
 "wheel",
 carouselWheel,
 { passive: false }
 );
+}
 
 requestCarouselAnimation();
-
 }
 
 /* =========================
@@ -1333,13 +1273,9 @@ requestCarouselAnimation();
 ========================== */
 
 function stopCarousel() {
-
-if (!carouselActive) {
-return;
-}
+if (!carouselActive) return;
 
 carouselActive = false;
-
 document.body.classList.remove("carousel-mode");
 
 if (carouselAnimation) {
@@ -1350,14 +1286,12 @@ carouselAnimation = null;
 carouselDragging = false;
 
 carouselRecords.forEach(function(record) {
-
 record.removeEventListener("pointerdown", carouselPointerDown);
 record.removeEventListener("pointermove", carouselPointerMove);
 record.removeEventListener("pointerup", carouselPointerUp);
 record.removeEventListener("pointercancel", carouselPointerUp);
-
 record.style.transform = "";
-
+record.classList.remove("center");
 });
 
 var collection = document.querySelector(".collection");
@@ -1365,20 +1299,19 @@ var collection = document.querySelector(".collection");
 if (collection) {
 collection.removeEventListener("wheel", carouselWheel);
 }
-
 }
 
 /* =========================
-   CAROUSEL DRAG
+   CAROUSEL POINTER DOWN
 ========================== */
 
 function carouselPointerDown(event) {
+if (!carouselActive) return;
 
 carouselDragging = true;
 
 carouselLastX = event.clientX;
 carouselLastTime = performance.now();
-
 carouselVelocity = 0;
 
 if (carouselAnimation) {
@@ -1386,19 +1319,19 @@ cancelAnimationFrame(carouselAnimation);
 carouselAnimation = null;
 }
 
+try {
 event.currentTarget.setPointerCapture(event.pointerId);
+} catch (error) {}
 
+event.preventDefault();
 }
 
 /* =========================
-   CAROUSEL MOVE
+   CAROUSEL POINTER MOVE
 ========================== */
 
 function carouselPointerMove(event) {
-
-if (!carouselDragging) {
-return;
-}
+if (!carouselActive || !carouselDragging) return;
 
 var now = performance.now();
 var deltaX = event.clientX - carouselLastX;
@@ -1407,8 +1340,13 @@ var deltaTime = now - carouselLastTime;
 carouselPosition += deltaX;
 
 if (deltaTime > 0) {
-carouselVelocity = deltaX / deltaTime * 16;
+carouselVelocity = (deltaX / deltaTime) * 16;
 }
+
+carouselVelocity = Math.max(
+-40,
+Math.min(40, carouselVelocity)
+);
 
 carouselLastX = event.clientX;
 carouselLastTime = now;
@@ -1416,23 +1354,26 @@ carouselLastTime = now;
 positionCarousel();
 
 event.preventDefault();
-
 }
 
 /* =========================
-   CAROUSEL RELEASE
+   CAROUSEL POINTER UP
 ========================== */
 
-function carouselPointerUp() {
-
-if (!carouselDragging) {
-return;
-}
+function carouselPointerUp(event) {
+if (!carouselDragging) return;
 
 carouselDragging = false;
 
-requestCarouselAnimation();
+if (event && event.currentTarget) {
+try {
+if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+event.currentTarget.releasePointerCapture(event.pointerId);
+}
+} catch (error) {}
+}
 
+requestCarouselAnimation();
 }
 
 /* =========================
@@ -1440,10 +1381,7 @@ requestCarouselAnimation();
 ========================== */
 
 function carouselWheel(event) {
-
-if (!carouselActive) {
-return;
-}
+if (!carouselActive) return;
 
 event.preventDefault();
 
@@ -1455,7 +1393,6 @@ Math.min(35, carouselVelocity)
 );
 
 requestCarouselAnimation();
-
 }
 
 /* =========================
@@ -1463,28 +1400,21 @@ requestCarouselAnimation();
 ========================== */
 
 function requestCarouselAnimation() {
-
-if (carouselAnimation) {
-return;
-}
+if (carouselAnimation) return;
 
 function animate() {
-
 if (!carouselActive) {
 carouselAnimation = null;
 return;
 }
 
 if (!carouselDragging) {
-
 carouselPosition += carouselVelocity;
-
 carouselVelocity *= 0.94;
 
 if (Math.abs(carouselVelocity) < 0.05) {
 carouselVelocity = 0;
 }
-
 }
 
 positionCarousel();
@@ -1493,21 +1423,13 @@ if (
 carouselDragging ||
 Math.abs(carouselVelocity) > 0.05
 ) {
-
-carouselAnimation =
-requestAnimationFrame(animate);
-
+carouselAnimation = requestAnimationFrame(animate);
 } else {
-
 carouselAnimation = null;
-
+}
 }
 
-}
-
-carouselAnimation =
-requestAnimationFrame(animate);
-
+carouselAnimation = requestAnimationFrame(animate);
 }
 
 /* =========================
@@ -1515,18 +1437,11 @@ requestAnimationFrame(animate);
 ========================== */
 
 function positionCarousel() {
-
-if (!carouselRecords.length) {
-return;
-}
+if (!carouselRecords.length) return;
 
 var center = window.innerWidth / 2;
-
-var recordWidth =
-window.innerWidth <= 600 ? 280 : 360;
-
-var totalWidth =
-carouselRecords.length * carouselSpacing;
+var recordWidth = window.innerWidth <= 600 ? 280 : 360;
+var totalWidth = carouselRecords.length * carouselSpacing;
 
 carouselRecords.forEach(function(record, index) {
 
@@ -1542,17 +1457,13 @@ totalWidth - totalWidth / 2;
 
 x += center - recordWidth / 2;
 
-var recordCenter =
-x + recordWidth / 2;
-
-var distance =
-Math.abs(recordCenter - center);
+var recordCenter = x + recordWidth / 2;
+var distance = Math.abs(recordCenter - center);
 
 var scale = 1;
 
 if (distance < 500) {
-scale =
-1 + (1 - distance / 500) * 0.12;
+scale = 1 + (1 - distance / 500) * 0.12;
 }
 
 record.style.transform =
@@ -1569,7 +1480,6 @@ record.classList.remove("center");
 }
 
 });
-
 }
 
 /* =========================
@@ -1581,12 +1491,13 @@ var smoothScrollVelocity = 0;
 var smoothScrollAnimation = null;
 
 function smoothGridScroll(event) {
+if (carouselActive) return;
 
-if (carouselActive) {
-return;
-}
+var screensaver =
+document.getElementById("screensaver");
 
-if (document.getElementById("screensaver").classList.contains("active")) {
+if (screensaver &&
+screensaver.classList.contains("active")) {
 return;
 }
 
@@ -1605,8 +1516,7 @@ var maxScroll =
 document.documentElement.scrollHeight -
 window.innerHeight;
 
-smoothScrollTarget =
-Math.max(
+smoothScrollTarget = Math.max(
 0,
 Math.min(maxScroll, smoothScrollTarget)
 );
@@ -1614,7 +1524,6 @@ Math.min(maxScroll, smoothScrollTarget)
 if (!smoothScrollAnimation) {
 requestSmoothScroll();
 }
-
 }
 
 function requestSmoothScroll() {
@@ -1622,12 +1531,8 @@ function requestSmoothScroll() {
 function animateSmoothScroll() {
 
 var current = window.scrollY;
-
-var difference =
-smoothScrollTarget - current;
-
-var movement =
-difference * 0.12;
+var difference = smoothScrollTarget - current;
+var movement = difference * 0.12;
 
 window.scrollTo(
 0,
@@ -1640,22 +1545,16 @@ if (
 Math.abs(difference) > 0.5 ||
 Math.abs(smoothScrollVelocity) > 0.2
 ) {
-
 smoothScrollAnimation =
 requestAnimationFrame(animateSmoothScroll);
-
 } else {
-
 window.scrollTo(0, smoothScrollTarget);
 smoothScrollAnimation = null;
-
 }
-
 }
 
 smoothScrollAnimation =
 requestAnimationFrame(animateSmoothScroll);
-
 }
 
 window.addEventListener(
