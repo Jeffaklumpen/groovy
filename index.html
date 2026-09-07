@@ -1,106 +1,219 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vinyl Collection</title>
+    <title>My Vinyl Collection</title>
 
     <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            background: #111;
-            color: white;
-            font-family: Arial, sans-serif;
+        * {
+            box-sizing: border-box;
         }
 
-        h1 {
-            text-align: center;
-            font-size: 28px;
-            margin-bottom: 25px;
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+
+        body {
+            background: #0b0b0c;
+            color: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+            padding: 28px;
+        }
+
+        .header {
+            max-width: 1400px;
+            margin: 0 auto 35px auto;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            padding-bottom: 22px;
+        }
+
+        .title {
+            font-size: 34px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            margin: 0;
+        }
+
+        .subtitle {
+            margin-top: 8px;
+            color: #999;
+            font-size: 14px;
+            letter-spacing: 1px;
         }
 
         .collection {
-            display: table;
-            width: 100%;
-            table-layout: fixed;
+            max-width: 1400px;
+            margin: 0 auto;
+
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 34px 24px;
         }
 
         .record {
-            display: table-cell;
-            padding: 8px;
-            vertical-align: top;
-            text-align: center;
+            min-width: 0;
+        }
+
+        .cover-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            background: #1c1c1e;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.45);
         }
 
         .cover {
             width: 100%;
-            max-width: 180px;
-            height: auto;
-            background: #333;
-            margin: 0 auto 8px auto;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: linear-gradient(
+                135deg,
+                #303030,
+                #181818
+            );
+
+            color: #777;
+            font-size: 14px;
+            letter-spacing: 2px;
         }
 
         .number {
-            font-size: 20px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+
+            background: rgba(0,0,0,0.75);
+            padding: 5px 8px;
+
+            font-size: 13px;
             font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .info {
+            padding-top: 12px;
         }
 
         .artist {
-            font-size: 16px;
-            font-weight: bold;
+            font-size: 17px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .album {
+            margin-top: 4px;
             font-size: 15px;
+            color: #c0c0c0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .year {
-            font-size: 14px;
-            color: #aaa;
+            margin-top: 5px;
+            font-size: 13px;
+            color: #777;
+        }
+
+        @media screen and (max-width: 900px) {
+            .collection {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media screen and (max-width: 600px) {
+            .collection {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 24px 14px;
+            }
+
+            body {
+                padding: 18px;
+            }
+
+            .title {
+                font-size: 25px;
+            }
         }
     </style>
 </head>
 
 <body>
 
-<h1>MY VINYL COLLECTION</h1>
+    <header class="header">
+        <h1 class="title">MY VINYL COLLECTION</h1>
+        <div class="subtitle">04 RECORDS</div>
+    </header>
 
-<div class="collection">
+    <main class="collection">
 
-    <div class="record">
-        <div class="cover">COVER</div>
-        <div class="number">01</div>
-        <div class="artist">David Bowie</div>
-        <div class="album">Hunky Dory</div>
-        <div class="year">1971</div>
-    </div>
+        <article class="record">
+            <div class="cover-wrapper">
+                <div class="cover">ALBUM COVER</div>
+                <div class="number">01</div>
+            </div>
 
-    <div class="record">
-        <div class="cover">COVER</div>
-        <div class="number">02</div>
-        <div class="artist">Pink Floyd</div>
-        <div class="album">Meddle</div>
-        <div class="year">1971</div>
-    </div>
+            <div class="info">
+                <div class="artist">David Bowie</div>
+                <div class="album">Hunky Dory</div>
+                <div class="year">1971</div>
+            </div>
+        </article>
 
-    <div class="record">
-        <div class="cover">COVER</div>
-        <div class="number">03</div>
-        <div class="artist">Kraftwerk</div>
-        <div class="album">Trans-Europe Express</div>
-        <div class="year">1977</div>
-    </div>
 
-    <div class="record">
-        <div class="cover">COVER</div>
-        <div class="number">04</div>
-        <div class="artist">The Beatles</div>
-        <div class="album">Abbey Road</div>
-        <div class="year">1969</div>
-    </div>
+        <article class="record">
+            <div class="cover-wrapper">
+                <div class="cover">ALBUM COVER</div>
+                <div class="number">02</div>
+            </div>
 
-</div>
+            <div class="info">
+                <div class="artist">Pink Floyd</div>
+                <div class="album">Meddle</div>
+                <div class="year">1971</div>
+            </div>
+        </article>
+
+
+        <article class="record">
+            <div class="cover-wrapper">
+                <div class="cover">ALBUM COVER</div>
+                <div class="number">03</div>
+            </div>
+
+            <div class="info">
+                <div class="artist">Kraftwerk</div>
+                <div class="album">Trans-Europe Express</div>
+                <div class="year">1977</div>
+            </div>
+        </article>
+
+
+        <article class="record">
+            <div class="cover-wrapper">
+                <div class="cover">ALBUM COVER</div>
+                <div class="number">04</div>
+            </div>
+
+            <div class="info">
+                <div class="artist">The Beatles</div>
+                <div class="album">Abbey Road</div>
+                <div class="year">1969</div>
+            </div>
+        </article>
+
+    </main>
 
 </body>
 </html>
+```
