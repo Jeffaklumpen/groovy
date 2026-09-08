@@ -37,7 +37,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .carousel-card.active{transform:scale(1.08);-webkit-transform:scale(1.08);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
 .carousel-card .info{transition:none}
 .carousel-card .artist{font-size:18px}.carousel-card .album{font-size:15px}.carousel-card .year{font-size:13px}
-.carousel-hint{text-align:center;color:#777;font-size:12px;letter-spacing:.5px;margin-top:-24px}
 /* iPad */
 @media screen and (min-width:601px) and (max-width:1100px){
  body{padding:20px}.header{margin-bottom:24px}.title{font-size:28px}
@@ -85,7 +84,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
   function centerCard(i,smooth){var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),card=cards[i];if(!vp||!card)return;var target=card.offsetLeft-(vp.clientWidth-card.offsetWidth)/2;if(target<0)target=0;var max=vp.scrollWidth-vp.clientWidth;if(target>max)target=max;setActive(i);animateScroll(vp,target,smooth);}
   function animateScroll(el,to,smooth){if(!smooth){el.scrollLeft=to;return;}var from=el.scrollLeft,change=to-from,duration=650,start=new Date().getTime();function step(){var now=new Date().getTime(),t=Math.min(1,(now-start)/duration),e=t*(2-t);el.scrollLeft=from+change*e;if(t<1)setTimeout(step,16);}step();}
   function nearest(){var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),center=vp.scrollLeft+vp.clientWidth/2,best=0,dist=Infinity,i,c,cx,d;for(i=0;i<cards.length;i++){c=cards[i];cx=c.offsetLeft+c.offsetWidth/2;d=Math.abs(cx-center);if(d<dist){dist=d;best=i;}}return best;}
-  function buildCarousel(){collection.className='collection carousel';var h='<div class="carousel-viewport" id="carouselViewport"><div class="carousel-track" id="carouselTrack">',i;for(i=0;i<records.length;i++)h+=recordHTML(records[i],'carousel-card');h+='</div></div><div class="carousel-hint">Svep åt vänster eller höger för att bläddra</div>';collection.innerHTML=h;var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),j;
+  function buildCarousel(){collection.className='collection carousel';var h='<div class="carousel-viewport" id="carouselViewport"><div class="carousel-track" id="carouselTrack">',i;for(i=0;i<records.length;i++)h+=recordHTML(records[i],'carousel-card');h+='</div></div>';collection.innerHTML=h;var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),j;
     for(j=0;j<cards.length;j++)(function(index){cards[index].onclick=function(){if(!drag)centerCard(index,true);};})(j);
     function scheduleSettle(){
       if(scrollTimer)clearTimeout(scrollTimer);
