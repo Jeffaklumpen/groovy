@@ -613,7 +613,8 @@ function buildCarousel(){
 
   html+='</div></div>';
   collection.innerHTML=html;
-
+  loadVisibleImages();
+  
   var viewport=document.getElementById('carouselViewport');
   var cards=document.getElementsByClassName('carousel-card');
 
