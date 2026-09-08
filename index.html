@@ -407,13 +407,14 @@ function loadVisibleImages(){
 
   for(var i=0;i<images.length;i++){
     var img=images[i];
+    var dataSrc=img.getAttribute('data-src');
 
-    if(img.src||!img.getAttribute('data-src'))continue;
+    if(!dataSrc)continue;
 
     var rect=img.getBoundingClientRect();
 
     if(rect.top<height+500&&rect.bottom>-500){
-      img.src=img.getAttribute('data-src');
+      img.setAttribute('src',dataSrc);
       img.removeAttribute('data-src');
     }
   }
