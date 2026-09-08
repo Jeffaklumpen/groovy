@@ -282,9 +282,9 @@ var records = [
     B:['Bright Eyes|4','Finally Found A Reason|3','Beyond The Tears|3','Oh How Happy|2',"When Someone Doesn't Want You|2",'Take Me Away|3']
   }],
 
-  ['08','The Beatles','Help!','1965','Rock',0,'covers/help.jpg',{
+  ['08','The Beatles','Help!','1965','Rock',3,'covers/help.jpg',{
     A:['Help!|5','The Night Before|4',"You've Got To Hide Your Love Away|4",'I Need You|3','Another Girl|3',"You're Going To Lose That Girl|2",'Ticket To Ride|3'],
-    B:['Act Naturally|2',"It's Only Love|3",'You Like Me Too Much|2','Tell Me What You See|0',"I've Just Seen A Face|0",'Yesterday|0','Dizzy Miss Lizzy|0']
+    B:['Act Naturally|2',"It's Only Love|3",'You Like Me Too Much|2','Tell Me What You See|3',"I've Just Seen A Face|2",'Yesterday|5','Dizzy Miss Lizzy|3']
   }],
 
   ['09','Benny Andersson & Björn Ulvaeus','Chess','1986','Musical',0,'covers/chess.jpg',{
@@ -372,21 +372,86 @@ var records = [
     D:['Honey Hi|0','Beautiful Child|0','Walk a Thin Line|0','Tusk|0','Never Forget|0']
   }],
 
-  ['24','Graeme Edge Band','Kick Off Your Muddy Boots','1975','Rock',0,'covers/muddy_boots.jpg',{A:[],B:[]}],
-  ['25','Jeff Wayne','The War Of The Worlds','1978','Progressive Rock',0,'covers/war_of_the_worlds.jpg',{A:[],B:[]}],
-  ['26','Jethro Tull','M.U The Best Of Jethro Tull','1976','Progressive Rock',0,'covers/best_of_jethro_tull.jpg',{A:[],B:[]}],
-  ['27','John Miles','Stranger In The City','1977','Rock',0,'covers/stranger_in_the_city.jpg',{A:[],B:[]}],
-  ['28','Jon Bon Jovi','Blaze Of Glory','1990','Rock',0,'covers/blaze_of_glory.jpg',{A:[],B:[]}],
-  ['29','Journey','Frontiers','1983','Rock',0,'covers/frontiers.jpg',{A:[],B:[]}],
-  ['30','Koto','Greatest Hits & Remixes','1992','Electronic',0,'covers/koto_greatest_hits_remixes.jpg',{A:[],B:[]}],
-  ['31','Level 42','World Machine','1985','Pop',0,'covers/world_machine.jpg',{A:[],B:[]}],
-  ['32','Maromaro','Full Moon','2026','Electronic',0,'covers/full_moon.jpg',{A:[],B:[]}],
-  ['33','Men At Work','Cargo','1983','Pop',0,'covers/cargo.jpg',{A:[],B:[]}],
-  ['34','Michael Jackson','Bad','1987','Pop',0,'covers/bad.jpg',{A:[],B:[]}],
-  ['35','Mike Curb Congregation','Sweet Gingerbread Man','1970','Pop',0,'covers/sweet_gingerbread_man.jpg',{A:[],B:[]}],
-  ['36','Muse','Origin Of Symmetry','2001','Alternative Rock',0,'covers/origin_of_symmetry.jpg',{A:[],B:[]}],
-  ['37','Muse','The Resistance','2009','Alternative Rock',0,'covers/the_resistance.jpg',{A:[],B:[]}],
-  ['38','Muse','The Wow! Signal','2026','Alternative Rock',0,'covers/the_wow_signal.jpg',{A:[],B:[]}],
+  ['24','Graeme Edge Band','Kick Off Your Muddy Boots','1975','Rock',0,'covers/muddy_boots.jpg',{
+    A:['Bareback Rider|0','In Dreams|0','Lost In Space|0','Have You Ever Wondered|0'],
+    B:["My Life's Not Wasted|0",'The Tunnel|0','Gew Janna Woman|0','Shotgun|0',"Somethin' We'd Like To Say|0"]
+  }],
+
+  ['25','Jeff Wayne','The War Of The Worlds','1978','Progressive Rock',0,'covers/war_of_the_worlds.jpg',{
+    A:['The Eve Of The War|0','Horsell Common And The Heat Ray|0'],
+    B:['The Artilleryman And The Fighting Machine|0','Forever Autumn|0','Thunder Child|0'],
+    C:['The Red Weed (Part 1)|0','Parson Nathaniel|0','The Spirit Of Man|0','The Red Weed (Part 2)|0'],
+    D:['Brave New World|0','Dead London|0','Epilogue (Part 1)|0','Epilogue (Part 2) (NASA)|0']
+  }],
+
+  ['26','Jethro Tull','M.U The Best Of Jethro Tull','1976','Progressive Rock',0,'covers/best_of_jethro_tull.jpg',{
+    A:['Teacher|0','Aqualung|0','Thick As A Brick Edit #1|0','Bungle In The Jungle|0','Locomotive Breath|0'],
+    B:['Fat Man|0','Living In The Past|0','A Passion Play Edit #8|0','Skating Away (On The Thin Ice Of The New Day)|0','Rainbow Blues|0','Nothing Is Easy|0']
+  }],
+
+  ['27','John Miles','Stranger In The City','1977','Rock',0,'covers/stranger_in_the_city.jpg',{
+    A:['Stranger In The City|0','Slow Down|0','Stand Up (And Give Me A Reason)|0','Time|0'],
+    B:['Manhattan Skyline|0','Glamour Boy|0','Do It Anyway|0','Remember Yesterday|0','Music Man|0']
+  }],
+
+  ['28','Jon Bon Jovi','Blaze Of Glory','1990','Rock',0,'covers/blaze_of_glory.jpg',{
+    A:['Billy Get Your Guns|0','Miracle|0','Blaze Of Glory|0','Blood Money|0','Santa Fe|0'],
+    B:['Justice In The Barrel|0','Never Say Die|0','You Really Got Me Now|0','Bang A Drum|0',"Dyin' Ain't Much Of A Livin'|0",'Guano City|0']
+  }],
+
+  ['29','Journey','Frontiers','1983','Rock',0,'covers/frontiers.jpg',{
+    A:['Separate Ways (Worlds Apart)|0','Send Her My Love|0','Chain Reaction|0','After The Fall|0','Faithfully|0'],
+    B:['Edge Of The Blade|0','Troubled Child|0','Back Talk|0','Frontiers|0','Rubicon|0']
+  }],
+
+  ['30','Koto','Greatest Hits & Remixes','1992','Electronic',0,'covers/koto_greatest_hits_remixes.jpg',{
+    A:['Jabdah (Original ZYX Remix)|0','Visitors (Vocal Remix)|0','Japanese War Game (Master Mix)|0',"Champion's Cue (Billiard Mix)|0"],
+    B:["Dragon's Legend (Maxi Version)|0",'Mind Machine|0','Time|0','The Koto Mix|0']
+  }],
+
+  ['31','Level 42','World Machine','1985','Pop',0,'covers/world_machine.jpg',{
+    A:['World Machine|0','Physical Presence|0','Something About You|0','Leaving Me Now|0'],
+    B:['I Sleep On My Heart|0',"It's Not The Same For Us|0",'Good Man In A Storm|0','Coup D\'etat|0','Lying Still|0']
+  }],
+
+  ['32','Maromaro','Full Moon','2026','Electronic',0,'covers/full_moon.jpg',{
+    A:['Moonlighting|0','Trickster|0','Premonition|0','Solstice|0','Higher|0'],
+    B:['Glass|0','Bandersnatch|0','Closer|0','Truffle|0','Vivid|0']
+  }],
+
+  ['33','Men At Work','Cargo','1983','Pop',0,'covers/cargo.jpg',{
+    A:['Dr. Heckyll & Mr. Jive|0','Overkill|0','Settle Down My Boy|0','Upstairs In My House|0','No Sign Of Yesterday|0'],
+    B:["It's A Mistake|0",'High Wire|0','Blue For You|0','I Like To|0','No Restrictions|0']
+  }],
+
+  ['34','Michael Jackson','Bad','1987','Pop',0,'covers/bad.jpg',{
+    A:['Bad|0','The Way You Make Me Feel|0','Speed Demon|0','Liberian Girl|0','Just Good Friends|0'],
+    B:['Another Part Of Me|0','Man In The Mirror|0',"I Just Can't Stop Loving You|0",'Dirty Diana|0','Smooth Criminal|0']
+  }],
+
+  ['35','Mike Curb Congregation','Sweet Gingerbread Man','1970','Pop',0,'covers/sweet_gingerbread_man.jpg',{
+    A:['Sweet Gingerbread Man|0','Let It Be|0','Bringing In The Sheaves|0','Spirit In The Sky|0','This Land Is Your Land|0','My Home Town|0'],
+    B:['Burning Bridges|0','Teach Your Children|0','The Long And Winding Road|0','Everything Is Beautiful|0','Lead Us On|0']
+  }],
+
+  ['36','Muse','Origin Of Symmetry','2001','Alternative Rock',0,'covers/origin_of_symmetry.jpg',{
+    A:['New Born|0','Bliss|0'],
+    B:['Space Dementia|0','Hyper Music|0','Plug In Baby|0'],
+    C:['Citizen Erased|0','Micro Cuts|0','Screenager|0'],
+    D:['Darkshines|0','Feeling Good|0','Megalomania|0']
+  }],
+
+  ['37','Muse','The Resistance','2009','Alternative Rock',0,'covers/the_resistance.jpg',{
+    A:['Uprising|0','Resistance|0','Undisclosed Desires|0'],
+    B:['United States Of Eurasia (+Collateral Damage)|0','Guiding Light|0'],
+    C:['Unnatural Selection|0','MK Ultra|0','I Belong To You (+Mon Cœur S\'Ouvre A Ta Voix)|0'],
+    D:['Exogenesis: Symphony Part 1 (Overture)|0','Exogenesis: Symphony Part 2 (Cross-Pollination)|0','Exogenesis: Symphony Part 3 (Redemption)|0']
+  }],
+
+  ['38','Muse','The Wow! Signal','2026','Alternative Rock',0,'covers/the_wow_signal.jpg',{
+    A:['The Dark Forest|0','Nightshift Superstar|0','Shimmering Scars|0','Cryogen|0','Be With You|0'],
+    B:['Hexagons|0','The Sickness In You & I|0','Unravelling|0','Hush (feat. Ellie Goulding)|0','Space Debris|0']
+  }],
 
   ['39','Pink Floyd','The Dark Side Of The Moon','1973','Progressive Rock',0,'covers/dark_side_of_the_moon.jpg',{
     A:['Speak To Me|0','Breathe|0','On The Run|0','Time|0','The Great Gig In The Sky|0'],
