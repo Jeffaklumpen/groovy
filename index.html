@@ -44,6 +44,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 
 .number{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:13px;font-weight:bold;letter-spacing:1px}
 
+.cover-rating{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:15px;letter-spacing:2px;color:#fff;line-height:1}
+.cover-rating .empty{color:#555}
+
 .info{padding-top:12px;min-width:0}
 
 .artist,.album{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -359,10 +362,17 @@ function esc(value){
 }
 
 function recordHTML(record, className){
-  return '<article class="record '+(className||'')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
+  var html='<article class="record '+(className||'')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
       '<img class="cover" src="'+record[6]+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
       '<div class="number">'+record[0]+'</div>'+
+      '<div class="cover-rating">';
+
+  for(var r=1;r<=5;r++){
+    html+=r<=record[5]?'★':'<span class="empty">★</span>';
+  }
+
+  html+='</div>'+
     '</div>'+
     '<div class="info">'+
       '<div class="artist">'+esc(record[1])+'</div>'+
@@ -370,6 +380,8 @@ function recordHTML(record, className){
       '<div class="year">'+esc(record[3])+'</div>'+
     '</div>'+
   '</article>';
+
+  return html;
 }
 
 function openAlbum(index){
