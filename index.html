@@ -1,3033 +1,672 @@
 <!DOCTYPE html>
+
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-
 <title>Vinylskivor</title>
 
 <style>
+*{box-sizing:border-box}
 
-/* =========================================================
-   BAS
-   ========================================================= */
+html,body{margin:0;padding:0;min-height:100%;background:#0b0b0c;color:#f5f5f5}
 
-*{
-  box-sizing:border-box;
+body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;padding:28px;overflow-x:hidden}
+
+.header{max-width:1400px;margin:0 auto 32px;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:20px;position:relative}
+
+.title{font-size:34px;font-weight:600;letter-spacing:3px;margin:0;padding-right:250px}
+
+.subtitle{margin-top:8px;color:#999;font-size:14px;letter-spacing:1px}
+
+.view-toggle{position:absolute;right:0;top:0;display:table;padding:4px;background:#171719;border:1px solid #2b2b2e;border-radius:10px;z-index:20}
+
+.view-toggle button{border:0;background:transparent;color:#aaa;padding:8px 12px;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+.view-toggle button.active{background:#303033;color:#fff}
+
+.collection{max-width:1400px;margin:0 auto}
+
+.grid:after{content:"";display:table;clear:both}
+
+.grid .record{float:left;width:24%;margin-right:1.3333%;margin-bottom:38px;min-width:0}
+
+.grid .record:nth-child(4n){margin-right:0}
+
+.cover-wrapper{position:relative;width:100%;height:0;padding-bottom:100%;overflow:hidden;background:#1c1c1e;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+
+.cover{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block}
+
+.number{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:13px;font-weight:bold;letter-spacing:1px}
+
+.info{padding-top:12px;min-width:0}
+
+.artist,.album{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.artist{font-size:17px;font-weight:600}
+
+.album{margin-top:4px;font-size:15px;color:#c0c0c0}
+
+.year{margin-top:5px;font-size:13px;color:#777}
+
+.carousel{width:100%}
+
+.carousel-viewport{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;white-space:nowrap;padding:42px 0 55px;position:relative;-ms-overflow-style:none;scrollbar-width:none}
+
+.carousel-viewport::-webkit-scrollbar{display:none}
+
+.carousel-track{display:inline-block;white-space:nowrap;font-size:0}
+
+.carousel-card{display:inline-block;vertical-align:top;width:300px;margin:0 14px;white-space:normal;cursor:pointer;transform:scale(1);-webkit-transform:scale(1);transform-origin:center center;transition:none;-webkit-transition:none;-webkit-backface-visibility:hidden;backface-visibility:hidden;-webkit-tap-highlight-color:transparent}
+
+.carousel-card.active{transform:scale(1.08);-webkit-transform:scale(1.08);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
+
+.carousel-card .info{transition:none}
+.carousel-card .artist{font-size:18px}
+.carousel-card .album{font-size:15px}
+.carousel-card .year{font-size:13px}
+
+.album-overlay{position:fixed;z-index:1000;inset:0;background:rgba(0,0,0,.90);display:none;padding:28px;overflow:auto;-webkit-overflow-scrolling:touch}
+
+.album-overlay.visible{display:block}
+
+.album-detail{position:relative;width:100%;max-width:1180px;min-height:620px;margin:0 auto;background:#111113;box-shadow:0 25px 70px rgba(0,0,0,.8);overflow:hidden}
+
+.album-detail-cover{position:absolute;left:0;top:0;width:620px;height:620px;overflow:hidden;background:#080808}
+
+.album-detail-cover img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;display:block;opacity:.72}
+
+.album-detail-cover:after{content:"";position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,.12) 0%,rgba(0,0,0,.38) 48%,rgba(0,0,0,.94) 100%)}
+
+.album-detail-main{position:absolute;z-index:5;left:0;bottom:0;width:620px;padding:35px 42px 38px;text-shadow:0 2px 8px rgba(0,0,0,.95)}
+
+.detail-number{font-size:12px;color:#aaa;letter-spacing:2px;margin-bottom:9px}
+
+.detail-artist{font-size:29px;font-weight:600;line-height:1.15;margin-bottom:6px}
+
+.detail-album{font-size:22px;color:#ddd;line-height:1.2}
+
+.detail-meta{margin-top:16px;color:#aaa;font-size:13px;letter-spacing:.7px}
+
+.detail-meta span{display:inline-block;margin-right:17px}
+
+.detail-rating{margin-top:13px;font-size:22px;letter-spacing:3px;color:#fff}
+
+.detail-rating .empty{color:#555}
+
+.album-tracks{position:absolute;z-index:4;right:0;top:0;bottom:0;width:calc(100% - 620px);padding:55px 38px 35px;background:rgba(12,12,14,.97);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;-webkit-transform:translateZ(0);transform:translateZ(0)}
+
+.tracks-title{font-size:12px;color:#777;letter-spacing:2px;margin-bottom:22px;text-transform:uppercase}
+
+.track-side{margin-bottom:24px}
+
+.track-side:last-child{margin-bottom:0}
+
+.side-title{font-size:11px;font-weight:600;color:#aaa;letter-spacing:2px;margin-bottom:7px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.10)}
+
+.side-title span{color:#555;margin-right:7px}
+
+.tracks-list{margin:0;padding:0;list-style:none;counter-reset:track}
+
+.tracks-list li{position:relative;padding:6px 0 6px 30px;border-bottom:1px solid rgba(255,255,255,.045);color:#d5d5d5;font-size:13px;line-height:1.25}
+
+.tracks-list li:before{position:absolute;left:0;top:6px;width:21px;color:#555;counter-increment:track;content:counter(track,decimal-leading-zero);font-size:10px}
+
+.album-close{position:absolute;z-index:20;right:14px;top:12px;width:46px;height:46px;border:0;background:rgba(0,0,0,.68);color:#fff;font-size:31px;line-height:42px;text-align:center;border-radius:23px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+.album-close:active{background:rgba(255,255,255,.2)}
+
+@media screen and (min-width:601px) and (max-width:1100px){
+body{padding:20px}
+.header{margin-bottom:24px}
+.title{font-size:28px}
+.grid .record{width:24%;margin-right:1.3333%;margin-bottom:30px}
+.grid .artist{font-size:15px}
+.grid .album{font-size:13px}
+.grid .year{font-size:12px}
+.carousel-viewport{padding-top:32px;padding-bottom:58px}
+.carousel-card{width:300px;margin-left:12px;margin-right:12px}
+.carousel-card.active{transform:scale(1.10);-webkit-transform:scale(1.10);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
+.carousel-card .artist{font-size:16px}
+.carousel-card .album{font-size:14px}
+.album-overlay{padding:20px}
+.album-detail{min-height:620px}
+.album-detail-main{padding:28px 30px 30px}
+.detail-artist{font-size:25px}
+.detail-album{font-size:19px}
+.album-tracks{padding:50px 28px 25px}
+.track-side{margin-bottom:18px}
+.tracks-list li{font-size:12px;padding-top:6px;padding-bottom:6px}
 }
 
-html,
-body{
-  margin:0;
-  padding:0;
-  min-height:100%;
-  background:#0b0b0c;
-  color:#f5f5f5;
+@media screen and (max-width:600px){
+body{padding:15px}
+.header{padding-bottom:16px;margin-bottom:20px}
+.title{font-size:23px;padding-right:175px;letter-spacing:2px}
+.subtitle{font-size:12px}
+.view-toggle{top:-2px}
+.view-toggle button{padding:7px 8px;font-size:12px}
+.grid .record{width:48%;margin-right:4%;margin-bottom:28px}
+.grid .record:nth-child(4n){margin-right:4%}
+.grid .record:nth-child(2n){margin-right:0}
+.carousel-card{width:260px;margin-left:9px;margin-right:9px}
+.carousel-card.active{transform:scale(1.07);-webkit-transform:scale(1.07);transition:transform .4s ease;-webkit-transition:-webkit-transform .4s ease}
+.album-overlay{padding:10px}
+.album-detail{min-height:0;height:auto}
+.album-detail-cover{position:relative;width:100%;height:75vw;min-height:270px;max-height:430px}
+.album-detail-cover:after{background:linear-gradient(to bottom,rgba(0,0,0,.10),rgba(0,0,0,.35) 45%,rgba(0,0,0,.92) 100%)}
+.album-detail-main{position:absolute;width:100%;left:0;bottom:0;padding:25px 22px 22px}
+.detail-artist{font-size:22px}
+.detail-album{font-size:17px}
+.album-tracks{position:relative;width:100%;padding:25px 22px 30px;overflow:visible}
+.tracks-list{max-height:none;overflow:visible}
+.tracks-list li{font-size:13px}
+.track-side{margin-bottom:22px}
 }
-
-body{
-  font-family:-apple-system,BlinkMacSystemFont,
-              "Helvetica Neue",Arial,sans-serif;
-  padding:28px;
-  overflow-x:hidden;
-}
-
-
-/* =========================================================
-   HEADER
-   ========================================================= */
-
-.header{
-  max-width:1400px;
-  margin:0 auto 32px;
-  border-bottom:1px solid rgba(255,255,255,.12);
-  padding-bottom:20px;
-  position:relative;
-}
-
-.title{
-  font-size:34px;
-  font-weight:600;
-  letter-spacing:3px;
-  margin:0;
-  padding-right:250px;
-}
-
-.subtitle{
-  margin-top:8px;
-  color:#999;
-  font-size:14px;
-  letter-spacing:1px;
-}
-
-.view-toggle{
-  position:absolute;
-  right:0;
-  top:0;
-  display:table;
-  padding:4px;
-  background:#171719;
-  border:1px solid #2b2b2e;
-  border-radius:10px;
-  z-index:20;
-}
-
-.view-toggle button{
-  border:0;
-  background:transparent;
-  color:#aaa;
-  padding:8px 12px;
-  border-radius:7px;
-  font-family:inherit;
-  font-size:13px;
-  cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-}
-
-.view-toggle button.active{
-  background:#303033;
-  color:#fff;
-}
-
-
-/* =========================================================
-   COLLECTION
-   ========================================================= */
-
-.collection{
-  max-width:1400px;
-  margin:0 auto;
-}
-
-
-/* =========================================================
-   GRID
-   ========================================================= */
-
-.grid:after{
-  content:"";
-  display:table;
-  clear:both;
-}
-
-.grid .record{
-  float:left;
-  width:24%;
-  margin-right:1.3333%;
-  margin-bottom:38px;
-  min-width:0;
-}
-
-.grid .record:nth-child(4n){
-  margin-right:0;
-}
-
-.cover-wrapper{
-  position:relative;
-  width:100%;
-  height:0;
-  padding-bottom:100%;
-  overflow:hidden;
-  background:#1c1c1e;
-  box-shadow:0 12px 30px rgba(0,0,0,.45);
-}
-
-.cover{
-  position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-}
-
-.number{
-  position:absolute;
-  top:10px;
-  left:10px;
-  background:rgba(0,0,0,.78);
-  padding:5px 8px;
-  font-size:13px;
-  font-weight:bold;
-  letter-spacing:1px;
-}
-
-.info{
-  padding-top:12px;
-  min-width:0;
-}
-
-.artist,
-.album{
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-.artist{
-  font-size:17px;
-  font-weight:600;
-}
-
-.album{
-  margin-top:4px;
-  font-size:15px;
-  color:#c0c0c0;
-}
-
-.year{
-  margin-top:5px;
-  font-size:13px;
-  color:#777;
-}
-
-
-/* =========================================================
-   CAROUSEL
-   ========================================================= */
-
-.carousel{
-  width:100%;
-}
-
-.carousel-viewport{
-  width:100%;
-  overflow-x:auto;
-  overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;
-  white-space:nowrap;
-  padding:42px 0 55px;
-  position:relative;
-  -ms-overflow-style:none;
-  scrollbar-width:none;
-}
-
-.carousel-viewport::-webkit-scrollbar{
-  display:none;
-}
-
-.carousel-track{
-  display:inline-block;
-  white-space:nowrap;
-  font-size:0;
-}
-
-.carousel-card{
-  display:inline-block;
-  vertical-align:top;
-  width:300px;
-  margin:0 14px;
-  white-space:normal;
-  cursor:pointer;
-
-  transform:scale(1);
-  -webkit-transform:scale(1);
-
-  transform-origin:center center;
-
-  transition:none;
-  -webkit-transition:none;
-
-  -webkit-backface-visibility:hidden;
-  backface-visibility:hidden;
-
-  -webkit-tap-highlight-color:transparent;
-}
-
-.carousel-card.active{
-  transform:scale(1.08);
-  -webkit-transform:scale(1.08);
-
-  transition:transform .45s ease;
-  -webkit-transition:-webkit-transform .45s ease;
-}
-
-.carousel-card .info{
-  transition:none;
-}
-
-.carousel-card .artist{
-  font-size:18px;
-}
-
-.carousel-card .album{
-  font-size:15px;
-}
-
-.carousel-card .year{
-  font-size:13px;
-}
-
-
-/* =========================================================
-   ALBUM DETAIL OVERLAY
-   ========================================================= */
-
-.album-overlay{
-  position:fixed;
-  z-index:1000;
-
-  left:0;
-  top:0;
-  right:0;
-  bottom:0;
-
-  background:rgba(0,0,0,.90);
-
-  display:none;
-
-  padding:28px;
-
-  overflow:auto;
-  -webkit-overflow-scrolling:touch;
-}
-
-.album-overlay.visible{
-  display:block;
-}
-
-
-/* =========================================================
-   DETAIL PANEL
-   ========================================================= */
-
-.album-detail{
-  position:relative;
-
-  width:100%;
-  max-width:1180px;
-
-  min-height:620px;
-
-  margin:0 auto;
-
-  background:#111113;
-
-  box-shadow:0 25px 70px rgba(0,0,0,.8);
-
-  overflow:hidden;
-}
-
-
-/* =========================================================
-   LARGE COVER
-   ========================================================= */
-
-.album-detail-cover{
-  position:absolute;
-  left:0;
-  top:0;
-
-  width:620px;
-  height:620px;
-
-  overflow:hidden;
-  background:#080808;
-}
-
-.album-detail-cover img{
-  position:absolute;
-  left:0;
-  top:0;
-
-  width:100%;
-  height:100%;
-
-  object-fit:cover;
-
-  display:block;
-  opacity:.72;
-}
-
-
-/* Dark gradient over cover */
-
-.album-detail-cover:after{
-  content:"";
-
-  position:absolute;
-
-  left:0;
-  top:0;
-  right:0;
-  bottom:0;
-
-  background:
-    linear-gradient(
-      to right,
-      rgba(0,0,0,.12) 0%,
-      rgba(0,0,0,.38) 48%,
-      rgba(0,0,0,.94) 100%
-    );
-}
-
-
-/* =========================================================
-   TEXT OVER COVER
-   ========================================================= */
-
-.album-detail-main{
-  position:absolute;
-
-  z-index:5;
-
-  left:0;
-  bottom:0;
-
-  width:620px;
-
-  padding:35px 42px 38px;
-
-  text-shadow:0 2px 8px rgba(0,0,0,.95);
-}
-
-.detail-number{
-  font-size:12px;
-  color:#aaa;
-  letter-spacing:2px;
-  margin-bottom:9px;
-}
-
-.detail-artist{
-  font-size:29px;
-  font-weight:600;
-  line-height:1.15;
-  margin-bottom:6px;
-}
-
-.detail-album{
-  font-size:22px;
-  color:#ddd;
-  line-height:1.2;
-}
-
-.detail-meta{
-  margin-top:16px;
-  color:#aaa;
-  font-size:13px;
-  letter-spacing:.7px;
-}
-
-.detail-meta span{
-  display:inline-block;
-  margin-right:17px;
-}
-
-
-/* =========================================================
-   RATING
-   ========================================================= */
-
-.detail-rating{
-  margin-top:13px;
-
-  font-size:22px;
-
-  letter-spacing:3px;
-
-  color:#fff;
-}
-
-.detail-rating .empty{
-  color:#555;
-}
-
-
-/* =========================================================
-   TRACKLIST AREA
-   ========================================================= */
-
-.album-tracks{
-  position:absolute;
-
-  z-index:4;
-
-  right:0;
-  top:0;
-  bottom:0;
-
-  width:calc(100% - 620px);
-
-  padding:55px 38px 35px;
-
-  background:rgba(12,12,14,.97);
-
-  /* Högerspalten kan scrollas separat */
-  overflow-y:auto;
-  overflow-x:hidden;
-
-  /* Touch-scroll på iPad */
-  -webkit-overflow-scrolling:touch;
-
-  /* Hjälper äldre Safari */
-  -webkit-transform:translateZ(0);
-  transform:translateZ(0);
-}
-
-.tracks-title{
-  font-size:12px;
-
-  color:#777;
-
-  letter-spacing:2px;
-
-  margin-bottom:22px;
-
-  text-transform:uppercase;
-}
-
-
-/* =========================================================
-   VINYL SIDES
-   ========================================================= */
-
-.track-side{
-  margin-bottom:24px;
-}
-
-.track-side:last-child{
-  margin-bottom:0;
-}
-
-.side-title{
-  font-size:11px;
-
-  font-weight:600;
-
-  color:#aaa;
-
-  letter-spacing:2px;
-
-  margin-bottom:7px;
-
-  padding-bottom:6px;
-
-  border-bottom:
-    1px solid rgba(255,255,255,.10);
-}
-
-.side-title span{
-  color:#555;
-
-  margin-right:7px;
-}
-
-
-/* Track list */
-
-.tracks-list{
-  margin:0;
-  padding:0;
-
-  list-style:none;
-
-  counter-reset:track;
-}
-
-.tracks-list li{
-  position:relative;
-
-  padding:6px 0 6px 30px;
-
-  border-bottom:
-    1px solid rgba(255,255,255,.045);
-
-  color:#d5d5d5;
-
-  font-size:13px;
-
-  line-height:1.25;
-}
-
-.tracks-list li:before{
-  position:absolute;
-
-  left:0;
-  top:6px;
-
-  width:21px;
-
-  color:#555;
-
-  counter-increment:track;
-
-  content:counter(
-    track,
-    decimal-leading-zero
-  );
-
-  font-size:10px;
-}
-
-
-/* =========================================================
-   CLOSE BUTTON
-   ========================================================= */
-
-.album-close{
-  position:absolute;
-
-  z-index:20;
-
-  right:14px;
-  top:12px;
-
-  width:46px;
-  height:46px;
-
-  border:0;
-
-  background:rgba(0,0,0,.68);
-
-  color:#fff;
-
-  font-size:31px;
-
-  line-height:42px;
-
-  text-align:center;
-
-  border-radius:23px;
-
-  cursor:pointer;
-
-  -webkit-tap-highlight-color:transparent;
-}
-
-.album-close:active{
-  background:rgba(255,255,255,.2);
-}
-
-
-/* =========================================================
-   iPAD
-   ========================================================= */
-
-@media screen and
-(min-width:601px) and
-(max-width:1100px){
-
-  body{
-    padding:20px;
-  }
-
-  .header{
-    margin-bottom:24px;
-  }
-
-  .title{
-    font-size:28px;
-  }
-
-  .grid .record{
-    width:24%;
-    margin-right:1.3333%;
-    margin-bottom:30px;
-  }
-
-  .grid .artist{
-    font-size:15px;
-  }
-
-  .grid .album{
-    font-size:13px;
-  }
-
-  .grid .year{
-    font-size:12px;
-  }
-
-  .carousel-viewport{
-    padding-top:32px;
-    padding-bottom:58px;
-  }
-
-  .carousel-card{
-    width:300px;
-    margin-left:12px;
-    margin-right:12px;
-  }
-
-  .carousel-card.active{
-    transform:scale(1.10);
-    -webkit-transform:scale(1.10);
-
-    transition:transform .45s ease;
-    -webkit-transition:-webkit-transform .45s ease;
-  }
-
-  .carousel-card .artist{
-    font-size:16px;
-  }
-
-  .carousel-card .album{
-    font-size:14px;
-  }
-
-
-  /* Detail */
-
-  .album-overlay{
-    padding:20px;
-  }
-
-  .album-detail{
-    min-height:620px;
-  }
-
-  .album-detail-main{
-    padding:28px 30px 30px;
-  }
-
-  .detail-artist{
-    font-size:25px;
-  }
-
-  .detail-album{
-    font-size:19px;
-  }
-
-  .album-tracks{
-    padding:50px 28px 25px;
-  }
-
-  .track-side{
-    margin-bottom:18px;
-  }
-
-  .tracks-list li{
-    font-size:12px;
-    padding-top:6px;
-    padding-bottom:6px;
-  }
-}
-
-
-/* =========================================================
-   PHONE / PORTRAIT
-   ========================================================= */
-
-@media screen and
-(max-width:600px){
-
-  body{
-    padding:15px;
-  }
-
-  .header{
-    padding-bottom:16px;
-    margin-bottom:20px;
-  }
-
-  .title{
-    font-size:23px;
-    padding-right:175px;
-    letter-spacing:2px;
-  }
-
-  .subtitle{
-    font-size:12px;
-  }
-
-  .view-toggle{
-    top:-2px;
-  }
-
-  .view-toggle button{
-    padding:7px 8px;
-    font-size:12px;
-  }
-
-
-  .grid .record{
-    width:48%;
-    margin-right:4%;
-    margin-bottom:28px;
-  }
-
-  .grid .record:nth-child(4n){
-    margin-right:4%;
-  }
-
-  .grid .record:nth-child(2n){
-    margin-right:0;
-  }
-
-
-  .carousel-card{
-    width:260px;
-    margin-left:9px;
-    margin-right:9px;
-  }
-
-  .carousel-card.active{
-    transform:scale(1.07);
-    -webkit-transform:scale(1.07);
-
-    transition:transform .4s ease;
-    -webkit-transition:-webkit-transform .4s ease;
-  }
-
-
-  /* Detail */
-
-  .album-overlay{
-    padding:10px;
-  }
-
-  .album-detail{
-    min-height:0;
-    height:auto;
-  }
-
-  .album-detail-cover{
-    position:relative;
-
-    width:100%;
-
-    height:75vw;
-
-    min-height:270px;
-    max-height:430px;
-  }
-
-  .album-detail-cover:after{
-    background:
-      linear-gradient(
-        to bottom,
-        rgba(0,0,0,.10),
-        rgba(0,0,0,.35) 45%,
-        rgba(0,0,0,.92) 100%
-      );
-  }
-
-  .album-detail-main{
-    position:absolute;
-
-    width:100%;
-
-    left:0;
-    bottom:0;
-
-    padding:25px 22px 22px;
-  }
-
-  .detail-artist{
-    font-size:22px;
-  }
-
-  .detail-album{
-    font-size:17px;
-  }
-
-  .album-tracks{
-    position:relative;
-
-    width:100%;
-
-    padding:25px 22px 30px;
-
-    overflow:visible;
-  }
-
-  .tracks-list{
-    max-height:none;
-    overflow:visible;
-  }
-
-  .tracks-list li{
-    font-size:13px;
-  }
-
-  .track-side{
-    margin-bottom:22px;
-  }
-}
-
 </style>
-</head>
 
+</head>
 
 <body>
 
-
-<!-- =======================================================
-     HEADER
-     ======================================================= -->
-
 <header class="header">
+  <h1 class="title">VINYLSKIVOR</h1>
+  <div class="subtitle">49 SKIVOR</div>
 
-  <h1 class="title">
-    VINYLSKIVOR
-  </h1>
-
-  <div class="subtitle">
-    49 SKIVOR
+  <div class="view-toggle" role="group" aria-label="Visningsläge">
+    <button id="gridButton" class="active" type="button">▦ Grid</button>
+    <button id="carouselButton" type="button">◀ Karusell</button>
   </div>
-
-  <div class="view-toggle"
-       role="group"
-       aria-label="Visningsläge">
-
-    <button
-      id="gridButton"
-      class="active"
-      type="button">
-      ▦ Grid
-    </button>
-
-    <button
-      id="carouselButton"
-      type="button">
-      ◀ Karusell
-    </button>
-
-  </div>
-
 </header>
 
+<main id="collection" class="collection"></main>
 
-<!-- =======================================================
-     COLLECTION
-     ======================================================= -->
-
-<main
-  id="collection"
-  class="collection">
-</main>
-
-
-<!-- =======================================================
-     ALBUM DETAIL
-     ======================================================= -->
-
-<div
-  class="album-overlay"
-  id="albumOverlay">
-
+<div class="album-overlay" id="albumOverlay">
   <div class="album-detail">
 
+```
+<button type="button" class="album-close" id="albumClose" aria-label="Stäng">×</button>
 
-    <!-- Close -->
-
-    <button
-      type="button"
-      class="album-close"
-      id="albumClose"
-      aria-label="Stäng">
-
-      ×
-
-    </button>
-
-
-    <!-- Large cover -->
-
-    <div class="album-detail-cover">
-
-      <img
-        id="detailCover"
-        src=""
-        alt="">
-
-    </div>
-
-
-    <!-- Album information -->
-
-    <div class="album-detail-main">
-
-      <div
-        class="detail-number"
-        id="detailNumber">
-      </div>
-
-      <div
-        class="detail-artist"
-        id="detailArtist">
-      </div>
-
-      <div
-        class="detail-album"
-        id="detailAlbum">
-      </div>
-
-      <div class="detail-meta">
-
-        <span id="detailYear"></span>
-
-        <span id="detailGenre"></span>
-
-      </div>
-
-      <div
-        class="detail-rating"
-        id="detailRating">
-      </div>
-
-    </div>
-
-
-    <!-- Tracklist -->
-
-    <div class="album-tracks">
-
-      <div class="tracks-title">
-        LÅTLISTA
-      </div>
-
-      <div id="detailTracks"></div>
-
-    </div>
-
-  </div>
-
+<div class="album-detail-cover">
+  <img id="detailCover" src="" alt="">
 </div>
 
+<div class="album-detail-main">
+  <div class="detail-number" id="detailNumber"></div>
+  <div class="detail-artist" id="detailArtist"></div>
+  <div class="detail-album" id="detailAlbum"></div>
+
+  <div class="detail-meta">
+    <span id="detailYear"></span>
+    <span id="detailGenre"></span>
+  </div>
+
+  <div class="detail-rating" id="detailRating"></div>
+</div>
+
+<div class="album-tracks">
+  <div class="tracks-title">LÅTLISTA</div>
+  <div id="detailTracks"></div>
+</div>
+```
+
+  </div>
+</div>
 
 <script>
-
 (function(){
-
-
-/* =========================================================
-   DATA
-
-   Struktur:
-
-   [
-     nummer,
-     artist,
-     album,
-     år,
-     genre,
-     rating,
-     bild,
-     {
-       A: [ låtar ],
-       B: [ låtar ],
-       C: [ låtar ],
-       D: [ låtar ]
-     }
-   ]
-
-   Vanligt album:
-   A + B
-
-   Dubbelalbum:
-   A + B + C + D
-
-   Tomma sidor behöver inte anges.
-   ========================================================= */
-
 
 var records = [
 
-  // 01
-  [
-    '01',
-    'ABBA',
-    'The Album',
-    '1977',
-    'Pop',
-    3,
-    'covers/the_album.jpg',
-    {
-      A: [
-        "Eagle",
-        "Take a Chance On Me",
-        "One Man, One Woman",
-        "The Name Of The Game"
-      ],
-      B: [
-        "Move On",
-        "Hole In Your Soul",
-        "Thank You For The Music",
-        "I Wonder (Departure)",
-        "I'm A Marionette"
-      ]
-    }
-  ],
+  ['01','ABBA','The Album','1977','Pop',3,'covers/the_album.jpg',{
+    A:['Eagle','Take a Chance On Me','One Man, One Woman','The Name Of The Game'],
+    B:['Move On','Hole In Your Soul','Thank You For The Music','I Wonder (Departure)',"I'm A Marionette"]
+  }],
 
-  // 02
-  [
-    '02',
-    'ABBA',
-    'Super Trouper',
-    '1980',
-    'Pop',
-    5,
-    'covers/abba_super_trouper.jpg',
-    {
-      A: [
-        "Super Trouper",
-        "The Winner Takes It All",
-        "On And On And On",
-        "Andante, Andante",
-        "Me And I"
-      ],
-      B: [
-        "Happy New Year",
-        "Our Last Summer",
-        "The Piper",
-        "Lay All Your Love On Me",
-        "The Way Old Friends Do - Live At Wembley Arena"
-      ]
-    }
-  ],
+  ['02','ABBA','Super Trouper','1980','Pop',5,'covers/abba_super_trouper.jpg',{
+    A:['Super Trouper','The Winner Takes It All','On And On And On','Andante, Andante','Me And I'],
+    B:['Happy New Year','Our Last Summer','The Piper','Lay All Your Love On Me','The Way Old Friends Do - Live At Wembley Arena']
+  }],
 
-  // 03
-  [
-    '03',
-    'a-ha',
-    'Hunting High And Low',
-    '1985',
-    'Pop',
-    3,
-    'covers/a-ha_hunting_high_and_low.jpg',
-    {
-      A: [
-        "Take On Me",
-        "Train Of Thought",
-        "Hunting High And Low",
-        "The Blue Sky",
-        "Living A Boy’s Adventure Tale"
-      ],
-      B: [
-        "The Sun Always Shines On TV",
-        "And You Tell Me",
-        "Love Is Reason",
-        "Dream Myself Alive",
-        "Here I Stand And Face The Rain"
-      ]
-    }
-  ],
+  ['03','a-ha','Hunting High And Low','1985','Pop',3,'covers/a-ha_hunting_high_and_low.jpg',{
+    A:['Take On Me','Train Of Thought','Hunting High And Low','The Blue Sky','Living A Boy’s Adventure Tale'],
+    B:['The Sun Always Shines On TV','And You Tell Me','Love Is Reason','Dream Myself Alive','Here I Stand And Face The Rain']
+  }],
 
-  // 04
-  [
-    '04',
-    'The Alan Parsons Project',
-    'I Robot',
-    '1977',
-    'Progressive Rock',
-    4,
-    'covers/alan_parson_i_robot.jpg',
-    {
-      A: [
-        "I Robot",
-        "I Wouldn’t Want To Be Like You",
-        "Some Other Time",
-        "Breakdown",
-        "Don’t Let It Show"
-      ],
-      B: [
-        "The Voice",
-        "Nucleus",
-        "Day After Day (The Show Must Go On)",
-        "Total Eclipse",
-        "Genesis Ch. 1 V.32"
-      ]
-    }
-  ],
+  ['04','The Alan Parsons Project','I Robot','1977','Progressive Rock',4,'covers/alan_parson_i_robot.jpg',{
+    A:['I Robot','I Wouldn’t Want To Be Like You','Some Other Time','Breakdown','Don’t Let It Show'],
+    B:['The Voice','Nucleus','Day After Day (The Show Must Go On)','Total Eclipse','Genesis Ch. 1 V.32']
+  }],
 
-  // 05
-  [
-    '05',
-    'The Alan Parsons Project',
-    'The Turn Of A Friendly Card',
-    '1980',
-    'Progressive Rock',
-    4,
-    'covers/alan_parson_turn_of_a_friendly_card.jpg',
-    {
-      A: [
-        "May Be A Price To Pay",
-        "Games People Play",
-        "Time",
-        "I Don’t Wanna Go Home"
-      ],
-      B: [
-        "The Gold Bug (Instrumental)",
-        "The Turn Of A Friendly Card (Part 1)",
-        "The Turn Of A Friendly Card: Snake Eyes",
-        "The Turn Of A Friendly Card: The Ace Of Swords (Instrumental)",
-        "The Turn Of A Friendly Card: Nothing Left To Lose",
-        "The Turn Of A Friendly Card (Part 2)"
-      ]
-    }
-  ],
+  ['05','The Alan Parsons Project','The Turn Of A Friendly Card','1980','Progressive Rock',4,'covers/alan_parson_turn_of_a_friendly_card.jpg',{
+    A:['May Be A Price To Pay','Games People Play','Time','I Don’t Wanna Go Home'],
+    B:['The Gold Bug (Instrumental)','The Turn Of A Friendly Card (Part 1)','The Turn Of A Friendly Card: Snake Eyes','The Turn Of A Friendly Card: The Ace Of Swords (Instrumental)','The Turn Of A Friendly Card: Nothing Left To Lose','The Turn Of A Friendly Card (Part 2)']
+  }],
 
-  // 06
-  [
-    '06',
-    'Andrew Lloyd Webber',
-    'The Phantom Of The Opera',
-    '1987',
-    'Musical',
-    4,
-    'covers/andrew_lloyd_webber_phantom.jpg',
-    {
-      A: [
-        "Prologue: The Stage Of The Paris Opéra, 1905",
-        "Overture",
-        "Think Of Me",
-        "Angel Of Music",
-        "Little Lotte... / The Mirror... (Angel Of Music)",
-        "The Phantom Of The Opera",
-        "The Music Of The Night",
-        "I Remember... / Stranger Than You Dreamt It..."
-      ],
+  ['06','Andrew Lloyd Webber','The Phantom Of The Opera','1987','Musical',4,'covers/andrew_lloyd_webber_phantom.jpg',{
+    A:['Prologue: The Stage Of The Paris Opéra, 1905','Overture','Think Of Me','Angel Of Music','Little Lotte... / The Mirror... (Angel Of Music)','The Phantom Of The Opera','The Music Of The Night','I Remember... / Stranger Than You Dreamt It...'],
+    B:['Magical Lasso...','Notes... / Prima Donna','Poor Fool, He Makes Me Laugh',"Why Have You Brought Me Here... / Raoul, I've Been There...",'All I Ask Of You','All I Ask Of You (Reprise)'],
+    C:['Entr’acte','Masquerade / Why So Silent...','Notes... / Twisted Every Way...','Wishing You Were Somehow Here Again','Wandering Child... / Bravo, Monsieur...'],
+    D:['The Point Of No Return','Down Once More... / Track Down This Murderer...']
+  }],
 
-      B: [
-        "Magical Lasso...",
-        "Notes... / Prima Donna",
-        "Poor Fool, He Makes Me Laugh",
-        "Why Have You Brought Me Here... / Raoul, I've Been There...",
-        "All I Ask Of You",
-        "All I Ask Of You (Reprise)"
-      ],
+  ['07','Art Garfunkel','Fate For Breakfast','1979','Pop',3,'covers/art_garfunkel_fate_for_breakfast.jpg',{
+    A:["In A Little While (I'll Be On My Way)","Since I Don't Have You",'And I Know','Sail On A Rainbow','Miss You Nights'],
+    B:['Bright Eyes','Finally Found A Reason','Beyond The Tears','Oh How Happy',"When Someone Doesn't Want You",'Take Me Away']
+  }],
 
-      C: [
-        "Entr’acte",
-        "Masquerade / Why So Silent...",
-        "Notes... / Twisted Every Way...",
-        "Wishing You Were Somehow Here Again",
-        "Wandering Child... / Bravo, Monsieur..."
-      ],
+  ['08','The Beatles','Help!','1965','Rock',4,'covers/beatles_help.jpg',{
+    A:['Help!','The Night Before',"You've Got To Hide Your Love Away",'I Need You','Another Girl',"You're Going To Lose That Girl",'Ticket To Ride'],
+    B:['Act Naturally',"It's Only Love",'You Like Me Too Much','Tell Me What You See',"I've Just Seen A Face",'Yesterday','Dizzy Miss Lizzy']
+  }],
 
-      D: [
-        "The Point Of No Return",
-        "Down Once More... / Track Down This Murderer..."
-      ]
-    }
-  ],
+  ['09','Benny Andersson & Björn Ulvaeus','Chess','1986','Musical',4,'covers/chess.jpg',{
+    A:['Merano','The Russian And Molokov / Where I Want To Be','Opening Ceremony','Quartet (A Model Of Decorum And Tranquility)'],
+    B:['The American And Florence / Nobody’s Side','Chess','Mountain Duet','Florence Quits','Embassy Lament','Anthem'],
+    C:['Bangkok / One Night In Bangkok','Heaven Help My Heart','Argument','I Know Him So Well','The Deal'],
+    D:['Endgame','Epilogue: You And I']
+  }],
 
-  // 07
-  [
-    '07',
-    'Art Garfunkel',
-    'Fate For Breakfast',
-    '1979',
-    'Pop',
-    3,
-    'covers/art_garfunkel_fate_for_breakfast.jpg',
-    {
-      A: [
-        "In A Little While (I'll Be On My Way)",
-        "Since I Don't Have You",
-        "And I Know",
-        "Sail On A Rainbow",
-        "Miss You Nights"
-      ],
-      B: [
-        "Bright Eyes",
-        "Finally Found A Reason",
-        "Beyond The Tears",
-        "Oh How Happy",
-        "When Someone Doesn't Want You",
-        "Take Me Away"
-      ]
-    }
-  ],
+  ['10','Christopher Larkin','Hollow Knight','2017','Soundtrack',5,'covers/hollow_knight.jpg',{
+    A:['Enter Hallownest','Dirtmouth','Crossroads','False Knight','Greenpath','Hornet','Reflection'],
+    B:['Mantis Lords','City Of Tears','Dung Defender','Crystal Peak','Fungal Wastes','Decisive Battle'],
+    C:['Soul Sanctum','Resting Grounds',"Queen's Gardens",'The White Lady','Broken Vessel',"Kingdom's Edge",'Nosk'],
+    D:['Dream','Dream Battle','White Palace','Sealed Vessel','Radiance','Hollow Knight']
+  }],
 
-  // 08
-  [
-    '08',
-    'The Beatles',
-    'Help!',
-    '1965',
-    'Rock',
-    4,
-    'covers/beatles_help.jpg',
-    {
-      A: [
-        "Help!",
-        "The Night Before",
-        "You've Got To Hide Your Love Away",
-        "I Need You",
-        "Another Girl",
-        "You're Going To Lose That Girl",
-        "Ticket To Ride"
-      ],
-      B: [
-        "Act Naturally",
-        "It's Only Love",
-        "You Like Me Too Much",
-        "Tell Me What You See",
-        "I've Just Seen A Face",
-        "Yesterday",
-        "Dizzy Miss Lizzy"
-      ]
-    }
-  ],
+  ['11','C418','Volume Alpha','2011','Electronic',5,'covers/minecraft.jpg',{A:[],B:[]}],
+  ['12','Dave Clark','Time','1986','Electronic',4,'covers/time.jpg',{A:[],B:[]}],
+  ['13','David Bowie',"Let's Dance",'1983','Rock',5,'covers/lets_dance.jpg',{A:[],B:[]}],
+  ['14','Dire Straits','Dire Straits','1978','Rock',5,'covers/dire_straits.jpg',{A:[],B:[]}],
+  ['15','The Eagles','Hotel California','1976','Rock',5,'covers/hotel_california.jpg',{A:[],B:[]}],
+  ['16','Electric Light Orchestra','Discovery','1979','Rock',5,'covers/discovery.jpg',{A:[],B:[]}],
+  ['17','Electric Light Orchestra','Out Of The Blue','1977','Rock',5,'covers/out_of_the_blue.jpg',{A:[],B:[]}],
+  ['18','Elton John','Elton John','1970','Rock',5,'covers/elton_john.jpg',{A:[],B:[]}],
+  ['19','Europe','The Final Countdown','1986','Rock',4,'covers/final_countdown.jpg',{A:[],B:[]}],
+  ['20','Eurythmics','Sweet Dreams','1983','Pop',5,'covers/sweet_dreams.jpg',{A:[],B:[]}],
+  ['21','First Aid Kid','Palomino','2022','Folk',5,'covers/palomino.jpg',{A:[],B:[]}],
+  ['22','Fleetwood Mac','Behind The Mask','1990','Rock',4,'covers/behind_the_mask.jpg',{A:[],B:[]}],
+  ['23','Fleetwood Mac','Tusk','1979','Rock',5,'covers/tusk.jpg',{A:[],B:[]}],
+  ['24','Graeme Edge Band','Kick Off Your Muddy Boots','1975','Rock',4,'covers/muddy_boots.jpg',{A:[],B:[]}],
+  ['25','Jeff Wayne','The War Of The Worlds','1978','Progressive Rock',5,'covers/war_of_the_worlds.jpg',{A:[],B:[]}],
+  ['26','Jethro Tull','M.U The Best Of Jethro Tull','1976','Progressive Rock',5,'covers/best_of_jethro_tull.jpg',{A:[],B:[]}],
+  ['27','John Miles','Stranger In The City','1977','Rock',4,'covers/stranger_in_the_city.jpg',{A:[],B:[]}],
+  ['28','Jon Bon Jovi','Blaze Of Glory','1990','Rock',4,'covers/blaze_of_glory.jpg',{A:[],B:[]}],
+  ['29','Journey','Frontiers','1983','Rock',5,'covers/frontiers.jpg',{A:[],B:[]}],
+  ['30','Koto','Greatest Hits & Remixes','1992','Electronic',4,'covers/koto_greatest_hits_remixes.jpg',{A:[],B:[]}],
+  ['31','Level 42','World Machine','1985','Pop',5,'covers/world_machine.jpg',{A:[],B:[]}],
+  ['32','Maromaro','Full Moon','1982','Electronic',4,'covers/full_moon.jpg',{A:[],B:[]}],
+  ['33','Men At Work','Cargo','1983','Pop',4,'covers/cargo.jpg',{A:[],B:[]}],
+  ['34','Michael Jackson','Bad','1987','Pop',5,'covers/bad.jpg',{A:[],B:[]}],
+  ['35','Mike Curb Congregation','Sweet Gingerbread Man','1970','Pop',3,'covers/sweet_gingerbread_man.jpg',{A:[],B:[]}],
+  ['36','Muse','Origin Of Symmetry','2001','Alternative Rock',5,'covers/origin_of_symmetry.jpg',{A:[],B:[]}],
+  ['37','Muse','The Resistance','2009','Alternative Rock',5,'covers/the_resistance.jpg',{A:[],B:[]}],
+  ['38','Muse','The Wow! Signal','2026','Alternative Rock',5,'covers/the_wow_signal.jpg',{A:[],B:[]}],
 
-  // 09
-  [
-    '09',
-    'Benny Andersson & Björn Ulvaeus',
-    'Chess',
-    '1986',
-    'Musical',
-    4,
-    'covers/chess.jpg',
-    {
-      A: [
-        "Merano",
-        "The Russian And Molokov / Where I Want To Be",
-        "Opening Ceremony",
-        "Quartet (A Model Of Decorum And Tranquility)"
-      ],
-      B: [
-        "The American And Florence / Nobody’s Side",
-        "Chess",
-        "Mountain Duet",
-        "Florence Quits",
-        "Embassy Lament",
-        "Anthem"
-      ],
-      C: [
-        "Bangkok / One Night In Bangkok",
-        "Heaven Help My Heart",
-        "Argument",
-        "I Know Him So Well",
-        "The Deal"
-      ],
-      D: [
-        "Endgame",
-        "Epilogue: You And I"
-      ]
-    }
-  ],
+  ['39','Pink Floyd','The Dark Side Of The Moon','1973','Progressive Rock',5,'covers/dark_side_of_the_moon.jpg',{
+    A:['Speak To Me','Breathe','On The Run','Time','The Great Gig In The Sky'],
+    B:['Money','Us And Them','Any Colour You Like','Brain Damage','Eclipse']
+  }],
 
-  // 10
-  [
-    '10',
-    'Christopher Larkin',
-    'Hollow Knight',
-    '2017',
-    'Soundtrack',
-    5,
-    'covers/hollow_knight.jpg',
-    {
-      A: [
-        "Enter Hallownest",
-        "Dirtmouth",
-        "Crossroads",
-        "False Knight",
-        "Greenpath",
-        "Hornet",
-        "Reflection"
-      ],
-      B: [
-        "Mantis Lords",
-        "City Of Tears",
-        "Dung Defender",
-        "Crystal Peak",
-        "Fungal Wastes",
-        "Decisive Battle"
-      ],
-      C: [
-        "Soul Sanctum",
-        "Resting Grounds",
-        "Queen's Gardens",
-        "The White Lady",
-        "Broken Vessel",
-        "Kingdom's Edge",
-        "Nosk"
-      ],
-      D: [
-        "Dream",
-        "Dream Battle",
-        "White Palace",
-        "Sealed Vessel",
-        "Radiance",
-        "Hollow Knight"
-      ]
-    }
-  ],    
-  [
-    '11',
-    'C418',
-    'Volume Alpha',
-    '2011',
-    'Electronic',
-    5,
-    'covers/minecraft.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
+  ['40','Pink Floyd','The Wall','1979','Progressive Rock',5,'covers/the_wall.jpg',{
+    A:['In The Flesh?','The Thin Ice','Another Brick In The Wall, Part 1'],
+    B:['Hey You','Is There Anybody Out There?','Nobody Home'],
+    C:['Comfortably Numb','The Show Must Go On'],
+    D:['Run Like Hell','The Trial','Outside The Wall']
+  }],
 
-  [
-    '12',
-    'Dave Clark',
-    'Time',
-    '1986',
-    'Electronic',
-    4,
-    'covers/time.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '13',
-    'David Bowie',
-    'Let\'s Dance',
-    '1983',
-    'Rock',
-    5,
-    'covers/lets_dance.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '14',
-    'Dire Straits',
-    'Dire Straits',
-    '1978',
-    'Rock',
-    5,
-    'covers/dire_straits.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '15',
-    'The Eagles',
-    'Hotel California',
-    '1976',
-    'Rock',
-    5,
-    'covers/hotel_california.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '16',
-    'Electric Light Orchestra',
-    'Discovery',
-    '1979',
-    'Rock',
-    5,
-    'covers/discovery.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '17',
-    'Electric Light Orchestra',
-    'Out Of The Blue',
-    '1977',
-    'Rock',
-    5,
-    'covers/out_of_the_blue.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '18',
-    'Elton John',
-    'Elton John',
-    '1970',
-    'Rock',
-    5,
-    'covers/elton_john.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '19',
-    'Europe',
-    'The Final Countdown',
-    '1986',
-    'Rock',
-    4,
-    'covers/final_countdown.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '20',
-    'Eurythmics',
-    'Sweet Dreams',
-    '1983',
-    'Pop',
-    5,
-    'covers/sweet_dreams.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '21',
-    'First Aid Kid',
-    'Palomino',
-    '2022',
-    'Folk',
-    5,
-    'covers/palomino.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '22',
-    'Fleetwood Mac',
-    'Behind The Mask',
-    '1990',
-    'Rock',
-    4,
-    'covers/behind_the_mask.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '23',
-    'Fleetwood Mac',
-    'Tusk',
-    '1979',
-    'Rock',
-    5,
-    'covers/tusk.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '24',
-    'Graeme Edge Band',
-    'Kick Off Your Muddy Boots',
-    '1975',
-    'Rock',
-    4,
-    'covers/muddy_boots.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '25',
-    'Jeff Wayne',
-    'The War Of The Worlds',
-    '1978',
-    'Progressive Rock',
-    5,
-    'covers/war_of_the_worlds.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '26',
-    'Jethro Tull',
-    'M.U The Best Of Jethro Tull',
-    '1976',
-    'Progressive Rock',
-    5,
-    'covers/best_of_jethro_tull.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '27',
-    'John Miles',
-    'Stranger In The City',
-    '1977',
-    'Rock',
-    4,
-    'covers/stranger_in_the_city.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '28',
-    'Jon Bon Jovi',
-    'Blaze Of Glory',
-    '1990',
-    'Rock',
-    4,
-    'covers/blaze_of_glory.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '29',
-    'Journey',
-    'Frontiers',
-    '1983',
-    'Rock',
-    5,
-    'covers/frontiers.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '30',
-    'Koto',
-    'Greatest Hits & Remixes',
-    '1992',
-    'Electronic',
-    4,
-    'covers/koto_greatest_hits_remixes.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '31',
-    'Level 42',
-    'World Machine',
-    '1985',
-    'Pop',
-    5,
-    'covers/world_machine.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '32',
-    'Maromaro',
-    'Full Moon',
-    '1982',
-    'Electronic',
-    4,
-    'covers/full_moon.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '33',
-    'Men At Work',
-    'Cargo',
-    '1983',
-    'Pop',
-    4,
-    'covers/cargo.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '34',
-    'Michael Jackson',
-    'Bad',
-    '1987',
-    'Pop',
-    5,
-    'covers/bad.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '35',
-    'Mike Curb Congregation',
-    'Sweet Gingerbread Man',
-    '1970',
-    'Pop',
-    3,
-    'covers/sweet_gingerbread_man.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '36',
-    'Muse',
-    'Origin Of Symmetry',
-    '2001',
-    'Alternative Rock',
-    5,
-    'covers/origin_of_symmetry.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '37',
-    'Muse',
-    'The Resistance',
-    '2009',
-    'Alternative Rock',
-    5,
-    'covers/the_resistance.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '38',
-    'Muse',
-    'The Wow! Signal',
-    '2026',
-    'Alternative Rock',
-    5,
-    'covers/the_wow_signal.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '39',
-    'Pink Floyd',
-    'The Dark Side Of The Moon',
-    '1973',
-    'Progressive Rock',
-    5,
-    'covers/dark_side_of_the_moon.jpg',
-    {
-      A: [
-        'Speak To Me',
-        'Breathe',
-        'On The Run',
-        'Time',
-        'The Great Gig In The Sky'
-      ],
-
-      B: [
-        'Money',
-        'Us And Them',
-        'Any Colour You Like',
-        'Brain Damage',
-        'Eclipse'
-      ]
-    }
-  ],
-
-  [
-    '40',
-    'Pink Floyd',
-    'The Wall',
-    '1979',
-    'Progressive Rock',
-    5,
-    'covers/the_wall.jpg',
-    {
-      A: [
-        'In The Flesh?',
-        'The Thin Ice',
-        'Another Brick In The Wall, Part 1'
-      ],
-
-      B: [
-        'Hey You',
-        'Is There Anybody Out There?',
-        'Nobody Home'
-      ],
-
-      C: [
-        'Comfortably Numb',
-        'The Show Must Go On'
-      ],
-
-      D: [
-        'Run Like Hell',
-        'The Trial',
-        'Outside The Wall'
-      ]
-    }
-  ],
-
-  [
-    '41',
-    'Rick Astley',
-    'Whenever You Need Somebody',
-    '1987',
-    'Pop',
-    4,
-    'covers/whenever_you_need_somebody.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '42',
-    'Rick Wakeman',
-    'Journey To The Centre Of The Earth',
-    '1974',
-    'Progressive Rock',
-    5,
-    'covers/journey_to_the_centre_of_the_earth.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '43',
-    'Rick Wakeman',
-    'The Myths And Legends Of King Arthur And The Knights Of The Round Table',
-    '1975',
-    'Progressive Rock',
-    5,
-    'covers/the_myths_and_legends_of_king_arthur.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '44',
-    'Rod Stewart',
-    'The Best Of Rod Stewart',
-    '1989',
-    'Rock',
-    4,
-    'covers/the_best_of_rod_stewart.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '45',
-    'Simon And Garfunkel',
-    'Bridge Over Troubled Water',
-    '1970',
-    'Pop',
-    5,
-    'covers/bridge_over_troubled_water.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '46',
-    'Starship',
-    'Knee Deep In The Hoopla',
-    '1985',
-    'Rock',
-    4,
-    'covers/knee_deep_in_the_hoopla.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '47',
-    'Status Quo',
-    'Just Supposin',
-    '1980',
-    'Rock',
-    4,
-    'covers/just_supposin.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '48',
-    'Toto',
-    'Toto',
-    '1978',
-    'Rock',
-    5,
-    'covers/toto.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ],
-
-  [
-    '49',
-    'Toto',
-    'Toto IV',
-    '1982',
-    'Rock',
-    5,
-    'covers/toto_iv.jpg',
-    {
-      A: [],
-      B: []
-    }
-  ]
+  ['41','Rick Astley','Whenever You Need Somebody','1987','Pop',4,'covers/whenever_you_need_somebody.jpg',{A:[],B:[]}],
+  ['42','Rick Wakeman','Journey To The Centre Of The Earth','1974','Progressive Rock',5,'covers/journey_to_the_centre_of_the_earth.jpg',{A:[],B:[]}],
+  ['43','Rick Wakeman','The Myths And Legends Of King Arthur And The Knights Of The Round Table','1975','Progressive Rock',5,'covers/the_myths_and_legends_of_king_arthur.jpg',{A:[],B:[]}],
+  ['44','Rod Stewart','The Best Of Rod Stewart','1989','Rock',4,'covers/the_best_of_rod_stewart.jpg',{A:[],B:[]}],
+  ['45','Simon And Garfunkel','Bridge Over Troubled Water','1970','Pop',5,'covers/bridge_over_troubled_water.jpg',{A:[],B:[]}],
+  ['46','Starship','Knee Deep In The Hoopla','1985','Rock',4,'covers/knee_deep_in_the_hoopla.jpg',{A:[],B:[]}],
+  ['47','Status Quo','Just Supposin','1980','Rock',4,'covers/just_supposin.jpg',{A:[],B:[]}],
+  ['48','Toto','Toto','1978','Rock',5,'covers/toto.jpg',{A:[],B:[]}],
+  ['49','Toto','Toto IV','1982','Rock',5,'covers/toto_iv.jpg',{A:[],B:[]}]
 
 ];
 
-
-/* =========================================================
-   VARIABLES
-   ========================================================= */
-
-var collection =
-  document.getElementById('collection');
-
-var gridButton =
-  document.getElementById('gridButton');
-
-var carouselButton =
-  document.getElementById('carouselButton');
-
-var albumOverlay =
-  document.getElementById('albumOverlay');
-
-var albumClose =
-  document.getElementById('albumClose');
-
-var detailCover =
-  document.getElementById('detailCover');
-
-var detailNumber =
-  document.getElementById('detailNumber');
-
-var detailArtist =
-  document.getElementById('detailArtist');
-
-var detailAlbum =
-  document.getElementById('detailAlbum');
-
-var detailYear =
-  document.getElementById('detailYear');
-
-var detailGenre =
-  document.getElementById('detailGenre');
-
-var detailRating =
-  document.getElementById('detailRating');
-
-var detailTracks =
-  document.getElementById('detailTracks');
-
+var collection=document.getElementById('collection');
+var gridButton=document.getElementById('gridButton');
+var carouselButton=document.getElementById('carouselButton');
+var albumOverlay=document.getElementById('albumOverlay');
+var albumClose=document.getElementById('albumClose');
+var detailCover=document.getElementById('detailCover');
+var detailNumber=document.getElementById('detailNumber');
+var detailArtist=document.getElementById('detailArtist');
+var detailAlbum=document.getElementById('detailAlbum');
+var detailYear=document.getElementById('detailYear');
+var detailGenre=document.getElementById('detailGenre');
+var detailRating=document.getElementById('detailRating');
+var detailTracks=document.getElementById('detailTracks');
 
 var view='grid';
-
 var activeIndex=0;
-
 var drag=false;
-
 var startX=0;
-
 var startY=0;
-
 var startScroll=0;
-
 var scrollTimer=null;
 
-
-/* =========================================================
-   ESCAPE HTML
-   ========================================================= */
-
-function esc(s){
-
-  s=String(s);
-
-  return s
+function esc(value){
+  return String(value)
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;');
-
 }
 
-
-/* =========================================================
-   OPEN ALBUM
-   ========================================================= */
+function recordHTML(record, className){
+  return '<article class="record '+(className||'')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
+    '<div class="cover-wrapper">'+
+      '<img class="cover" src="'+record[6]+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
+      '<div class="number">'+record[0]+'</div>'+
+    '</div>'+
+    '<div class="info">'+
+      '<div class="artist">'+esc(record[1])+'</div>'+
+      '<div class="album">'+esc(record[2])+'</div>'+
+      '<div class="year">'+esc(record[3])+'</div>'+
+    '</div>'+
+  '</article>';
+}
 
 function openAlbum(index){
+  var record=records[index];
+  if(!record)return;
 
-  var r=records[index];
+  detailNumber.innerHTML=esc(record[0]);
+  detailArtist.innerHTML=esc(record[1]);
+  detailAlbum.innerHTML=esc(record[2]);
+  detailYear.innerHTML=esc(record[3]);
+  detailGenre.innerHTML=esc(record[4]||'Genre saknas');
 
-  if(!r){
-    return;
-  }
+  detailCover.src=record[6];
+  detailCover.alt=record[1]+' - '+record[2];
 
-
-  /* Information */
-
-  detailNumber.innerHTML=
-    esc(r[0]);
-
-  detailArtist.innerHTML=
-    esc(r[1]);
-
-  detailAlbum.innerHTML=
-    esc(r[2]);
-
-  detailYear.innerHTML=
-    esc(r[3]);
-
-  detailGenre.innerHTML=
-    esc(r[4] || 'Genre saknas');
-
-
-  /* Cover */
-
-  detailCover.src=r[6];
-
-  detailCover.alt=
-    r[1]+' - '+r[2];
-
-
-  /* Rating */
-
-  var rating=
-    parseInt(r[5],10);
-
-  if(isNaN(rating)){
-    rating=0;
-  }
-
-  if(rating<0){
-    rating=0;
-  }
-
-  if(rating>5){
-    rating=5;
-  }
-
+  var rating=parseInt(record[5],10);
+  if(isNaN(rating))rating=0;
+  rating=Math.max(0,Math.min(5,rating));
 
   var stars='';
-
-  var i;
-
-
-  for(i=1;i<=5;i++){
-
-    if(i<=rating){
-
-      stars+='★';
-
-    }else{
-
-      stars+=
-        '<span class="empty">★</span>';
-
-    }
-
+  for(var i=1;i<=5;i++){
+    stars+=i<=rating?'★':'<span class="empty">★</span>';
   }
+  detailRating.innerHTML=stars;
 
-
-  detailRating.innerHTML=
-    stars;
-
-
-  /* =======================================================
-     TRACKLIST
-
-     Build each vinyl side separately.
-     Only sides containing songs are shown.
-     ======================================================= */
-
-  var sides=
-    r[7] || {};
-
-  var sideNames=[
-    'A',
-    'B',
-    'C',
-    'D'
-  ];
-
-  var trackHTML='';
-
-  var side;
-
-  var tracks;
-
-  var j;
-
+  var sides=record[7]||{};
+  var sideNames=['A','B','C','D'];
+  var html='';
 
   for(i=0;i<sideNames.length;i++){
+    var side=sideNames[i];
+    var tracks=sides[side];
 
-    side=sideNames[i];
+    if(!tracks||!tracks.length)continue;
 
-    tracks=sides[side];
+    html+='<section class="track-side">'+
+      '<div class="side-title"><span>SIDA</span>'+side+'</div>'+
+      '<ol class="tracks-list">';
 
-
-    /*
-      Don't show empty sides.
-    */
-
-    if(
-      !tracks ||
-      !tracks.length
-    ){
-
-      continue;
-
+    for(var j=0;j<tracks.length;j++){
+      html+='<li>'+esc(tracks[j])+'</li>';
     }
 
-
-    trackHTML+=
-      '<section class="track-side">'+
-
-        '<div class="side-title">'+
-          '<span>SIDA</span>'+
-          side+
-        '</div>'+
-
-        '<ol class="tracks-list">';
-
-
-    for(j=0;j<tracks.length;j++){
-
-      trackHTML+=
-        '<li>'+
-        esc(tracks[j])+
-        '</li>';
-
-    }
-
-
-    trackHTML+=
-        '</ol>'+
-
-      '</section>';
-
+    html+='</ol></section>';
   }
 
+  detailTracks.innerHTML=html||
+    '<div style="color:#666;font-size:13px">Ingen låtlista tillagd</div>';
 
-  /*
-    If there is no tracklist yet.
-  */
-
-  if(!trackHTML){
-
-    trackHTML=
-      '<div style="color:#666;font-size:13px">'+
-      'Ingen låtlista tillagd'+
-      '</div>';
-
-  }
-
-
-  detailTracks.innerHTML=
-    trackHTML;
-
-
-  /* Show */
-
-  albumOverlay.className=
-    'album-overlay visible';
-
-
-  /*
-    Stop background scrolling.
-  */
-
-  document.body.style.overflow=
-    'hidden';
-
+  albumOverlay.className='album-overlay visible';
+  document.body.style.overflow='hidden';
 }
-
-
-/* =========================================================
-   CLOSE ALBUM
-   ========================================================= */
 
 function closeAlbum(){
-
-  albumOverlay.className=
-    'album-overlay';
-
+  albumOverlay.className='album-overlay';
   document.body.style.overflow='';
 
-
-  /*
-    Release image after closing.
-    Useful for old iPad memory management.
-  */
-
   setTimeout(function(){
-
-    if(
-      albumOverlay.className.indexOf(
-        'visible'
-      )===-1
-    ){
-
+    if(albumOverlay.className.indexOf('visible')===-1){
       detailCover.src='';
-
     }
-
   },100);
-
 }
-
-
-/* =========================================================
-   ALBUM CLICK HANDLERS
-   ========================================================= */
 
 function attachAlbumClicks(){
+  var elements=document.getElementsByClassName('record');
 
-  var elements=
-    document.getElementsByClassName(
-      'record'
-    );
-
-  var i;
-
-
-  for(i=0;i<elements.length;i++){
-
+  for(var i=0;i<elements.length;i++){
     (function(index){
-
-      elements[index].onclick=
-        function(){
-
-          /*
-            In carousel don't open album
-            if user is swiping.
-          */
-
-          if(
-            view==='carousel' &&
-            drag
-          ){
-
-            return;
-
-          }
-
-
-          openAlbum(index);
-
-        };
-
-    })(
-      parseInt(
-        elements[i].getAttribute(
-          'data-index'
-        ),
-        10
-      )
-    );
-
+      elements[index].onclick=function(){
+        if(view==='carousel'&&drag)return;
+        openAlbum(index);
+      };
+    })(parseInt(elements[i].getAttribute('data-index'),10));
   }
-
 }
-
-
-/* =========================================================
-   CREATE RECORD HTML
-
-   IMPORTANT:
-   Only artist, album and year are
-   displayed in the normal views.
-   ========================================================= */
-
-function recordHTML(r,cls){
-
-  return (
-
-    '<article class="record '+
-    (cls||'')+
-    '" data-index="'+
-    (parseInt(r[0],10)-1)+
-    '">'+
-
-      '<div class="cover-wrapper">'+
-
-        '<img '+
-        'class="cover" '+
-        'src="'+r[6]+'" '+
-        'alt="'+
-        esc(r[1]+' - '+r[2])+
-        '">'+
-
-        '<div class="number">'+
-        r[0]+
-        '</div>'+
-
-      '</div>'+
-
-      '<div class="info">'+
-
-        '<div class="artist">'+
-        esc(r[1])+
-        '</div>'+
-
-        '<div class="album">'+
-        esc(r[2])+
-        '</div>'+
-
-        '<div class="year">'+
-        esc(r[3])+
-        '</div>'+
-
-      '</div>'+
-
-    '</article>'
-
-  );
-
-}
-
-
-/* =========================================================
-   GRID
-   ========================================================= */
 
 function buildGrid(){
+  collection.className='collection grid';
 
-  collection.className=
-    'collection grid';
-
-  var h='';
-
-  var i;
-
-
-  for(i=0;i<records.length;i++){
-
-    h+=recordHTML(
-      records[i],
-      ''
-    );
-
+  var html='';
+  for(var i=0;i<records.length;i++){
+    html+=recordHTML(records[i],'');
   }
 
-
-  collection.innerHTML=h;
-
-
+  collection.innerHTML=html;
   attachAlbumClicks();
-
 }
 
+function setActive(index){
+  activeIndex=index;
 
-/* =========================================================
-   CAROUSEL ACTIVE CARD
-   ========================================================= */
+  var cards=document.getElementsByClassName('carousel-card');
 
-function setActive(i){
+  for(var i=0;i<cards.length;i++){
+    cards[i].className=cards[i].className.replace(/\sactive\b/g,'');
 
-  activeIndex=i;
-
-  var cards=
-    document.getElementsByClassName(
-      'carousel-card'
-    );
-
-  var j;
-
-
-  for(j=0;j<cards.length;j++){
-
-    cards[j].className=
-      cards[j].className
-      .replace(/\sactive\b/g,'');
-
-
-    if(j===i){
-
-      cards[j].className+=
-        ' active';
-
+    if(i===index){
+      cards[i].className+=' active';
     }
-
   }
-
 }
 
-
-/* =========================================================
-   CENTER CAROUSEL CARD
-   ========================================================= */
-
-function centerCard(i,smooth){
-
-  var vp=
-    document.getElementById(
-      'carouselViewport'
-    );
-
-  var cards=
-    document.getElementsByClassName(
-      'carousel-card'
-    );
-
-  var card=cards[i];
-
-
-  if(!vp || !card){
-
-    return;
-
-  }
-
-
-  var target=
-    card.offsetLeft-
-    (
-      vp.clientWidth-
-      card.offsetWidth
-    )/2;
-
-
-  if(target<0){
-
-    target=0;
-
-  }
-
-
-  var max=
-    vp.scrollWidth-
-    vp.clientWidth;
-
-
-  if(target>max){
-
-    target=max;
-
-  }
-
-
-  setActive(i);
-
-
-  animateScroll(
-    vp,
-    target,
-    smooth
-  );
-
-}
-
-
-/* =========================================================
-   SCROLL ANIMATION
-   ========================================================= */
-
-function animateScroll(
-  el,
-  to,
-  smooth
-){
-
+function animateScroll(element,to,smooth){
   if(!smooth){
-
-    el.scrollLeft=to;
-
+    element.scrollLeft=to;
     return;
-
   }
 
-
-  var from=el.scrollLeft;
-
+  var from=element.scrollLeft;
   var change=to-from;
-
   var duration=650;
-
-  var start=
-    new Date().getTime();
-
+  var start=new Date().getTime();
 
   function step(){
+    var time=new Date().getTime();
+    var progress=Math.min(1,(time-start)/duration);
+    var easing=progress*(2-progress);
 
-    var now=
-      new Date().getTime();
+    element.scrollLeft=from+change*easing;
 
-    var t=
-      Math.min(
-        1,
-        (now-start)/duration
-      );
-
-    var e=
-      t*(2-t);
-
-
-    el.scrollLeft=
-      from+
-      change*e;
-
-
-    if(t<1){
-
-      setTimeout(
-        step,
-        16
-      );
-
+    if(progress<1){
+      setTimeout(step,16);
     }
-
   }
-
 
   step();
-
 }
 
+function centerCard(index,smooth){
+  var viewport=document.getElementById('carouselViewport');
+  var cards=document.getElementsByClassName('carousel-card');
+  var card=cards[index];
 
-/* =========================================================
-   FIND NEAREST CAROUSEL CARD
-   ========================================================= */
+  if(!viewport||!card)return;
+
+  var target=card.offsetLeft-(viewport.clientWidth-card.offsetWidth)/2;
+  var max=viewport.scrollWidth-viewport.clientWidth;
+
+  target=Math.max(0,Math.min(target,max));
+
+  setActive(index);
+  animateScroll(viewport,target,smooth);
+}
 
 function nearest(){
-
-  var vp=
-    document.getElementById(
-      'carouselViewport'
-    );
-
-  var cards=
-    document.getElementsByClassName(
-      'carousel-card'
-    );
-
-
-  var center=
-    vp.scrollLeft+
-    vp.clientWidth/2;
-
+  var viewport=document.getElementById('carouselViewport');
+  var cards=document.getElementsByClassName('carousel-card');
+  var center=viewport.scrollLeft+viewport.clientWidth/2;
 
   var best=0;
+  var distance=Infinity;
 
-  var dist=Infinity;
+  for(var i=0;i<cards.length;i++){
+    var card=cards[i];
+    var cardCenter=card.offsetLeft+card.offsetWidth/2;
+    var currentDistance=Math.abs(cardCenter-center);
 
-  var i;
-
-
-  for(i=0;i<cards.length;i++){
-
-    var c=cards[i];
-
-    var cx=
-      c.offsetLeft+
-      c.offsetWidth/2;
-
-    var d=
-      Math.abs(
-        cx-center
-      );
-
-
-    if(d<dist){
-
-      dist=d;
-
+    if(currentDistance<distance){
+      distance=currentDistance;
       best=i;
-
     }
-
   }
-
 
   return best;
-
 }
-
-
-/* =========================================================
-   BUILD CAROUSEL
-   ========================================================= */
 
 function buildCarousel(){
+  collection.className='collection carousel';
 
-  collection.className=
-    'collection carousel';
+  var html=
+    '<div class="carousel-viewport" id="carouselViewport">'+
+      '<div class="carousel-track" id="carouselTrack">';
 
-
-  var h=
-    '<div '+
-    'class="carousel-viewport" '+
-    'id="carouselViewport">'+
-
-      '<div '+
-      'class="carousel-track" '+
-      'id="carouselTrack">';
-
-
-  var i;
-
-
-  for(i=0;i<records.length;i++){
-
-    h+=recordHTML(
-      records[i],
-      'carousel-card'
-    );
-
+  for(var i=0;i<records.length;i++){
+    html+=recordHTML(records[i],'carousel-card');
   }
 
+  html+='</div></div>';
+  collection.innerHTML=html;
 
-  h+=
-      '</div>'+
-    '</div>';
+  var viewport=document.getElementById('carouselViewport');
+  var cards=document.getElementsByClassName('carousel-card');
 
-
-  collection.innerHTML=h;
-
-
-  var vp=
-    document.getElementById(
-      'carouselViewport'
-    );
-
-
-  var cards=
-    document.getElementsByClassName(
-      'carousel-card'
-    );
-
-
-  var j;
-
-
-  /*
-    One tap opens album detail.
-
-    Native horizontal scrolling remains
-    available for iPad.
-  */
-
-  for(j=0;j<cards.length;j++){
-
+  for(var j=0;j<cards.length;j++){
     (function(index){
-
-      cards[index].onclick=
-        function(){
-
-          if(!drag){
-
-            openAlbum(index);
-
-          }
-
-        };
-
+      cards[index].onclick=function(){
+        if(!drag)openAlbum(index);
+      };
     })(j);
-
   }
-
-
-  /* =======================================================
-     SETTLE CAROUSEL
-     ======================================================= */
 
   function scheduleSettle(){
+    if(scrollTimer)clearTimeout(scrollTimer);
 
-    if(scrollTimer){
-
-      clearTimeout(
-        scrollTimer
-      );
-
-    }
-
-
-    scrollTimer=
-      setTimeout(
-        function(){
-
-          /*
-            Don't touch scrollLeft while
-            native momentum scrolling settles.
-          */
-
-          setActive(
-            nearest()
-          );
-
-        },
-        180
-      );
-
+    scrollTimer=setTimeout(function(){
+      setActive(nearest());
+    },180);
   }
 
-
-  /* =======================================================
-     SCROLL
-     ======================================================= */
-
-  vp.onscroll=function(){
-
+  viewport.onscroll=function(){
     setActive(-1);
-
     scheduleSettle();
-
   };
 
-
-  /* =======================================================
-     TOUCH START
-     ======================================================= */
-
-  vp.ontouchstart=function(e){
-
-    if(
-      !e.touches ||
-      !e.touches.length
-    ){
-
-      return;
-
-    }
-
+  viewport.ontouchstart=function(event){
+    if(!event.touches||!event.touches.length)return;
 
     drag=false;
+    startX=event.touches[0].pageX;
+    startY=event.touches[0].pageY;
+    startScroll=viewport.scrollLeft;
 
-    startX=
-      e.touches[0].pageX;
-
-    startY=
-      e.touches[0].pageY;
-
-    startScroll=
-      vp.scrollLeft;
-
-
-    if(scrollTimer){
-
-      clearTimeout(
-        scrollTimer
-      );
-
-    }
-
-
+    if(scrollTimer)clearTimeout(scrollTimer);
     setActive(-1);
-
   };
 
+  viewport.ontouchmove=function(event){
+    if(!event.touches||!event.touches.length)return;
 
-  /* =======================================================
-     TOUCH MOVE
-     ======================================================= */
+    var dx=event.touches[0].pageX-startX;
 
-  vp.ontouchmove=function(e){
-
-    if(
-      !e.touches ||
-      !e.touches.length
-    ){
-
-      return;
-
-    }
-
-
-    var dx=
-      e.touches[0].pageX-
-      startX;
-
-
-    if(Math.abs(dx)>8){
-
-      drag=true;
-
-    }
-
+    if(Math.abs(dx)>8)drag=true;
 
     setActive(-1);
-
   };
 
-
-  /* =======================================================
-     TOUCH END
-     ======================================================= */
-
-  vp.ontouchend=function(){
-
+  viewport.ontouchend=function(){
     scheduleSettle();
 
-
-    setTimeout(
-      function(){
-
-        drag=false;
-
-      },
-      120
-    );
-
+    setTimeout(function(){
+      drag=false;
+    },120);
   };
 
-
-  /*
-    Center current album after switching.
-  */
-
-  setTimeout(
-    function(){
-
-      centerCard(
-        activeIndex,
-        false
-      );
-
-    },
-    30
-  );
-
+  setTimeout(function(){
+    centerCard(activeIndex,false);
+  },30);
 }
 
+function setView(nextView){
+  view=nextView;
 
-/* =========================================================
-   CHANGE VIEW
-   ========================================================= */
+  gridButton.className=view==='grid'?'active':'';
+  carouselButton.className=view==='carousel'?'active':'';
 
-function setView(next){
-
-  view=next;
-
-
-  gridButton.className=
-    view==='grid'
-    ? 'active'
-    : '';
-
-
-  carouselButton.className=
-    view==='carousel'
-    ? 'active'
-    : '';
-
-
-  gridButton.setAttribute(
-    'aria-pressed',
-    view==='grid'
-    ? 'true'
-    : 'false'
-  );
-
-
-  carouselButton.setAttribute(
-    'aria-pressed',
-    view==='carousel'
-    ? 'true'
-    : 'false'
-  );
-
+  gridButton.setAttribute('aria-pressed',view==='grid'?'true':'false');
+  carouselButton.setAttribute('aria-pressed',view==='carousel'?'true':'false');
 
   if(view==='grid'){
-
     buildGrid();
-
   }else{
-
     buildCarousel();
-
   }
-
 }
 
-
-/* =========================================================
-   VIEW BUTTONS
-   ========================================================= */
-
 gridButton.onclick=function(){
-
   setView('grid');
-
 };
-
 
 carouselButton.onclick=function(){
-
   setView('carousel');
-
 };
-
-
-/* =========================================================
-   CLOSE
-   ========================================================= */
 
 albumClose.onclick=function(){
-
   closeAlbum();
-
 };
 
-
-/* =========================================================
-   TAP OUTSIDE PANEL
-   ========================================================= */
-
-albumOverlay.onclick=function(e){
-
-  e=e || window.event;
-
-
-  if(e.target===albumOverlay){
-
+albumOverlay.onclick=function(event){
+  if((event||window.event).target===albumOverlay){
     closeAlbum();
-
   }
-
 };
 
+document.onkeydown=function(event){
+  event=event||window.event;
 
-/* =========================================================
-   KEYBOARD
-   ========================================================= */
-
-document.onkeydown=function(e){
-
-  e=e || window.event;
-
-
-  /*
-    ESC
-  */
-
-  if(e.keyCode===27){
-
-    if(
-      albumOverlay.className.indexOf(
-        'visible'
-      )!==-1
-    ){
-
+  if(event.keyCode===27){
+    if(albumOverlay.className.indexOf('visible')!==-1){
       closeAlbum();
-
     }
-
     return;
-
   }
 
+  if(view!=='carousel')return;
 
-  /*
-    Carousel left/right
-  */
-
-  if(view!=='carousel'){
-
-    return;
-
+  if(event.keyCode===39&&activeIndex<records.length-1){
+    centerCard(activeIndex+1,true);
+  }else if(event.keyCode===37&&activeIndex>0){
+    centerCard(activeIndex-1,true);
   }
-
-
-  if(e.keyCode===39){
-
-    if(
-      activeIndex<
-      records.length-1
-    ){
-
-      centerCard(
-        activeIndex+1,
-        true
-      );
-
-    }
-
-  }
-
-
-  else if(e.keyCode===37){
-
-    if(activeIndex>0){
-
-      centerCard(
-        activeIndex-1,
-        true
-      );
-
-    }
-
-  }
-
 };
-
-
-/* =========================================================
-   START
-   ========================================================= */
 
 buildGrid();
 
-
 })();
-
 </script>
 
 </body>
