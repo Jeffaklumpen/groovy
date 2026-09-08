@@ -278,8 +278,8 @@ var records = [
   }],
 
   ['07','Art Garfunkel','Fate For Breakfast','1979','Soft Rock',0,'covers/fate_for_breakfast.jpg',{
-    A:["In A Little While (I'll Be On My Way)|0","Since I Don't Have You|0",'And I Know|0','Sail On A Rainbow|0','Miss You Nights|0'],
-    B:['Bright Eyes|0','Finally Found A Reason|0','Beyond The Tears|0','Oh How Happy|0',"When Someone Doesn't Want You|0",'Take Me Away|0']
+    A:["In A Little While (I'll Be On My Way)|3","Since I Don't Have You|3",'And I Know|2','Sail On A Rainbow|2','Miss You Nights|4'],
+    B:['Bright Eyes|4','Finally Found A Reason|3','Beyond The Tears|3','Oh How Happy|2',"When Someone Doesn't Want You|0",'Take Me Away|0']
   }],
 
   ['08','The Beatles','Help!','1965','Rock',0,'covers/help.jpg',{
@@ -301,18 +301,70 @@ var records = [
     D:['Dream|0','Dream Battle|0','White Palace|0','Sealed Vessel|0','Radiance|0','Hollow Knight|0']
   }],
 
-  ['11','C418','Volume Alpha','2011','Electronic',0,'covers/minecraft.jpg',{A:[],B:[]}],
-  ['12','Dave Clark','Time','1986','Electronic',0,'covers/time.jpg',{A:[],B:[]}],
-  ['13','David Bowie',"Let's Dance",'1983','Rock',0,'covers/lets_dance.jpg',{A:[],B:[]}],
-  ['14','Dire Straits','Dire Straits','1978','Rock',0,'covers/dire_straits.jpg',{A:[],B:[]}],
-  ['15','The Eagles','Hotel California','1976','Rock',0,'covers/hotel_california.jpg',{A:[],B:[]}],
-  ['16','Electric Light Orchestra','Discovery','1979','Rock',0,'covers/discovery.jpg',{A:[],B:[]}],
-  ['17','Electric Light Orchestra','Out Of The Blue','1977','Rock',0,'covers/out_of_the_blue.jpg',{A:[],B:[]}],
-  ['18','Elton John','Elton John','1970','Rock',0,'covers/elton_john.jpg',{A:[],B:[]}],
-  ['19','Europe','The Final Countdown','1986','Rock',0,'covers/the_final_countdown.jpg',{A:[],B:[]}],
-  ['20','Eurythmics','Sweet Dreams','1983','Pop',0,'covers/sweet_dreams.jpg',{A:[],B:[]}],
-  ['21','First Aid Kid','Palomino','2022','Folk',0,'covers/palomino.jpg',{A:[],B:[]}],
-  ['22','Fleetwood Mac','Behind The Mask','1990','Rock',0,'covers/behind_the_mask.jpg',{A:[],B:[]}],
+  ['11','C418','Volume Alpha','2011','Electronic',0,'covers/minecraft.jpg',{
+  A:['Subwoofer Lullaby|0','Living Mice|0','Moog City|0','Haggstrom|0','Minecraft|0','Clark|0'],
+  B:['Mice On Venus|0','Dry Hands|0','Wet Hands|0','Sweden|0','Cat|0','Danny|0']
+  }],
+  
+  ['12','Dave Clark','Time','1986','Electronic',0,'covers/time.jpg',{
+  A:["Born To Rock 'N' Roll|0","Time Talkin'|0",'Time|0','Music Of The Spheres|0','Law Of The Universe|0','The Time Lord Theme|0','The Charge|0','One Human Family|0'],
+  B:['What On Earth|0','I Know, I Know|0','Your Brother In Soul|0','Case For The Prosecution|0','Star Maker|0','Time Will Teach Us All|0','I Object|0','In My Defence|0'],
+  C:['Within My World|0','Because|0','Move The Judge|0',"She's So Beautiful|0",'Beauty, Truth, Love, Freedom, Peace|0','If You Only Knew|0'],
+  D:["We're The U.F.O.|0","The Theme From 'Time'|0",'Harmony|0','The Return|0','Time (Reprise)|0',"It's In Every One Of Us|0"]
+  }],
+  
+  ['13','David Bowie',"Let's Dance",'1983','Rock',0,'covers/lets_dance.jpg',{
+  A:['Modern Love|0','China Girl|0',"Let's Dance|0",'Without You|0'],
+  B:['Ricochet|0','Criminal World|0','Cat People (Putting Out Fire)|0','Shake It|0']
+  }],
+  
+  ['14','Dire Straits','Dire Straits','1978','Rock',0,'covers/dire_straits.jpg',{
+  A:['Down To The Waterline|0','Water Of Love|0','Setting Me Up|0','Six Blade Knife|0','Southbound Again|0'],
+  B:['Sultans Of Swing|0','In The Gallery|0','Wild West End|0','Lions|0']
+  }],
+  
+  ['15','The Eagles','Hotel California','1976','Rock',0,'covers/hotel_california.jpg',{
+  A:['Hotel California|0','New Kid In Town|0','Life In The Fast Lane|0'],
+  B:['Wasted Time|0','Wasted Time (Reprise)|0','Victim Of Love|0','Pretty Maids All In A Row|0','Try And Love Again|0','The Last Resort|0']
+  }],
+  
+  ['16','Electric Light Orchestra','Discovery','1979','Rock',0,'covers/discovery.jpg',{
+  A:['Shine A Little Love|0','Confusion|0','Need Her Love|0','The Diary Of Horace Wimp|0'],
+  B:['Last Train To London|0','Midnight Blue|0','On The Run|0','Wishing|0']
+  }],
+  
+  ['17','Electric Light Orchestra','Out Of The Blue','1977','Rock',0,'covers/out_of_the_blue.jpg',{
+  A:['Turn To Stone|0',"It's Over|0","Sweet Talkin' Woman|0",'Across The Border|0'],
+  B:['Night In The City|0','Starlight|0','Jungle|0','Believe Me Now|0','Steppin' Out|0'],
+  C:['Standin' In The Rain|0','Big Wheels|0','Summer And Lightning|0','Mr. Blue Sky|0'],
+  D:['Sweet Is The Night|0','The Whale|0','Birmingham Blues|0','Wild West Hero|0']
+  }],
+  
+  ['18','Elton John','Elton John','1970','Rock',0,'covers/elton_john.jpg',{
+  A:['Your Song|0','I Need You To Turn To|0','Take Me To The Pilot|0','No Shoe Strings On Louise|0','First Episode At Hienton|0'],
+  B:['Sixty Years On|0','Border Song|0','The Greatest Discovery|0','The Cage|0','The King Must Die|0']
+  }],
+  
+  ['19','Europe','The Final Countdown','1986','Rock',0,'covers/the_final_countdown.jpg',{
+  A:['The Final Countdown|0','Rock The Night|0','Carrie|0','Danger On The Track|0','Ninja|0'],
+  B:['Cherokee|0','Time Has Come|0','Heart Of Stone|0','On The Loose|0','Love Chaser|0']
+  }],
+  
+  ['20','Eurythmics','Sweet Dreams','1983','Pop',0,'covers/sweet_dreams.jpg',{
+  A:['Love Is A Stranger|0',"I've Got An Angel|0",'Wrap It Up|0','I Could Give You (A Mirror)|0','The Walk|0'],
+  B:['Sweet Dreams (Are Made Of This)|0','Jennifer|0','This Is The House|0','Somebody Told Me|0','This City Never Sleeps|0']
+  }],
+  
+  ['21','First Aid Kid','Palomino','2022','Folk',0,'covers/palomino.jpg',{
+  A:['Out Of My Head|0','Angel|0','Ready To Run|0','Turning Onto You|0','Fallen Snow|0','Wild Horses II|0'],
+  B:['The Last One|0','Nobody Knows|0','A Feeling That Never Came|0','29 Palms Highway|0','Palomino|0']
+  }],
+  
+  ['22','Fleetwood Mac','Behind The Mask','1990','Rock',0,'covers/behind_the_mask.jpg',{
+  A:['Skies The Limit|0','Love Is Dangerous|0','In The Back Of My Mind|0','Do You Know|0','Save Me|0','Affairs Of The Heart|0'],
+  B:['When The Sun Goes Down|0','Behind The Mask|0','Stand On The Rock|0','Hard Feelings|0','Freedom|0','When It Comes To Love|0','The Second Time|0']
+  }],
+
   ['23','Fleetwood Mac','Tusk','1979','Rock',0,'covers/tusk.jpg',{A:[],B:[]}],
   ['24','Graeme Edge Band','Kick Off Your Muddy Boots','1975','Rock',0,'covers/muddy_boots.jpg',{A:[],B:[]}],
   ['25','Jeff Wayne','The War Of The Worlds','1978','Progressive Rock',0,'covers/war_of_the_worlds.jpg',{A:[],B:[]}],
@@ -322,7 +374,7 @@ var records = [
   ['29','Journey','Frontiers','1983','Rock',0,'covers/frontiers.jpg',{A:[],B:[]}],
   ['30','Koto','Greatest Hits & Remixes','1992','Electronic',0,'covers/koto_greatest_hits_remixes.jpg',{A:[],B:[]}],
   ['31','Level 42','World Machine','1985','Pop',0,'covers/world_machine.jpg',{A:[],B:[]}],
-  ['32','Maromaro','Full Moon','1982','Electronic',0,'covers/full_moon.jpg',{A:[],B:[]}],
+  ['32','Maromaro','Full Moon','2026','Electronic',0,'covers/full_moon.jpg',{A:[],B:[]}],
   ['33','Men At Work','Cargo','1983','Pop',0,'covers/cargo.jpg',{A:[],B:[]}],
   ['34','Michael Jackson','Bad','1987','Pop',0,'covers/bad.jpg',{A:[],B:[]}],
   ['35','Mike Curb Congregation','Sweet Gingerbread Man','1970','Pop',0,'covers/sweet_gingerbread_man.jpg',{A:[],B:[]}],
