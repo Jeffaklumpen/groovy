@@ -322,15 +322,13 @@ body{
 
 .album-detail-cover{
   position:absolute;
-
   left:0;
   top:0;
-  bottom:0;
 
-  width:57%;
+  width:620px;
+  height:620px;
 
   overflow:hidden;
-
   background:#080808;
 }
 
@@ -338,12 +336,14 @@ body{
   position:absolute;
   left:0;
   top:0;
+
   width:100%;
   height:100%;
-  object-fit:contain;
+
+  object-fit:cover;
+
   display:block;
   opacity:.72;
-  background:#080808;
 }
 
 
@@ -381,7 +381,7 @@ body{
   left:0;
   bottom:0;
 
-  width:57%;
+  width:620px;
 
   padding:35px 42px 38px;
 
@@ -447,13 +447,11 @@ body{
 .album-tracks{
   position:absolute;
 
-  z-index:4;
-
   right:0;
   top:0;
   bottom:0;
 
-  width:43%;
+  width:calc(100% - 620px);
 
   padding:55px 38px 35px;
 
