@@ -14,99 +14,46 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .header{max-width:1400px;margin:0 auto 32px;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:20px;position:relative}
 .title{font-size:34px;font-weight:600;letter-spacing:3px;margin:0;padding-right:250px}
 .subtitle{margin-top:8px;color:#999;font-size:14px;letter-spacing:1px}
-.view-toggle{position:absolute;right:0;top:0;display:flex;gap:6px;padding:4px;background:#171719;border:1px solid #2b2b2e;border-radius:10px}
-.view-toggle button{border:0;background:transparent;color:#aaa;padding:8px 12px;border-radius:7px;font:inherit;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.view-toggle{position:absolute;right:0;top:0;display:table;padding:4px;background:#171719;border:1px solid #2b2b2e;border-radius:10px;z-index:20}
+.view-toggle button{border:0;background:transparent;color:#aaa;padding:8px 12px;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .view-toggle button.active{background:#303033;color:#fff}
 .collection{max-width:1400px;margin:0 auto}
-
-/* GRID — alltid fyra album per rad på iPad */
-.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:2%;row-gap:38px}
-.record{min-width:0}
-.cover-wrapper{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#1c1c1e;box-shadow:0 12px 30px rgba(0,0,0,.45)}
-.cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+/* GRID: float layout works on older iPad Safari too */
+.grid:after{content:"";display:table;clear:both}
+.grid .record{float:left;width:23.5%;margin-right:2%;margin-bottom:38px;min-width:0}
+.grid .record:nth-child(4n){margin-right:0}
+.cover-wrapper{position:relative;width:100%;height:0;padding-bottom:100%;overflow:hidden;background:#1c1c1e;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.cover{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block}
 .number{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:13px;font-weight:bold;letter-spacing:1px}
 .info{padding-top:12px;min-width:0}
 .artist,.album{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.artist{font-size:17px;font-weight:600}
-.album{margin-top:4px;font-size:15px;color:#c0c0c0}
-.year{margin-top:5px;font-size:13px;color:#777}
-
-/* KARUSELL */
+.artist{font-size:17px;font-weight:600}.album{margin-top:4px;font-size:15px;color:#c0c0c0}.year{margin-top:5px;font-size:13px;color:#777}
+/* CAROUSEL */
 .carousel{width:100%}
-.carousel-viewport{
-  width:100%;
-  overflow-x:auto;
-  overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;
-  overscroll-behavior-x:contain;
-  scroll-snap-type:x mandatory;
-  scroll-behavior:smooth;
-  scrollbar-width:none;
-  touch-action:pan-x pan-y;
-  padding:34px 0 46px;
-}
+.carousel-viewport{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;white-space:nowrap;padding:42px 0 55px;position:relative;-ms-overflow-style:none;scrollbar-width:none}
 .carousel-viewport::-webkit-scrollbar{display:none}
-.carousel-track{
-  display:flex;
-  align-items:flex-start;
-  gap:34px;
-  width:max-content;
-  padding-left:calc((100vw - min(300px, 72vw))/2);
-  padding-right:calc((100vw - min(300px, 72vw))/2);
-}
-.carousel-card{
-  flex:0 0 min(300px,72vw);
-  width:min(300px,72vw);
-  scroll-snap-align:center;
-  scroll-snap-stop:always;
-  cursor:pointer;
-  transform:scale(.94);
-  transform-origin:center center;
-  opacity:.82;
-  transition:transform .65s cubic-bezier(.22,.61,.36,1),opacity .65s ease;
-  will-change:transform;
-}
-.carousel-card.active{transform:scale(1.08);opacity:1}
-.carousel-card .cover-wrapper{box-shadow:0 18px 42px rgba(0,0,0,.55)}
-.carousel-card .artist{font-size:18px}
-.carousel-card .album{font-size:15px}
-.carousel-card .year{font-size:13px}
-.carousel-hint{text-align:center;color:#777;font-size:12px;letter-spacing:.5px;margin-top:-22px}
-
-/* iPad: större karusell, men inte "utzoomad" */
+.carousel-track{display:inline-block;white-space:nowrap;font-size:0}
+.carousel-card{display:inline-block;vertical-align:top;width:300px;margin:0 14px;white-space:normal;cursor:pointer;transform:scale(.94);transform-origin:center center;transition:transform .7s cubic-bezier(.22,.61,.36,1);-webkit-transition:-webkit-transform .7s cubic-bezier(.22,.61,.36,1);will-change:transform}
+.carousel-card.active{transform:scale(1.08);-webkit-transform:scale(1.08)}
+.carousel-card .info{transition:none}
+.carousel-card .artist{font-size:18px}.carousel-card .album{font-size:15px}.carousel-card .year{font-size:13px}
+.carousel-hint{text-align:center;color:#777;font-size:12px;letter-spacing:.5px;margin-top:-24px}
+/* iPad */
 @media screen and (min-width:601px) and (max-width:1100px){
-  body{padding:20px}
-  .header{margin-bottom:24px}
-  .title{font-size:28px}
-  .grid{column-gap:2%;row-gap:30px}
-  .artist{font-size:15px}
-  .album{font-size:13px}
-  .year{font-size:12px}
-  .carousel-viewport{padding-top:30px;padding-bottom:52px}
-  .carousel-track{
-    gap:26px;
-    padding-left:calc((100vw - min(300px, 72vw))/2);
-    padding-right:calc((100vw - min(300px, 72vw))/2);
-  }
-  .carousel-card{flex-basis:min(300px,72vw);width:min(300px,72vw)}
-  .carousel-card.active{transform:scale(1.10)}
-  .carousel-card .artist{font-size:16px}
-  .carousel-card .album{font-size:14px}
+ body{padding:20px}.header{margin-bottom:24px}.title{font-size:28px}
+ .grid .record{width:23.5%;margin-right:2%;margin-bottom:30px}.grid .record:nth-child(4n){margin-right:0}
+ .grid .artist{font-size:15px}.grid .album{font-size:13px}.grid .year{font-size:12px}
+ .carousel-viewport{padding-top:32px;padding-bottom:58px}
+ .carousel-card{width:300px;margin-left:12px;margin-right:12px}
+ .carousel-card.active{transform:scale(1.10);-webkit-transform:scale(1.10)}
+ .carousel-card .artist{font-size:16px}.carousel-card .album{font-size:14px}
 }
-
-/* Telefon: två album per rad */
+/* Phone */
 @media screen and (max-width:600px){
-  body{padding:15px}
-  .header{padding-bottom:16px;margin-bottom:20px}
-  .title{font-size:23px;padding-right:175px;letter-spacing:2px}
-  .subtitle{font-size:12px}
-  .view-toggle{top:-2px}
-  .view-toggle button{padding:7px 8px;font-size:12px}
-  .grid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:4%;row-gap:28px}
-  .carousel-track{gap:18px}
-  .carousel-card{transform:scale(.93)}
-  .carousel-card.active{transform:scale(1.07)}
-  .carousel-hint{margin-top:-14px}
+ body{padding:15px}.header{padding-bottom:16px;margin-bottom:20px}.title{font-size:23px;padding-right:175px;letter-spacing:2px}.subtitle{font-size:12px}
+ .view-toggle{top:-2px}.view-toggle button{padding:7px 8px;font-size:12px}
+ .grid .record{width:48%;margin-right:4%;margin-bottom:28px}.grid .record:nth-child(4n){margin-right:4%}.grid .record:nth-child(2n){margin-right:0}
+ .carousel-card{width:260px;margin-left:9px;margin-right:9px}.carousel-card.active{transform:scale(1.07);-webkit-transform:scale(1.07)}.carousel-hint{margin-top:-16px}
 }
 </style>
 </head>
@@ -124,202 +71,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 <main id="collection" class="collection"></main>
 
 <script>
-"use strict";
-
-const records = [
-      ["01", "ABBA", "The Album", "1977", "covers/the_album.jpg"],
-      ["02", "ABBA", "Super Trouper", "1980", "covers/abba_super_trouper.jpg"],
-      ["03", "A-ha", "Hunting High And Low", "1985", "covers/a-ha_hunting_high_and_low.jpg"],
-      ["04", "The Alan Parson Project", "I Robot", "1977", "covers/alan_parson_i_robot.jpg"],
-      ["05", "The Alan Parson Project", "The Turn Of A Friendly Card", "1980", "covers/alan_parson_turn_of_a_friendly_card.jpg"],
-      ["06", "Andrew Lloyd Webber", "The Phantom Of The Opera", "1987", "covers/andrew_lloyd_webber_phantom.jpg"],
-      ["07", "Art Garfunkel", "Fate For Breakfast", "1979", "covers/art_garfunkel_fate_for_breakfast.jpg"],
-      ["08", "The Beatles", "Help!", "1965", "covers/beatles_help.jpg"],
-      ["09", "Benny Andersson & Björn Ulvaeus", "Chess", "1986", "covers/chess.jpg"],
-      ["10", "Christopher Larkin", "Hollow Knight", "2017", "covers/hollow_knight.jpg"],
-      ["11", "C418", "Volume Alpha", "2011", "covers/minecraft.jpg"],
-      ["12", "Dave Clark", "Time", "1986", "covers/time.jpg"],
-      ["13", "David Bowie", "Let's Dance", "1983", "covers/lets_dance.jpg"],
-      ["14", "Dire Straits", "Dire Straits", "1978", "covers/dire_straits.jpg"],
-      ["15", "The Eagles", "Hotel California", "1976", "covers/hotel_california.jpg"],
-      ["16", "Electric Light Orchestra", "Discovery", "1979", "covers/discovery.jpg"],
-      ["17", "Electric Light Orchestra", "Out Of The Blue", "1977", "covers/out_of_the_blue.jpg"],
-      ["18", "Elton John", "Elton John", "1970", "covers/elton_john.jpg"],
-      ["19", "Europe", "The Final Countdown", "1986", "covers/final_countdown.jpg"],
-      ["20", "Eurythmics", "Sweet Dreams", "1983", "covers/sweet_dreams.jpg"],
-      ["21", "First Aid Kid", "Palomino", "2022", "covers/palomino.jpg"],
-      ["22", "Fleetwood Mac", "Behind The Mask", "1990", "covers/behind_the_mask.jpg"],
-      ["23", "Fleetwood Mac", "Tusk", "1979", "covers/tusk.jpg"],
-      ["24", "Graeme Edge Band", "Kick Off Your Muddy Boots", "1975", "covers/muddy_boots.jpg"],
-      ["25", "Jeff Wayne", "The War Of The Worlds", "1978", "covers/war_of_the_worlds.jpg"],
-      ["26", "Jethro Tull", "M.U The Best Of Jethro Tull", "1976", "covers/best_of_jethro_tull.jpg"],
-      ["27", "John Miles", "Stranger In The City", "1977", "covers/stranger_in_the_city.jpg"],
-      ["28", "Jon Bon Jovi", "Blaze Of Glory", "1990", "covers/blaze_of_glory.jpg"],
-      ["29", "Journey", "Frontiers", "1983", "covers/frontiers.jpg"],
-      ["30", "Koto", "Greatest Hits & Remixes", "1992", "covers/koto_greatest_hits_remixes.jpg"],
-      ["31", "Level 42", "World Machine", "1985", "covers/world_machine.jpg"],
-      ["32", "Maromaro", "Full Moon", "1982", "covers/full_moon.jpg"],
-      ["33", "Men At Work", "Cargo", "1983", "covers/cargo.jpg"],
-      ["34", "Michael Jackson", "Bad", "1987", "covers/bad.jpg"],
-      ["35", "Mike Curb Congregation", "Sweet Gingerbread Man", "1970", "covers/sweet_gingerbread_man.jpg"],
-      ["36", "Muse", "Origin Of Symmetry", "2001", "covers/origin_of_symmetry.jpg"],
-      ["37", "Muse", "The Resistance", "2009", "covers/the_resistance.jpg"],
-      ["38", "Muse", "The Wow! Signal", "2026", "covers/the_wow_signal.jpg"],
-      ["39", "Pink Floyd", "The Dark Side Of The Moon", "1973", "covers/dark_side_of_the_moon.jpg"],
-      ["40", "Pink Floyd", "The Wall", "1979", "covers/the_wall.jpg"],
-      ["41", "Rick Astley", "Whenever You Need Somebody", "1987", "covers/whenever_you_need_somebody.jpg"],
-      ["42", "Rick Wakeman", "Journey To The Centre Of The Earth", "1974", "covers/journey_to_the_centre_of_the_earth.jpg"],
-      ["43", "Rick Wakeman", "The Myths And Legends Of King Arthur And The Knights Of The Round Table", "1975", "covers/the_myths_and_legends_of_king_arthur.jpg"],
-      ["44", "Rod Stewart", "The Best Of Rod Stewart", "1989", "covers/the_best_of_rod_stewart.jpg"],
-      ["45", "Simon And Garfunkel", "Bridge Over Troubled Water", "1970", "covers/bridge_over_troubled_water.jpg"],
-      ["46", "Starship", "Knee Deep In The Hoopla", "1985", "covers/knee_deep_in_the_hoopla.jpg"],
-      ["47", "Status Quo", "Just Supposin", "1980", "covers/just_supposin.jpg"],
-      ["48", "Toto", "Toto", "1978", "covers/toto.jpg"],
-      ["49", "Toto", "Toto IV", "1982", "covers/toto_iv.jpg"]
-];
-
-const collection = document.getElementById("collection");
-const gridButton = document.getElementById("gridButton");
-const carouselButton = document.getElementById("carouselButton");
-
-let view = "grid";
-let activeIndex = 0;
-let scrollTimer = null;
-let isDragging = false;
-
-function recordHTML(r, extraClass = "") {
-  const [number, artist, album, year, src] = r;
-  return `
-    <article class="record carousel-card ${extraClass}" data-index="${number - 1}">
-      <div class="cover-wrapper">
-        <img class="cover" src="${src}" alt="${artist.replace(/"/g,'&quot;')} - ${album.replace(/"/g,'&quot;')}">
-        <div class="number">${number}</div>
-      </div>
-      <div class="info">
-        <div class="artist">${artist}</div>
-        <div class="album">${album}</div>
-        <div class="year">${year}</div>
-      </div>
-    </article>`;
-}
-
-function buildGrid() {
-  collection.className = "collection grid";
-  collection.innerHTML = records.map(r => recordHTML(r)).join("");
-}
-
-function buildCarousel() {
-  collection.className = "collection carousel";
-  collection.innerHTML = `
-    <div class="carousel-viewport" id="carouselViewport" aria-label="Vinylkarusell">
-      <div class="carousel-track" id="carouselTrack">
-        ${records.map(r => recordHTML(r)).join("")}
-      </div>
-    </div>
-    <div class="carousel-hint">Svep åt vänster eller höger för att bläddra</div>
-  `;
-
-  const viewport = document.getElementById("carouselViewport");
-  const cards = [...document.querySelectorAll(".carousel-card")];
-
-  cards.forEach((card, index) => {
-    card.addEventListener("click", () => {
-      if (isDragging) return;
-      activeIndex = index;
-      scrollToCard(index, true);
-    });
-  });
-
-  viewport.addEventListener("scroll", updateActiveFromScroll, { passive:true });
-  viewport.addEventListener("pointerdown", () => { isDragging = false; });
-  viewport.addEventListener("pointermove", () => { isDragging = true; });
-  viewport.addEventListener("pointerup", () => {
-    setTimeout(() => isDragging = false, 40);
-  });
-  viewport.addEventListener("pointercancel", () => { isDragging = false; });
-
-  requestAnimationFrame(() => {
-    scrollToCard(activeIndex, false);
-    updateActiveFromScroll();
-  });
-}
-
-function scrollToCard(index, smooth) {
-  const viewport = document.getElementById("carouselViewport");
-  const card = viewport && viewport.querySelector(`.carousel-card[data-index="${index}"]`);
-  if (!viewport || !card) return;
-
-  card.scrollIntoView({
-    behavior: smooth ? "smooth" : "auto",
-    block: "nearest",
-    inline: "center"
-  });
-  setActive(index);
-}
-
-function setActive(index) {
-  activeIndex = index;
-  document.querySelectorAll(".carousel-card").forEach((card, i) => {
-    card.classList.toggle("active", i === index);
-  });
-}
-
-function updateActiveFromScroll() {
-  const viewport = document.getElementById("carouselViewport");
-  if (!viewport) return;
-
-  clearTimeout(scrollTimer);
-  scrollTimer = setTimeout(() => {
-    const center = viewport.scrollLeft + viewport.clientWidth / 2;
-    let best = 0;
-    let distance = Infinity;
-
-    document.querySelectorAll(".carousel-card").forEach((card, i) => {
-      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-      const d = Math.abs(cardCenter - center);
-      if (d < distance) {
-        distance = d;
-        best = i;
-      }
-    });
-
-    setActive(best);
-  }, 45);
-}
-
-function setView(nextView) {
-  view = nextView;
-  gridButton.classList.toggle("active", view === "grid");
-  carouselButton.classList.toggle("active", view === "carousel");
-  gridButton.setAttribute("aria-pressed", view === "grid");
-  carouselButton.setAttribute("aria-pressed", view === "carousel");
-
-  if (view === "grid") {
-    buildGrid();
-    window.scrollTo({top:0, behavior:"smooth"});
-  } else {
-    buildCarousel();
+/* Compatible with older iPad Safari (including iPad 3) */
+(function(){
+  var records = [
+    ["01","ABBA","The Album","1977","covers/the_album.jpg"],["02","ABBA","Super Trouper","1980","covers/abba_super_trouper.jpg"],["03","A-ha","Hunting High And Low","1985","covers/a-ha_hunting_high_and_low.jpg"],["04","The Alan Parson Project","I Robot","1977","covers/alan_parson_i_robot.jpg"],["05","The Alan Parson Project","The Turn Of A Friendly Card","1980","covers/alan_parson_turn_of_a_friendly_card.jpg"],["06","Andrew Lloyd Webber","The Phantom Of The Opera","1987","covers/andrew_lloyd_webber_phantom.jpg"],["07","Art Garfunkel","Fate For Breakfast","1979","covers/art_garfunkel_fate_for_breakfast.jpg"],["08","The Beatles","Help!","1965","covers/beatles_help.jpg"],["09","Benny Andersson & Björn Ulvaeus","Chess","1986","covers/chess.jpg"],["10","Christopher Larkin","Hollow Knight","2017","covers/hollow_knight.jpg"],["11","C418","Volume Alpha","2011","covers/minecraft.jpg"],["12","Dave Clark","Time","1986","covers/time.jpg"],["13","David Bowie","Let's Dance","1983","covers/lets_dance.jpg"],["14","Dire Straits","Dire Straits","1978","covers/dire_straits.jpg"],["15","The Eagles","Hotel California","1976","covers/hotel_california.jpg"],["16","Electric Light Orchestra","Discovery","1979","covers/discovery.jpg"],["17","Electric Light Orchestra","Out Of The Blue","1977","covers/out_of_the_blue.jpg"],["18","Elton John","Elton John","1970","covers/elton_john.jpg"],["19","Europe","The Final Countdown","1986","covers/final_countdown.jpg"],["20","Eurythmics","Sweet Dreams","1983","covers/sweet_dreams.jpg"],["21","First Aid Kid","Palomino","2022","covers/palomino.jpg"],["22","Fleetwood Mac","Behind The Mask","1990","covers/behind_the_mask.jpg"],["23","Fleetwood Mac","Tusk","1979","covers/tusk.jpg"],["24","Graeme Edge Band","Kick Off Your Muddy Boots","1975","covers/muddy_boots.jpg"],["25","Jeff Wayne","The War Of The Worlds","1978","covers/war_of_the_worlds.jpg"],["26","Jethro Tull","M.U The Best Of Jethro Tull","1976","covers/best_of_jethro_tull.jpg"],["27","John Miles","Stranger In The City","1977","covers/stranger_in_the_city.jpg"],["28","Jon Bon Jovi","Blaze Of Glory","1990","covers/blaze_of_glory.jpg"],["29","Journey","Frontiers","1983","covers/frontiers.jpg"],["30","Koto","Greatest Hits & Remixes","1992","covers/koto_greatest_hits_remixes.jpg"],["31","Level 42","World Machine","1985","covers/world_machine.jpg"],["32","Maromaro","Full Moon","1982","covers/full_moon.jpg"],["33","Men At Work","Cargo","1983","covers/cargo.jpg"],["34","Michael Jackson","Bad","1987","covers/bad.jpg"],["35","Mike Curb Congregation","Sweet Gingerbread Man","1970","covers/sweet_gingerbread_man.jpg"],["36","Muse","Origin Of Symmetry","2001","covers/origin_of_symmetry.jpg"],["37","Muse","The Resistance","2009","covers/the_resistance.jpg"],["38","Muse","The Wow! Signal","2026","covers/the_wow_signal.jpg"],["39","Pink Floyd","The Dark Side Of The Moon","1973","covers/dark_side_of_the_moon.jpg"],["40","Pink Floyd","The Wall","1979","covers/the_wall.jpg"],["41","Rick Astley","Whenever You Need Somebody","1987","covers/whenever_you_need_somebody.jpg"],["42","Rick Wakeman","Journey To The Centre Of The Earth","1974","covers/journey_to_the_centre_of_the_earth.jpg"],["43","Rick Wakeman","The Myths And Legends Of King Arthur And The Knights Of The Round Table","1975","covers/the_myths_and_legends_of_king_arthur.jpg"],["44","Rod Stewart","The Best Of Rod Stewart","1989","covers/the_best_of_rod_stewart.jpg"],["45","Simon And Garfunkel","Bridge Over Troubled Water","1970","covers/bridge_over_troubled_water.jpg"],["46","Starship","Knee Deep In The Hoopla","1985","covers/knee_deep_in_the_hoopla.jpg"],["47","Status Quo","Just Supposin","1980","covers/just_supposin.jpg"],["48","Toto","Toto","1978","covers/toto.jpg"],["49","Toto","Toto IV","1982","covers/toto_iv.jpg"]
+  ];
+  var collection=document.getElementById('collection'), gridButton=document.getElementById('gridButton'), carouselButton=document.getElementById('carouselButton');
+  var view='grid', activeIndex=0, drag=false, startX=0, startY=0, startScroll=0;
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function recordHTML(r, cls){return '<article class="record carousel-card '+(cls||'')+'" data-index="'+(parseInt(r[0],10)-1)+'"><div class="cover-wrapper"><img class="cover" src="'+r[4]+'" alt="'+esc(r[1]+' - '+r[2])+'"><div class="number">'+r[0]+'</div></div><div class="info"><div class="artist">'+esc(r[1])+'</div><div class="album">'+esc(r[2])+'</div><div class="year">'+r[3]+'</div></div></article>';}
+  function buildGrid(){collection.className='collection grid';var h='',i;for(i=0;i<records.length;i++)h+=recordHTML(records[i],'');collection.innerHTML=h;}
+  function setActive(i){activeIndex=i;var cards=document.getElementsByClassName('carousel-card'),j;for(j=0;j<cards.length;j++)cards[j].className=cards[j].className.replace(/\sactive\b/g,'')+(j===i?' active':'');}
+  function centerCard(i,smooth){var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),card=cards[i];if(!vp||!card)return;var target=card.offsetLeft-(vp.clientWidth-card.offsetWidth)/2;if(target<0)target=0;var max=vp.scrollWidth-vp.clientWidth;if(target>max)target=max;setActive(i);animateScroll(vp,target,smooth);}
+  function animateScroll(el,to,smooth){if(!smooth){el.scrollLeft=to;return;}var from=el.scrollLeft,change=to-from,duration=650,start=new Date().getTime();function step(){var now=new Date().getTime(),t=Math.min(1,(now-start)/duration),e=t*(2-t);el.scrollLeft=from+change*e;if(t<1)setTimeout(step,16);}step();}
+  function nearest(){var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),center=vp.scrollLeft+vp.clientWidth/2,best=0,dist=Infinity,i,c,cx,d;for(i=0;i<cards.length;i++){c=cards[i];cx=c.offsetLeft+c.offsetWidth/2;d=Math.abs(cx-center);if(d<dist){dist=d;best=i;}}return best;}
+  function buildCarousel(){collection.className='collection carousel';var h='<div class="carousel-viewport" id="carouselViewport"><div class="carousel-track" id="carouselTrack">',i;for(i=0;i<records.length;i++)h+=recordHTML(records[i],'');h+='</div></div><div class="carousel-hint">Svep åt vänster eller höger för att bläddra</div>';collection.innerHTML=h;var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),j;
+    for(j=0;j<cards.length;j++)(function(index){cards[index].onclick=function(){if(!drag)centerCard(index,true);};})(j);
+    vp.ontouchstart=function(e){if(!e.touches||!e.touches.length)return;drag=false;startX=e.touches[0].pageX;startY=e.touches[0].pageY;startScroll=vp.scrollLeft;};
+    vp.ontouchmove=function(e){if(!e.touches||!e.touches.length)return;var dx=e.touches[0].pageX-startX,dy=e.touches[0].pageY-startY;if(Math.abs(dx)>8)drag=true;/* native iPad scrolling remains enabled */};
+    vp.ontouchend=function(){var idx=nearest();setTimeout(function(){drag=false;},80);centerCard(idx,true);};
+    setTimeout(function(){centerCard(activeIndex,false);},30);
   }
-}
-
-gridButton.addEventListener("click", () => setView("grid"));
-carouselButton.addEventListener("click", () => setView("carousel"));
-
-document.addEventListener("keydown", e => {
-  if (view !== "carousel") return;
-  if (e.key === "ArrowRight") {
-    e.preventDefault();
-    activeIndex = Math.min(records.length - 1, activeIndex + 1);
-    scrollToCard(activeIndex, true);
-  }
-  if (e.key === "ArrowLeft") {
-    e.preventDefault();
-    activeIndex = Math.max(0, activeIndex - 1);
-    scrollToCard(activeIndex, true);
-  }
-});
-
-buildGrid();
+  function setView(next){view=next;gridButton.className=view==='grid'?'active':'';carouselButton.className=view==='carousel'?'active':'';gridButton.setAttribute('aria-pressed',view==='grid'?'true':'false');carouselButton.setAttribute('aria-pressed',view==='carousel'?'true':'false');if(view==='grid')buildGrid();else buildCarousel();}
+  gridButton.onclick=function(){setView('grid');};carouselButton.onclick=function(){setView('carousel');};
+  document.onkeydown=function(e){e=e||window.event;if(view!=='carousel')return;var code=e.keyCode;if(code===39){if(activeIndex<records.length-1)centerCard(activeIndex+1,true);}else if(code===37){if(activeIndex>0)centerCard(activeIndex-1,true);}};
+  buildGrid();
+})();
 </script>
 </body>
 </html>
