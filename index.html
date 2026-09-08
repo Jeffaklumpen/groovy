@@ -126,6 +126,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 
 .album-close:active{background:rgba(255,255,255,.2)}
 
+.rating-filter{position:absolute;right:230px;top:0;display:table;padding:4px;background:#171719;border:1px solid #2b2b2e;border-radius:10px;z-index:20}
+.rating-filter button{border:0;background:transparent;color:#aaa;padding:8px 10px;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.rating-filter button.active{background:#303033;color:#fff}
+
 @media screen and (min-width:601px) and (max-width:1100px){
 body{padding:20px}
 .header{margin-bottom:24px}
@@ -186,6 +190,15 @@ body{padding:15px}
   <div class="view-toggle" role="group" aria-label="Visningsläge">
     <button id="gridButton" class="active" type="button">▦ Grid</button>
     <button id="carouselButton" type="button">◀ Karusell</button>
+  </div>
+
+  <div class="rating-filter">
+    <button class="active" data-rating="all">Alla</button>
+    <button data-rating="1">★</button>
+    <button data-rating="2">★★</button>
+    <button data-rating="3">★★★</button>
+    <button data-rating="4">★★★★</button>
+    <button data-rating="5">★★★★★</button>
   </div>
 </header>
 
@@ -675,6 +688,33 @@ document.onkeydown=function(event){
     centerCard(activeIndex-1,true);
   }
 };
+
+var ratingFilter=document.querySelectorAll('.rating-filter button');
+
+for(var f=0;f<ratingFilter.length;f++){
+  ratingFilter[f].addEventListener('click',function(){
+    var selected=this.getAttribute('data-rating');
+
+    for(var i=0;i<ratingFilter.length;i++){
+      ratingFilter[i].className='';
+    }
+
+    this.className='active';
+
+    var records=document.querySelectorAll('.record');
+
+    for(var r=0;r<records.length;r++){
+      var index=parseInt(records[r].getAttribute('data-index'),10);
+      var rating=parseInt(collection[index][5],10);
+
+      if(selected==='all'||rating===parseInt(selected,10)){
+        records[r].style.display='';
+      }else{
+        records[r].style.display='none';
+      }
+    }
+  });
+}
 
 buildGrid();
 
