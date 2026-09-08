@@ -8,52 +8,523 @@
 <title>Vinylskivor</title>
 
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;min-height:100%;background:#0b0b0c;color:#f5f5f5}
-body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;padding:28px;overflow-x:hidden}
-.header{max-width:1400px;margin:0 auto 32px;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:20px;position:relative}
-.title{font-size:34px;font-weight:600;letter-spacing:3px;margin:0;padding-right:250px}
-.subtitle{margin-top:8px;color:#999;font-size:14px;letter-spacing:1px}
-.view-toggle{position:absolute;right:0;top:0;display:table;padding:4px;background:#171719;border:1px solid #2b2b2e;border-radius:10px;z-index:20}
-.view-toggle button{border:0;background:transparent;color:#aaa;padding:8px 12px;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.view-toggle button.active{background:#303033;color:#fff}
-.collection{max-width:1400px;margin:0 auto}
-/* GRID: float layout works on older iPad Safari too */
-.grid:after{content:"";display:table;clear:both}
-.grid .record{float:left;width:24%;margin-right:1.3333%;margin-bottom:38px;min-width:0}
-.grid .record:nth-child(4n){margin-right:0}
-.cover-wrapper{position:relative;width:100%;height:0;padding-bottom:100%;overflow:hidden;background:#1c1c1e;box-shadow:0 12px 30px rgba(0,0,0,.45)}
-.cover{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block}
-.number{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:13px;font-weight:bold;letter-spacing:1px}
-.info{padding-top:12px;min-width:0}
-.artist,.album{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.artist{font-size:17px;font-weight:600}.album{margin-top:4px;font-size:15px;color:#c0c0c0}.year{margin-top:5px;font-size:13px;color:#777}
-/* CAROUSEL */
-.carousel{width:100%}
-.carousel-viewport{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;white-space:nowrap;padding:42px 0 55px;position:relative;-ms-overflow-style:none;scrollbar-width:none}
-.carousel-viewport::-webkit-scrollbar{display:none}
-.carousel-track{display:inline-block;white-space:nowrap;font-size:0}
-.carousel-card{display:inline-block;vertical-align:top;width:300px;margin:0 14px;white-space:normal;cursor:pointer;transform:scale(1);-webkit-transform:scale(1);transform-origin:center center;transition:none;-webkit-backface-visibility:hidden;backface-visibility:hidden;-webkit-transition:none}
-.carousel-card.active{transform:scale(1.08);-webkit-transform:scale(1.08);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
-.carousel-card .info{transition:none}
-.carousel-card .artist{font-size:18px}.carousel-card .album{font-size:15px}.carousel-card .year{font-size:13px}
-/* iPad */
-@media screen and (min-width:601px) and (max-width:1100px){
- body{padding:20px}.header{margin-bottom:24px}.title{font-size:28px}
- .grid .record{width:24%;margin-right:1.3333%;margin-bottom:30px}.grid .record:nth-child(4n){margin-right:0}
- .grid .artist{font-size:15px}.grid .album{font-size:13px}.grid .year{font-size:12px}
- .carousel-viewport{padding-top:32px;padding-bottom:58px}
- .carousel-card{width:300px;margin-left:12px;margin-right:12px}
- .carousel-card.active{transform:scale(1.10);-webkit-transform:scale(1.10);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
- .carousel-card .artist{font-size:16px}.carousel-card .album{font-size:14px}
+
+/* =========================================================
+   RESET & BASE
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
 }
-/* Phone */
-@media screen and (max-width:600px){
- body{padding:15px}.header{padding-bottom:16px;margin-bottom:20px}.title{font-size:23px;padding-right:175px;letter-spacing:2px}.subtitle{font-size:12px}
- .view-toggle{top:-2px}.view-toggle button{padding:7px 8px;font-size:12px}
- .grid .record{width:48%;margin-right:4%;margin-bottom:28px}.grid .record:nth-child(4n){margin-right:4%}.grid .record:nth-child(2n){margin-right:0}
- .carousel-card{width:260px;margin-left:9px;margin-right:9px}.carousel-card.active{transform:scale(1.07);-webkit-transform:scale(1.07);transition:transform .4s ease;-webkit-transition:-webkit-transform .4s ease}.carousel-hint{margin-top:-16px}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: #0b0b0c;
+    color: #f5f5f5;
 }
+
+body {
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+
+    padding: 28px;
+    overflow-x: hidden;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.header {
+    position: relative;
+
+    max-width: 1400px;
+    margin: 0 auto 32px;
+
+    padding-bottom: 20px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.title {
+    margin: 0;
+    padding-right: 250px;
+
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: 3px;
+}
+
+.subtitle {
+    margin-top: 8px;
+
+    color: #999;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   VIEW TOGGLE
+   ========================================================= */
+
+.view-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 20;
+
+    display: table;
+
+    padding: 4px;
+
+    background: #171719;
+    border: 1px solid #2b2b2e;
+    border-radius: 10px;
+}
+
+.view-toggle button {
+    padding: 8px 12px;
+
+    border: 0;
+    border-radius: 7px;
+
+    background: transparent;
+    color: #aaa;
+
+    font-family: inherit;
+    font-size: 13px;
+
+    cursor: pointer;
+
+    -webkit-tap-highlight-color: transparent;
+}
+
+.view-toggle button.active {
+    background: #303033;
+    color: #fff;
+}
+
+
+/* =========================================================
+   COLLECTION
+   ========================================================= */
+
+.collection {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+
+/* =========================================================
+   ALBUM CARD / VINYL SLEEVE
+   ========================================================= */
+
+/*
+   The cover-wrapper represents the physical vinyl sleeve.
+
+   The image itself stays completely flat and sharp.
+   The shadows and border create the impression of a
+   separate album sleeve sitting above the background.
+*/
+
+.cover-wrapper {
+    position: relative;
+
+    width: 100%;
+    height: 0;
+    padding-bottom: 100%;
+
+    overflow: hidden;
+
+    background: #151515;
+
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 2px;
+
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.65),
+        0 8px 18px rgba(0, 0, 0, 0.55),
+        0 18px 35px rgba(0, 0, 0, 0.35);
+
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+.cover {
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+
+/*
+   Subtle reflection from the plastic sleeve.
+   pointer-events:none makes sure it never interferes
+   with tapping the album.
+*/
+
+.cover-wrapper::after {
+    content: "";
+
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.10) 0%,
+            rgba(255, 255, 255, 0.025) 18%,
+            rgba(255, 255, 255, 0) 45%
+        );
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   ALBUM NUMBER
+   ========================================================= */
+
+.number {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 2;
+
+    padding: 5px 8px;
+
+    background: rgba(0, 0, 0, 0.78);
+
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   ALBUM INFORMATION
+   ========================================================= */
+
+.info {
+    min-width: 0;
+    padding-top: 12px;
+}
+
+.artist,
+.album {
+    overflow: hidden;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.artist {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.album {
+    margin-top: 4px;
+
+    color: #c0c0c0;
+    font-size: 15px;
+}
+
+.year {
+    margin-top: 5px;
+
+    color: #777;
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   GRID VIEW
+   ========================================================= */
+
+/*
+   Float layout is intentionally kept here because it works
+   reliably on older iPad Safari versions.
+*/
+
+.grid::after {
+    content: "";
+
+    display: table;
+
+    clear: both;
+}
+
+.grid .record {
+    float: left;
+
+    width: 24%;
+    min-width: 0;
+
+    margin-right: 1.3333%;
+    margin-bottom: 38px;
+}
+
+.grid .record:nth-child(4n) {
+    margin-right: 0;
+}
+
+
+/* =========================================================
+   CAROUSEL VIEW
+   ========================================================= */
+
+.carousel {
+    width: 100%;
+}
+
+.carousel-viewport {
+    position: relative;
+
+    width: 100%;
+
+    padding: 42px 0 55px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    white-space: nowrap;
+
+    /*
+       Let old iPad Safari handle momentum scrolling natively.
+       This is important for the iPad 3.
+    */
+
+    -webkit-overflow-scrolling: touch;
+
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.carousel-viewport::-webkit-scrollbar {
+    display: none;
+}
+
+.carousel-track {
+    display: inline-block;
+
+    white-space: nowrap;
+
+    font-size: 0;
+}
+
+
+/*
+   Do NOT use scale() here.
+
+   Scaling the cards while iPad 3 Safari is scrolling can
+   cause rendering flicker. translateZ(0) keeps the card on
+   its own rendering layer without changing its size.
+*/
+
+.carousel-card {
+    display: inline-block;
+
+    vertical-align: top;
+
+    width: 300px;
+
+    margin: 0 14px;
+
+    white-space: normal;
+
+    cursor: pointer;
+
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+.carousel-card .cover-wrapper {
+    box-shadow:
+        0 3px 6px rgba(0, 0, 0, 0.70),
+        0 12px 25px rgba(0, 0, 0, 0.60),
+        0 25px 45px rgba(0, 0, 0, 0.35);
+}
+
+
+/*
+   Active album gets a subtle outline instead of scaling.
+   This is much safer for the old iPad.
+*/
+
+.carousel-card.active .cover-wrapper {
+    border-color: rgba(255, 255, 255, 0.35);
+
+    box-shadow:
+        0 3px 6px rgba(0, 0, 0, 0.75),
+        0 14px 30px rgba(0, 0, 0, 0.65),
+        0 28px 50px rgba(0, 0, 0, 0.40);
+}
+
+.carousel-card .info {
+    transition: none;
+}
+
+.carousel-card .artist {
+    font-size: 18px;
+}
+
+.carousel-card .album {
+    font-size: 15px;
+}
+
+.carousel-card .year {
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   iPAD / TABLET
+   ========================================================= */
+
+@media screen and (min-width: 601px) and (max-width: 1100px) {
+
+    body {
+        padding: 20px;
+    }
+
+    .header {
+        margin-bottom: 24px;
+    }
+
+    .title {
+        font-size: 28px;
+    }
+
+    .grid .record {
+        width: 24%;
+
+        margin-right: 1.3333%;
+        margin-bottom: 30px;
+    }
+
+    .grid .record:nth-child(4n) {
+        margin-right: 0;
+    }
+
+    .grid .artist {
+        font-size: 15px;
+    }
+
+    .grid .album {
+        font-size: 13px;
+    }
+
+    .grid .year {
+        font-size: 12px;
+    }
+
+    .carousel-viewport {
+        padding-top: 32px;
+        padding-bottom: 58px;
+    }
+
+    .carousel-card {
+        width: 300px;
+
+        margin-right: 12px;
+        margin-left: 12px;
+    }
+
+    .carousel-card .artist {
+        font-size: 16px;
+    }
+
+    .carousel-card .album {
+        font-size: 14px;
+    }
+}
+
+
+/* =========================================================
+   PHONE
+   ========================================================= */
+
+@media screen and (max-width: 600px) {
+
+    body {
+        padding: 15px;
+    }
+
+    .header {
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+    }
+
+    .title {
+        padding-right: 175px;
+
+        font-size: 23px;
+        letter-spacing: 2px;
+    }
+
+    .subtitle {
+        font-size: 12px;
+    }
+
+    .view-toggle {
+        top: -2px;
+    }
+
+    .view-toggle button {
+        padding: 7px 8px;
+
+        font-size: 12px;
+    }
+
+    .grid .record {
+        width: 48%;
+
+        margin-right: 4%;
+        margin-bottom: 28px;
+    }
+
+    .grid .record:nth-child(4n) {
+        margin-right: 4%;
+    }
+
+    .grid .record:nth-child(2n) {
+        margin-right: 0;
+    }
+
+    .carousel-card {
+        width: 260px;
+
+        margin-right: 9px;
+        margin-left: 9px;
+    }
+}
+
 </style>
 </head>
 
@@ -123,15 +594,257 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
     ['48', 'Toto', 'Toto', '1978', 'covers/toto.jpg'],
     ['49', 'Toto', 'Toto IV', '1982', 'covers/toto_iv.jpg']
   ];
-  var collection=document.getElementById('collection'), gridButton=document.getElementById('gridButton'), carouselButton=document.getElementById('carouselButton');
-  var view='grid', activeIndex=0, drag=false, startX=0, startY=0, startScroll=0, scrollTimer=null;
-  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-  function recordHTML(r, cls){return '<article class="record '+(cls||'')+'" data-index="'+(parseInt(r[0],10)-1)+'"><div class="cover-wrapper"><img class="cover" src="'+r[4]+'" alt="'+esc(r[1]+' - '+r[2])+'"><div class="number">'+r[0]+'</div></div><div class="info"><div class="artist">'+esc(r[1])+'</div><div class="album">'+esc(r[2])+'</div><div class="year">'+r[3]+'</div></div></article>';}
-  function buildGrid(){collection.className='collection grid';var h='',i;for(i=0;i<records.length;i++)h+=recordHTML(records[i],'');collection.innerHTML=h;}
-  function setActive(i){activeIndex=i;var cards=document.getElementsByClassName('carousel-card'),j;for(j=0;j<cards.length;j++)cards[j].className=cards[j].className.replace(/\sactive\b/g,'')+(j===i?' active':'');}
-  function centerCard(i,smooth){var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),card=cards[i];if(!vp||!card)return;var target=card.offsetLeft-(vp.clientWidth-card.offsetWidth)/2;if(target<0)target=0;var max=vp.scrollWidth-vp.clientWidth;if(target>max)target=max;setActive(i);animateScroll(vp,target,smooth);}
-  function animateScroll(el,to,smooth){if(!smooth){el.scrollLeft=to;return;}var from=el.scrollLeft,change=to-from,duration=650,start=new Date().getTime();function step(){var now=new Date().getTime(),t=Math.min(1,(now-start)/duration),e=t*(2-t);el.scrollLeft=from+change*e;if(t<1)setTimeout(step,16);}step();}
-  function nearest(){var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),center=vp.scrollLeft+vp.clientWidth/2,best=0,dist=Infinity,i,c,cx,d;for(i=0;i<cards.length;i++){c=cards[i];cx=c.offsetLeft+c.offsetWidth/2;d=Math.abs(cx-center);if(d<dist){dist=d;best=i;}}return best;}
+  var collection = document.getElementById('collection');
+  var gridButton = document.getElementById('gridButton');
+  var carouselButton = document.getElementById('carouselButton');
+
+  var view = 'grid';
+  var activeIndex = 0;
+
+  var drag = false;
+  var startX = 0;
+  var startY = 0;
+  var startScroll = 0;
+
+  var scrollTimer = null;
+
+
+  /* ---------------------------------------------------------
+     Utility
+     --------------------------------------------------------- */
+
+  function esc(s) {
+      return s
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+  }
+
+
+  /* ---------------------------------------------------------
+     Album HTML
+     --------------------------------------------------------- */
+
+  function recordHTML(record, className) {
+
+      var number = record[0];
+      var artist = record[1];
+      var album = record[2];
+      var year = record[3];
+      var cover = record[4];
+
+      var index = parseInt(number, 10) - 1;
+
+      return (
+          '<article class="record ' + (className || '') + '" data-index="' + index + '">' +
+
+              '<div class="cover-wrapper">' +
+
+                  '<img ' +
+                      'class="cover" ' +
+                      'src="' + cover + '" ' +
+                      'alt="' + esc(artist + ' - ' + album) + '">' +
+
+                  '<div class="number">' +
+                      number +
+                  '</div>' +
+
+              '</div>' +
+
+              '<div class="info">' +
+
+                  '<div class="artist">' +
+                      esc(artist) +
+                  '</div>' +
+
+                  '<div class="album">' +
+                      esc(album) +
+                  '</div>' +
+
+                  '<div class="year">' +
+                      year +
+                  '</div>' +
+
+              '</div>' +
+
+          '</article>'
+      );
+  }
+
+
+  /* ---------------------------------------------------------
+     GRID
+     --------------------------------------------------------- */
+
+  function buildGrid() {
+
+      collection.className = 'collection grid';
+
+      var html = '';
+      var i;
+
+      for (i = 0; i < records.length; i++) {
+          html += recordHTML(records[i], '');
+      }
+
+      collection.innerHTML = html;
+  }
+
+
+  /* ---------------------------------------------------------
+     CAROUSEL ACTIVE ALBUM
+     --------------------------------------------------------- */
+
+  function setActive(index) {
+
+      activeIndex = index;
+
+      var cards = document.getElementsByClassName('carousel-card');
+      var i;
+
+      for (i = 0; i < cards.length; i++) {
+
+          cards[i].className =
+              cards[i].className.replace(/\sactive\b/g, '');
+
+          if (i === index) {
+              cards[i].className += ' active';
+          }
+      }
+  }
+
+
+  /* ---------------------------------------------------------
+     CAROUSEL POSITIONING
+     --------------------------------------------------------- */
+
+  function centerCard(index, smooth) {
+
+      var viewport =
+          document.getElementById('carouselViewport');
+
+      var cards =
+          document.getElementsByClassName('carousel-card');
+
+      var card = cards[index];
+
+      if (!viewport || !card) {
+          return;
+      }
+
+      var target =
+          card.offsetLeft -
+          (viewport.clientWidth - card.offsetWidth) / 2;
+
+      if (target < 0) {
+          target = 0;
+      }
+
+      var max =
+          viewport.scrollWidth -
+          viewport.clientWidth;
+
+      if (target > max) {
+          target = max;
+      }
+
+      setActive(index);
+
+      animateScroll(
+          viewport,
+          target,
+          smooth
+      );
+  }
+
+
+  /*
+     Used only when the user explicitly taps an album
+     or uses the keyboard.
+
+     Normal touch scrolling NEVER calls this automatically.
+  */
+
+  function animateScroll(element, target, smooth) {
+
+      if (!smooth) {
+          element.scrollLeft = target;
+          return;
+      }
+
+      var from = element.scrollLeft;
+      var change = target - from;
+
+      var duration = 650;
+      var start = new Date().getTime();
+
+      function step() {
+
+          var now = new Date().getTime();
+
+          var progress =
+              Math.min(
+                  1,
+                  (now - start) / duration
+              );
+
+          var easing =
+              progress * (2 - progress);
+
+          element.scrollLeft =
+              from + change * easing;
+
+          if (progress < 1) {
+              setTimeout(step, 16);
+          }
+      }
+
+      step();
+  }
+
+
+  /* ---------------------------------------------------------
+     FIND NEAREST ALBUM
+     --------------------------------------------------------- */
+
+  function nearest() {
+
+      var viewport =
+          document.getElementById('carouselViewport');
+
+      var cards =
+          document.getElementsByClassName('carousel-card');
+
+      var center =
+          viewport.scrollLeft +
+          viewport.clientWidth / 2;
+
+      var best = 0;
+      var distance = Infinity;
+
+      var i;
+
+      for (i = 0; i < cards.length; i++) {
+
+          var card = cards[i];
+
+          var cardCenter =
+              card.offsetLeft +
+              card.offsetWidth / 2;
+
+          var currentDistance =
+              Math.abs(cardCenter - center);
+
+          if (currentDistance < distance) {
+
+              distance = currentDistance;
+              best = i;
+          }
+      }
+
+      return best;
+  }
   function buildCarousel(){collection.className='collection carousel';var h='<div class="carousel-viewport" id="carouselViewport"><div class="carousel-track" id="carouselTrack">',i;for(i=0;i<records.length;i++)h+=recordHTML(records[i],'carousel-card');h+='</div></div>';collection.innerHTML=h;var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),j;
     for(j=0;j<cards.length;j++)(function(index){cards[index].onclick=function(){if(!drag)centerCard(index,true);};})(j);
     function scheduleSettle(){
