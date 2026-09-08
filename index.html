@@ -35,9 +35,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 
 .grid .record:nth-child(4n){margin-right:0}
 
-.cover-wrapper{position:relative;width:100%;height:0;padding-bottom:100%;overflow:hidden;background:#1c1c1e;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.cover-wrapper{position:relative;width:100%;height:0;padding-bottom:100%;overflow:hidden;background:#161618;border:1px solid #29292c;box-shadow:0 8px 12px rgba(0,0,0,.28),0 18px 35px rgba(0,0,0,.48),0 2px 3px rgba(0,0,0,.55);-webkit-transform:translateZ(0);transform:translateZ(0)}
 
 .cover{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block}
+
+.grid .record{transition:transform .18s ease;-webkit-transition:-webkit-transform .18s ease}
+.grid .record:active{-webkit-transform:scale(.985);transform:scale(.985)}
 
 .number{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:13px;font-weight:bold;letter-spacing:1px}
 
@@ -60,6 +63,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .carousel-track{display:inline-block;white-space:nowrap;font-size:0}
 
 .carousel-card{display:inline-block;vertical-align:top;width:300px;margin:0 14px;white-space:normal;cursor:pointer;transform:scale(1);-webkit-transform:scale(1);transform-origin:center center;transition:none;-webkit-transition:none;-webkit-backface-visibility:hidden;backface-visibility:hidden;-webkit-tap-highlight-color:transparent}
+.carousel-card .cover-wrapper{box-shadow:0 7px 10px rgba(0,0,0,.25),0 18px 32px rgba(0,0,0,.52),0 28px 48px rgba(0,0,0,.25);border:1px solid #2d2d30}
+.carousel-card.active .cover-wrapper{box-shadow:0 9px 12px rgba(0,0,0,.30),0 22px 42px rgba(0,0,0,.62),0 32px 55px rgba(0,0,0,.28)}
 
 .carousel-card.active{transform:scale(1.08);-webkit-transform:scale(1.08);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
 
