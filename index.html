@@ -1,1221 +1,690 @@
 <!DOCTYPE html>
-<html>
+<html lang="sv">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <title>Vinylskivor</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Vinylskivor</title>
 
-    <style>
+<style>
+*{box-sizing:border-box}
 
-        * {
-            box-sizing: border-box;
-        }
+html,body{
+    margin:0;
+    padding:0;
+    min-height:100%;
+}
 
-        html, body {
-            margin: 0;
-            padding: 0;
-            min-height: 100%;
-        }
+body{
+    background:#0b0b0c;
+    color:#f5f5f5;
+    font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+    padding:28px;
+}
 
-        body {
-            background: #0b0b0c;
-            color: #f5f5f5;
-            font-family: -apple-system, BlinkMacSystemFont,
-                         "Helvetica Neue", Arial, sans-serif;
-            padding: 28px;
-        }
+/* HEADER */
 
-        /* =========================
-           HEADER
-        ========================= */
+.header{
+    max-width:1400px;
+    margin:0 auto 35px;
+    border-bottom:1px solid rgba(255,255,255,.12);
+    padding-bottom:22px;
+    position:relative;
+}
 
-        .header {
-            max-width: 1400px;
-            margin: 0 auto 35px auto;
-            border-bottom: 1px solid rgba(255,255,255,0.12);
-            padding-bottom: 22px;
-        }
+.title{
+    font-size:34px;
+    font-weight:600;
+    letter-spacing:3px;
+    margin:0;
+}
 
-        .title {
-            font-size: 34px;
-            font-weight: 600;
-            letter-spacing: 3px;
-            margin: 0;
-        }
+.subtitle{
+    margin-top:8px;
+    color:#999;
+    font-size:14px;
+    letter-spacing:1px;
+}
 
-        .subtitle {
-            margin-top: 8px;
-            color: #999;
-            font-size: 14px;
-            letter-spacing: 1px;
-        }
+/* VIEW TOGGLE */
 
+.view-toggle{
+    position:absolute;
+    right:0;
+    top:0;
+    display:flex;
+    background:#1c1c1e;
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:10px;
+    overflow:hidden;
+}
 
-        /* =========================
-           COLLECTION
-        ========================= */
+.view-toggle button{
+    border:0;
+    background:transparent;
+    color:#888;
+    padding:9px 13px;
+    font-size:13px;
+    cursor:pointer;
+}
 
-        .collection {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+.view-toggle button.active{
+    background:#f5f5f5;
+    color:#0b0b0c;
+}
 
-        .record {
-            float: left;
-            width: 23.5%;
-            margin-right: 2%;
-            margin-bottom: 38px;
-        }
+/* COLLECTION */
 
-        .record:nth-child(4n) {
-            margin-right: 0;
-        }
+.collection{
+    max-width:1400px;
+    margin:0 auto;
+}
 
-        .collection:after {
-            content: "";
-            display: table;
-            clear: both;
-        }
+/* GRID */
 
-        /* =========================
-           COVER
-        ========================= */
+.collection.grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:38px 2%;
+}
 
-        .cover-wrapper {
-            position: relative;
-            width: 100%;
-            height: 0;
-            padding-bottom: 100%;
-            overflow: hidden;
-            background: #1c1c1e;
-            box-shadow:
-                0 12px 30px rgba(0,0,0,0.45);
-        }
+.record{
+    min-width:0;
+}
 
-        .cover {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
+.cover-wrapper{
+    position:relative;
+    width:100%;
+    aspect-ratio:1;
+    overflow:hidden;
+    background:#1c1c1e;
+    box-shadow:0 12px 30px rgba(0,0,0,.45);
+}
 
-        .cover-text {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            width: 100%;
-            margin-top: -7px;
-        }
+.cover{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+}
 
-        /* =========================
-           NUMBER
-        ========================= */
+.number{
+    position:absolute;
+    top:10px;
+    left:10px;
+    background:rgba(0,0,0,.78);
+    padding:5px 8px;
+    font-size:13px;
+    font-weight:bold;
+    letter-spacing:1px;
+}
 
-        .number {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.78);
-            padding: 5px 8px;
-            font-size: 13px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
+.info{
+    padding-top:12px;
+    min-width:0;
+}
 
-        /* =========================
-           TEXT
-        ========================= */
+.artist{
+    font-size:17px;
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
 
-        .info {
-            padding-top: 12px;
-        }
+.album{
+    margin-top:4px;
+    font-size:15px;
+    color:#c0c0c0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
 
-        .artist {
-            font-size: 17px;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+.year{
+    margin-top:5px;
+    font-size:13px;
+    color:#777;
+}
 
-        .album {
-            margin-top: 4px;
-            font-size: 15px;
-            color: #c0c0c0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+/* CAROUSEL */
 
-        .year {
-            margin-top: 5px;
-            font-size: 13px;
-            color: #777;
-        }
+.collection.carousel{
+    position:relative;
+    overflow:hidden;
+    padding:20px 0 30px;
+}
 
-        /* =========================
-           TABLET / IPAD
-        ========================= */
+.carousel-viewport{
+    width:100%;
+    overflow:hidden;
+}
 
-        @media screen and (max-width: 1100px) {
+.carousel-track{
+    display:flex;
+    align-items:flex-start;
+    gap:22px;
+    width:max-content;
+    transition:transform .3s ease;
+    padding:25px max(20px,calc((100vw - 1400px)/2 + 20px));
+}
 
-            body {
-                padding: 20px;
-            }
+.carousel .record{
+    flex:0 0 min(250px,24vw);
+    width:min(250px,24vw);
+    transition:width .3s ease;
+}
 
-            .header {
-                margin-bottom: 25px;
-            }
+.carousel .record.active{
+    flex-basis:min(310px,30vw);
+    width:min(310px,30vw);
+}
 
-            .title {
-                font-size: 28px;
-            }
+.carousel .cover-wrapper{
+    width:100%;
+    aspect-ratio:1;
+}
 
-            .record {
-                width: 23.5%;
-                margin-right: 2%;
-            }
+.carousel .info{
+    padding-top:14px;
+}
 
-            .artist {
-                font-size: 15px;
-            }
+.carousel .artist{
+    font-size:17px;
+}
 
-            .album {
-                font-size: 13px;
-            }
+.carousel .album{
+    font-size:15px;
+}
 
-            .year {
-                font-size: 12px;
-            }
-        }
+.carousel .year{
+    font-size:13px;
+}
 
-        /* =========================
-           PHONE
-        ========================= */
+/* CAROUSEL NAVIGATION */
 
-        @media screen and (max-width: 600px) {
+.carousel-button{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    z-index:5;
+    width:44px;
+    height:44px;
+    border:0;
+    border-radius:50%;
+    background:rgba(20,20,21,.9);
+    color:#fff;
+    font-size:28px;
+    line-height:44px;
+    text-align:center;
+    cursor:pointer;
+    box-shadow:0 4px 15px rgba(0,0,0,.4);
+}
 
-            body {
-                padding: 15px;
-            }
+.carousel-button.prev{left:8px}
+.carousel-button.next{right:8px}
 
-            .title {
-                font-size: 23px;
-            }
+.carousel-button:disabled{
+    opacity:.25;
+    cursor:default;
+}
 
-            .record {
-                width: 48%;
+/* IPAD / TABLET */
 
-                margin-right: 4%;
+@media screen and (max-width:1100px){
 
-                margin-bottom: 28px;
-            }
+    body{
+        padding:20px;
+    }
 
-            .record:nth-child(4n) {
-                margin-right: 4%;
-            }
+    .header{
+        margin-bottom:25px;
+    }
 
-            .record:nth-child(2n) {
-                margin-right: 0;
-            }
+    .title{
+        font-size:28px;
+    }
 
-        }
+    .collection.grid{
+        grid-template-columns:repeat(4,1fr);
+        gap:30px 2%;
+    }
 
-        /* =========================
-           SCREENSAVER
-        ========================= */
+    .artist{
+        font-size:15px;
+    }
 
-        #screensaver {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #0b0b0c;
-            z-index: 9999;
-            overflow: hidden;
-        }
+    .album{
+        font-size:13px;
+    }
 
-        #screensaver.active {
-            display: block;
-        }
+    .year{
+        font-size:12px;
+    }
 
-        .screensaver-track {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            white-space: nowrap;
-            font-size: 0;
-        }
+    .carousel .record{
+        flex-basis:250px;
+        width:250px;
+    }
 
-        .screensaver-record {
-            display: inline-block;
-            vertical-align: top;
-            width: 320px;
-            margin-right: 80px;
-            text-align: center;
-            white-space: normal;
-        }
+    .carousel .record.active{
+        flex-basis:290px;
+        width:290px;
+    }
+}
 
-        .screensaver-cover-wrapper {
-            position: relative;
-            width: 320px;
-            height: 320px;
-            overflow: hidden;
-            background: #1c1c1e;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.55);
-        }
+/* PHONE */
 
-        .screensaver-cover {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+@media screen and (max-width:600px){
 
-        .screensaver-number {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(0,0,0,0.78);
-            padding: 6px 9px;
-            font-size: 13px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
+    body{
+        padding:15px;
+    }
 
-        .screensaver-info {
-            padding-top: 16px;
-        }
+    .title{
+        font-size:23px;
+    }
 
-        .screensaver-artist {
-            font-size: 19px;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+    .view-toggle{
+        top:-3px;
+    }
 
-        .screensaver-album {
-            margin-top: 5px;
-            font-size: 16px;
-            color: #c0c0c0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+    .view-toggle button{
+        padding:8px 10px;
+        font-size:12px;
+    }
 
-        .screensaver-year {
-            margin-top: 6px;
-            font-size: 13px;
-            color: #777;
-        }
+    .collection.grid{
+        grid-template-columns:repeat(2,1fr);
+        gap:28px 4%;
+    }
 
-    </style>
+    .carousel{
+        padding-top:10px;
+    }
+
+    .carousel-track{
+        gap:15px;
+    }
+
+    .carousel .record,
+    .carousel .record.active{
+        flex-basis:220px;
+        width:220px;
+    }
+
+    .carousel-button{
+        width:40px;
+        height:40px;
+        line-height:40px;
+    }
+}
+</style>
 </head>
 
 <body>
 
-    <header class="header">
-        <h1 class="title">
-            VINYLSKIVOR
-        </h1>
-        <div class="subtitle">
-            49 SKIVOR
-        </div>
-    </header>
+<header class="header">
 
-    <main class="collection">
+    <h1 class="title">VINYLSKIVOR</h1>
 
-<!-- =========================
-          RECORD 01
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/the_album.jpg" alt="ABBA - The Album">
-<div class="number">01</div>
-</div>
-<div class="info">
-<div class="artist">ABBA</div>
-<div class="album">The Album</div>
-<div class="year">1977</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 02
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/abba_super_trouper.jpg" alt="ABBA - Super Trouper">
-<div class="number">02</div>
-</div>
-<div class="info">
-<div class="artist">ABBA</div>
-<div class="album">Super Trouper</div>
-<div class="year">1980</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 03
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/a-ha_hunting_high_and_low.jpg" alt="A-ha - Hunting High And Low">
-<div class="number">03</div>
-</div>
-<div class="info">
-<div class="artist">A-ha</div>
-<div class="album">Hunting High And Low</div>
-<div class="year">1985</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 04
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/alan_parson_i_robot.jpg" alt="The Alan Parson Project - I Robot">
-<div class="number">04</div>
-</div>
-<div class="info">
-<div class="artist">The Alan Parson Project</div>
-<div class="album">I Robot</div>
-<div class="year">1977</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 05
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/alan_parson_turn_of_a_friendly_card.jpg" alt="The Alan Parson Project - The Turn Of A Friendly Card">
-<div class="number">05</div>
-</div>
-<div class="info">
-<div class="artist">The Alan Parson Project</div>
-<div class="album">The Turn Of A Friendly Card</div>
-<div class="year">1980</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 06
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/andrew_lloyd_webber_phantom.jpg">
-<div class="number">06</div>
-</div>
-<div class="info">
-<div class="artist">Andrew Lloyd Webber</div>
-<div class="album">The Phantom Of The Opera</div>
-<div class="year">1987</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 07
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/art_garfunkel_fate_for_breakfast.jpg">
-<div class="number">07</div>
-</div>
-<div class="info">
-<div class="artist">Art Garfunkel</div>
-<div class="album">Fate For Breakfast</div>
-<div class="year">1979</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 08
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/beatles_help.jpg">
-<div class="number">08</div>
-</div>
-<div class="info">
-<div class="artist">The Beatles</div>
-<div class="album">Help!</div>
-<div class="year">1965</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 09
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/chess.jpg">
-<div class="number">09</div>
-</div>
-<div class="info">
-<div class="artist">Benny Andersson & Björn Ulvaeus</div>
-<div class="album">Chess</div>
-<div class="year">1986</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 10
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/hollow_knight.jpg">
-<div class="number">10</div>
-</div>
-<div class="info">
-<div class="artist">Christopher Larkin</div>
-<div class="album">Hollow Knight</div>
-<div class="year">2017</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 11
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/minecraft.jpg">
-<div class="number">11</div>
-</div>
-<div class="info">
-<div class="artist">C418</div>
-<div class="album">Volume Alpha</div>
-<div class="year">2011</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 12
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/time.jpg">
-<div class="number">12</div>
-</div>
-<div class="info">
-<div class="artist">Dave Clark</div>
-<div class="album">Time</div>
-<div class="year">1986</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 13
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/lets_dance.jpg">
-<div class="number">13</div>
-</div>
-<div class="info">
-<div class="artist">David Bowie</div>
-<div class="album">Let's Dance</div>
-<div class="year">1983</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 14
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/dire_straits.jpg">
-<div class="number">14</div>
-</div>
-<div class="info">
-<div class="artist">Dire Straits</div>
-<div class="album">Dire Straits</div>
-<div class="year">1978</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 15
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/hotel_california.jpg">
-<div class="number">15</div>
-</div>
-<div class="info">
-<div class="artist">The Eagles</div>
-<div class="album">Hotel California</div>
-<div class="year">1976</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 16
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/discovery.jpg">
-<div class="number">16</div>
-</div>
-<div class="info">
-<div class="artist">Electric Light Orchestra</div>
-<div class="album">Discovery</div>
-<div class="year">1979</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 17
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/out_of_the_blue.jpg">
-<div class="number">17</div>
-</div>
-<div class="info">
-<div class="artist">Electric Light Orchestra</div>
-<div class="album">Out Of The Blue</div>
-<div class="year">1977</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 18
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/elton_john.jpg">
-<div class="number">18</div>
-</div>
-<div class="info">
-<div class="artist">Elton John</div>
-<div class="album">Elton John</div>
-<div class="year">1970</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 19
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/final_countdown.jpg">
-<div class="number">19</div>
-</div>
-<div class="info">
-<div class="artist">Europe</div>
-<div class="album">The Final Countdown</div>
-<div class="year">1986</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 20
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/sweet_dreams.jpg">
-<div class="number">20</div>
-</div>
-<div class="info">
-<div class="artist">Eurythmics</div>
-<div class="album">Sweet Dreams</div>
-<div class="year">1983</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 21
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/palomino.jpg">
-<div class="number">21</div>
-</div>
-<div class="info">
-<div class="artist">First Aid Kid</div>
-<div class="album">Palomino</div>
-<div class="year">2022</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 22
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/behind_the_mask.jpg">
-<div class="number">22</div>
-</div>
-<div class="info">
-<div class="artist">Fleetwood Mac</div>
-<div class="album">Behind The Mask</div>
-<div class="year">1990</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 23
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/tusk.jpg">
-<div class="number">23</div>
-</div>
-<div class="info">
-<div class="artist">Fleetwood Mac</div>
-<div class="album">Tusk</div>
-<div class="year">1979</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 24
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/muddy_boots.jpg">
-<div class="number">24</div>
-</div>
-<div class="info">
-<div class="artist">Graeme Edge Band</div>
-<div class="album">Kick Off Your Muddy Boots</div>
-<div class="year">1975</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 25
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/war_of_the_worlds.jpg">
-<div class="number">25</div>
-</div>
-<div class="info">
-<div class="artist">Jeff Wayne</div>
-<div class="album">The War Of The Worlds</div>
-<div class="year">1978</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 26
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/best_of_jethro_tull.jpg">
-<div class="number">26</div>
-</div>
-<div class="info">
-<div class="artist">Jethro Tull</div>
-<div class="album">M.U The Best Of Jethro Tull</div>
-<div class="year">1976</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 27
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/stranger_in_the_city.jpg">
-<div class="number">27</div>
-</div>
-<div class="info">
-<div class="artist">John Miles</div>
-<div class="album">Stranger In The City</div>
-<div class="year">1977</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 28
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/blaze_of_glory.jpg">
-<div class="number">28</div>
-</div>
-<div class="info">
-<div class="artist">Jon Bon Jovi</div>
-<div class="album">Blaze Of Glory</div>
-<div class="year">1990</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 29
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/frontiers.jpg">
-<div class="number">29</div>
-</div>
-<div class="info">
-<div class="artist">Journey</div>
-<div class="album">Frontiers</div>
-<div class="year">1983</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 30
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/koto_greatest_hits_remixes.jpg">
-<div class="number">30</div>
-</div>
-<div class="info">
-<div class="artist">Koto</div>
-<div class="album">Greatest Hits & Remixes</div>
-<div class="year">1992</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 31
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/world_machine.jpg">
-<div class="number">31</div>
-</div>
-<div class="info">
-<div class="artist">Level 42</div>
-<div class="album">World Machine</div>
-<div class="year">1985</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 32
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/full_moon.jpg">
-<div class="number">32</div>
-</div>
-<div class="info">
-<div class="artist">Maromaro</div>
-<div class="album">Full Moon</div>
-<div class="year">1982</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 33
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/cargo.jpg">
-<div class="number">33</div>
-</div>
-<div class="info">
-<div class="artist">Men At Work</div>
-<div class="album">Cargo</div>
-<div class="year">1983</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 34
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/bad.jpg">
-<div class="number">34</div>
-</div>
-<div class="info">
-<div class="artist">Michael Jackson</div>
-<div class="album">Bad</div>
-<div class="year">1987</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 35
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/sweet_gingerbread_man.jpg">
-<div class="number">35</div>
-</div>
-<div class="info">
-<div class="artist">Mike Curb Congregation</div>
-<div class="album">Sweet Gingerbread Man</div>
-<div class="year">1970</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 36
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/origin_of_symmetry.jpg">
-<div class="number">36</div>
-</div>
-<div class="info">
-<div class="artist">Muse</div>
-<div class="album">Origin Of Symmetry</div>
-<div class="year">2001</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 37
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/the_resistance.jpg">
-<div class="number">37</div>
-</div>
-<div class="info">
-<div class="artist">Muse</div>
-<div class="album">The Resistance</div>
-<div class="year">2009</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 38
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/the_wow_signal.jpg">
-<div class="number">38</div>
-</div>
-<div class="info">
-<div class="artist">Muse</div>
-<div class="album">The Wow! Signal</div>
-<div class="year">2026</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 39
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/dark_side_of_the_moon.jpg">
-<div class="number">39</div>
-</div>
-<div class="info">
-<div class="artist">Pink Floyd</div>
-<div class="album">The Dark Side Of The Moon</div>
-<div class="year">1973</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 40
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/the_wall.jpg">
-<div class="number">40</div>
-</div>
-<div class="info">
-<div class="artist">Pink Floyd</div>
-<div class="album">The Wall</div>
-<div class="year">1979</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 41
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/whenever_you_need_somebody.jpg">
-<div class="number">41</div>
-</div>
-<div class="info">
-<div class="artist">Rick Astley</div>
-<div class="album">Whenever You Need Somebody</div>
-<div class="year">1987</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 42
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/journey_to_the_centre_of_the_earth.jpg">
-<div class="number">42</div>
-</div>
-<div class="info">
-<div class="artist">Rick Wakeman</div>
-<div class="album">Journey To The Centre Of The Earth</div>
-<div class="year">1974</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 43
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/the_myths_and_legends_of_king_arthur.jpg">
-<div class="number">43</div>
-</div>
-<div class="info">
-<div class="artist">Rick Wakeman</div>
-<div class="album">The Myths And Legends Of King Arthur And The Knights Of The Round Table</div>
-<div class="year">1975</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 44
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/the_best_of_rod_stewart.jpg">
-<div class="number">44</div>
-</div>
-<div class="info">
-<div class="artist">Rod Stewart</div>
-<div class="album">The Best Of Rod Stewart</div>
-<div class="year">1989</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 45
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/bridge_over_troubled_water.jpg">
-<div class="number">45</div>
-</div>
-<div class="info">
-<div class="artist">Simon And Garfunkel</div>
-<div class="album">Bridge Over Troubled Water</div>
-<div class="year">1970</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 46
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/knee_deep_in_the_hoopla.jpg">
-<div class="number">46</div>
-</div>
-<div class="info">
-<div class="artist">Starship</div>
-<div class="album">Knee Deep In The Hoopla</div>
-<div class="year">1985</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 47
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/just_supposin.jpg">
-<div class="number">47</div>
-</div>
-<div class="info">
-<div class="artist">Status Quo</div>
-<div class="album">Just Supposin</div>
-<div class="year">1980</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 48
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/toto.jpg">
-<div class="number">48</div>
-</div>
-<div class="info">
-<div class="artist">Toto</div>
-<div class="album">Toto</div>
-<div class="year">1978</div>
-</div>
-</article>
-
-<!-- =========================
-          RECORD 49
-========================== -->
-<article class="record">
-<div class="cover-wrapper">
-<img class="cover" src="covers/toto_iv.jpg">
-<div class="number">49</div>
-</div>
-<div class="info">
-<div class="artist">Toto</div>
-<div class="album">Toto IV</div>
-<div class="year">1982</div>
-</div>
-</article>
-        
-    </main>
-
-
-
-    <!-- =========================
-         SCREENSAVER
-    ========================== -->
-
-    <div id="screensaver">
-        <div class="screensaver-track" id="screensaverTrack"></div>
+    <div class="subtitle">
+        <span id="recordCount">49</span> SKIVOR
     </div>
 
+    <div class="view-toggle">
+        <button id="gridButton" class="active" onclick="setView('grid')">
+            ▦ Grid
+        </button>
+        <button id="carouselButton" onclick="setView('carousel')">
+            ◀ Karusell
+        </button>
+    </div>
 
-    <script>
-        /* =========================
-           SCREENSAVER SCRIPT
-        ========================= */
+</header>
 
-        var IDLE_TIME = 60000;       // 10 seconds for testing
-        var SCROLL_SPEED = 1;        // pixels per tick
-        var SCROLL_INTERVAL = 30;    // milliseconds
+<main id="collection" class="collection grid"></main>
 
-        var idleTimer = null;
-        var scrollTimer = null;
-        var scrollPosition = 0;
-        var loopWidth = 0;
+<script>
 
-        function buildScreensaver() {
-            var collection = document.getElementsByClassName("record");
-            var track = document.getElementById("screensaverTrack");
-            var html = "";
-            var i;
-            var record;
-            var image;
-            var number;
-            var artist;
-            var album;
-            var year;
+/* =========================
+   VINYLSAMLING
+========================= */
 
-            for (i = 0; i < collection.length; i++) {
-                record = collection[i];
+var records = [
 
-                image = record.getElementsByClassName("cover")[0];
-                number = record.getElementsByClassName("number")[0];
-                artist = record.getElementsByClassName("artist")[0];
-                album = record.getElementsByClassName("album")[0];
-                year = record.getElementsByClassName("year")[0];
+    ["01","ABBA","The Album","1977","covers/the_album.jpg"],
+    ["02","ABBA","Super Trouper","1980","covers/abba_super_trouper.jpg"],
+    ["03","A-ha","Hunting High And Low","1985","covers/a-ha_hunting_high_and_low.jpg"],
+    ["04","The Alan Parson Project","I Robot","1977","covers/alan_parson_i_robot.jpg"],
+    ["05","The Alan Parson Project","The Turn Of A Friendly Card","1980","covers/alan_parson_turn_of_a_friendly_card.jpg"],
+    ["06","Andrew Lloyd Webber","The Phantom Of The Opera","1987","covers/andrew_lloyd_webber_phantom.jpg"],
+    ["07","Art Garfunkel","Fate For Breakfast","1979","covers/art_garfunkel_fate_for_breakfast.jpg"],
+    ["08","The Beatles","Help!","1965","covers/beatles_help.jpg"],
+    ["09","Benny Andersson & Björn Ulvaeus","Chess","1986","covers/chess.jpg"],
+    ["10","Christopher Larkin","Hollow Knight","2017","covers/hollow_knight.jpg"],
+    ["11","C418","Volume Alpha","2011","covers/minecraft.jpg"],
+    ["12","Dave Clark","Time","1986","covers/time.jpg"],
+    ["13","David Bowie","Let's Dance","1983","covers/lets_dance.jpg"],
+    ["14","Dire Straits","Dire Straits","1978","covers/dire_straits.jpg"],
+    ["15","The Eagles","Hotel California","1976","covers/hotel_california.jpg"],
+    ["16","Electric Light Orchestra","Discovery","1979","covers/discovery.jpg"],
+    ["17","Electric Light Orchestra","Out Of The Blue","1977","covers/out_of_the_blue.jpg"],
+    ["18","Elton John","Elton John","1970","covers/elton_john.jpg"],
+    ["19","Europe","The Final Countdown","1986","covers/final_countdown.jpg"],
+    ["20","Eurythmics","Sweet Dreams","1983","covers/sweet_dreams.jpg"],
+    ["21","First Aid Kid","Palomino","2022","covers/palomino.jpg"],
+    ["22","Fleetwood Mac","Behind The Mask","1990","covers/behind_the_mask.jpg"],
+    ["23","Fleetwood Mac","Tusk","1979","covers/tusk.jpg"],
+    ["24","Graeme Edge Band","Kick Off Your Muddy Boots","1975","covers/muddy_boots.jpg"],
+    ["25","Jeff Wayne","The War Of The Worlds","1978","covers/war_of_the_worlds.jpg"],
+    ["26","Jethro Tull","M.U The Best Of Jethro Tull","1976","covers/best_of_jethro_tull.jpg"],
+    ["27","John Miles","Stranger In The City","1977","covers/stranger_in_the_city.jpg"],
+    ["28","Jon Bon Jovi","Blaze Of Glory","1990","covers/blaze_of_glory.jpg"],
+    ["29","Journey","Frontiers","1983","covers/frontiers.jpg"],
+    ["30","Koto","Greatest Hits & Remixes","1992","covers/koto_greatest_hits_remixes.jpg"],
+    ["31","Level 42","World Machine","1985","covers/world_machine.jpg"],
+    ["32","Maromaro","Full Moon","1982","covers/full_moon.jpg"],
+    ["33","Men At Work","Cargo","1983","covers/cargo.jpg"],
+    ["34","Michael Jackson","Bad","1987","covers/bad.jpg"],
+    ["35","Mike Curb Congregation","Sweet Gingerbread Man","1970","covers/sweet_gingerbread_man.jpg"],
+    ["36","Muse","Origin Of Symmetry","2001","covers/origin_of_symmetry.jpg"],
+    ["37","Muse","The Resistance","2009","covers/the_resistance.jpg"],
+    ["38","Muse","The Wow! Signal","2026","covers/the_wow_signal.jpg"],
+    ["39","Pink Floyd","The Dark Side Of The Moon","1973","covers/dark_side_of_the_moon.jpg"],
+    ["40","Pink Floyd","The Wall","1979","covers/the_wall.jpg"],
+    ["41","Rick Astley","Whenever You Need Somebody","1987","covers/whenever_you_need_somebody.jpg"],
+    ["42","Rick Wakeman","Journey To The Centre Of The Earth","1974","covers/journey_to_the_centre_of_the_earth.jpg"],
+    ["43","Rick Wakeman","The Myths And Legends Of King Arthur And The Knights Of The Round Table","1975","covers/the_myths_and_legends_of_king_arthur.jpg"],
+    ["44","Rod Stewart","The Best Of Rod Stewart","1989","covers/the_best_of_rod_stewart.jpg"],
+    ["45","Simon And Garfunkel","Bridge Over Troubled Water","1970","covers/bridge_over_troubled_water.jpg"],
+    ["46","Starship","Knee Deep In The Hoopla","1985","covers/knee_deep_in_the_hoopla.jpg"],
+    ["47","Status Quo","Just Supposin","1980","covers/just_supposin.jpg"],
+    ["48","Toto","Toto","1978","covers/toto.jpg"],
+    ["49","Toto","Toto IV","1982","covers/toto_iv.jpg"]
 
-                if (!image || !artist || !album || !year) {
-                    continue;
-                }
+];
 
-                html += '<div class="screensaver-record">';
-                html += '<div class="screensaver-cover-wrapper">';
-                html += '<img class="screensaver-cover" src="' + image.getAttribute("src") + '" alt="">';
+/* =========================
+   VARIABLES
+========================= */
 
-                if (number) {
-                    html += '<div class="screensaver-number">' + number.innerHTML + '</div>';
-                }
+var collection = document.getElementById("collection");
+var gridButton = document.getElementById("gridButton");
+var carouselButton = document.getElementById("carouselButton");
 
-                html += '</div>';
-                html += '<div class="screensaver-info">';
-                html += '<div class="screensaver-artist">' + artist.innerHTML + '</div>';
-                html += '<div class="screensaver-album">' + album.innerHTML + '</div>';
-                html += '<div class="screensaver-year">' + year.innerHTML + '</div>';
-                html += '</div>';
-                html += '</div>';
-            }
+var currentView = "grid";
+var currentIndex = 0;
 
-            /* Two copies = seamless continuous loop */
-            track.innerHTML = html + html;
+/* =========================
+   CREATE RECORD
+========================= */
+
+function createRecord(record,index){
+
+    var number = record[0];
+    var artist = record[1];
+    var album = record[2];
+    var year = record[3];
+    var image = record[4];
+
+    var article = document.createElement("article");
+
+    article.className = "record";
+
+    article.innerHTML =
+        '<div class="cover-wrapper">' +
+            '<img class="cover" src="' + image + '" alt="' +
+            artist + ' - ' + album + '">' +
+            '<div class="number">' + number + '</div>' +
+        '</div>' +
+        '<div class="info">' +
+            '<div class="artist">' + artist + '</div>' +
+            '<div class="album">' + album + '</div>' +
+            '<div class="year">' + year + '</div>' +
+        '</div>';
+
+    article.onclick = function(){
+        if(currentView === "carousel"){
+            currentIndex = index;
+            updateCarousel();
         }
+    };
 
-        function startScreensaver() {
-            var screensaver = document.getElementById("screensaver");
-            var track = document.getElementById("screensaverTrack");
-            var firstRecord;
-            var recordWidth;
-            var marginRight;
-            var count;
+    return article;
+}
 
-            buildScreensaver();
+/* =========================
+   GRID
+========================= */
 
-            screensaver.className = "active";
+function buildGrid(){
 
-            firstRecord = track.getElementsByClassName("screensaver-record")[0];
+    collection.innerHTML = "";
+    collection.className = "collection grid";
 
-            if (!firstRecord) {
-                return;
-            }
+    for(var i=0;i<records.length;i++){
+        collection.appendChild(createRecord(records[i],i));
+    }
+}
 
-            recordWidth = firstRecord.offsetWidth;
-            marginRight = 80;
-            count = track.getElementsByClassName("screensaver-record").length / 2;
+/* =========================
+   CAROUSEL
+========================= */
 
-            loopWidth = (recordWidth + marginRight) * count;
+function buildCarousel(){
 
-            /* Start with the first album centered */
-            scrollPosition = Math.floor((window.innerWidth - recordWidth) / 2);
+    collection.innerHTML = "";
+    collection.className = "collection carousel";
 
-            track.style.left = scrollPosition + "px";
-            track.style.top = Math.floor((window.innerHeight - 390) / 2) + "px";
+    var viewport = document.createElement("div");
+    viewport.className = "carousel-viewport";
 
-            clearInterval(scrollTimer);
+    var track = document.createElement("div");
+    track.className = "carousel-track";
+    track.id = "carouselTrack";
 
-            scrollTimer = setInterval(function () {
-                scrollPosition = scrollPosition - SCROLL_SPEED;
+    for(var i=0;i<records.length;i++){
+        track.appendChild(createRecord(records[i],i));
+    }
 
-                if (scrollPosition <= -loopWidth) {
-                    scrollPosition = scrollPosition + loopWidth;
-                }
+    viewport.appendChild(track);
+    collection.appendChild(viewport);
 
-                track.style.left = scrollPosition + "px";
-            }, SCROLL_INTERVAL);
+    var prev = document.createElement("button");
+    prev.className = "carousel-button prev";
+    prev.innerHTML = "‹";
+    prev.setAttribute("aria-label","Föregående");
+    prev.onclick = function(){
+        if(currentIndex > 0){
+            currentIndex--;
+            updateCarousel();
         }
+    };
 
-        function stopScreensaver() {
-            var screensaver = document.getElementById("screensaver");
-
-            clearInterval(scrollTimer);
-            scrollTimer = null;
-
-            screensaver.className = "";
+    var next = document.createElement("button");
+    next.className = "carousel-button next";
+    next.innerHTML = "›";
+    next.setAttribute("aria-label","Nästa");
+    next.onclick = function(){
+        if(currentIndex < records.length - 1){
+            currentIndex++;
+            updateCarousel();
         }
+    };
 
-        function resetIdleTimer() {
-            clearTimeout(idleTimer);
+    collection.appendChild(prev);
+    collection.appendChild(next);
 
-            idleTimer = setTimeout(function () {
-                startScreensaver();
-            }, IDLE_TIME);
-        }
+    updateCarousel();
+}
 
-        function userActivity() {
-            if (scrollTimer !== null) {
-                stopScreensaver();
-            }
+/* =========================
+   POSITION CAROUSEL
+========================= */
 
-            resetIdleTimer();
-        }
+function updateCarousel(){
 
-        document.addEventListener("touchstart", userActivity, false);
-        document.addEventListener("mousedown", userActivity, false);
+    var track = document.getElementById("carouselTrack");
 
-        window.onload = function () {
-            resetIdleTimer();
-        };
-    </script>
+    if(!track) return;
+
+    var items = track.getElementsByClassName("record");
+
+    for(var i=0;i<items.length;i++){
+        items[i].classList.toggle("active",i === currentIndex);
+    }
+
+    /*
+       Vänta ett ögonblick så att den aktiva skivans
+       faktiska storlek är beräknad innan positionen sätts.
+    */
+
+    requestAnimationFrame(function(){
+
+        var active = items[currentIndex];
+
+        if(!active) return;
+
+        var viewport = track.parentElement;
+
+        var target =
+            active.offsetLeft +
+            active.offsetWidth / 2 -
+            viewport.clientWidth / 2;
+
+        var max =
+            track.scrollWidth -
+            viewport.clientWidth;
+
+        target = Math.max(0,Math.min(target,max));
+
+        track.style.transform =
+            "translateX(-" + target + "px)";
+
+        var prev =
+            collection.querySelector(".prev");
+
+        var next =
+            collection.querySelector(".next");
+
+        if(prev) prev.disabled = currentIndex === 0;
+        if(next) next.disabled = currentIndex === records.length - 1;
+
+    });
+}
+
+/* =========================
+   CHANGE VIEW
+========================= */
+
+function setView(view){
+
+    currentView = view;
+
+    if(view === "grid"){
+
+        gridButton.classList.add("active");
+        carouselButton.classList.remove("active");
+
+        buildGrid();
+
+    }else{
+
+        gridButton.classList.remove("active");
+        carouselButton.classList.add("active");
+
+        buildCarousel();
+    }
+}
+
+/* =========================
+   KEYBOARD
+========================= */
+
+document.addEventListener("keydown",function(e){
+
+    if(currentView !== "carousel") return;
+
+    if(e.key === "ArrowLeft" && currentIndex > 0){
+        currentIndex--;
+        updateCarousel();
+    }
+
+    if(e.key === "ArrowRight" &&
+       currentIndex < records.length - 1){
+        currentIndex++;
+        updateCarousel();
+    }
+});
+
+/* =========================
+   IPAD SWIPE
+========================= */
+
+var touchStartX = 0;
+var touchStartY = 0;
+
+document.addEventListener("touchstart",function(e){
+
+    if(currentView !== "carousel") return;
+
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+
+},{passive:true});
+
+document.addEventListener("touchend",function(e){
+
+    if(currentView !== "carousel") return;
+
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    var dy = e.changedTouches[0].clientY - touchStartY;
+
+    /*
+       Endast tydliga horisontella drag räknas
+       som karusellnavigation.
+    */
+
+    if(Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)){
+        return;
+    }
+
+    if(dx < 0 && currentIndex < records.length - 1){
+        currentIndex++;
+        updateCarousel();
+    }
+
+    if(dx > 0 && currentIndex > 0){
+        currentIndex--;
+        updateCarousel();
+    }
+
+},{passive:true});
+
+/* =========================
+   WINDOW RESIZE
+========================= */
+
+window.addEventListener("resize",function(){
+
+    if(currentView === "carousel"){
+        updateCarousel();
+    }
+
+});
+
+/* =========================
+   START
+========================= */
+
+document.getElementById("recordCount").textContent =
+    records.length;
+
+buildGrid();
+
+</script>
 
 </body>
 </html>
