@@ -33,8 +33,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .carousel-viewport{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;white-space:nowrap;padding:42px 0 55px;position:relative;-ms-overflow-style:none;scrollbar-width:none}
 .carousel-viewport::-webkit-scrollbar{display:none}
 .carousel-track{display:inline-block;white-space:nowrap;font-size:0}
-.carousel-card{display:inline-block;vertical-align:top;width:300px;margin:0 14px;white-space:normal;cursor:pointer;transform:scale(1);-webkit-transform:scale(1);transform-origin:center center;transition:none;-webkit-backface-visibility:hidden;backface-visibility:hidden;-webkit-transition:none}
-.carousel-card.active{transform:scale(1.08);-webkit-transform:scale(1.08);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
+.carousel-card{display:inline-block;vertical-align:top;width:300px;margin:0 14px;white-space:normal;cursor:pointer;transform:scale(1);-webkit-transform:scale(1);transform-origin:center center;-webkit-transform-origin:center center;transition:transform .12s linear;-webkit-transition:-webkit-transform .12s linear;-webkit-backface-visibility:hidden;backface-visibility:hidden;-webkit-perspective:1000px;-webkit-transform-style:preserve-3d}
+.carousel-card.active{transform:scale(1.10);-webkit-transform:scale(1.10)}
 .carousel-card .info{transition:none}
 .carousel-card .artist{font-size:18px}.carousel-card .album{font-size:15px}.carousel-card .year{font-size:13px}
 .carousel-hint{text-align:center;color:#777;font-size:12px;letter-spacing:.5px;margin-top:-24px}
@@ -45,7 +45,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
  .grid .artist{font-size:15px}.grid .album{font-size:13px}.grid .year{font-size:12px}
  .carousel-viewport{padding-top:32px;padding-bottom:58px}
  .carousel-card{width:300px;margin-left:12px;margin-right:12px}
- .carousel-card.active{transform:scale(1.10);-webkit-transform:scale(1.10);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
+ .carousel-card.active{transform:scale(1.10);-webkit-transform:scale(1.10)}
  .carousel-card .artist{font-size:16px}.carousel-card .album{font-size:14px}
 }
 /* Phone */
@@ -53,7 +53,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
  body{padding:15px}.header{padding-bottom:16px;margin-bottom:20px}.title{font-size:23px;padding-right:175px;letter-spacing:2px}.subtitle{font-size:12px}
  .view-toggle{top:-2px}.view-toggle button{padding:7px 8px;font-size:12px}
  .grid .record{width:48%;margin-right:4%;margin-bottom:28px}.grid .record:nth-child(4n){margin-right:4%}.grid .record:nth-child(2n){margin-right:0}
- .carousel-card{width:260px;margin-left:9px;margin-right:9px}.carousel-card.active{transform:scale(1.07);-webkit-transform:scale(1.07);transition:transform .4s ease;-webkit-transition:-webkit-transform .4s ease}.carousel-hint{margin-top:-16px}
+ .carousel-card{width:260px;margin-left:9px;margin-right:9px}.carousel-card.active{transform:scale(1.10);-webkit-transform:scale(1.10)}.carousel-hint{margin-top:-16px}
 }
 </style>
 </head>
@@ -81,7 +81,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
   function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function recordHTML(r, cls){return '<article class="record '+(cls||'')+'" data-index="'+(parseInt(r[0],10)-1)+'"><div class="cover-wrapper"><img class="cover" src="'+r[4]+'" alt="'+esc(r[1]+' - '+r[2])+'"><div class="number">'+r[0]+'</div></div><div class="info"><div class="artist">'+esc(r[1])+'</div><div class="album">'+esc(r[2])+'</div><div class="year">'+r[3]+'</div></div></article>';}
   function buildGrid(){collection.className='collection grid';var h='',i;for(i=0;i<records.length;i++)h+=recordHTML(records[i],'');collection.innerHTML=h;}
-  function setActive(i){activeIndex=i;var cards=document.getElementsByClassName('carousel-card'),j;for(j=0;j<cards.length;j++)cards[j].className=cards[j].className.replace(/\sactive\b/g,'')+(j===i?' active':'');}
+  function setActive(i){activeIndex=i;var cards=document.getElementsByClassName('carousel-card'),j;for(j=0;j<cards.length;j++){cards[j].className=cards[j].className.replace(/\sactive\b/g,'')+(j===i?' active':'');}}
+  function updateScales(){var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),center,i,c,cx,dist,maxDist,scale; if(!vp)return; center=vp.scrollLeft+vp.clientWidth/2; maxDist=vp.clientWidth*0.72; for(i=0;i<cards.length;i++){c=cards[i];cx=c.offsetLeft+c.offsetWidth/2;dist=Math.abs(cx-center);if(dist>maxDist)dist=maxDist;scale=1+(1-dist/maxDist)*0.10;c.style.transform='scale('+scale.toFixed(3)+')';c.style.webkitTransform='scale('+scale.toFixed(3)+')';}}
   function centerCard(i,smooth){var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),card=cards[i];if(!vp||!card)return;var target=card.offsetLeft-(vp.clientWidth-card.offsetWidth)/2;if(target<0)target=0;var max=vp.scrollWidth-vp.clientWidth;if(target>max)target=max;setActive(i);animateScroll(vp,target,smooth);}
   function animateScroll(el,to,smooth){if(!smooth){el.scrollLeft=to;return;}var from=el.scrollLeft,change=to-from,duration=650,start=new Date().getTime();function step(){var now=new Date().getTime(),t=Math.min(1,(now-start)/duration),e=t*(2-t);el.scrollLeft=from+change*e;if(t<1)setTimeout(step,16);}step();}
   function nearest(){var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),center=vp.scrollLeft+vp.clientWidth/2,best=0,dist=Infinity,i,c,cx,d;for(i=0;i<cards.length;i++){c=cards[i];cx=c.offsetLeft+c.offsetWidth/2;d=Math.abs(cx-center);if(d<dist){dist=d;best=i;}}return best;}
@@ -99,14 +100,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
       setActive(-1);
       scheduleSettle();
     };
-    vp.ontouchstart=function(e){if(!e.touches||!e.touches.length)return;drag=false;startX=e.touches[0].pageX;startY=e.touches[0].pageY;startScroll=vp.scrollLeft;if(scrollTimer)clearTimeout(scrollTimer);setActive(-1);};
-    vp.ontouchmove=function(e){if(!e.touches||!e.touches.length)return;var dx=e.touches[0].pageX-startX;if(Math.abs(dx)>8)drag=true;setActive(-1);/* native iPad scrolling remains enabled */};
+    vp.ontouchstart=function(e){if(!e.touches||!e.touches.length)return;drag=false;startX=e.touches[0].pageX;startY=e.touches[0].pageY;startScroll=vp.scrollLeft;if(scrollTimer)clearTimeout(scrollTimer);updateScales();};
+    vp.ontouchmove=function(e){if(!e.touches||!e.touches.length)return;var dx=e.touches[0].pageX-startX;if(Math.abs(dx)>8)drag=true;/* native iPad scrolling remains enabled */};
     vp.ontouchend=function(){
       /* Let native momentum finish first; then select and gently center the nearest album. */
       scheduleSettle();
       setTimeout(function(){drag=false;},120);
     };
-    setTimeout(function(){centerCard(activeIndex,false);},30);
+    setTimeout(function(){centerCard(activeIndex,false);updateScales();},30);
   }
   function setView(next){view=next;gridButton.className=view==='grid'?'active':'';carouselButton.className=view==='carousel'?'active':'';gridButton.setAttribute('aria-pressed',view==='grid'?'true':'false');carouselButton.setAttribute('aria-pressed',view==='carousel'?'true':'false');if(view==='grid')buildGrid();else buildCarousel();}
   gridButton.onclick=function(){setView('grid');};carouselButton.onclick=function(){setView('carousel');};
