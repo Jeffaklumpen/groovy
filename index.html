@@ -8,52 +8,466 @@
 <title>Vinylskivor</title>
 
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;min-height:100%;background:#0b0b0c;color:#f5f5f5}
-body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;padding:28px;overflow-x:hidden}
-.header{max-width:1400px;margin:0 auto 32px;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:20px;position:relative}
-.title{font-size:34px;font-weight:600;letter-spacing:3px;margin:0;padding-right:250px}
-.subtitle{margin-top:8px;color:#999;font-size:14px;letter-spacing:1px}
-.view-toggle{position:absolute;right:0;top:0;display:table;padding:4px;background:#171719;border:1px solid #2b2b2e;border-radius:10px;z-index:20}
-.view-toggle button{border:0;background:transparent;color:#aaa;padding:8px 12px;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.view-toggle button.active{background:#303033;color:#fff}
-.collection{max-width:1400px;margin:0 auto}
-/* GRID: float layout works on older iPad Safari too */
-.grid:after{content:"";display:table;clear:both}
-.grid .record{float:left;width:24%;margin-right:1.3333%;margin-bottom:38px;min-width:0}
-.grid .record:nth-child(4n){margin-right:0}
-.cover-wrapper{position:relative;width:100%;height:0;padding-bottom:100%;overflow:hidden;background:#1c1c1e;box-shadow:0 12px 30px rgba(0,0,0,.45)}
-.cover{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block}
-.number{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:13px;font-weight:bold;letter-spacing:1px}
-.info{padding-top:12px;min-width:0}
-.artist,.album{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.artist{font-size:17px;font-weight:600}.album{margin-top:4px;font-size:15px;color:#c0c0c0}.year{margin-top:5px;font-size:13px;color:#777}
-/* CAROUSEL */
-.carousel{width:100%}
-.carousel-viewport{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;white-space:nowrap;padding:42px 0 55px;position:relative;-ms-overflow-style:none;scrollbar-width:none}
-.carousel-viewport::-webkit-scrollbar{display:none}
-.carousel-track{display:inline-block;white-space:nowrap;font-size:0}
-.carousel-card{display:inline-block;vertical-align:top;width:300px;margin:0 14px;white-space:normal;cursor:pointer;transform:scale(1);-webkit-transform:scale(1);transform-origin:center center;transition:none;-webkit-backface-visibility:hidden;backface-visibility:hidden;-webkit-transition:none}
-.carousel-card.active{transform:scale(1.08);-webkit-transform:scale(1.08);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
-.carousel-card .info{transition:none}
-.carousel-card .artist{font-size:18px}.carousel-card .album{font-size:15px}.carousel-card .year{font-size:13px}
-/* iPad */
-@media screen and (min-width:601px) and (max-width:1100px){
- body{padding:20px}.header{margin-bottom:24px}.title{font-size:28px}
- .grid .record{width:24%;margin-right:1.3333%;margin-bottom:30px}.grid .record:nth-child(4n){margin-right:0}
- .grid .artist{font-size:15px}.grid .album{font-size:13px}.grid .year{font-size:12px}
- .carousel-viewport{padding-top:32px;padding-bottom:58px}
- .carousel-card{width:300px;margin-left:12px;margin-right:12px}
- .carousel-card.active{transform:scale(1.10);-webkit-transform:scale(1.10);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
- .carousel-card .artist{font-size:16px}.carousel-card .album{font-size:14px}
-}
-/* Phone */
-@media screen and (max-width:600px){
- body{padding:15px}.header{padding-bottom:16px;margin-bottom:20px}.title{font-size:23px;padding-right:175px;letter-spacing:2px}.subtitle{font-size:12px}
- .view-toggle{top:-2px}.view-toggle button{padding:7px 8px;font-size:12px}
- .grid .record{width:48%;margin-right:4%;margin-bottom:28px}.grid .record:nth-child(4n){margin-right:4%}.grid .record:nth-child(2n){margin-right:0}
- .carousel-card{width:260px;margin-left:9px;margin-right:9px}.carousel-card.active{transform:scale(1.07);-webkit-transform:scale(1.07);transition:transform .4s ease;-webkit-transition:-webkit-transform .4s ease}.carousel-hint{margin-top:-16px}
-}
+  /* =========================================================
+     RESET & BASE
+     ========================================================= */
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: #0b0b0c;
+    color: #f5f5f5;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    padding: 28px;
+    overflow-x: hidden;
+  }
+
+  /* =========================================================
+     HEADER
+     ========================================================= */
+  .header {
+    max-width: 1400px;
+    margin: 0 auto 32px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    padding-bottom: 20px;
+    position: relative;
+  }
+
+  .title {
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    margin: 0;
+    padding-right: 250px;
+  }
+
+  .subtitle {
+    margin-top: 8px;
+    color: #999;
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  /* =========================================================
+     VIEW TOGGLE
+     ========================================================= */
+  .view-toggle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    display: table;
+    padding: 4px;
+    background: #171719;
+    border: 1px solid #2b2b2e;
+    border-radius: 10px;
+    z-index: 20;
+  }
+
+  .view-toggle button {
+    border: 0;
+    background: transparent;
+    color: #aaa;
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .view-toggle button.active {
+    background: #303033;
+    color: #fff;
+  }
+
+  /* =========================================================
+     COLLECTION
+     ========================================================= */
+  .collection {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* =========================================================
+     ALBUM CARD / VINYL SLEEVE
+     ========================================================= */
+  .record {
+    position: relative;
+  }
+
+  .cover-wrapper {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 100%;
+    overflow: hidden;
+    background: #151517;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    box-shadow:
+      0 3px 7px rgba(0, 0, 0, 0.65),
+      0 10px 22px rgba(0, 0, 0, 0.50),
+      0 20px 38px rgba(0, 0, 0, 0.28);
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  .cover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  /* Dark overlay: keeps the cover visible but creates room
+     for readable information in carousel/detail mode. */
+  .cover-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 46%;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0),
+      rgba(0, 0, 0, 0.18) 22%,
+      rgba(0, 0, 0, 0.82) 100%
+    );
+    pointer-events: none;
+  }
+
+  .number {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 5px 8px;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    z-index: 3;
+  }
+
+  /* =========================================================
+     ALBUM INFORMATION
+     ========================================================= */
+  .info {
+    padding-top: 12px;
+    min-width: 0;
+  }
+
+  .artist,
+  .album {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .artist {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .album {
+    margin-top: 4px;
+    font-size: 15px;
+    color: #c0c0c0;
+  }
+
+  .meta {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .year,
+  .genre {
+    font-size: 12px;
+    color: #888;
+  }
+
+  .genre {
+    padding-left: 8px;
+    border-left: 1px solid #444;
+  }
+
+  .rating {
+    margin-top: 7px;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: #d5d5d5;
+    white-space: nowrap;
+  }
+
+  .rating .empty {
+    color: #4b4b4d;
+  }
+
+  /* =========================================================
+     CAROUSEL
+     ========================================================= */
+  .carousel {
+    width: 100%;
+  }
+
+  .carousel-viewport {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    padding: 42px 0 55px;
+    position: relative;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .carousel-viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  .carousel-track {
+    display: inline-block;
+    white-space: nowrap;
+    font-size: 0;
+  }
+
+  .carousel-card {
+    display: inline-block;
+    vertical-align: top;
+    width: 300px;
+    margin: 0 14px;
+    white-space: normal;
+    cursor: pointer;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  /* No scaling here: old iPad Safari is more stable this way. */
+  .carousel-card.active .cover-wrapper {
+    outline: 2px solid rgba(255, 255, 255, 0.28);
+    outline-offset: 4px;
+    box-shadow:
+      0 4px 9px rgba(0, 0, 0, 0.72),
+      0 15px 30px rgba(0, 0, 0, 0.58),
+      0 26px 46px rgba(0, 0, 0, 0.35);
+  }
+
+  .carousel-card .info {
+    padding-top: 15px;
+  }
+
+  .carousel-card .artist {
+    font-size: 18px;
+  }
+
+  .carousel-card .album {
+    font-size: 15px;
+  }
+
+  /* =========================================================
+     CAROUSEL DETAILS
+     ========================================================= */
+  .carousel-details {
+    margin-top: 10px;
+    padding: 12px 13px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+  }
+
+  .tracklist-title {
+    margin: 0 0 7px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #888;
+    text-transform: uppercase;
+  }
+
+  .tracklist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tracklist li {
+    display: flex;
+    gap: 8px;
+    padding: 3px 0;
+    color: #cfcfcf;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+
+  .track-number {
+    min-width: 17px;
+    color: #666;
+    text-align: right;
+  }
+
+  /* =========================================================
+     GRID
+     ========================================================= */
+  .grid:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  .grid .record {
+    float: left;
+    width: 24%;
+    margin-right: 1.3333%;
+    margin-bottom: 38px;
+    min-width: 0;
+  }
+
+  .grid .record:nth-child(4n) {
+    margin-right: 0;
+  }
+
+  .grid .carousel-details {
+    display: none;
+  }
+
+  /* =========================================================
+     IPAD / TABLET
+     ========================================================= */
+  @media screen and (min-width: 601px) and (max-width: 1100px) {
+    body {
+      padding: 20px;
+    }
+
+    .header {
+      margin-bottom: 24px;
+    }
+
+    .title {
+      font-size: 28px;
+    }
+
+    .grid .record {
+      width: 24%;
+      margin-right: 1.3333%;
+      margin-bottom: 30px;
+    }
+
+    .grid .record:nth-child(4n) {
+      margin-right: 0;
+    }
+
+    .grid .artist {
+      font-size: 15px;
+    }
+
+    .grid .album {
+      font-size: 13px;
+    }
+
+    .grid .year,
+    .grid .genre {
+      font-size: 11px;
+    }
+
+    .grid .rating {
+      font-size: 14px;
+    }
+
+    .carousel-viewport {
+      padding-top: 32px;
+      padding-bottom: 58px;
+    }
+
+    .carousel-card {
+      width: 300px;
+      margin-left: 12px;
+      margin-right: 12px;
+    }
+
+    .carousel-card .artist {
+      font-size: 16px;
+    }
+
+    .carousel-card .album {
+      font-size: 14px;
+    }
+  }
+
+  /* =========================================================
+     PHONE
+     ========================================================= */
+  @media screen and (max-width: 600px) {
+    body {
+      padding: 15px;
+    }
+
+    .header {
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+
+    .title {
+      font-size: 23px;
+      padding-right: 175px;
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      font-size: 12px;
+    }
+
+    .view-toggle {
+      top: -2px;
+    }
+
+    .view-toggle button {
+      padding: 7px 8px;
+      font-size: 12px;
+    }
+
+    .grid .record {
+      width: 48%;
+      margin-right: 4%;
+      margin-bottom: 28px;
+    }
+
+    .grid .record:nth-child(4n) {
+      margin-right: 4%;
+    }
+
+    .grid .record:nth-child(2n) {
+      margin-right: 0;
+    }
+
+    .carousel-card {
+      width: 260px;
+      margin-left: 9px;
+      margin-right: 9px;
+    }
+
+    .carousel-details {
+      padding: 10px;
+    }
+  }
 </style>
 </head>
 
@@ -72,61 +486,43 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 <script>
 /* Compatible with older iPad Safari (including iPad 3) */
 (function(){
-  var records = [
-    ['01', 'ABBA', 'The Album', '1977', 'covers/the_album.jpg'],
-    ['02', 'ABBA', 'Super Trouper', '1980', 'covers/abba_super_trouper.jpg'],
-    ['03', 'A-ha', 'Hunting High And Low', '1985', 'covers/a-ha_hunting_high_and_low.jpg'],
-    ['04', 'The Alan Parson Project', 'I Robot', '1977', 'covers/alan_parson_i_robot.jpg'],
-    ['05', 'The Alan Parson Project', 'The Turn Of A Friendly Card', '1980', 'covers/alan_parson_turn_of_a_friendly_card.jpg'],
-    ['06', 'Andrew Lloyd Webber', 'The Phantom Of The Opera', '1987', 'covers/andrew_lloyd_webber_phantom.jpg'],
-    ['07', 'Art Garfunkel', 'Fate For Breakfast', '1979', 'covers/art_garfunkel_fate_for_breakfast.jpg'],
-    ['08', 'The Beatles', 'Help!', '1965', 'covers/beatles_help.jpg'],
-    ['09', 'Benny Andersson & Björn Ulvaeus', 'Chess', '1986', 'covers/chess.jpg'],
-    ['10', 'Christopher Larkin', 'Hollow Knight', '2017', 'covers/hollow_knight.jpg'],
-    ['11', 'C418', 'Volume Alpha', '2011', 'covers/minecraft.jpg'],
-    ['12', 'Dave Clark', 'Time', '1986', 'covers/time.jpg'],
-    ['13', 'David Bowie', 'Let\'s Dance', '1983', 'covers/lets_dance.jpg'],
-    ['14', 'Dire Straits', 'Dire Straits', '1978', 'covers/dire_straits.jpg'],
-    ['15', 'The Eagles', 'Hotel California', '1976', 'covers/hotel_california.jpg'],
-    ['16', 'Electric Light Orchestra', 'Discovery', '1979', 'covers/discovery.jpg'],
-    ['17', 'Electric Light Orchestra', 'Out Of The Blue', '1977', 'covers/out_of_the_blue.jpg'],
-    ['18', 'Elton John', 'Elton John', '1970', 'covers/elton_john.jpg'],
-    ['19', 'Europe', 'The Final Countdown', '1986', 'covers/final_countdown.jpg'],
-    ['20', 'Eurythmics', 'Sweet Dreams', '1983', 'covers/sweet_dreams.jpg'],
-    ['21', 'First Aid Kid', 'Palomino', '2022', 'covers/palomino.jpg'],
-    ['22', 'Fleetwood Mac', 'Behind The Mask', '1990', 'covers/behind_the_mask.jpg'],
-    ['23', 'Fleetwood Mac', 'Tusk', '1979', 'covers/tusk.jpg'],
-    ['24', 'Graeme Edge Band', 'Kick Off Your Muddy Boots', '1975', 'covers/muddy_boots.jpg'],
-    ['25', 'Jeff Wayne', 'The War Of The Worlds', '1978', 'covers/war_of_the_worlds.jpg'],
-    ['26', 'Jethro Tull', 'M.U The Best Of Jethro Tull', '1976', 'covers/best_of_jethro_tull.jpg'],
-    ['27', 'John Miles', 'Stranger In The City', '1977', 'covers/stranger_in_the_city.jpg'],
-    ['28', 'Jon Bon Jovi', 'Blaze Of Glory', '1990', 'covers/blaze_of_glory.jpg'],
-    ['29', 'Journey', 'Frontiers', '1983', 'covers/frontiers.jpg'],
-    ['30', 'Koto', 'Greatest Hits & Remixes', '1992', 'covers/koto_greatest_hits_remixes.jpg'],
-    ['31', 'Level 42', 'World Machine', '1985', 'covers/world_machine.jpg'],
-    ['32', 'Maromaro', 'Full Moon', '1982', 'covers/full_moon.jpg'],
-    ['33', 'Men At Work', 'Cargo', '1983', 'covers/cargo.jpg'],
-    ['34', 'Michael Jackson', 'Bad', '1987', 'covers/bad.jpg'],
-    ['35', 'Mike Curb Congregation', 'Sweet Gingerbread Man', '1970', 'covers/sweet_gingerbread_man.jpg'],
-    ['36', 'Muse', 'Origin Of Symmetry', '2001', 'covers/origin_of_symmetry.jpg'],
-    ['37', 'Muse', 'The Resistance', '2009', 'covers/the_resistance.jpg'],
-    ['38', 'Muse', 'The Wow! Signal', '2026', 'covers/the_wow_signal.jpg'],
-    ['39', 'Pink Floyd', 'The Dark Side Of The Moon', '1973', 'covers/dark_side_of_the_moon.jpg'],
-    ['40', 'Pink Floyd', 'The Wall', '1979', 'covers/the_wall.jpg'],
-    ['41', 'Rick Astley', 'Whenever You Need Somebody', '1987', 'covers/whenever_you_need_somebody.jpg'],
-    ['42', 'Rick Wakeman', 'Journey To The Centre Of The Earth', '1974', 'covers/journey_to_the_centre_of_the_earth.jpg'],
-    ['43', 'Rick Wakeman', 'The Myths And Legends Of King Arthur And The Knights Of The Round Table', '1975', 'covers/the_myths_and_legends_of_king_arthur.jpg'],
-    ['44', 'Rod Stewart', 'The Best Of Rod Stewart', '1989', 'covers/the_best_of_rod_stewart.jpg'],
-    ['45', 'Simon And Garfunkel', 'Bridge Over Troubled Water', '1970', 'covers/bridge_over_troubled_water.jpg'],
-    ['46', 'Starship', 'Knee Deep In The Hoopla', '1985', 'covers/knee_deep_in_the_hoopla.jpg'],
-    ['47', 'Status Quo', 'Just Supposin', '1980', 'covers/just_supposin.jpg'],
-    ['48', 'Toto', 'Toto', '1978', 'covers/toto.jpg'],
+  var records = [    ['01', 'ABBA', 'The Album', '1977', 'covers/the_album.jpg', 'Pop', 0, []],    ['02', 'ABBA', 'Super Trouper', '1980', 'covers/abba_super_trouper.jpg', 'Pop', 0, []],    ['03', 'A-ha', 'Hunting High And Low', '1985', 'covers/a-ha_hunting_high_and_low.jpg', 'Pop Rock', 0, []],    ['04', 'The Alan Parson Project', 'I Robot', '1977', 'covers/alan_parson_i_robot.jpg', 'Progressive Rock', 0, []],    ['05', 'The Alan Parson Project', 'The Turn Of A Friendly Card', '1980', 'covers/alan_parson_turn_of_a_friendly_card.jpg', 'Rock', 0, []],    ['06', 'Andrew Lloyd Webber', 'The Phantom Of The Opera', '1987', 'covers/andrew_lloyd_webber_phantom.jpg', 'Musical', 0, []],    ['07', 'Art Garfunkel', 'Fate For Breakfast', '1979', 'covers/art_garfunkel_fate_for_breakfast.jpg', 'Pop', 0, []],    ['08', 'The Beatles', 'Help!', '1965', 'covers/beatles_help.jpg', 'Rock', 0, []],    ['09', 'Benny Andersson & Björn Ulvaeus', 'Chess', '1986', 'covers/chess.jpg', 'Musical', 0, []],    ['10', 'Christopher Larkin', 'Hollow Knight', '2017', 'covers/hollow_knight.jpg', 'Soundtrack', 0, []],    ['11', 'C418', 'Volume Alpha', '2011', 'covers/minecraft.jpg', 'Electronic', 0, []],    ['12', 'Dave Clark', 'Time', '1986', 'covers/time.jpg', 'Electronic', 0, []],    ['13', 'David Bowie', 'Let\'s Dance', '1983', 'covers/lets_dance.jpg', 'Pop Rock', 0, []],    ['14', 'Dire Straits', 'Dire Straits', '1978', 'covers/dire_straits.jpg', 'Rock', 0, []],    ['15', 'The Eagles', 'Hotel California', '1976', 'covers/hotel_california.jpg', 'Rock', 0, []],    ['16', 'Electric Light Orchestra', 'Discovery', '1979', 'covers/discovery.jpg', 'Rock', 0, []],    ['17', 'Electric Light Orchestra', 'Out Of The Blue', '1977', 'covers/out_of_the_blue.jpg', 'Rock', 0, []],    ['18', 'Elton John', 'Elton John', '1970', 'covers/elton_john.jpg', 'Pop', 0, []],    ['19', 'Europe', 'The Final Countdown', '1986', 'covers/final_countdown.jpg', 'Rock', 0, []],    ['20', 'Eurythmics', 'Sweet Dreams', '1983', 'covers/sweet_dreams.jpg', 'Synth-pop', 0, []],    ['21', 'First Aid Kid', 'Palomino', '2022', 'covers/palomino.jpg', 'Pop', 0, []],    ['22', 'Fleetwood Mac', 'Behind The Mask', '1990', 'covers/behind_the_mask.jpg', 'Rock', 0, []],    ['23', 'Fleetwood Mac', 'Tusk', '1979', 'covers/tusk.jpg', 'Rock', 0, []],    ['24', 'Graeme Edge Band', 'Kick Off Your Muddy Boots', '1975', 'covers/muddy_boots.jpg', 'Rock', 0, []],    ['25', 'Jeff Wayne', 'The War Of The Worlds', '1978', 'covers/war_of_the_worlds.jpg', 'Progressive Rock', 0, []],    ['26', 'Jethro Tull', 'M.U The Best Of Jethro Tull', '1976', 'covers/best_of_jethro_tull.jpg', 'Progressive Rock', 0, []],    ['27', 'John Miles', 'Stranger In The City', '1977', 'covers/stranger_in_the_city.jpg', 'Rock', 0, []],    ['28', 'Jon Bon Jovi', 'Blaze Of Glory', '1990', 'covers/blaze_of_glory.jpg', 'Rock', 0, []],    ['29', 'Journey', 'Frontiers', '1983', 'covers/frontiers.jpg', 'Rock', 0, []],    ['30', 'Koto', 'Greatest Hits & Remixes', '1992', 'covers/koto_greatest_hits_remixes.jpg', 'Electronic', 0, []],    ['31', 'Level 42', 'World Machine', '1985', 'covers/world_machine.jpg', 'Pop', 0, []],    ['32', 'Maromaro', 'Full Moon', '1982', 'covers/full_moon.jpg', 'Electronic', 0, []],    ['33', 'Men At Work', 'Cargo', '1983', 'covers/cargo.jpg', 'Rock', 0, []],    ['34', 'Michael Jackson', 'Bad', '1987', 'covers/bad.jpg', 'Pop', 0, []],    ['35', 'Mike Curb Congregation', 'Sweet Gingerbread Man', '1970', 'covers/sweet_gingerbread_man.jpg', 'Pop', 0, []],    ['36', 'Muse', 'Origin Of Symmetry', '2001', 'covers/origin_of_symmetry.jpg', 'Alternative Rock', 0, []],    ['37', 'Muse', 'The Resistance', '2009', 'covers/the_resistance.jpg', 'Alternative Rock', 0, []],    ['38', 'Muse', 'The Wow! Signal', '2026', 'covers/the_wow_signal.jpg', 'Electronic', 0, []],    ['39', 'Pink Floyd', 'The Dark Side Of The Moon', '1973', 'covers/dark_side_of_the_moon.jpg', 'Progressive Rock', 0, []],    ['40', 'Pink Floyd', 'The Wall', '1979', 'covers/the_wall.jpg', 'Rock', 0, []],    ['41', 'Rick Astley', 'Whenever You Need Somebody', '1987', 'covers/whenever_you_need_somebody.jpg', 'Pop', 0, []],    ['42', 'Rick Wakeman', 'Journey To The Centre Of The Earth', '1974', 'covers/journey_to_the_centre_of_the_earth.jpg', 'Progressive Rock', 0, []],    ['43', 'Rick Wakeman', 'The Myths And Legends Of King Arthur And The Knights Of The Round Table', '1975', 'covers/the_myths_and_legends_of_king_arthur.jpg', 'Progressive Rock', 0, []],    ['44', 'Rod Stewart', 'The Best Of Rod Stewart', '1989', 'covers/the_best_of_rod_stewart.jpg', 'Rock', 0, []],    ['45', 'Simon And Garfunkel', 'Bridge Over Troubled Water', '1970', 'covers/bridge_over_troubled_water.jpg', 'Folk Rock', 0, []],    ['46', 'Starship', 'Knee Deep In The Hoopla', '1985', 'covers/knee_deep_in_the_hoopla.jpg', 'Rock', 0, []],    ['47', 'Status Quo', 'Just Supposin', '1980', 'covers/just_supposin.jpg', 'Rock', 0, []],    ['48', 'Toto', 'Toto', '1978', 'covers/toto.jpg', 'Rock', 0, []],
     ['49', 'Toto', 'Toto IV', '1982', 'covers/toto_iv.jpg']
   ];
   var collection=document.getElementById('collection'), gridButton=document.getElementById('gridButton'), carouselButton=document.getElementById('carouselButton');
   var view='grid', activeIndex=0, drag=false, startX=0, startY=0, startScroll=0, scrollTimer=null;
   function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-  function recordHTML(r, cls){return '<article class="record '+(cls||'')+'" data-index="'+(parseInt(r[0],10)-1)+'"><div class="cover-wrapper"><img class="cover" src="'+r[4]+'" alt="'+esc(r[1]+' - '+r[2])+'"><div class="number">'+r[0]+'</div></div><div class="info"><div class="artist">'+esc(r[1])+'</div><div class="album">'+esc(r[2])+'</div><div class="year">'+r[3]+'</div></div></article>';}
+  function stars(rating){
+    var h='',i;
+    for(i=1;i<=5;i++) h += i<=rating ? '★' : '<span class="empty">★</span>';
+    return h;
+  }
+
+  function trackList(tracks){
+    if(!tracks || !tracks.length) return '';
+    var h='<div class="carousel-details"><div class="tracklist-title">Låtlista</div><ol class="tracklist">',i;
+    for(i=0;i<tracks.length;i++){
+      h+='<li><span class="track-number">'+(i+1)+'.</span><span>'+esc(tracks[i])+'</span></li>';
+    }
+    return h+'</ol></div>';
+  }
+
+  function recordHTML(r, cls){
+    return '<article class="record '+(cls||'')+'" data-index="'+(parseInt(r[0],10)-1)+'">'+
+      '<div class="cover-wrapper">'+
+        '<img class="cover" src="'+r[4]+'" alt="'+esc(r[1]+' - '+r[2])+'">'+
+        '<div class="cover-overlay"></div>'+
+        '<div class="number">'+r[0]+'</div>'+
+      '</div>'+
+      '<div class="info">'+
+        '<div class="artist">'+esc(r[1])+'</div>'+
+        '<div class="album">'+esc(r[2])+'</div>'+
+        '<div class="meta"><span class="year">'+r[3]+'</span><span class="genre">'+esc(r[5])+'</span></div>'+
+        '<div class="rating" aria-label="Betyg '+r[6]+' av 5">'+stars(r[6])+'</div>'+
+      '</div>'+
+      trackList(r[7])+
+    '</article>';
+  }
   function buildGrid(){collection.className='collection grid';var h='',i;for(i=0;i<records.length;i++)h+=recordHTML(records[i],'');collection.innerHTML=h;}
   function setActive(i){activeIndex=i;var cards=document.getElementsByClassName('carousel-card'),j;for(j=0;j<cards.length;j++)cards[j].className=cards[j].className.replace(/\sactive\b/g,'')+(j===i?' active':'');}
   function centerCard(i,smooth){var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),card=cards[i];if(!vp||!card)return;var target=card.offsetLeft-(vp.clientWidth-card.offsetWidth)/2;if(target<0)target=0;var max=vp.scrollWidth-vp.clientWidth;if(target>max)target=max;setActive(i);animateScroll(vp,target,smooth);}
