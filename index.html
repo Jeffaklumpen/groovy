@@ -1380,7 +1380,7 @@
             resetIdleTimer();
         }
 
-        document.addEventListener("touchstart", userActivity, false);
+        document.addEventListener("touchstart", userActivity, true);
         document.addEventListener("mousedown", userActivity, false);
 
         window.onload = function () {
@@ -1458,8 +1458,18 @@ function changeAlbumSide(direction) {
 /* ALBUM CLICK - iPad + dator */
 
 var collection = document.querySelector(".collection");
+var lastAlbumTap = 0;
 
-collection.addEventListener("pointerup", function(event) {
+function handleAlbumTap(event) {
+
+    var now = Date.now();
+
+    /* Förhindrar att touch + click öppnar två gånger */
+    if (now - lastAlbumTap < 500) {
+        return;
+    }
+
+    lastAlbumTap = now;
 
     var record = event.target.closest(".record");
 
@@ -1474,8 +1484,22 @@ collection.addEventListener("pointerup", function(event) {
     }
 
     event.preventDefault();
-    openAlbum(index);
 
+    openAlbum(index);
+}
+
+
+/* iPad / touch */
+
+collection.addEventListener("touchstart", function(event) {
+    handleAlbumTap(event);
+}, {passive:false});
+
+
+/* Dator + fallback */
+
+collection.addEventListener("click", function(event) {
+    handleAlbumTap(event);
 });
 
 /* CLOSE */
