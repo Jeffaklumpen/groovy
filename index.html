@@ -381,7 +381,7 @@ function esc(value){
 function recordHTML(record, className){
   var html='<article class="record '+(className||'')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
-      '<img class="cover" src="'+record[6]+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
+      '<img class="cover" src="" data-src="'+record[6]+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
       '<div class="number">'+record[0]+'</div>'+
       '<div class="cover-rating">';
 
@@ -399,6 +399,24 @@ function recordHTML(record, className){
   '</article>';
 
   return html;
+}
+
+function loadVisibleImages(){
+  var images=document.querySelectorAll('.cover');
+  var height=window.innerHeight||600;
+
+  for(var i=0;i<images.length;i++){
+    var img=images[i];
+
+    if(img.src||!img.getAttribute('data-src'))continue;
+
+    var rect=img.getBoundingClientRect();
+
+    if(rect.top<height+500&&rect.bottom>-500){
+      img.src=img.getAttribute('data-src');
+      img.removeAttribute('data-src');
+    }
+  }
 }
 
 function openAlbum(index){
@@ -500,6 +518,7 @@ function buildGrid(){
 
   collection.innerHTML=html;
   attachAlbumClicks();
+  loadVisibleImages();
 }
 
 function setActive(index){
@@ -732,6 +751,10 @@ for(var f=0;f<ratingFilter.length;f++){
     }
   };
 }
+
+window.onscroll=function(){
+  loadVisibleImages();
+};
 
 buildGrid();
 
