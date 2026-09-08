@@ -446,6 +446,8 @@ body{
 .album-tracks{
   position:absolute;
 
+  z-index:4;
+
   right:0;
   top:0;
   bottom:0;
@@ -456,7 +458,16 @@ body{
 
   background:rgba(12,12,14,.97);
 
-  overflow:hidden;
+  /* Högerspalten kan scrollas separat */
+  overflow-y:auto;
+  overflow-x:hidden;
+
+  /* Touch-scroll på iPad */
+  -webkit-overflow-scrolling:touch;
+
+  /* Hjälper äldre Safari */
+  -webkit-transform:translateZ(0);
+  transform:translateZ(0);
 }
 
 .tracks-title{
