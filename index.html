@@ -20,7 +20,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .collection{max-width:1400px;margin:0 auto}
 /* GRID: float layout works on older iPad Safari too */
 .grid:after{content:"";display:table;clear:both}
-.grid .record{float:left;width:23.5%;margin-right:2%;margin-bottom:38px;min-width:0}
+.grid .record{float:left;width:24%;margin-right:1.3333%;margin-bottom:38px;min-width:0}
 .grid .record:nth-child(4n){margin-right:0}
 .cover-wrapper{position:relative;width:100%;height:0;padding-bottom:100%;overflow:hidden;background:#1c1c1e;box-shadow:0 12px 30px rgba(0,0,0,.45)}
 .cover{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block}
@@ -33,19 +33,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .carousel-viewport{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;white-space:nowrap;padding:42px 0 55px;position:relative;-ms-overflow-style:none;scrollbar-width:none}
 .carousel-viewport::-webkit-scrollbar{display:none}
 .carousel-track{display:inline-block;white-space:nowrap;font-size:0}
-.carousel-card{display:inline-block;vertical-align:top;width:300px;margin:0 14px;white-space:normal;cursor:pointer;transform:scale(.94);transform-origin:center center;transition:transform .7s cubic-bezier(.22,.61,.36,1);-webkit-transition:-webkit-transform .7s cubic-bezier(.22,.61,.36,1);will-change:transform}
-.carousel-card.active{transform:scale(1.08);-webkit-transform:scale(1.08)}
+.carousel-card{display:inline-block;vertical-align:top;width:300px;margin:0 14px;white-space:normal;cursor:pointer;transform:scale(1);-webkit-transform:scale(1);transform-origin:center center;transition:none;-webkit-transition:none}
+.carousel-card.active{transform:scale(1.08);-webkit-transform:scale(1.08);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
 .carousel-card .info{transition:none}
 .carousel-card .artist{font-size:18px}.carousel-card .album{font-size:15px}.carousel-card .year{font-size:13px}
 .carousel-hint{text-align:center;color:#777;font-size:12px;letter-spacing:.5px;margin-top:-24px}
 /* iPad */
 @media screen and (min-width:601px) and (max-width:1100px){
  body{padding:20px}.header{margin-bottom:24px}.title{font-size:28px}
- .grid .record{width:23.5%;margin-right:2%;margin-bottom:30px}.grid .record:nth-child(4n){margin-right:0}
+ .grid .record{width:24%;margin-right:1.3333%;margin-bottom:30px}.grid .record:nth-child(4n){margin-right:0}
  .grid .artist{font-size:15px}.grid .album{font-size:13px}.grid .year{font-size:12px}
  .carousel-viewport{padding-top:32px;padding-bottom:58px}
  .carousel-card{width:300px;margin-left:12px;margin-right:12px}
- .carousel-card.active{transform:scale(1.10);-webkit-transform:scale(1.10)}
+ .carousel-card.active{transform:scale(1.10);-webkit-transform:scale(1.10);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
  .carousel-card .artist{font-size:16px}.carousel-card .album{font-size:14px}
 }
 /* Phone */
@@ -53,7 +53,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
  body{padding:15px}.header{padding-bottom:16px;margin-bottom:20px}.title{font-size:23px;padding-right:175px;letter-spacing:2px}.subtitle{font-size:12px}
  .view-toggle{top:-2px}.view-toggle button{padding:7px 8px;font-size:12px}
  .grid .record{width:48%;margin-right:4%;margin-bottom:28px}.grid .record:nth-child(4n){margin-right:4%}.grid .record:nth-child(2n){margin-right:0}
- .carousel-card{width:260px;margin-left:9px;margin-right:9px}.carousel-card.active{transform:scale(1.07);-webkit-transform:scale(1.07)}.carousel-hint{margin-top:-16px}
+ .carousel-card{width:260px;margin-left:9px;margin-right:9px}.carousel-card.active{transform:scale(1.07);-webkit-transform:scale(1.07);transition:transform .4s ease;-webkit-transition:-webkit-transform .4s ease}.carousel-hint{margin-top:-16px}
 }
 </style>
 </head>
@@ -79,7 +79,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
   var collection=document.getElementById('collection'), gridButton=document.getElementById('gridButton'), carouselButton=document.getElementById('carouselButton');
   var view='grid', activeIndex=0, drag=false, startX=0, startY=0, startScroll=0;
   function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-  function recordHTML(r, cls){return '<article class="record carousel-card '+(cls||'')+'" data-index="'+(parseInt(r[0],10)-1)+'"><div class="cover-wrapper"><img class="cover" src="'+r[4]+'" alt="'+esc(r[1]+' - '+r[2])+'"><div class="number">'+r[0]+'</div></div><div class="info"><div class="artist">'+esc(r[1])+'</div><div class="album">'+esc(r[2])+'</div><div class="year">'+r[3]+'</div></div></article>';}
+  function recordHTML(r, cls){return '<article class="record '+(cls||'')+'" data-index="'+(parseInt(r[0],10)-1)+'"><div class="cover-wrapper"><img class="cover" src="'+r[4]+'" alt="'+esc(r[1]+' - '+r[2])+'"><div class="number">'+r[0]+'</div></div><div class="info"><div class="artist">'+esc(r[1])+'</div><div class="album">'+esc(r[2])+'</div><div class="year">'+r[3]+'</div></div></article>';}
   function buildGrid(){collection.className='collection grid';var h='',i;for(i=0;i<records.length;i++)h+=recordHTML(records[i],'');collection.innerHTML=h;}
   function setActive(i){activeIndex=i;var cards=document.getElementsByClassName('carousel-card'),j;for(j=0;j<cards.length;j++)cards[j].className=cards[j].className.replace(/\sactive\b/g,'')+(j===i?' active':'');}
   function centerCard(i,smooth){var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),card=cards[i];if(!vp||!card)return;var target=card.offsetLeft-(vp.clientWidth-card.offsetWidth)/2;if(target<0)target=0;var max=vp.scrollWidth-vp.clientWidth;if(target>max)target=max;setActive(i);animateScroll(vp,target,smooth);}
@@ -87,8 +87,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
   function nearest(){var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),center=vp.scrollLeft+vp.clientWidth/2,best=0,dist=Infinity,i,c,cx,d;for(i=0;i<cards.length;i++){c=cards[i];cx=c.offsetLeft+c.offsetWidth/2;d=Math.abs(cx-center);if(d<dist){dist=d;best=i;}}return best;}
   function buildCarousel(){collection.className='collection carousel';var h='<div class="carousel-viewport" id="carouselViewport"><div class="carousel-track" id="carouselTrack">',i;for(i=0;i<records.length;i++)h+=recordHTML(records[i],'');h+='</div></div><div class="carousel-hint">Svep åt vänster eller höger för att bläddra</div>';collection.innerHTML=h;var vp=document.getElementById('carouselViewport'),cards=document.getElementsByClassName('carousel-card'),j;
     for(j=0;j<cards.length;j++)(function(index){cards[index].onclick=function(){if(!drag)centerCard(index,true);};})(j);
-    vp.ontouchstart=function(e){if(!e.touches||!e.touches.length)return;drag=false;startX=e.touches[0].pageX;startY=e.touches[0].pageY;startScroll=vp.scrollLeft;};
-    vp.ontouchmove=function(e){if(!e.touches||!e.touches.length)return;var dx=e.touches[0].pageX-startX,dy=e.touches[0].pageY-startY;if(Math.abs(dx)>8)drag=true;/* native iPad scrolling remains enabled */};
+    vp.ontouchstart=function(e){if(!e.touches||!e.touches.length)return;drag=false;startX=e.touches[0].pageX;startY=e.touches[0].pageY;startScroll=vp.scrollLeft;setActive(-1);};
+    vp.ontouchmove=function(e){if(!e.touches||!e.touches.length)return;var dx=e.touches[0].pageX-startX;if(Math.abs(dx)>8)drag=true;setActive(-1);/* native iPad scrolling remains enabled */};
     vp.ontouchend=function(){var idx=nearest();setTimeout(function(){drag=false;},80);centerCard(idx,true);};
     setTimeout(function(){centerCard(activeIndex,false);},30);
   }
