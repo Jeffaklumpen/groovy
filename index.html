@@ -73,11 +73,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .carousel-card .album{font-size:15px}
 .carousel-card .year{font-size:13px}
 
-.album-overlay{position:fixed;z-index:1000;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.90);display:none;padding:28px;overflow:auto;-webkit-overflow-scrolling:touch;}
+.album-overlay{position:fixed;z-index:1000;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0);display:block;padding:28px;overflow:auto;-webkit-overflow-scrolling:touch;visibility:hidden;opacity:0;-webkit-transition:opacity .28s ease,visibility 0s linear .32s;transition:opacity .28s ease,visibility 0s linear .32s}
+.album-overlay.visible{visibility:visible;opacity:1;background:rgba(0,0,0,.90);-webkit-transition:opacity .28s ease,visibility 0s linear 0s;transition:opacity .28s ease,visibility 0s linear 0s}
 
-.album-overlay.visible{display:block}
-
-.album-detail{position:relative;width:100%;max-width:1180px;min-height:620px;margin:0 auto;background:#111113;box-shadow:0 25px 70px rgba(0,0,0,.8);overflow:hidden}
+.album-detail{position:relative;width:100%;max-width:1180px;min-height:620px;margin:0 auto;background:#111113;box-shadow:0 25px 70px rgba(0,0,0,.8);overflow:hidden;-webkit-transform:scale(.88);transform:scale(.88);opacity:0;-webkit-transition:-webkit-transform .32s cubic-bezier(.2,.8,.2,1),opacity .22s ease;transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .22s ease}
+.album-overlay.visible .album-detail{-webkit-transform:scale(1);transform:scale(1);opacity:1}
 
 .album-detail-cover{position:absolute;left:0;top:0;width:620px;height:620px;overflow:hidden;background:#080808}
 
@@ -431,8 +431,9 @@ function closeAlbum(){
     if(albumOverlay.className.indexOf('visible')===-1){
       detailCover.src='';
     }
-  },100);
+  },350);
 }
+
 
 function attachAlbumClicks(){
   var elements=document.getElementsByClassName('record');
