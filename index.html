@@ -692,7 +692,7 @@ document.onkeydown=function(event){
 var ratingFilter=document.querySelectorAll('.rating-filter button');
 
 for(var f=0;f<ratingFilter.length;f++){
-  ratingFilter[f].addEventListener('click',function(){
+  ratingFilter[f].onclick=function(){
     var selected=this.getAttribute('data-rating');
 
     for(var i=0;i<ratingFilter.length;i++){
@@ -701,19 +701,19 @@ for(var f=0;f<ratingFilter.length;f++){
 
     this.className='active';
 
-    var records=document.querySelectorAll('.record');
+    var visibleRecords=document.querySelectorAll('.record');
 
-    for(var r=0;r<records.length;r++){
-      var index=parseInt(records[r].getAttribute('data-index'),10);
-      var rating=parseInt(collection[index][5],10);
+    for(var r=0;r<visibleRecords.length;r++){
+      var index=parseInt(visibleRecords[r].getAttribute('data-index'),10);
+      var rating=parseInt(records[index][5],10);
 
       if(selected==='all'||rating===parseInt(selected,10)){
-        records[r].style.display='';
+        visibleRecords[r].style.display='';
       }else{
-        records[r].style.display='none';
+        visibleRecords[r].style.display='none';
       }
     }
-  });
+  };
 }
 
 buildGrid();
