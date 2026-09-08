@@ -62,11 +62,15 @@
             margin: 0 auto;
         }
 
-        .record {
-            float: left;
-            width: 23.5%;
-            margin-right: 2%;
-            margin-bottom: 38px;
+        .record{
+            float:left;
+            width:23.5%;
+            margin-right:2%;
+            margin-bottom:38px;
+        
+            cursor:pointer;
+            -webkit-tap-highlight-color:transparent;
+            touch-action:manipulation;
         }
 
         .record:nth-child(4n) {
@@ -1453,17 +1457,24 @@ function changeAlbumSide(direction) {
 
 /* ALBUM CLICK - iPad + dator */
 
-albumRecords.forEach(function(record, index) {
+var collection = document.querySelector(".collection");
 
-    record.addEventListener("click", function(event) {
-        event.preventDefault();
-        openAlbum(index);
-    });
+collection.addEventListener("pointerup", function(event) {
 
-    record.addEventListener("touchend", function(event) {
-        event.preventDefault();
-        openAlbum(index);
-    }, {passive:false});
+    var record = event.target.closest(".record");
+
+    if (!record) {
+        return;
+    }
+
+    var index = Array.prototype.indexOf.call(albumRecords, record);
+
+    if (index === -1) {
+        return;
+    }
+
+    event.preventDefault();
+    openAlbum(index);
 
 });
 
