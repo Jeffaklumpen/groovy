@@ -421,8 +421,6 @@ function attachAlbumClicks(){
       event.preventDefault();
       event.stopPropagation();
 
-      if(!deleteMode)return;
-
       var recordElement=deleteButton.closest('.record');
 
       if(!recordElement)return;
