@@ -438,55 +438,6 @@ function enableGridSorting(){
     return false;
   };
 
-  function animateMove(moveFunction){
-    var cards=collection.querySelectorAll('.record');
-    var first=new Map();
-
-    for(var i=0;i<cards.length;i++){
-      first.set(cards[i],cards[i].getBoundingClientRect());
-    }
-
-    moveFunction();
-
-    requestAnimationFrame(function(){
-      for(var i=0;i<cards.length;i++){
-        var card=cards[i];
-        var oldRect=first.get(card);
-
-        if(!oldRect)continue;
-
-        var newRect=card.getBoundingClientRect();
-        var x=oldRect.left-newRect.left;
-        var y=oldRect.top-newRect.top;
-
-        if(x||y){
-          card.style.transform='translate('+x+'px,'+y+'px)';
-
-          requestAnimationFrame(function(){
-            card.style.transition='transform .28s cubic-bezier(.2,.8,.2,1)';
-            card.style.transform='';
-          });
-        }
-      }
-    });
-  }
-
-  function moveBefore(target,after){
-    if(!dragged||!target||target===dragged)return;
-
-    animateMove(function(){
-      if(after){
-        if(target.nextSibling!==dragged){
-          target.parentNode.insertBefore(dragged,target.nextSibling);
-        }
-      }else{
-        if(target!==dragged.nextSibling){
-          target.parentNode.insertBefore(dragged,target);
-        }
-      }
-    });
-  }
-
   collection.ondragstart=function(event){
     var record=event.target.closest('.record');
 
@@ -501,6 +452,14 @@ function enableGridSorting(){
     }
   };
 
+  collection.ondragend=function(){
+    if(dragged){
+      dragged.classList.remove('dragging');
+    }
+
+    dragged=null;
+  };
+
   collection.ondragover=function(event){
     if(!dragged)return;
 
@@ -513,7 +472,11 @@ function enableGridSorting(){
     var rect=target.getBoundingClientRect();
     var after=event.clientY>rect.top+rect.height/2;
 
-    moveBefore(target,after);
+    if(after){
+      target.parentNode.insertBefore(dragged,target.nextSibling);
+    }else{
+      target.parentNode.insertBefore(dragged,target);
+    }
   };
 
   collection.ondrop=async function(event){
@@ -544,14 +507,6 @@ function enableGridSorting(){
     records=newRecords;
 
     await saveGridOrder();
-
-    dragged=null;
-  };
-
-  collection.ondragend=function(){
-    if(dragged){
-      dragged.classList.remove('dragging');
-    }
 
     dragged=null;
   };
@@ -590,7 +545,11 @@ function enableGridSorting(){
       var rect=card.getBoundingClientRect();
       var after=touch.clientY>rect.top+rect.height/2;
 
-      moveBefore(card,after);
+      if(after){
+        card.parentNode.insertBefore(dragged,card.nextSibling);
+      }else{
+        card.parentNode.insertBefore(dragged,card);
+      }
     };
 
     cards[i].ontouchend=async function(){
