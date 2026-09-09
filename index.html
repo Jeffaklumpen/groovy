@@ -1039,15 +1039,17 @@ function escapeHTML(text){
 async function searchMusicBrainz(query){
     albumSearchResults.innerHTML='<p>Söker...</p>';
 
-    const searchQuery='format:Vinyl AND (artist:"'+query+'" OR release:"'+query+'")';
+    const searchQuery='('+query+') AND format:Vinyl';
 
     const url='https://musicbrainz.org/ws/2/release/?query='+encodeURIComponent(searchQuery)+'&fmt=json&limit=25';
 
     try{
         const response=await fetch(url);
+
         if(!response.ok)throw new Error('HTTP '+response.status);
 
         const data=await response.json();
+
         albumSearchResults.innerHTML='';
 
         if(!data.releases||!data.releases.length){
@@ -1070,12 +1072,12 @@ async function searchMusicBrainz(query){
                 :'';
 
             function score(title,artist){
-                if(artist===search)return 100;
-                if(title===search)return 95;
-                if(artist.indexOf(search)===0)return 80;
-                if(title.indexOf(search)===0)return 75;
-                if(artist.indexOf(search)>-1)return 60;
-                if(title.indexOf(search)>-1)return 50;
+                if(title===search)return 100;
+                if(artist===search)return 90;
+                if(title.indexOf(search)===0)return 80;
+                if(artist.indexOf(search)===0)return 70;
+                if(title.indexOf(search)>-1)return 60;
+                if(artist.indexOf(search)>-1)return 50;
                 return 0;
             }
 
@@ -1083,6 +1085,7 @@ async function searchMusicBrainz(query){
         });
 
         data.releases.slice(0,10).forEach(function(release){
+
             const artist=release['artist-credit']&&release['artist-credit'][0]
                 ?release['artist-credit'][0].name
                 :'Okänd artist';
