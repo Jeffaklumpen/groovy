@@ -22,6 +22,8 @@
     Add Album+
   </button>
 
+  <button id="deleteModeButton" class="delete-mode-button" type="button" aria-label="Ta bort album">🗑</button>
+
   <div class="rating-filter">
     <button class="active" data-rating="all">Alla</button>
     <button data-rating="1">★</button>
@@ -91,16 +93,6 @@
 
     </div>
 
-</div>
-
-<div id="selectionBar" class="selection-bar">
-    <span id="selectionCount" class="selection-count">0 markerade</span>
-    <button id="deleteSelectedButton" class="delete-selected-button" type="button">
-        Ta bort markerade
-    </button>
-    <button id="cancelSelectionButton" class="cancel-selection-button" type="button">
-        Avbryt
-    </button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
