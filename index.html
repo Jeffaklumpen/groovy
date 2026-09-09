@@ -1039,9 +1039,7 @@ function escapeHTML(text){
 async function searchMusicBrainz(query){
     albumSearchResults.innerHTML='<p>Söker...</p>';
 
-    const searchQuery='('+query+') AND format:Vinyl';
-
-    const url='https://musicbrainz.org/ws/2/release/?query='+encodeURIComponent(searchQuery)+'&fmt=json&limit=25';
+    const url='https://musicbrainz.org/ws/2/release/?query='+encodeURIComponent(query)+'&fmt=json&limit=25';
 
     try{
         const response=await fetch(url);
@@ -1053,13 +1051,25 @@ async function searchMusicBrainz(query){
         albumSearchResults.innerHTML='';
 
         if(!data.releases||!data.releases.length){
+            albumSearchResults.innerHTML='<p>Inga album hittades.</p>';
+            return;
+        }
+
+        const vinylReleases=data.releases.filter(function(release){
+            return (release.media||[]).some(function(media){
+                const format=(media.format||'').toLowerCase();
+                return format.indexOf('vinyl')>-1;
+            });
+        });
+
+        if(!vinylReleases.length){
             albumSearchResults.innerHTML='<p>Inga vinylalbum hittades.</p>';
             return;
         }
 
         const search=query.toLowerCase().trim();
 
-        data.releases.sort(function(a,b){
+        vinylReleases.sort(function(a,b){
             const titleA=(a.title||'').toLowerCase();
             const titleB=(b.title||'').toLowerCase();
 
@@ -1084,7 +1094,7 @@ async function searchMusicBrainz(query){
             return score(titleB,artistB)-score(titleA,artistA);
         });
 
-        data.releases.slice(0,10).forEach(function(release){
+        vinylReleases.slice(0,10).forEach(function(release){
 
             const artist=release['artist-credit']&&release['artist-credit'][0]
                 ?release['artist-credit'][0].name
@@ -1093,6 +1103,20 @@ async function searchMusicBrainz(query){
             const year=release.date
                 ?release.date.substring(0,4)
                 :'';
+
+            const vinylFormats=[];
+
+            (release.media||[]).forEach(function(media){
+                const format=media.format||'';
+
+                if(format.toLowerCase().indexOf('vinyl')>-1){
+                    if(vinylFormats.indexOf(format)===-1){
+                        vinylFormats.push(format);
+                    }
+                }
+            });
+
+            const formatText=vinylFormats.join(', ');
 
             const imageUrl='https://coverartarchive.org/release/'+release.id+'/front-250';
 
@@ -1104,7 +1128,7 @@ async function searchMusicBrainz(query){
                 '<div class="mb-info">'+
                     '<div class="mb-title">'+escapeHTML(release.title)+'</div>'+
                     '<div class="mb-artist">'+escapeHTML(artist)+'</div>'+
-                    '<div class="mb-year">'+escapeHTML(year)+' · Vinyl</div>'+
+                    '<div class="mb-year">'+escapeHTML(year)+' · '+escapeHTML(formatText)+'</div>'+
                 '</div>'+
                 '<button class="mb-add-button">Add</button>';
 
