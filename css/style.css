@@ -195,3 +195,7 @@ body{padding:15px}
 .selection-count{font-size:13px;color:#ccc}
 .delete-selected-button{border:0;border-radius:7px;padding:9px 13px;background:#c62828;color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .cancel-selection-button{border:1px solid #444;border-radius:7px;padding:8px 12px;background:#222;color:#ccc;font-family:inherit;font-size:13px;cursor:pointer}
+
+.delete-cover-button{position:absolute;right:8px;top:8px;z-index:10;width:34px;height:34px;border:0;border-radius:50%;background:rgba(0,0,0,.72);color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .15s ease,background .15s ease}
+.cover-wrapper:hover .delete-cover-button{opacity:1;pointer-events:auto}
+.delete-cover-button:hover{background:#c62828}
