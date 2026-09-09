@@ -361,7 +361,17 @@ function openAlbum(index){
   albumOverlay.className='album-overlay visible';
   document.body.style.overflow='hidden';
 }
+    
+function closeAlbum(){
+  albumOverlay.className='album-overlay';
+  document.body.style.overflow='';
 
+  setTimeout(function(){
+    if(albumOverlay.className.indexOf('visible')===-1){
+      detailCover.src='';
+    }
+  },350);
+}
 
 function attachAlbumClicks(){
   if(collection._albumClickAttached)return;
