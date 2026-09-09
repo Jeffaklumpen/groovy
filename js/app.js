@@ -831,7 +831,6 @@ let musicBrainzSearchNumber=0;
 
 
 
-
 async function searchMusicBrainz(query){
     const searchNumber=++musicBrainzSearchNumber;
 
@@ -847,7 +846,7 @@ async function searchMusicBrainz(query){
             throw error;
         }
 
-        console.log('Discogs results:',data);
+        console.log('Discogs Master Release results:',data);
 
         if(searchNumber!==musicBrainzSearchNumber)return;
 
@@ -862,318 +861,15 @@ async function searchMusicBrainz(query){
 
 
         // ========================================
-        // 1. ENDAST 12" VINYL
+        // VISA MASTER RELEASES
         // ========================================
 
-        const vinylResults=results.filter(function(release){
+        results.slice(0,10).forEach(function(master){
 
-            const formats=Array.isArray(release.format)
-                ?release.format.map(function(format){
-                    return String(format).toLowerCase();
-                })
-                :[];
+            const title=master.title||'Okänd titel';
 
-            const formatText=formats.join(' ');
 
-            // Måste vara Vinyl
-            const isVinyl=formats.some(function(format){
-                return format.indexOf('vinyl')>-1;
-            });
-
-            if(!isVinyl)return false;
-
-
-            // Måste vara 12"
-            const is12Inch=
-                formatText.indexOf('12"')>-1 ||
-                formatText.indexOf('12 inch')>-1 ||
-                formatText.indexOf('12-inch')>-1;
-
-            if(!is12Inch)return false;
-
-
-            // ========================================
-            // 2. TA BORT REMASTERS / REISSUES
-            // ========================================
-
-            const blockedWords=[
-                'remaster',
-                'remastered',
-                'reissue',
-                'anniversary',
-                'deluxe',
-                'expanded',
-                'box set'
-            ];
-
-            const isBlocked=blockedWords.some(function(word){
-                return formatText.indexOf(word)>-1;
-            });
-
-            if(isBlocked)return false;
-
-
-            // Kontrollera även titel och eventuell
-            // beskrivande information.
-            const text=String(
-                (release.title||'')+' '+
-                (release.notes||'')+' '+
-                (release.format_description||'')
-            ).toLowerCase();
-
-
-            const blockedTextWords=[
-                'remaster',
-                'remastered',
-                'reissue',
-                'anniversary edition',
-                'deluxe edition',
-                'expanded edition'
-            ];
-
-
-            const blockedByText=blockedTextWords.some(function(word){
-                return text.indexOf(word)>-1;
-            });
-
-
-            if(blockedByText)return false;
-
-
-            return true;
-        });
-
-
-        if(!vinylResults.length){
-            albumSearchResults.innerHTML=
-                '<p>Inga relevanta 12" vinylalbum hittades.</p>';
-            return;
-        }
-
-
-        // ========================================
-        // 3. HÄMTA ARTIST + ALBUMTITEL
-        // ========================================
-
-        function getArtist(release){
-
-            const title=String(release.title||'');
-            const parts=title.split(' - ');
-
-            if(parts.length>1){
-                return parts[0].trim().toLowerCase();
-            }
-
-            return '';
-        }
-
-
-        function getAlbumTitle(release){
-
-            const title=String(release.title||'');
-            const parts=title.split(' - ');
-
-            if(parts.length>1){
-                return parts.slice(1).join(' - ').trim().toLowerCase();
-            }
-
-            return title.trim().toLowerCase();
-        }
-
-
-        // ========================================
-        // 4. LANDPRIORITET
-        //
-        // UK först
-        // US därefter
-        // Europe sist
-        // ========================================
-
-        function getCountryPriority(release){
-
-            const country=String(
-                release.country||''
-            ).toLowerCase().trim();
-
-
-            if(
-                country==='uk' ||
-                country==='united kingdom'
-            ){
-                return 1;
-            }
-
-
-            if(
-                country==='us' ||
-                country==='usa' ||
-                country==='united states'
-            ){
-                return 2;
-            }
-
-
-            if(
-                country==='europe' ||
-                country==='eu'
-            ){
-                return 3;
-            }
-
-
-            return 99;
-        }
-
-
-        // ========================================
-        // 5. GRUPPERA SAMMA ALBUM
-        // ========================================
-
-        const albumGroups={};
-
-
-        vinylResults.forEach(function(release){
-
-            const artist=getArtist(release);
-            const albumTitle=getAlbumTitle(release);
-
-
-            if(!albumTitle)return;
-
-
-            const key=artist+'|'+albumTitle;
-
-
-            if(!albumGroups[key]){
-                albumGroups[key]=[];
-            }
-
-
-            albumGroups[key].push(release);
-        });
-
-
-        // ========================================
-        // 6. VÄLJ EN RELEASE PER ALBUM
-        // ========================================
-
-        const selectedAlbums=[];
-
-
-        Object.keys(albumGroups).forEach(function(key){
-
-            const releases=albumGroups[key];
-
-
-            // ----------------------------------------
-            // Först försöker vi UK
-            // ----------------------------------------
-
-            let preferred=releases.filter(function(release){
-                return getCountryPriority(release)===1;
-            });
-
-
-            // ----------------------------------------
-            // Om ingen UK: US
-            // ----------------------------------------
-
-            if(!preferred.length){
-
-                preferred=releases.filter(function(release){
-                    return getCountryPriority(release)===2;
-                });
-
-            }
-
-
-            // ----------------------------------------
-            // Om ingen UK eller US: Europe
-            // ----------------------------------------
-
-            if(!preferred.length){
-
-                preferred=releases.filter(function(release){
-                    return getCountryPriority(release)===3;
-                });
-
-            }
-
-
-            // ----------------------------------------
-            // Om inget av UK/US/Europe finns
-            // tar vi INTE en annan region.
-            // ----------------------------------------
-
-            if(!preferred.length){
-                return;
-            }
-
-
-            // ----------------------------------------
-            // Äldsta release först
-            // ----------------------------------------
-
-            preferred.sort(function(a,b){
-
-                const yearA=parseInt(a.year,10);
-                const yearB=parseInt(b.year,10);
-
-
-                if(!yearA && !yearB)return 0;
-                if(!yearA)return 1;
-                if(!yearB)return -1;
-
-
-                return yearA-yearB;
-            });
-
-
-            // Första = vår bästa kandidat
-            selectedAlbums.push(preferred[0]);
-        });
-
-
-        // ========================================
-        // 7. SORTERA ALBUMEN
-        // ========================================
-        //
-        // Tidigaste album först.
-        // Detta gör exempelvis ABBA-resultaten
-        // mer naturliga kronologiskt.
-        // ========================================
-
-        selectedAlbums.sort(function(a,b){
-
-            const yearA=parseInt(a.year,10);
-            const yearB=parseInt(b.year,10);
-
-
-            if(!yearA && !yearB)return 0;
-            if(!yearA)return 1;
-            if(!yearB)return -1;
-
-
-            return yearA-yearB;
-        });
-
-
-        console.log(
-            'Valda album:',
-            selectedAlbums
-        );
-
-
-        // ========================================
-        // 8. VISA RESULTAT
-        // ========================================
-
-        selectedAlbums.slice(0,10).forEach(function(release){
-
-            const title=release.title||'Okänd titel';
-
-
-            // Discogs brukar returnera:
+            // Discogs Master Release brukar returnera:
             // Artist - Album
             const parts=title.split(' - ');
 
@@ -1188,17 +884,11 @@ async function searchMusicBrainz(query){
                 :title;
 
 
-            const year=release.year||'';
+            const year=master.year||'';
 
-            const country=release.country||'';
+            const imageUrl=master.thumb||'';
 
-
-            const formats=Array.isArray(release.format)
-                ?release.format.join(', ')
-                :'';
-
-
-            const imageUrl=release.thumb||'';
+            const masterId=master.id||'';
 
 
             const div=document.createElement('div');
@@ -1225,13 +915,6 @@ async function searchMusicBrainz(query){
 
                     '<div class="mb-year">'+
                         escapeHTML(String(year))+
-
-                        (country
-                            ?' · '+escapeHTML(country)
-                            :'')+
-
-                        ' · 12" Vinyl'+
-
                     '</div>'+
 
                 '</div>'+
@@ -1251,13 +934,13 @@ async function searchMusicBrainz(query){
 
 
                     console.log(
-                        'Valt Discogs-release:',
-                        release
+                        'Vald Discogs Master Release:',
+                        master
                     );
 
 
                     addAlbumFromDiscogs(
-                        release,
+                        master,
                         artist,
                         albumTitle,
                         year,
@@ -1269,13 +952,6 @@ async function searchMusicBrainz(query){
 
             albumSearchResults.appendChild(div);
         });
-
-
-        if(!selectedAlbums.length){
-
-            albumSearchResults.innerHTML=
-                '<p>Inga relevanta UK-, US- eller Europe-pressningar hittades.</p>';
-        }
 
 
     }catch(error){
