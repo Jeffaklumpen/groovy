@@ -1039,7 +1039,9 @@ function escapeHTML(text){
 async function searchMusicBrainz(query){
     albumSearchResults.innerHTML='<p>Söker...</p>';
 
-    const url='https://musicbrainz.org/ws/2/release/?query='+encodeURIComponent(query)+'&fmt=json&limit=25';
+    const searchQuery='format:Vinyl AND (artist:"'+query+'" OR release:"'+query+'")';
+
+    const url='https://musicbrainz.org/ws/2/release/?query='+encodeURIComponent(searchQuery)+'&fmt=json&limit=25';
 
     try{
         const response=await fetch(url);
@@ -1053,20 +1055,9 @@ async function searchMusicBrainz(query){
             return;
         }
 
-        const vinylReleases=data.releases.filter(function(release){
-            return (release.media||[]).some(function(media){
-                return (media.format||'').toLowerCase()==='vinyl';
-            });
-        });
-
-        if(!vinylReleases.length){
-            albumSearchResults.innerHTML='<p>Inga vinylalbum hittades.</p>';
-            return;
-        }
-
         const search=query.toLowerCase().trim();
 
-        vinylReleases.sort(function(a,b){
+        data.releases.sort(function(a,b){
             const titleA=(a.title||'').toLowerCase();
             const titleB=(b.title||'').toLowerCase();
 
@@ -1079,19 +1070,19 @@ async function searchMusicBrainz(query){
                 :'';
 
             function score(title,artist){
-                if(title===search)return 100;
-                if(artist===search)return 90;
-                if(title.indexOf(search)===0)return 80;
-                if(artist.indexOf(search)===0)return 70;
-                if(title.indexOf(search)>-1)return 60;
-                if(artist.indexOf(search)>-1)return 50;
+                if(artist===search)return 100;
+                if(title===search)return 95;
+                if(artist.indexOf(search)===0)return 80;
+                if(title.indexOf(search)===0)return 75;
+                if(artist.indexOf(search)>-1)return 60;
+                if(title.indexOf(search)>-1)return 50;
                 return 0;
             }
 
             return score(titleB,artistB)-score(titleA,artistA);
         });
 
-        vinylReleases.slice(0,10).forEach(function(release){
+        data.releases.slice(0,10).forEach(function(release){
             const artist=release['artist-credit']&&release['artist-credit'][0]
                 ?release['artist-credit'][0].name
                 :'Okänd artist';
