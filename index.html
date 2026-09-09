@@ -135,71 +135,199 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .rating-filter button{border:0;background:transparent;color:#aaa;padding:8px 10px;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .rating-filter button.active{background:#303033;color:#fff}
 
-.musicbrainz-search {
-    display: flex;
-    gap: 10px;
-    margin: 20px 0;
-}
+/* ================================
+   ADD ALBUM BUTTON
+   ================================ */
 
-.musicbrainz-search input {
-    flex: 1;
-    padding: 12px;
-    font-size: 16px;
-    background: #222;
+.add-album-button {
+    background: #22c55e;
     color: white;
-    border: 1px solid #555;
+    border: none;
+    padding: 10px 16px;
     border-radius: 6px;
-}
-
-.musicbrainz-search button {
-    padding: 12px 20px;
-    font-size: 16px;
+    font-size: 14px;
+    font-weight: bold;
     cursor: pointer;
 }
 
-#mbResults {
+.add-album-button:hover {
+    background: #16a34a;
+}
+
+
+/* ================================
+   ADD ALBUM MODAL
+   ================================ */
+
+.add-album-modal {
+    display: none;
+
+    position: fixed;
+    z-index: 9999;
+
+    left: 0;
+    top: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0, 0, 0, 0.8);
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.add-album-box {
+    position: relative;
+
+    width: 100%;
+    max-width: 650px;
+    max-height: 85vh;
+
+    overflow-y: auto;
+
+    background: #181818;
+    color: white;
+
+    border-radius: 10px;
+
+    padding: 25px;
+
+    box-sizing: border-box;
+}
+
+.add-album-box h2 {
+    margin-top: 0;
     margin-bottom: 20px;
 }
 
-.mb-result {
-    display: flex;
-    gap: 15px;
-    padding: 12px;
-    margin-bottom: 10px;
-    background: #222;
-    border-radius: 8px;
+.close-add-album {
+    position: absolute;
+
+    top: 10px;
+    right: 15px;
+
+    background: none;
+    border: none;
+
+    color: white;
+
+    font-size: 30px;
     cursor: pointer;
 }
 
-.mb-result:hover {
-    background: #333;
+
+/* ================================
+   SEARCH
+   ================================ */
+
+.add-album-search {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
-.mb-cover {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    background: #111;
+.add-album-search input {
+    flex: 1;
+
+    padding: 12px;
+
+    background: #252525;
+    color: white;
+
+    border: 1px solid #555;
+    border-radius: 6px;
+
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.add-album-search button {
+    padding: 12px 18px;
+
+    background: #333;
+    color: white;
+
+    border: 1px solid #555;
+    border-radius: 6px;
+
+    cursor: pointer;
+}
+
+
+/* ================================
+   SEARCH RESULTS
+   ================================ */
+
+.mb-result {
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 12px;
+
+    margin-bottom: 8px;
+
+    background: #242424;
+
+    border-radius: 8px;
 }
 
 .mb-info {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    flex: 1;
 }
 
 .mb-title {
+    font-size: 16px;
     font-weight: bold;
-    font-size: 17px;
 }
 
 .mb-artist {
-    margin-top: 5px;
+    margin-top: 4px;
+    opacity: 0.8;
 }
 
 .mb-year {
-    margin-top: 4px;
-    opacity: 0.7;
+    margin-top: 3px;
+    opacity: 0.6;
+}
+
+
+/* ================================
+   ADD BUTTON
+   ================================ */
+
+.mb-add-button {
+    flex-shrink: 0;
+
+    background: #22c55e;
+    color: white;
+
+    border: none;
+
+    padding: 9px 16px;
+
+    border-radius: 6px;
+
+    font-size: 14px;
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+.mb-add-button:hover {
+    background: #16a34a;
+}
+
+.mb-added {
+    background: #555;
+    color: #ccc;
+    cursor: default;
 }
 
 @media screen and (min-width:601px) and (max-width:1100px){
@@ -264,17 +392,9 @@ body{padding:15px}
     <button id="carouselButton" type="button">◀ Karusell</button>
   </div>
 
-  <div class="musicbrainz-search">
-      <input
-          type="text"
-          id="mbSearch"
-          placeholder="Sök album..."
-          autocomplete="off"
-      >
-      <button id="mbSearchButton">Sök</button>
-  </div>
-  
-  <div id="mbResults"></div>
+  <button id="addAlbumButton" class="add-album-button">
+      Add Album+
+  </button>
 
   <div class="rating-filter">
     <button class="active" data-rating="all">Alla</button>
@@ -316,6 +436,35 @@ body{padding:15px}
 </div>
 
   </div>
+</div>
+
+<div id="addAlbumModal" class="add-album-modal">
+
+    <div class="add-album-box">
+
+        <button id="closeAddAlbum" class="close-add-album">
+            ×
+        </button>
+
+        <h2>Add Album</h2>
+
+        <div class="add-album-search">
+            <input
+                type="text"
+                id="albumSearchInput"
+                placeholder="Search artist or album..."
+                autocomplete="off"
+            >
+
+            <button id="albumSearchButton">
+                Search
+            </button>
+        </div>
+
+        <div id="albumSearchResults"></div>
+
+    </div>
+
 </div>
 
 <script>
@@ -1024,52 +1173,120 @@ buildGrid();
 
 })();
 
-const mbSearchInput = document.getElementById('mbSearch');
-const mbSearchButton = document.getElementById('mbSearchButton');
-const mbResults = document.getElementById('mbResults');
+// ========================================
+// ADD ALBUM / MUSICBRAINZ
+// ========================================
+
+const addAlbumButton =
+    document.getElementById('addAlbumButton');
+
+const addAlbumModal =
+    document.getElementById('addAlbumModal');
+
+const closeAddAlbum =
+    document.getElementById('closeAddAlbum');
+
+const albumSearchInput =
+    document.getElementById('albumSearchInput');
+
+const albumSearchButton =
+    document.getElementById('albumSearchButton');
+
+const albumSearchResults =
+    document.getElementById('albumSearchResults');
+
+
+// ========================================
+// OPEN MODAL
+// ========================================
+
+addAlbumButton.addEventListener('click', function () {
+
+    addAlbumModal.style.display = 'flex';
+
+    albumSearchInput.focus();
+
+});
+
+
+// ========================================
+// CLOSE MODAL
+// ========================================
+
+closeAddAlbum.addEventListener('click', function () {
+
+    addAlbumModal.style.display = 'none';
+
+});
+
+
+// Close if clicking outside the box
+
+addAlbumModal.addEventListener('click', function (event) {
+
+    if (event.target === addAlbumModal) {
+
+        addAlbumModal.style.display = 'none';
+
+    }
+
+});
+
+
+// ========================================
+// SEARCH
+// ========================================
 
 async function searchMusicBrainz() {
 
-    const query = mbSearchInput.value.trim();
+    const query =
+        albumSearchInput.value.trim();
 
     if (!query) return;
 
-    mbResults.innerHTML = '<p>Söker...</p>';
+    albumSearchResults.innerHTML =
+        '<p>Söker...</p>';
 
     const url =
         'https://musicbrainz.org/ws/2/release-group/' +
-        '?query=' + encodeURIComponent(query) +
+        '?query=' +
+        encodeURIComponent(query) +
         '&fmt=json' +
         '&limit=10';
 
     try {
 
-        const response = await fetch(url);
-
-        console.log('MusicBrainz status:', response.status);
+        const response =
+            await fetch(url);
 
         if (!response.ok) {
+
             throw new Error(
                 'HTTP ' + response.status
             );
+
         }
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
-        console.log('MusicBrainz data:', data);
+        albumSearchResults.innerHTML = '';
 
-        mbResults.innerHTML = '';
 
-        if (!data['release-groups'] ||
-            data['release-groups'].length === 0) {
+        if (
+            !data['release-groups'] ||
+            data['release-groups'].length === 0
+        ) {
 
-            mbResults.innerHTML =
+            albumSearchResults.innerHTML =
                 '<p>Inga album hittades.</p>';
 
             return;
+
         }
 
-        data['release-groups'].forEach(album => {
+
+        data['release-groups'].forEach(function (album) {
 
             const artist =
                 album['artist-credit'] &&
@@ -1077,16 +1294,22 @@ async function searchMusicBrainz() {
                     ? album['artist-credit'][0].name
                     : 'Okänd artist';
 
+
             const year =
                 album['first-release-date']
-                    ? album['first-release-date'].substring(0, 4)
+                    ? album['first-release-date']
+                        .substring(0, 4)
                     : '';
 
-            const div = document.createElement('div');
+
+            const div =
+                document.createElement('div');
 
             div.className = 'mb-result';
 
+
             div.innerHTML = `
+
                 <div class="mb-info">
 
                     <div class="mb-title">
@@ -1102,10 +1325,40 @@ async function searchMusicBrainz() {
                     </div>
 
                 </div>
+
+                <button
+                    class="mb-add-button"
+                    data-album-id="${album.id}"
+                >
+                    Add
+                </button>
+
             `;
 
-            mbResults.appendChild(div);
+
+            const addButton =
+                div.querySelector('.mb-add-button');
+
+
+            addButton.addEventListener(
+                'click',
+                function () {
+
+                    addAlbumFromMusicBrainz(
+                        album,
+                        artist,
+                        year,
+                        addButton
+                    );
+
+                }
+            );
+
+
+            albumSearchResults.appendChild(div);
+
         });
+
 
     } catch (error) {
 
@@ -1114,35 +1367,106 @@ async function searchMusicBrainz() {
             error
         );
 
-        mbResults.innerHTML =
+        albumSearchResults.innerHTML =
             '<p>Kunde inte kontakta MusicBrainz.</p>';
+
     }
+
 }
 
-function escapeHTML(text) {
-    return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+
+// ========================================
+// ADD ALBUM
+// ========================================
+
+function addAlbumFromMusicBrainz(
+    album,
+    artist,
+    year,
+    button
+) {
+
+    console.log(
+        'Album valt:',
+        album
+    );
+
+
+    // Visuell feedback
+
+    button.textContent = 'Added';
+
+    button.classList.add('mb-added');
+
+    button.disabled = true;
+
+
+    /*
+     * JUST NU SPARAR VI INTE ALBUMET.
+     *
+     * Nästa steg blir att:
+     *
+     * 1. Hämta komplett albuminfo
+     * 2. Hämta låtlistan
+     * 3. Hämta omslaget
+     * 4. Spara albumet i Supabase
+     *
+     */
+
+
+    alert(
+        artist +
+        ' – ' +
+        album.title +
+        ' har valts!'
+    );
+
 }
 
-mbSearchButton.addEventListener(
+
+// ========================================
+// ENTER = SEARCH
+// ========================================
+
+albumSearchButton.addEventListener(
     'click',
     searchMusicBrainz
 );
 
-mbSearchInput.addEventListener(
+
+albumSearchInput.addEventListener(
     'keydown',
-    function(event) {
+    function (event) {
 
         if (event.key === 'Enter') {
+
             searchMusicBrainz();
+
         }
 
     }
 );
+
+
+// ========================================
+// SECURITY
+// ========================================
+
+function escapeHTML(text) {
+
+    return String(text)
+
+        .replace(/&/g, '&amp;')
+
+        .replace(/</g, '&lt;')
+
+        .replace(/>/g, '&gt;')
+
+        .replace(/"/g, '&quot;')
+
+        .replace(/'/g, '&#039;');
+
+}
 </script>
 
 </body>
