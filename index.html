@@ -551,7 +551,7 @@ function esc(value){
 function recordHTML(record, className){
   var html='<article class="record '+(className||'')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
-      '<img class="cover" src="" data-src="'+record[6]+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
+      '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+record[6]+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
       '<div class="number">'+record[0]+'</div>'+
       '<div class="cover-rating">';
 
@@ -583,8 +583,8 @@ function loadVisibleImages(){
 
     var rect=img.getBoundingClientRect();
 
-    if(rect.top<height+500&&rect.bottom>-500){
-      img.setAttribute('src',dataSrc);
+    if(rect.top<height+700&&rect.bottom>-700){
+      img.src=dataSrc;
       img.removeAttribute('data-src');
     }
   }
@@ -670,12 +670,15 @@ function attachAlbumClicks(){
   var elements=document.getElementsByClassName('record');
 
   for(var i=0;i<elements.length;i++){
-    (function(index){
-      elements[index].onclick=function(){
-        if(view==='carousel'&&drag)return;
+    elements[i].onclick=function(){
+      if(view==='carousel'&&drag)return;
+
+      var index=parseInt(this.getAttribute('data-index'),10);
+
+      if(!isNaN(index)){
         openAlbum(index);
-      };
-    })(parseInt(elements[i].getAttribute('data-index'),10));
+      }
+    };
   }
 }
 
@@ -797,13 +800,7 @@ function buildCarousel(){
   var viewport=document.getElementById('carouselViewport');
   var cards=document.getElementsByClassName('carousel-card');
 
-  for(var j=0;j<cards.length;j++){
-    (function(index){
-      cards[index].onclick=function(){
-        if(!drag)openAlbum(index);
-      };
-    })(j);
-  }
+  attachAlbumClicks();
 
   function scheduleSettle(){
     if(scrollTimer)clearTimeout(scrollTimer);
@@ -917,6 +914,8 @@ for(var f=0;f<ratingFilter.length;f++){
     }
 
     this.className='active';
+
+    activeIndex=0;
 
     if(view==='grid'){
       buildGrid();
