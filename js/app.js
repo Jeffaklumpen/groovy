@@ -477,23 +477,38 @@ function enableGridSorting(){
     });
   }
 
-  function moveDragged(target,after){
-    if(!dragged||!target||target===dragged)return;
+function moveDragged(target,after){
+  if(!dragged||!target||target===dragged)return;
 
-    if(after){
-      if(target.nextSibling!==dragged){
-        animateCards(function(){
-          target.parentNode.insertBefore(dragged,target.nextSibling);
-        });
-      }
-    }else{
-      if(target!==dragged.nextSibling){
-        animateCards(function(){
-          target.parentNode.insertBefore(dragged,target);
-        });
-      }
+  var draggedRect=dragged.getBoundingClientRect();
+  var targetRect=target.getBoundingClientRect();
+
+  var targetCenterX=targetRect.left+targetRect.width/2;
+  var targetCenterY=targetRect.top+targetRect.height/2;
+
+  var draggedCenterX=draggedRect.left+draggedRect.width/2;
+  var draggedCenterY=draggedRect.top+draggedRect.height/2;
+
+  if(Math.abs(draggedCenterX-targetCenterX)>Math.abs(draggedCenterY-targetCenterY)){
+    after=draggedCenterX>targetCenterX;
+  }else{
+    after=draggedCenterY>targetCenterY;
+  }
+
+  if(after){
+    if(target.nextSibling!==dragged){
+      animateCards(function(){
+        target.parentNode.insertBefore(dragged,target.nextSibling);
+      });
+    }
+  }else{
+    if(target!==dragged.nextSibling){
+      animateCards(function(){
+        target.parentNode.insertBefore(dragged,target);
+      });
     }
   }
+}
 
   function finishDrag(){
     var orderedCards=collection.querySelectorAll('.record');
