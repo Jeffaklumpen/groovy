@@ -1048,11 +1048,15 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
                     const position=track.position||'';
 
                     let discSide='';
-
+                    
                     if(position.startsWith('A')){
                         discSide='A';
                     }else if(position.startsWith('B')){
                         discSide='B';
+                    }else if(position.startsWith('C')){
+                        discSide='C';
+                    }else if(position.startsWith('D')){
+                        discSide='D';
                     }
 
                     const trackNumber=parseInt(
