@@ -550,9 +550,10 @@ function esc(value){
 }
 
 function recordHTML(record, className){
+  var smallSrc=record[6].replace('/covers/','/covers_small/');
   var html='<article class="record '+(className||'')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
-      '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+record[6]+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
+      '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+smallSrc+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
       '<div class="number">'+record[0]+'</div>'+
       '<div class="cover-rating">';
 
