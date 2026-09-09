@@ -1121,7 +1121,7 @@ async function searchMusicBrainz(query){
 async function addAlbumFromMusicBrainz(album,artist,year,button){
     if(button.classList.contains('mb-added'))return;
 
-    button.textContent='Hämtar...';
+    button.textContent='Hämtar vinyl...';
     button.disabled=true;
 
     try{
@@ -1133,17 +1133,24 @@ async function addAlbumFromMusicBrainz(album,artist,year,button){
 
         const data=await response.json();
 
-        console.log('MusicBrainz album:',data);
-
         const releases=data.releases||[];
 
-        if(!releases.length){
-            throw new Error('Inga releases hittades');
+        const vinylReleases=releases.filter(function(release){
+            return (release.media||[]).some(function(media){
+                return (media.format||'').toLowerCase()==='vinyl';
+            });
+        });
+
+        console.log('Alla releases:',releases);
+        console.log('Vinyl releases:',vinylReleases);
+
+        if(!vinylReleases.length){
+            throw new Error('Ingen vinylrelease hittades');
         }
 
-        const release=releases[0];
+        const release=vinylReleases[0];
 
-        console.log('Vald release:',release);
+        console.log('Vald vinylrelease:',release);
 
         const tracksUrl='https://musicbrainz.org/ws/2/release/'+release.id+'?inc=recordings+media&fmt=json';
 
@@ -1153,18 +1160,25 @@ async function addAlbumFromMusicBrainz(album,artist,year,button){
 
         const releaseData=await tracksResponse.json();
 
-        console.log('Release med låtar:',releaseData);
-
         const tracks=[];
 
         (releaseData.media||[]).forEach(function(media){
-            const side=media.position||1;
+
+            const format=(media.format||'').toLowerCase();
+
+            if(format!=='vinyl')return;
+
+            let side='';
 
             (media.tracks||[]).forEach(function(track){
+
+                const title=track.title||'';
+                const number=track.position||0;
+
                 tracks.push({
                     side:side,
-                    number:track.position||0,
-                    title:track.title||''
+                    number:number,
+                    title:title
                 });
             });
         });
@@ -1174,19 +1188,21 @@ async function addAlbumFromMusicBrainz(album,artist,year,button){
         console.log('Album:',album.title);
         console.log('Artist:',artist);
         console.log('År:',year);
+        console.log('Format: VINYL');
+        console.log('Release ID:',release.id);
         console.log('Omslag:',coverUrl);
         console.log('Låtar:',tracks);
 
-        button.textContent='✓ Added';
+        button.textContent='✓ Vinyl';
         button.classList.add('mb-added');
 
     }catch(error){
-        console.error('Kunde inte hämta album:',error);
+        console.error('Kunde inte hämta vinyl:',error);
 
         button.textContent='Add';
         button.disabled=false;
 
-        alert('Kunde inte hämta albuminformationen.');
+        alert('Ingen vinylutgåva hittades för detta album.');
     }
 }
 </script>
