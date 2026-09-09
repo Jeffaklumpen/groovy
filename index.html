@@ -135,6 +135,73 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .rating-filter button{border:0;background:transparent;color:#aaa;padding:8px 10px;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .rating-filter button.active{background:#303033;color:#fff}
 
+.musicbrainz-search {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.musicbrainz-search input {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    background: #222;
+    color: white;
+    border: 1px solid #555;
+    border-radius: 6px;
+}
+
+.musicbrainz-search button {
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#mbResults {
+    margin-bottom: 20px;
+}
+
+.mb-result {
+    display: flex;
+    gap: 15px;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #222;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.mb-result:hover {
+    background: #333;
+}
+
+.mb-cover {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    background: #111;
+}
+
+.mb-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.mb-title {
+    font-weight: bold;
+    font-size: 17px;
+}
+
+.mb-artist {
+    margin-top: 5px;
+}
+
+.mb-year {
+    margin-top: 4px;
+    opacity: 0.7;
+}
+
 @media screen and (min-width:601px) and (max-width:1100px){
 body{padding:20px}
 .header{margin-bottom:24px}
@@ -197,6 +264,18 @@ body{padding:15px}
     <button id="carouselButton" type="button">◀ Karusell</button>
   </div>
 
+  <div class="musicbrainz-search">
+      <input
+          type="text"
+          id="mbSearch"
+          placeholder="Sök album..."
+          autocomplete="off"
+      >
+      <button id="mbSearchButton">Sök</button>
+  </div>
+  
+  <div id="mbResults"></div>
+
   <div class="rating-filter">
     <button class="active" data-rating="all">Alla</button>
     <button data-rating="1">★</button>
@@ -212,7 +291,6 @@ body{padding:15px}
 <div class="album-overlay" id="albumOverlay">
   <div class="album-detail">
 
-```
 <button type="button" class="album-close" id="albumClose" aria-label="Stäng">×</button>
 
 <div class="album-detail-cover">
@@ -236,7 +314,6 @@ body{padding:15px}
   <div class="tracks-title">LÅTLISTA</div>
   <div id="detailTracks"></div>
 </div>
-```
 
   </div>
 </div>
@@ -946,6 +1023,99 @@ window.onscroll=scheduleImageLoad;
 buildGrid();
 
 })();
+
+const mbSearchInput = document.getElementById('mbSearch');
+const mbSearchButton = document.getElementById('mbSearchButton');
+const mbResults = document.getElementById('mbResults');
+
+async function searchMusicBrainz() {
+    const query = mbSearchInput.value.trim();
+
+    if (!query) return;
+
+    mbResults.innerHTML = '<p>Söker...</p>';
+
+    try {
+        const url =
+            'https://musicbrainz.org/ws/2/release-group/' +
+            '?query=' + encodeURIComponent(query) +
+            '&fmt=json&limit=10';
+
+        const response = await fetch(url, {
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('MusicBrainz svarade med ' + response.status);
+        }
+
+        const data = await response.json();
+
+        mbResults.innerHTML = '';
+
+        if (!data['release-groups'] || data['release-groups'].length === 0) {
+            mbResults.innerHTML = '<p>Inga album hittades.</p>';
+            return;
+        }
+
+        data['release-groups'].forEach(album => {
+            const artist =
+                album['artist-credit'] &&
+                album['artist-credit'][0]
+                    ? album['artist-credit'][0].name
+                    : 'Okänd artist';
+
+            const year =
+                album['first-release-date']
+                    ? album['first-release-date'].substring(0, 4)
+                    : '';
+
+            const div = document.createElement('div');
+            div.className = 'mb-result';
+
+            div.innerHTML = `
+                <img
+                    class="mb-cover"
+                    src="https://coverartarchive.org/release-group/${album.id}/front-250"
+                    onerror="this.style.display='none'"
+                >
+
+                <div class="mb-info">
+                    <div class="mb-title">${escapeHTML(album.title)}</div>
+                    <div class="mb-artist">${escapeHTML(artist)}</div>
+                    <div class="mb-year">${escapeHTML(year)}</div>
+                </div>
+            `;
+
+            mbResults.appendChild(div);
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        mbResults.innerHTML =
+            '<p>Kunde inte kontakta MusicBrainz.</p>';
+    }
+}
+
+function escapeHTML(text) {
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+mbSearchButton.addEventListener('click', searchMusicBrainz);
+
+mbSearchInput.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        searchMusicBrainz();
+    }
+});
 </script>
 
 </body>
