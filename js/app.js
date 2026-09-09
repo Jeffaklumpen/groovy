@@ -176,16 +176,17 @@ window.loadCollection=async function(){
           });
       }
 
-      return [
-        index+1,
-        artist,
-        album.title||'Okänd titel',
-        album.release_year||'',
-        album.genre||'',
-        ratings[album.id]||0,
-        album.cover_url||'',
-        sides
-      ];
+        return [
+          index+1,
+          artist,
+          album.title||'Okänd titel',
+          album.release_year||'',
+          album.genre||'',
+          ratings[album.id]||0,
+          album.cover_url||'',
+          sides,
+          album.id
+        ];
     });
 
   console.log('RECORDS:', records);
@@ -205,6 +206,7 @@ var detailYear=document.getElementById('detailYear');
 var detailGenre=document.getElementById('detailGenre');
 var detailRating=document.getElementById('detailRating');
 var detailTracks=document.getElementById('detailTracks');
+var deleteAlbumButton=document.getElementById('deleteAlbumButton');
 
 var view='grid';
 var activeIndex=0;
@@ -272,6 +274,34 @@ function openAlbum(index){
   var record=records[index];
   if(!record)return;
 
+  deleteAlbumButton.onclick=async function(){
+    if(!confirm('Vill du ta bort albumet från din samling?'))return;
+
+    var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+
+    if(userError||!user){
+      alert('Du måste vara inloggad.');
+      return;
+    }
+
+    var albumId=record[8];
+
+    var {error}=await supabaseClient
+      .from('collections')
+      .delete()
+      .eq('user_id',user.id)
+      .eq('album_id',albumId);
+
+    if(error){
+      console.error('Kunde inte ta bort albumet:',error);
+      alert('Kunde inte ta bort albumet.');
+      return;
+    }
+
+    closeAlbum();
+    await window.loadCollection();
+  };
+
   detailNumber.innerHTML=esc(record[0]);
   detailArtist.innerHTML=esc(record[1]);
   detailAlbum.innerHTML=esc(record[2]);
@@ -305,22 +335,22 @@ function openAlbum(index){
       '<div class="side-title"><span>SIDA</span>'+side+'</div>'+
       '<ol class="tracks-list">';
 
-  for(var j=0;j<tracks.length;j++){
-    var track=String(tracks[j]);
-    var parts=track.split('|');
-    var title=parts[0];
-    var rating=parseInt(parts[1],10);
-  
-    if(isNaN(rating))rating=0;
-    rating=Math.max(0,Math.min(5,rating));
-  
-    var trackStars='';
-    for(var s=1;s<=5;s++){
-      trackStars+=s<=rating?'★':'<span class="empty">☆</span>';
+    for(var j=0;j<tracks.length;j++){
+      var track=String(tracks[j]);
+      var parts=track.split('|');
+      var title=parts[0];
+      var rating=parseInt(parts[1],10);
+
+      if(isNaN(rating))rating=0;
+      rating=Math.max(0,Math.min(5,rating));
+
+      var trackStars='';
+      for(var s=1;s<=5;s++){
+        trackStars+=s<=rating?'★':'<span class="empty">☆</span>';
+      }
+
+      html+='<li><span class="track-title">'+esc(title)+'</span><span class="track-rating">'+trackStars+'</span></li>';
     }
-  
-    html+='<li><span class="track-title">'+esc(title)+'</span><span class="track-rating">'+trackStars+'</span></li>';
-  }
 
     html+='</ol></section>';
   }
@@ -330,17 +360,6 @@ function openAlbum(index){
 
   albumOverlay.className='album-overlay visible';
   document.body.style.overflow='hidden';
-}
-
-function closeAlbum(){
-  albumOverlay.className='album-overlay';
-  document.body.style.overflow='';
-
-  setTimeout(function(){
-    if(albumOverlay.className.indexOf('visible')===-1){
-      detailCover.src='';
-    }
-  },350);
 }
 
 
