@@ -1033,7 +1033,9 @@ albumSearchInput.addEventListener('input',function(){
 });
 
 async function searchMusicBrainz(query){
-    const url='https://musicbrainz.org/ws/2/release-group/?query='+encodeURIComponent(query)+'&fmt=json&limit=10';
+    albumSearchResults.innerHTML='<p>Söker...</p>';
+
+    const url='https://musicbrainz.org/ws/2/release-group/?query='+encodeURIComponent(query)+'&fmt=json&limit=25';
 
     try{
         const response=await fetch(url);
@@ -1047,7 +1049,29 @@ async function searchMusicBrainz(query){
             return;
         }
 
-        data['release-groups'].forEach(function(album){
+        const search=query.toLowerCase().trim();
+
+        data['release-groups'].sort(function(a,b){
+            const titleA=(a.title||'').toLowerCase();
+            const titleB=(b.title||'').toLowerCase();
+
+            const artistA=a['artist-credit']&&a['artist-credit'][0]?(a['artist-credit'][0].name||'').toLowerCase():'';
+            const artistB=b['artist-credit']&&b['artist-credit'][0]?(b['artist-credit'][0].name||'').toLowerCase():'';
+
+            function score(title,artist){
+                if(title===search)return 100;
+                if(title.indexOf(search)===0)return 80;
+                if(title.indexOf(search)>-1)return 60;
+                if(artist===search)return 50;
+                if(artist.indexOf(search)===0)return 40;
+                if(artist.indexOf(search)>-1)return 30;
+                return 0;
+            }
+
+            return score(titleB,artistB)-score(titleA,artistA);
+        });
+
+        data['release-groups'].slice(0,10).forEach(function(album){
             const artist=album['artist-credit']&&album['artist-credit'][0]
                 ?album['artist-credit'][0].name
                 :'Okänd artist';
@@ -1070,6 +1094,13 @@ async function searchMusicBrainz(query){
                 '</div>'+
                 '<button class="mb-add-button">Add</button>';
 
+            const addButton=div.querySelector('.mb-add-button');
+
+            addButton.addEventListener('click',function(event){
+                event.stopPropagation();
+                addAlbumFromMusicBrainz(album,artist,year,addButton);
+            });
+
             div.addEventListener('click',function(){
                 addAlbumFromMusicBrainz(album,artist,year,addButton);
             });
@@ -1081,25 +1112,6 @@ async function searchMusicBrainz(query){
         console.error('MusicBrainz-fel:',error);
         albumSearchResults.innerHTML='<p>Kunde inte kontakta MusicBrainz.</p>';
     }
-}
-
-function addAlbumFromMusicBrainz(album,artist,year,button){
-    console.log('Album valt:',album);
-
-    button.textContent='Added';
-    button.classList.add('mb-added');
-    button.disabled=true;
-
-    alert(artist+' – '+album.title+' har valts!');
-}
-
-function escapeHTML(text){
-    return String(text)
-        .replace(/&/g,'&amp;')
-        .replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;')
-        .replace(/"/g,'&quot;')
-        .replace(/'/g,'&#039;');
 }
 </script>
 
