@@ -241,4 +241,4 @@ body{padding:15px}
 
 .grid .record{cursor:grab;transition:transform .15s ease,box-shadow .15s ease}
 .grid .record:active{cursor:grabbing}
-.grid .record.dragging{opacity:.75;transform:scale(1.04);-webkit-transform:scale(1.04);filter:brightness(1.15);box-shadow:0 18px 40px rgba(0,0,0,.45);z-index:20;transition:transform .15s ease,opacity .15s ease,box-shadow .15s ease;cursor:grabbing}
+.grid .record.dragging{opacity:1;transform:scale(1.06) rotate(2deg);-webkit-transform:scale(1.06) rotate(2deg);filter:brightness(1.08);box-shadow:0 20px 45px rgba(0,0,0,.55);z-index:20;cursor:grabbing}
