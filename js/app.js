@@ -433,10 +433,10 @@ function enableGridSorting(){
   var touchTimer=null;
   var touchDragging=false;
 
-    collection.oncontextmenu=function(event){
-      event.preventDefault();
-      return false;
-    };
+  collection.oncontextmenu=function(event){
+    event.preventDefault();
+    return false;
+  };
 
   collection.ondragstart=function(event){
     var record=event.target.closest('.record');
@@ -460,6 +460,35 @@ function enableGridSorting(){
     dragged=null;
   };
 
+  function moveCard(target){
+    if(!dragged||!target||target===dragged)return;
+
+    var rect=target.getBoundingClientRect();
+    var after=false;
+
+    if(touchDragging){
+      var touch=window.event&&window.event.touches
+        ?window.event.touches[0]
+        :null;
+
+      if(touch){
+        after=touch.clientY>rect.top+rect.height/2;
+      }
+    }else{
+      after=window.event.clientY>rect.top+rect.height/2;
+    }
+
+    if(after){
+      if(target.nextSibling!==dragged){
+        target.parentNode.insertBefore(dragged,target.nextSibling);
+      }
+    }else{
+      if(target!==dragged.nextSibling){
+        target.parentNode.insertBefore(dragged,target);
+      }
+    }
+  }
+
   collection.ondragover=function(event){
     if(!dragged)return;
 
@@ -469,20 +498,11 @@ function enableGridSorting(){
 
     if(!target||target===dragged)return;
 
-    var rect=target.getBoundingClientRect();
-    var after=event.clientY>rect.top+rect.height/2;
-
-    if(after){
-      target.parentNode.insertBefore(dragged,target.nextSibling);
-    }else{
-      target.parentNode.insertBefore(dragged,target);
-    }
+    moveCard(target);
   };
 
-  collection.ondrop=async function(event){
+  async function finishDrag(){
     if(!dragged)return;
-
-    event.preventDefault();
 
     var orderedCards=collection.querySelectorAll('.record');
     var newRecords=[];
@@ -509,6 +529,15 @@ function enableGridSorting(){
     await saveGridOrder();
 
     dragged=null;
+    touchDragging=false;
+  }
+
+  collection.ondrop=async function(event){
+    if(!dragged)return;
+
+    event.preventDefault();
+
+    await finishDrag();
   };
 
   var cards=collection.querySelectorAll('.record');
@@ -546,9 +575,13 @@ function enableGridSorting(){
       var after=touch.clientY>rect.top+rect.height/2;
 
       if(after){
-        card.parentNode.insertBefore(dragged,card.nextSibling);
+        if(card.nextSibling!==dragged){
+          card.parentNode.insertBefore(dragged,card.nextSibling);
+        }
       }else{
-        card.parentNode.insertBefore(dragged,card);
+        if(card!==dragged.nextSibling){
+          card.parentNode.insertBefore(dragged,card);
+        }
       }
     };
 
@@ -560,32 +593,7 @@ function enableGridSorting(){
         return;
       }
 
-      var orderedCards=collection.querySelectorAll('.record');
-      var newRecords=[];
-
-      for(var j=0;j<orderedCards.length;j++){
-        var index=parseInt(orderedCards[j].getAttribute('data-index'),10);
-        var record=records[index];
-
-        if(!record)continue;
-
-        record[0]=j+1;
-
-        var numberElement=orderedCards[j].querySelector('.number');
-
-        if(numberElement){
-          numberElement.textContent=j+1;
-        }
-
-        newRecords.push(record);
-      }
-
-      records=newRecords;
-
-      await saveGridOrder();
-
-      dragged=null;
-      touchDragging=false;
+      await finishDrag();
     };
 
     cards[i].ontouchcancel=function(){
