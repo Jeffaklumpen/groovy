@@ -407,7 +407,8 @@ function attachAlbumClicks(){
       await deleteCollectionAlbum(index);
       return;
     }
-
+      
+    if(suppressAlbumClick)return;
     if(deleteMode)return;
 
     var recordElement=target.closest
