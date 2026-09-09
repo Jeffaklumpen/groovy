@@ -427,6 +427,7 @@ function attachAlbumClicks(){
 }
 
 function enableGridSorting(){
+    console.log('DRAGSTART FUNGERAR');
   if(collection._sortingAttached)return;
   collection._sortingAttached=true;
 
