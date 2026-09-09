@@ -1,3 +1,5 @@
+console.log('APP.JS LADDADE');
+
 const loginEmail=document.getElementById('loginEmail');
 const loginPassword=document.getElementById('loginPassword');
 const loginButton=document.getElementById('loginButton');
