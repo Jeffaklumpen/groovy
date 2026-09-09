@@ -868,6 +868,12 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
         const discogsTitle=data.title||albumTitle;
         const discogsYear=data.year||year;
 
+        const discogsGenre=
+            data.genres &&
+            data.genres.length
+                ?data.genres[0]
+                :'';
+
         const discogsArtist=
             data.artists &&
             data.artists.length &&
@@ -936,6 +942,7 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
                 artist_id:artistId,
                 title:discogsTitle,
                 release_year:discogsYear,
+                genre:discogsGenre,
                 cover_url:coverUrl
             })
             .select('id')
