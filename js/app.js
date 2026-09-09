@@ -499,36 +499,55 @@ function enableGridSorting(){
 
     dragged.classList.remove('dragging');
 
-    await saveGridOrder();
-
-    dragged=null;
+    var saved=await saveGridOrder();
+    
+    if(saved){
+      dragged=null;
+    }
   });
 }
 
 async function saveGridOrder(){
   var {data:{user},error:userError}=await supabaseClient.auth.getUser();
 
-  if(userError||!user)return;
+  if(userError||!user){
+    alert('Du måste vara inloggad.');
+    return false;
+  }
 
   for(var i=0;i<records.length;i++){
     var record=records[i];
 
-    var {error}=await supabaseClient
+    if(!record||!record[9]){
+      console.error('Saknar collection-id:',record);
+      alert('Kunde inte hitta albumets collection-id.');
+      return false;
+    }
+
+    var {data,error}=await supabaseClient
       .from('collections')
       .update({
         sort_order:i+1
       })
       .eq('id',record[9])
-      .eq('user_id',user.id);
+      .eq('user_id',user.id)
+      .select('id,sort_order');
 
     if(error){
       console.error('Kunde inte spara sorteringen:',error);
-      alert('Kunde inte spara sorteringen.');
-      return;
+      alert('Kunde inte spara sorteringen.\n\n'+error.message);
+      return false;
+    }
+
+    if(!data||!data.length){
+      console.error('Ingen collection uppdaterades:',record[9]);
+      alert('Supabase uppdaterade ingen rad. Kontrollera RLS-policyn för collections.');
+      return false;
     }
   }
 
   await window.loadCollection();
+  return true;
 }
     
 function buildGrid(){
