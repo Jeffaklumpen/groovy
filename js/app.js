@@ -51,6 +51,7 @@ loginButton.addEventListener('click',async function(){
     loginButton.disabled=false;
 
     await updateAuthUI();
+
 });
 
 logoutButton.addEventListener('click',async function(){
@@ -58,8 +59,12 @@ logoutButton.addEventListener('click',async function(){
     await updateAuthUI();
 });
 
-supabaseClient.auth.onAuthStateChange(function(){
-    updateAuthUI();
+supabaseClient.auth.onAuthStateChange(async function(){
+    await updateAuthUI();
+
+    if(typeof window.loadCollection==='function'){
+        await window.loadCollection();
+    }
 });
 
 updateAuthUI();
@@ -67,6 +72,122 @@ updateAuthUI();
 (function(){
 
 var records = [];
+
+window.loadCollection=async function(){
+  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+
+  if(userError){
+    console.error(userError);
+    return;
+  }
+
+  if(!user){
+    records=[];
+    buildGrid();
+    return;
+  }
+
+  var {data:collectionData,error:collectionError}=await supabaseClient
+    .from('collections')
+    .select(`
+      id,
+      collection_number,
+      albums(
+        id,
+        title,
+        release_year,
+        genre,
+        cover_url,
+        artists(
+          id,
+          name
+        ),
+        tracks(
+          id,
+          disc_side,
+          track_number,
+          title
+        )
+      )
+    `)
+    .eq('user_id',user.id)
+    .order('id',{ascending:true});
+
+  if(collectionError){
+    console.error('Kunde inte hämta samlingen:',collectionError);
+    return;
+  }
+
+  var albumIds=collectionData.map(function(item){
+    return item.albums&&item.albums.id;
+  }).filter(Boolean);
+
+  var ratings={};
+
+  if(albumIds.length){
+    var {data:ratingData,error:ratingError}=await supabaseClient
+      .from('album_ratings')
+      .select('album_id,rating')
+      .eq('user_id',user.id)
+      .in('album_id',albumIds);
+
+    if(ratingError){
+      console.error('Kunde inte hämta albumratings:',ratingError);
+    }else{
+      ratingData.forEach(function(item){
+        ratings[item.album_id]=item.rating||0;
+      });
+    }
+  }
+
+  records=collectionData
+    .filter(function(item){
+      return item.albums;
+    })
+    .map(function(item,index){
+      var album=item.albums;
+      var artist=
+        album.artists&&album.artists.name
+          ?album.artists.name
+          :'Okänd artist';
+
+      var sides={
+        A:[],
+        B:[],
+        C:[],
+        D:[]
+      };
+
+      if(Array.isArray(album.tracks)){
+        album.tracks
+          .sort(function(a,b){
+            return (a.id||0)-(b.id||0);
+          })
+          .forEach(function(track){
+            var side=track.disc_side;
+
+            if(!sides[side])return;
+
+            sides[side].push(
+              (track.title||'Okänd låt')+'|0'
+            );
+          });
+      }
+
+      return [
+        index+1,
+        artist,
+        album.title||'Okänd titel',
+        album.release_year||'',
+        album.genre||'',
+        ratings[album.id]||0,
+        album.cover_url||'',
+        sides
+      ];
+    });
+
+  buildGrid();
+}
 
 var collection=document.getElementById('collection');
 var gridButton=document.getElementById('gridButton');
@@ -100,7 +221,7 @@ function esc(value){
 }
 
 function recordHTML(record, className){
-  var smallSrc=record[6].replace('covers/','covers_small/');
+  var smallSrc=record[6];
   var html='<article class="record '+(className||'')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
       '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+smallSrc+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
@@ -493,7 +614,7 @@ function scheduleImageLoad(){
 
 window.onscroll=scheduleImageLoad;
 
-buildGrid();
+loadCollection();
 
 })();
 
@@ -869,9 +990,11 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             discogsArtist,
             discogsTitle
         );
-
+        
         button.textContent='✓ Added';
         button.classList.add('mb-added');
+        
+        await window.loadCollection();
 
     }catch(error){
         console.error(
