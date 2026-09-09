@@ -208,7 +208,6 @@ var detailYear=document.getElementById('detailYear');
 var detailGenre=document.getElementById('detailGenre');
 var detailRating=document.getElementById('detailRating');
 var detailTracks=document.getElementById('detailTracks');
-var deleteAlbumButton=document.getElementById('deleteAlbumButton');
 
 var view='grid';
 var activeIndex=0;
@@ -277,34 +276,6 @@ function loadVisibleImages(){
 function openAlbum(index){
   var record=records[index];
   if(!record)return;
-
-  deleteAlbumButton.onclick=async function(){
-    if(!confirm('Vill du ta bort albumet från din samling?'))return;
-
-    var {data:{user},error:userError}=await supabaseClient.auth.getUser();
-
-    if(userError||!user){
-      alert('Du måste vara inloggad.');
-      return;
-    }
-
-    var albumId=record[8];
-
-    var {error}=await supabaseClient
-      .from('collections')
-      .delete()
-      .eq('user_id',user.id)
-      .eq('album_id',albumId);
-
-    if(error){
-      console.error('Kunde inte ta bort albumet:',error);
-      alert('Kunde inte ta bort albumet.');
-      return;
-    }
-
-    closeAlbum();
-    await window.loadCollection();
-  };
 
   detailNumber.innerHTML=esc(record[0]);
   detailArtist.innerHTML=esc(record[1]);
