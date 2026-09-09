@@ -17,27 +17,28 @@
   <div class="subtitle">50 SKIVOR</div>
 
 <div class="header-controls">
-
-  <button id="addAlbumButton" class="add-album-button" type="button">
-    Add Album+
-  </button>
-
+  <button id="addAlbumButton" class="add-album-button" type="button">Add Album+</button>
   <button id="deleteModeButton" class="delete-mode-button" type="button" aria-label="Ta bort album">🗑</button>
 
-  <div class="rating-filter">
-    <button class="active" data-rating="all">Alla</button>
-    <button data-rating="1">★</button>
-    <button data-rating="2">★★</button>
-    <button data-rating="3">★★★</button>
-    <button data-rating="4">★★★★</button>
-    <button data-rating="5">★★★★★</button>
+  <div class="menu-dropdown">
+    <button id="filterButton" class="menu-button" type="button" aria-expanded="false">Filter ▾</button>
+    <div id="filterMenu" class="menu-panel">
+      <button type="button" data-rating="all" class="active">Alla</button>
+      <button type="button" data-rating="1">★ 1</button>
+      <button type="button" data-rating="2">★ 2</button>
+      <button type="button" data-rating="3">★ 3</button>
+      <button type="button" data-rating="4">★ 4</button>
+      <button type="button" data-rating="5">★ 5</button>
+    </div>
   </div>
 
-  <div class="view-toggle" role="group" aria-label="Visningsläge">
-    <button id="gridButton" class="active" type="button">▦ Grid</button>
-    <button id="carouselButton" type="button">◀ Karusell</button>
+  <div class="menu-dropdown">
+    <button id="viewButton" class="menu-button" type="button" aria-expanded="false">Grid ▾</button>
+    <div id="viewMenu" class="menu-panel">
+      <button type="button" data-view="grid" class="active">Grid</button>
+      <button type="button" data-view="carousel">Carousel</button>
+    </div>
   </div>
-
 </div>
 </header>
 
