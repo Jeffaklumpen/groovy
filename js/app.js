@@ -817,7 +817,7 @@ albumSearchInput.addEventListener('input',function(){
     albumSearchResults.innerHTML='<p>Söker...</p>';
 
     searchTimer=setTimeout(function(){
-        searchMusicBrainz(query);
+        searchDiscogs(query);
     },250);
 });
 
