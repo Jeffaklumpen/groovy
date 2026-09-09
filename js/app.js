@@ -194,8 +194,10 @@ window.loadCollection=async function(){
 }
 
 var collection=document.getElementById('collection');
-var gridButton=document.getElementById('gridButton');
-var carouselButton=document.getElementById('carouselButton');
+var filterButton=document.getElementById('filterButton');
+var filterMenu=document.getElementById('filterMenu');
+var viewButton=document.getElementById('viewButton');
+var viewMenu=document.getElementById('viewMenu');
 var albumOverlay=document.getElementById('albumOverlay');
 var albumClose=document.getElementById('albumClose');
 var detailCover=document.getElementById('detailCover');
@@ -624,11 +626,7 @@ function buildCarousel(){
 function setView(nextView){
   view=nextView;
 
-  gridButton.className=view==='grid'?'active':'';
-  carouselButton.className=view==='carousel'?'active':'';
-
-  gridButton.setAttribute('aria-pressed',view==='grid'?'true':'false');
-  carouselButton.setAttribute('aria-pressed',view==='carousel'?'true':'false');
+  viewButton.textContent=(view==='grid'?'Grid':'Carousel')+' ▾';
 
   if(view==='grid'){
     buildGrid();
@@ -636,14 +634,6 @@ function setView(nextView){
     buildCarousel();
   }
 }
-
-gridButton.onclick=function(){
-  setView('grid');
-};
-
-carouselButton.onclick=function(){
-  setView('carousel');
-};
 
 albumClose.onclick=function(){
   closeAlbum();
@@ -673,11 +663,6 @@ document.onkeydown=function(event){
     centerCard(activeIndex-1,true);
   }
 };
-
-var filterButton=document.getElementById('filterButton');
-var filterMenu=document.getElementById('filterMenu');
-var viewButton=document.getElementById('viewButton');
-var viewMenu=document.getElementById('viewMenu');
 
 filterButton.onclick=function(event){
   event.stopPropagation();
