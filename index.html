@@ -534,6 +534,7 @@ var detailTracks=document.getElementById('detailTracks');
 var view='grid';
 var activeIndex=0;
 var drag=false;
+var selectedRating='all';
 var startX=0;
 var startY=0;
 var startScroll=0;
@@ -682,8 +683,13 @@ function buildGrid(){
   collection.className='collection grid';
 
   var html='';
+
   for(var i=0;i<records.length;i++){
-    html+=recordHTML(records[i],'');
+    var rating=parseInt(records[i][5],10);
+
+    if(selectedRating==='all'||rating===parseInt(selectedRating,10)){
+      html+=recordHTML(records[i],'');
+    }
   }
 
   collection.innerHTML=html;
@@ -777,7 +783,11 @@ function buildCarousel(){
       '<div class="carousel-track" id="carouselTrack">';
 
   for(var i=0;i<records.length;i++){
-    html+=recordHTML(records[i],'carousel-card');
+    var rating=parseInt(records[i][5],10);
+  
+    if(selectedRating==='all'||rating===parseInt(selectedRating,10)){
+      html+=recordHTML(records[i],'carousel-card');
+    }
   }
 
   html+='</div></div>';
@@ -900,7 +910,7 @@ var ratingFilter=document.querySelectorAll('.rating-filter button');
 
 for(var f=0;f<ratingFilter.length;f++){
   ratingFilter[f].onclick=function(){
-    var selected=this.getAttribute('data-rating');
+    selectedRating=this.getAttribute('data-rating');
 
     for(var i=0;i<ratingFilter.length;i++){
       ratingFilter[i].className='';
@@ -908,17 +918,10 @@ for(var f=0;f<ratingFilter.length;f++){
 
     this.className='active';
 
-    var visibleRecords=document.querySelectorAll('.record');
-
-    for(var r=0;r<visibleRecords.length;r++){
-      var index=parseInt(visibleRecords[r].getAttribute('data-index'),10);
-      var rating=parseInt(records[index][5],10);
-
-      if(selected==='all'||rating===parseInt(selected,10)){
-        visibleRecords[r].style.display='';
-      }else{
-        visibleRecords[r].style.display='none';
-      }
+    if(view==='grid'){
+      buildGrid();
+    }else{
+      buildCarousel();
     }
   };
 }
