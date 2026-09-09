@@ -1170,7 +1170,7 @@ async function searchMusicBrainz(query){
             div.className='mb-result';
 
             div.innerHTML=
-                '<img class="mb-cover" src="'+imageUrl+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'+
+                '<img class="mb-cover" src="'+imageUrl+'" alt="" onerror="this.style.display=\'none\'">'+
                 '<div class="mb-info">'+
                     '<div class="mb-title">'+escapeHTML(release.title)+'</div>'+
                     '<div class="mb-artist">'+escapeHTML(artist)+'</div>'+
