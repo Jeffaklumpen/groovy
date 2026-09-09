@@ -425,10 +425,7 @@ function attachAlbumClicks(){
 
       if(!recordElement)return;
 
-      var index=parseInt(
-        recordElement.getAttribute('data-index'),
-        10
-      );
+      var index=parseInt(recordElement.getAttribute('data-index'),10);
 
       if(isNaN(index))return;
 
@@ -444,10 +441,7 @@ function attachAlbumClicks(){
 
     if(!recordElement)return;
 
-    var index=parseInt(
-      recordElement.getAttribute('data-index'),
-      10
-    );
+    var index=parseInt(recordElement.getAttribute('data-index'),10);
 
     if(isNaN(index))return;
 
@@ -458,10 +452,6 @@ function attachAlbumClicks(){
     openAlbum(index);
   });
 }
-
-cancelSelectionButton.addEventListener('click',function(){
-  clearSelection();
-});
 
 function buildGrid(){
   collection.className='collection grid';
@@ -734,11 +724,14 @@ const deleteModeButton=document.getElementById('deleteModeButton');
 
 let deleteMode=false;
 
-deleteModeButton.addEventListener('click',function(){
-    deleteMode=!deleteMode;
+deleteModeButton.addEventListener('click',function(event){
+  event.preventDefault();
+  event.stopPropagation();
 
-    deleteModeButton.classList.toggle('active',deleteMode);
-    document.body.classList.toggle('delete-mode-active',deleteMode);
+  deleteMode=!deleteMode;
+
+  deleteModeButton.classList.toggle('active',deleteMode);
+  document.body.classList.toggle('delete-mode-active',deleteMode);
 });
 
 let searchTimer=null;
