@@ -1029,38 +1029,48 @@ const mbSearchButton = document.getElementById('mbSearchButton');
 const mbResults = document.getElementById('mbResults');
 
 async function searchMusicBrainz() {
+
     const query = mbSearchInput.value.trim();
 
     if (!query) return;
 
     mbResults.innerHTML = '<p>Söker...</p>';
 
-    try {
-        const url =
-            'https://musicbrainz.org/ws/2/release-group/' +
-            '?query=' + encodeURIComponent(query) +
-            '&fmt=json&limit=10';
+    const url =
+        'https://musicbrainz.org/ws/2/release-group/' +
+        '?query=' + encodeURIComponent(query) +
+        '&fmt=json' +
+        '&limit=10';
 
-        const response = await fetch(url, {
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
+    try {
+
+        const response = await fetch(url);
+
+        console.log('MusicBrainz status:', response.status);
 
         if (!response.ok) {
-            throw new Error('MusicBrainz svarade med ' + response.status);
+            throw new Error(
+                'HTTP ' + response.status
+            );
         }
 
         const data = await response.json();
 
+        console.log('MusicBrainz data:', data);
+
         mbResults.innerHTML = '';
 
-        if (!data['release-groups'] || data['release-groups'].length === 0) {
-            mbResults.innerHTML = '<p>Inga album hittades.</p>';
+        if (!data['release-groups'] ||
+            data['release-groups'].length === 0) {
+
+            mbResults.innerHTML =
+                '<p>Inga album hittades.</p>';
+
             return;
         }
 
         data['release-groups'].forEach(album => {
+
             const artist =
                 album['artist-credit'] &&
                 album['artist-credit'][0]
@@ -1073,19 +1083,24 @@ async function searchMusicBrainz() {
                     : '';
 
             const div = document.createElement('div');
+
             div.className = 'mb-result';
 
             div.innerHTML = `
-                <img
-                    class="mb-cover"
-                    src="https://coverartarchive.org/release-group/${album.id}/front-250"
-                    onerror="this.style.display='none'"
-                >
-
                 <div class="mb-info">
-                    <div class="mb-title">${escapeHTML(album.title)}</div>
-                    <div class="mb-artist">${escapeHTML(artist)}</div>
-                    <div class="mb-year">${escapeHTML(year)}</div>
+
+                    <div class="mb-title">
+                        ${escapeHTML(album.title)}
+                    </div>
+
+                    <div class="mb-artist">
+                        ${escapeHTML(artist)}
+                    </div>
+
+                    <div class="mb-year">
+                        ${escapeHTML(year)}
+                    </div>
+
                 </div>
             `;
 
@@ -1093,7 +1108,11 @@ async function searchMusicBrainz() {
         });
 
     } catch (error) {
-        console.error(error);
+
+        console.error(
+            'MusicBrainz-fel:',
+            error
+        );
 
         mbResults.innerHTML =
             '<p>Kunde inte kontakta MusicBrainz.</p>';
@@ -1109,13 +1128,21 @@ function escapeHTML(text) {
         .replace(/'/g, '&#039;');
 }
 
-mbSearchButton.addEventListener('click', searchMusicBrainz);
+mbSearchButton.addEventListener(
+    'click',
+    searchMusicBrainz
+);
 
-mbSearchInput.addEventListener('keydown', function(event) {
-    if (event.key === 'Enter') {
-        searchMusicBrainz();
+mbSearchInput.addEventListener(
+    'keydown',
+    function(event) {
+
+        if (event.key === 'Enter') {
+            searchMusicBrainz();
+        }
+
     }
-});
+);
 </script>
 
 </body>
