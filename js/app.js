@@ -435,7 +435,7 @@ function enableGridSorting(){
   collection.addEventListener('dragstart',function(event){
     var record=event.target.closest('.record');
 
-    if(!record)return;
+    if(!record||selectedRating!=='all')return;
 
     dragged=record;
     record.classList.add('dragging');
@@ -452,7 +452,7 @@ function enableGridSorting(){
   });
 
   collection.addEventListener('dragover',function(event){
-    if(!dragged)return;
+    if(!dragged||selectedRating!=='all')return;
 
     var target=event.target.closest('.record');
 
@@ -471,9 +471,33 @@ function enableGridSorting(){
   });
 
   collection.addEventListener('drop',async function(event){
-    if(!dragged)return;
+    if(!dragged||selectedRating!=='all')return;
 
     event.preventDefault();
+
+    var cards=collection.querySelectorAll('.record');
+    var newRecords=[];
+
+    for(var i=0;i<cards.length;i++){
+      var index=parseInt(cards[i].getAttribute('data-index'),10);
+      var record=records[index];
+
+      if(!record)continue;
+
+      record[0]=i+1;
+
+      var numberElement=cards[i].querySelector('.number');
+
+      if(numberElement){
+        numberElement.textContent=i+1;
+      }
+
+      newRecords.push(record);
+    }
+
+    records=newRecords;
+
+    dragged.classList.remove('dragging');
 
     await saveGridOrder();
 
@@ -486,33 +510,20 @@ async function saveGridOrder(){
 
   if(userError||!user)return;
 
-  var cards=collection.querySelectorAll('.record');
-  var updates=[];
+  for(var i=0;i<records.length;i++){
+    var record=records[i];
 
-  for(var i=0;i<cards.length;i++){
-    var index=parseInt(cards[i].getAttribute('data-index'),10);
-    var record=records[index];
-
-    if(!record)continue;
-
-    updates.push({
-      id:record[9],
-      user_id:user.id,
-      sort_order:i+1
-    });
-  }
-
-  for(var j=0;j<updates.length;j++){
     var {error}=await supabaseClient
       .from('collections')
       .update({
-        sort_order:updates[j].sort_order
+        sort_order:i+1
       })
-      .eq('id',updates[j].id)
+      .eq('id',record[9])
       .eq('user_id',user.id);
 
     if(error){
       console.error('Kunde inte spara sorteringen:',error);
+      alert('Kunde inte spara sorteringen.');
       return;
     }
   }
