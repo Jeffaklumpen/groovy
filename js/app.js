@@ -856,11 +856,212 @@ async function searchMusicBrainz(query){
             return;
         }
 
-        results.slice(0,10).forEach(function(release){
+
+        // ========================================
+        // FILTRERA VINYL
+        // ========================================
+
+        const vinylResults=results.filter(function(release){
+
+            const formats=Array.isArray(release.format)
+                ?release.format.map(function(format){
+                    return String(format).toLowerCase();
+                })
+                :[];
+
+            const formatText=formats.join(' ');
+
+            // Måste vara vinyl
+            const isVinyl=formats.some(function(format){
+                return format.indexOf('vinyl')>-1;
+            });
+
+            if(!isVinyl)return false;
+
+
+            // ========================================
+            // TA BORT REMASTERS / MODERNA UTGÅVOR
+            // ========================================
+
+            const blockedWords=[
+                'remaster',
+                'remastered',
+                'reissue',
+                'anniversary',
+                'deluxe',
+                'expanded',
+                'box set',
+                'picture disc'
+            ];
+
+            const isBlocked=blockedWords.some(function(word){
+                return formatText.indexOf(word)>-1;
+            });
+
+            if(isBlocked)return false;
+
+
+            // Även titel/description kan innehålla
+            // information om remaster/reissue.
+            const text=String(
+                (release.title||'')+' '+
+                (release.notes||'')+' '+
+                (release.format_description||'')
+            ).toLowerCase();
+
+            const isRemasterText=
+                text.indexOf('remaster')>-1 ||
+                text.indexOf('reissue')>-1 ||
+                text.indexOf('anniversary')>-1 ||
+                text.indexOf('deluxe edition')>-1;
+
+            if(isRemasterText)return false;
+
+
+            return true;
+        });
+
+
+        if(!vinylResults.length){
+            albumSearchResults.innerHTML=
+                '<p>Inga relevanta vinylutgåvor hittades.</p>';
+            return;
+        }
+
+
+        // ========================================
+        // RANKA RESULTAT
+        // ========================================
+
+        function releaseScore(release){
+
+            const formats=Array.isArray(release.format)
+                ?release.format.map(function(format){
+                    return String(format).toLowerCase();
+                })
+                :[];
+
+            const formatText=formats.join(' ');
+
+            let score=0;
+
+            const year=parseInt(release.year,10);
+
+
+            // ----------------------------------------
+            // ÄLDRE UTGÅVOR PRIORITERAS
+            // ----------------------------------------
+
+            if(year){
+
+                // Äldre år får högre poäng.
+                // Detta gör att originalperioden
+                // normalt hamnar före senare pressningar.
+
+                score+=Math.max(0,300-(year-1950));
+            }
+
+
+            // ----------------------------------------
+            // LP PRIORITERAS
+            // ----------------------------------------
+
+            if(formatText.indexOf('lp')>-1){
+                score+=60;
+            }
+
+
+            // ----------------------------------------
+            // 12" PRIORITERAS
+            // ----------------------------------------
+
+            if(formatText.indexOf('12"')>-1){
+                score+=30;
+            }
+
+
+            // ----------------------------------------
+            // ORIGINAL / ALBUM
+            // ----------------------------------------
+
+            if(formatText.indexOf('album')>-1){
+                score+=20;
+            }
+
+
+            // ----------------------------------------
+            // LAND
+            // ----------------------------------------
+
+            const country=String(
+                release.country||''
+            ).toLowerCase();
+
+            if(country==='uk'){
+                score+=20;
+            }
+            else if(country==='us'){
+                score+=19;
+            }
+            else if(country==='europe'){
+                score+=17;
+            }
+            else if(country==='germany'){
+                score+=15;
+            }
+            else if(country==='france'){
+                score+=14;
+            }
+            else if(country==='netherlands'){
+                score+=14;
+            }
+            else if(country==='sweden'){
+                score+=14;
+            }
+
+
+            return score;
+        }
+
+
+        vinylResults.sort(function(a,b){
+
+            const scoreDifference=
+                releaseScore(b)-releaseScore(a);
+
+            if(scoreDifference!==0){
+                return scoreDifference;
+            }
+
+            // Om två resultat får samma score,
+            // lägg det äldre först.
+
+            const yearA=parseInt(a.year,10)||9999;
+            const yearB=parseInt(b.year,10)||9999;
+
+            return yearA-yearB;
+        });
+
+
+        console.log(
+            'Filtrerade/rankade Discogs-resultat:',
+            vinylResults
+        );
+
+
+        // ========================================
+        // VISA RESULTAT
+        // ========================================
+
+        vinylResults.slice(0,10).forEach(function(release){
 
             const title=release.title||'Okänd titel';
 
+
+            // Discogs returnerar normalt:
+            // "Artist - Album"
             const parts=title.split(' - ');
+
             const artist=parts.length>1
                 ?parts[0]
                 :'Okänd artist';
@@ -869,53 +1070,100 @@ async function searchMusicBrainz(query){
                 ?parts.slice(1).join(' - ')
                 :title;
 
+
             const year=release.year||'';
 
-            const formats=release.format||'';
+            const formats=Array.isArray(release.format)
+                ?release.format.join(', ')
+                :'';
+
+
+            const country=release.country||'';
 
             const imageUrl=release.thumb||'';
 
+
+            // ========================================
+            // RESULTATKORT
+            // ========================================
+
             const div=document.createElement('div');
+
             div.className='mb-result';
+
 
             div.innerHTML=
                 (imageUrl
-                    ?'<img class="mb-cover" src="'+escapeHTML(imageUrl)+'" alt="" onerror="this.style.display=\'none\'">'
+                    ?'<img class="mb-cover" src="'+
+                        escapeHTML(imageUrl)+
+                        '" alt="" onerror="this.style.display=\'none\'">'
                     :'')+
+
                 '<div class="mb-info">'+
-                    '<div class="mb-title">'+escapeHTML(albumTitle)+'</div>'+
-                    '<div class="mb-artist">'+escapeHTML(artist)+'</div>'+
+
+                    '<div class="mb-title">'+
+                        escapeHTML(albumTitle)+
+                    '</div>'+
+
+                    '<div class="mb-artist">'+
+                        escapeHTML(artist)+
+                    '</div>'+
+
                     '<div class="mb-year">'+
                         escapeHTML(String(year))+
-                        (formats?' · '+escapeHTML(formats):'')+
+
+                        (country
+                            ?' · '+escapeHTML(country)
+                            :'')+
+
+                        (formats
+                            ?' · '+escapeHTML(formats)
+                            :'')+
+
                     '</div>'+
+
                 '</div>'+
+
                 '<button class="mb-add-button">Add</button>';
 
-            const addButton=div.querySelector('.mb-add-button');
 
-            addButton.addEventListener('click',function(event){
-                event.stopPropagation();
+            const addButton=
+                div.querySelector('.mb-add-button');
 
-                console.log('Valt Discogs-release:',release);
 
-                addAlbumFromDiscogs(
-                    release,
-                    artist,
-                    albumTitle,
-                    year,
-                    addButton
-                );
-            });
+            addButton.addEventListener(
+                'click',
+                function(event){
+
+                    event.stopPropagation();
+
+                    console.log(
+                        'Valt Discogs-release:',
+                        release
+                    );
+
+
+                    addAlbumFromDiscogs(
+                        release,
+                        artist,
+                        albumTitle,
+                        year,
+                        addButton
+                    );
+                }
+            );
+
 
             albumSearchResults.appendChild(div);
         });
+
 
     }catch(error){
 
         console.error('Discogs-fel:',error);
 
         if(searchNumber===musicBrainzSearchNumber){
+
             albumSearchResults.innerHTML=
                 '<p>Kunde inte kontakta Discogs.</p>';
         }
