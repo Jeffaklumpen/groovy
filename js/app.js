@@ -960,10 +960,6 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
 
     try{
 
-        // ========================================
-        // 1. MASTER RELEASE
-        // ========================================
-
         const masterId=master.id;
 
         if(!masterId){
@@ -971,11 +967,6 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
         }
 
         console.log('Discogs Master Release ID:',masterId);
-
-
-        // ========================================
-        // 2. HÄMTA MASTER RELEASE
-        // ========================================
 
         const {data,error}=await supabaseClient.functions.invoke(
             'discogs-search',
@@ -994,29 +985,34 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
 
         console.log('Discogs Master Release:',data);
 
-
-        // ========================================
-        // 3. VISA GRUNDINFORMATION
-        // ========================================
-
         console.log('Album:',albumTitle);
         console.log('Artist:',artist);
         console.log('År:',year);
         console.log('Master ID:',masterId);
 
+        const tracklist=data&&Array.isArray(data.tracklist)
+            ?data.tracklist
+            :[];
 
-        // ========================================
-        // TILLFÄLLIGT
-        //
-        // Vi sparar inget ännu.
-        // Nästa steg blir att välja rätt
-        // fysisk release och hämta dess
-        // riktiga A/B-tracklist.
-        // ========================================
+        console.log('Discogs tracklist:',tracklist);
+
+        if(!tracklist.length){
+            console.warn('Master Release saknar tracklist.');
+        }
+
+        tracklist.forEach(function(track){
+
+            const position=track.position||'';
+            const title=track.title||'Okänd låt';
+
+            console.log(
+                position,
+                title
+            );
+        });
 
         button.textContent='✓ Added';
         button.classList.add('mb-added');
-
 
     }catch(error){
 
