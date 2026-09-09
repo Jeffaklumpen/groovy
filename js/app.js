@@ -469,6 +469,7 @@ function enableGridSorting(){
 
     cards[i].ondrop=async function(event){
       event.preventDefault();
+          console.log('DROP FUNGERAR');
 
       if(!dragged||this===dragged)return;
 
