@@ -1032,6 +1032,10 @@ albumSearchInput.addEventListener('input',function(){
     },400);
 });
 
+function escapeHTML(text){
+    return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
 async function searchMusicBrainz(query){
     albumSearchResults.innerHTML='<p>Söker...</p>';
 
