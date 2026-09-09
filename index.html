@@ -34,6 +34,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .grid .record{float:left;width:24%;margin-right:1.3333%;margin-bottom:38px;min-width:0}
 
 .grid .record:nth-child(4n){margin-right:0}
+.grid:after{content:"";display:table;clear:both}
 
 .cover-wrapper{position:relative;width:100%;height:0;padding-bottom:100%;overflow:hidden;background:#161618;border:1px solid #29292c;box-shadow:0 8px 12px rgba(0,0,0,.28),0 18px 35px rgba(0,0,0,.48),0 2px 3px rgba(0,0,0,.55);-webkit-transform:translateZ(0);transform:translateZ(0)}
 
@@ -189,7 +190,7 @@ body{padding:15px}
 
 <header class="header">
   <h1 class="title">VINYLSKIVOR</h1>
-  <div class="subtitle">49 SKIVOR</div>
+  <div class="subtitle">50 SKIVOR</div>
 
   <div class="view-toggle" role="group" aria-label="Visningsläge">
     <button id="gridButton" class="active" type="button">▦ Grid</button>
@@ -574,16 +575,18 @@ function recordHTML(record, className){
 function loadVisibleImages(){
   var images=document.querySelectorAll('.cover');
   var height=window.innerHeight||600;
+  var width=window.innerWidth||1024;
+  var verticalMargin=450;
+  var horizontalMargin=500;
 
   for(var i=0;i<images.length;i++){
     var img=images[i];
     var dataSrc=img.getAttribute('data-src');
-
     if(!dataSrc)continue;
 
     var rect=img.getBoundingClientRect();
-
-    if(rect.top<height+700&&rect.bottom>-700){
+    if(rect.top<height+verticalMargin&&rect.bottom>-verticalMargin&&
+       rect.left<width+horizontalMargin&&rect.right>-horizontalMargin){
       img.src=dataSrc;
       img.removeAttribute('data-src');
     }
@@ -667,19 +670,23 @@ function closeAlbum(){
 
 
 function attachAlbumClicks(){
-  var elements=document.getElementsByClassName('record');
+  if(collection._albumClickAttached)return;
+  collection._albumClickAttached=true;
 
-  for(var i=0;i<elements.length;i++){
-    elements[i].onclick=function(){
-      if(view==='carousel'&&drag)return;
+  collection.onclick=function(event){
+    event=event||window.event;
+    var target=event.target||event.srcElement;
 
-      var index=parseInt(this.getAttribute('data-index'),10);
+    while(target&&target!==collection&&(!target.className||String(target.className).indexOf('record')===-1)){
+      target=target.parentNode;
+    }
 
-      if(!isNaN(index)){
-        openAlbum(index);
-      }
-    };
-  }
+    if(!target||target===collection)return;
+    if(view==='carousel'&&drag)return;
+
+    var index=parseInt(target.getAttribute('data-index'),10);
+    if(!isNaN(index))openAlbum(index);
+  };
 }
 
 function buildGrid(){
@@ -720,23 +727,25 @@ function animateScroll(element,to,smooth){
     return;
   }
 
+  if(element.scrollTo){
+    try{
+      element.scrollTo({left:to,behavior:'smooth'});
+      return;
+    }catch(e){}
+  }
+
   var from=element.scrollLeft;
   var change=to-from;
-  var duration=650;
+  var duration=420;
   var start=new Date().getTime();
 
   function step(){
     var time=new Date().getTime();
     var progress=Math.min(1,(time-start)/duration);
     var easing=progress*(2-progress);
-
     element.scrollLeft=from+change*easing;
-
-    if(progress<1){
-      setTimeout(step,16);
-    }
+    if(progress<1)setTimeout(step,16);
   }
-
   step();
 }
 
@@ -811,7 +820,6 @@ function buildCarousel(){
   }
 
   viewport.onscroll=function(){
-    setActive(-1);
     scheduleSettle();
   };
 
@@ -824,7 +832,6 @@ function buildCarousel(){
     startScroll=viewport.scrollLeft;
 
     if(scrollTimer)clearTimeout(scrollTimer);
-    setActive(-1);
   };
 
   viewport.ontouchmove=function(event){
@@ -833,8 +840,6 @@ function buildCarousel(){
     var dx=event.touches[0].pageX-startX;
 
     if(Math.abs(dx)>8)drag=true;
-
-    setActive(-1);
   };
 
   viewport.ontouchend=function(){
@@ -925,9 +930,15 @@ for(var f=0;f<ratingFilter.length;f++){
   };
 }
 
-window.onscroll=function(){
-  loadVisibleImages();
-};
+var imageLoadScheduled=false;
+function scheduleImageLoad(){
+  if(imageLoadScheduled)return;
+  imageLoadScheduled=true;
+  var run=window.requestAnimationFrame||function(fn){return setTimeout(fn,50);};
+  run(function(){imageLoadScheduled=false;loadVisibleImages();});
+}
+
+window.onscroll=scheduleImageLoad;
 
 buildGrid();
 
