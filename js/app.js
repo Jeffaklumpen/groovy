@@ -194,16 +194,6 @@ window.loadCollection=async function(){
 }
 
 var collection=document.getElementById('collection');
-var selectionBar=document.getElementById('selectionBar');
-var selectionCount=document.getElementById('selectionCount');
-var deleteSelectedButton=document.getElementById('deleteSelectedButton');
-var cancelSelectionButton=document.getElementById('cancelSelectionButton');
-
-var selectionMode=false;
-var selectedAlbums={};
-var longPressTimer=null;
-var longPressTriggered=false;
-    
 var gridButton=document.getElementById('gridButton');
 var carouselButton=document.getElementById('carouselButton');
 var albumOverlay=document.getElementById('albumOverlay');
@@ -385,67 +375,6 @@ function closeAlbum(){
   },350);
 }
 
-function updateSelectionUI(){
-  var count=Object.keys(selectedAlbums).length;
-
-  selectionCount.textContent=count+' markerade';
-
-  if(count){
-    selectionBar.className='selection-bar visible';
-  }else{
-    selectionBar.className='selection-bar';
-  }
-}
-
-function enterSelectionMode(index){
-  selectionMode=true;
-  selectedAlbums[index]=true;
-
-  var recordElement=document.querySelector(
-    '.record[data-index="'+index+'"]'
-  );
-
-  if(recordElement){
-    recordElement.classList.add('selected');
-  }
-
-  updateSelectionUI();
-}
-
-function toggleSelection(index){
-  if(selectedAlbums[index]){
-    delete selectedAlbums[index];
-  }else{
-    selectedAlbums[index]=true;
-  }
-
-  var recordElement=document.querySelector(
-    '.record[data-index="'+index+'"]'
-  );
-
-  if(recordElement){
-    recordElement.classList.toggle(
-      'selected',
-      !!selectedAlbums[index]
-    );
-  }
-
-  updateSelectionUI();
-}
-
-function clearSelection(){
-  selectionMode=false;
-  selectedAlbums={};
-
-  var selected=document.querySelectorAll('.record.selected');
-
-  for(var i=0;i<selected.length;i++){
-    selected[i].classList.remove('selected');
-  }
-
-  updateSelectionUI();
-}
-
 async function deleteCollectionAlbum(index){
   var record=records[index];
 
@@ -479,81 +408,6 @@ function attachAlbumClicks(){
   if(collection._albumClickAttached)return;
   collection._albumClickAttached=true;
 
-  collection.addEventListener('pointerdown',function(event){
-    var target=event.target||event.srcElement;
-
-    var recordElement=target.closest
-      ?target.closest('.record')
-      :null;
-
-    if(!recordElement)return;
-
-    if(event.pointerType==='mouse'){
-      return;
-    }
-
-    var index=parseInt(
-      recordElement.getAttribute('data-index'),
-      10
-    );
-
-    if(isNaN(index))return;
-
-    longPressTriggered=false;
-
-    clearTimeout(longPressTimer);
-
-    longPressTimer=setTimeout(function(){
-      longPressTriggered=true;
-
-      if(!selectionMode){
-        enterSelectionMode(index);
-      }else{
-        toggleSelection(index);
-      }
-    },600);
-  });
-
-  collection.addEventListener('pointerup',function(event){
-    clearTimeout(longPressTimer);
-
-    var target=event.target||event.srcElement;
-
-    var deleteButton=target.closest
-      ?target.closest('.delete-cover-button')
-      :null;
-
-    if(deleteButton)return;
-
-    var recordElement=target.closest
-      ?target.closest('.record')
-      :null;
-
-    if(!recordElement)return;
-
-    var index=parseInt(
-      recordElement.getAttribute('data-index'),
-      10
-    );
-
-    if(isNaN(index))return;
-
-    if(longPressTriggered)return;
-
-    if(selectionMode){
-      toggleSelection(index);
-      return;
-    }
-
-    if(view==='carousel'&&drag)return;
-
-    openAlbum(index);
-  });
-
-  collection.addEventListener('pointercancel',function(){
-    clearTimeout(longPressTimer);
-  });
-
   collection.addEventListener('click',async function(event){
     var target=event.target||event.srcElement;
 
@@ -561,12 +415,32 @@ function attachAlbumClicks(){
       ?target.closest('.delete-cover-button')
       :null;
 
-    if(!deleteButton)return;
+    if(deleteButton){
+      event.preventDefault();
+      event.stopPropagation();
 
-    event.preventDefault();
-    event.stopPropagation();
+      if(!deleteMode)return;
 
-    var recordElement=deleteButton.closest('.record');
+      var recordElement=deleteButton.closest('.record');
+
+      if(!recordElement)return;
+
+      var index=parseInt(
+        recordElement.getAttribute('data-index'),
+        10
+      );
+
+      if(isNaN(index))return;
+
+      if(!confirm('Vill du ta bort albumet från din samling?'))return;
+
+      await deleteCollectionAlbum(index);
+      return;
+    }
+
+    var recordElement=target.closest
+      ?target.closest('.record')
+      :null;
 
     if(!recordElement)return;
 
@@ -577,67 +451,13 @@ function attachAlbumClicks(){
 
     if(isNaN(index))return;
 
-    if(!confirm('Vill du ta bort albumet från din samling?'))return;
+    if(deleteMode)return;
 
-    await deleteCollectionAlbum(index);
+    if(view==='carousel'&&drag)return;
+
+    openAlbum(index);
   });
 }
-
-deleteSelectedButton.addEventListener('click',async function(){
-  var indexes=Object.keys(selectedAlbums);
-
-  if(!indexes.length)return;
-
-  if(!confirm(
-    'Vill du ta bort '+indexes.length+
-    ' album från din samling?'
-  )){
-    return;
-  }
-
-  deleteSelectedButton.disabled=true;
-
-  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
-
-  if(userError||!user){
-    alert('Du måste vara inloggad.');
-    deleteSelectedButton.disabled=false;
-    return;
-  }
-
-  var albumIds=[];
-
-  for(var i=0;i<indexes.length;i++){
-    var record=records[parseInt(indexes[i],10)];
-
-    if(record&&record[8]){
-      albumIds.push(record[8]);
-    }
-  }
-
-  if(!albumIds.length){
-    deleteSelectedButton.disabled=false;
-    return;
-  }
-
-  var {error}=await supabaseClient
-    .from('collections')
-    .delete()
-    .eq('user_id',user.id)
-    .in('album_id',albumIds);
-
-  if(error){
-    console.error('Kunde inte ta bort albumen:',error);
-    alert('Kunde inte ta bort albumen.');
-    deleteSelectedButton.disabled=false;
-    return;
-  }
-
-  clearSelection();
-  deleteSelectedButton.disabled=false;
-
-  await window.loadCollection();
-});
 
 cancelSelectionButton.addEventListener('click',function(){
   clearSelection();
@@ -909,6 +729,17 @@ const addAlbumModal=document.getElementById('addAlbumModal');
 const closeAddAlbum=document.getElementById('closeAddAlbum');
 const albumSearchInput=document.getElementById('albumSearchInput');
 const albumSearchResults=document.getElementById('albumSearchResults');
+
+const deleteModeButton=document.getElementById('deleteModeButton');
+
+let deleteMode=false;
+
+deleteModeButton.addEventListener('click',function(){
+    deleteMode=!deleteMode;
+
+    deleteModeButton.classList.toggle('active',deleteMode);
+    document.body.classList.toggle('delete-mode-active',deleteMode);
+});
 
 let searchTimer=null;
 
