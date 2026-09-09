@@ -406,6 +406,8 @@ function attachAlbumClicks(){
       return;
     }
 
+    if(deleteMode)return;
+
     var recordElement=target.closest
       ?target.closest('.record')
       :null;
@@ -416,14 +418,12 @@ function attachAlbumClicks(){
 
     if(isNaN(index))return;
 
-    if(deleteMode)return;
-
     if(view==='carousel'&&drag)return;
 
     openAlbum(index);
   });
 }
-
+    
 function buildGrid(){
   collection.className='collection grid';
 
