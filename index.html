@@ -1117,6 +1117,78 @@ async function searchMusicBrainz(query){
         albumSearchResults.innerHTML='<p>Kunde inte kontakta MusicBrainz.</p>';
     }
 }
+
+async function addAlbumFromMusicBrainz(album,artist,year,button){
+    if(button.classList.contains('mb-added'))return;
+
+    button.textContent='Hämtar...';
+    button.disabled=true;
+
+    try{
+        const url='https://musicbrainz.org/ws/2/release-group/'+album.id+'?inc=releases+artist-credits&fmt=json';
+
+        const response=await fetch(url);
+
+        if(!response.ok)throw new Error('HTTP '+response.status);
+
+        const data=await response.json();
+
+        console.log('MusicBrainz album:',data);
+
+        const releases=data.releases||[];
+
+        if(!releases.length){
+            throw new Error('Inga releases hittades');
+        }
+
+        const release=releases[0];
+
+        console.log('Vald release:',release);
+
+        const tracksUrl='https://musicbrainz.org/ws/2/release/'+release.id+'?inc=recordings+media&fmt=json';
+
+        const tracksResponse=await fetch(tracksUrl);
+
+        if(!tracksResponse.ok)throw new Error('HTTP '+tracksResponse.status);
+
+        const releaseData=await tracksResponse.json();
+
+        console.log('Release med låtar:',releaseData);
+
+        const tracks=[];
+
+        (releaseData.media||[]).forEach(function(media){
+            const side=media.position||1;
+
+            (media.tracks||[]).forEach(function(track){
+                tracks.push({
+                    side:side,
+                    number:track.position||0,
+                    title:track.title||''
+                });
+            });
+        });
+
+        const coverUrl='https://coverartarchive.org/release/'+release.id+'/front-1200';
+
+        console.log('Album:',album.title);
+        console.log('Artist:',artist);
+        console.log('År:',year);
+        console.log('Omslag:',coverUrl);
+        console.log('Låtar:',tracks);
+
+        button.textContent='✓ Added';
+        button.classList.add('mb-added');
+
+    }catch(error){
+        console.error('Kunde inte hämta album:',error);
+
+        button.textContent='Add';
+        button.disabled=false;
+
+        alert('Kunde inte hämta albuminformationen.');
+    }
+}
 </script>
 
 </body>
