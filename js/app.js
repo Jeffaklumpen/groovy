@@ -92,6 +92,7 @@ window.loadCollection=async function(){
     .select(`
       id,
       collection_number,
+      sort_order,
       albums(
         id,
         title,
@@ -111,7 +112,7 @@ window.loadCollection=async function(){
       )
     `)
     .eq('user_id',user.id)
-    .order('id',{ascending:true});
+    .order('sort_order',{ascending:true});
 
     if(collectionError){
         console.error('Kunde inte hämta samlingen:',collectionError);
@@ -185,7 +186,8 @@ window.loadCollection=async function(){
           ratings[album.id]||0,
           album.cover_url||'',
           sides,
-          album.id
+          album.id,
+          item.id
         ];
     });
 
@@ -229,7 +231,7 @@ function esc(value){
 function recordHTML(record, className){
   var smallSrc=record[6];
 
-  var html='<article class="record '+(className||'')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
+  var html='<article class="record '+(className||'')+'" draggable="'+(view==='grid'?'true':'false')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
       '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+smallSrc+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
       '<div class="number">'+record[0]+'</div>'+
@@ -423,6 +425,100 @@ function attachAlbumClicks(){
     openAlbum(index);
   });
 }
+
+function enableGridSorting(){
+  if(collection._sortingAttached)return;
+  collection._sortingAttached=true;
+
+  var dragged=null;
+
+  collection.addEventListener('dragstart',function(event){
+    var record=event.target.closest('.record');
+
+    if(!record)return;
+
+    dragged=record;
+    record.classList.add('dragging');
+
+    event.dataTransfer.effectAllowed='move';
+  });
+
+  collection.addEventListener('dragend',function(){
+    if(dragged){
+      dragged.classList.remove('dragging');
+    }
+
+    dragged=null;
+  });
+
+  collection.addEventListener('dragover',function(event){
+    if(!dragged)return;
+
+    var target=event.target.closest('.record');
+
+    if(!target||target===dragged)return;
+
+    event.preventDefault();
+
+    var rect=target.getBoundingClientRect();
+    var after=event.clientY>rect.top+rect.height/2;
+
+    if(after){
+      target.parentNode.insertBefore(dragged,target.nextSibling);
+    }else{
+      target.parentNode.insertBefore(dragged,target);
+    }
+  });
+
+  collection.addEventListener('drop',async function(event){
+    if(!dragged)return;
+
+    event.preventDefault();
+
+    await saveGridOrder();
+
+    dragged=null;
+  });
+}
+
+async function saveGridOrder(){
+  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+
+  if(userError||!user)return;
+
+  var cards=collection.querySelectorAll('.record');
+  var updates=[];
+
+  for(var i=0;i<cards.length;i++){
+    var index=parseInt(cards[i].getAttribute('data-index'),10);
+    var record=records[index];
+
+    if(!record)continue;
+
+    updates.push({
+      id:record.collectionId,
+      user_id:user.id,
+      sort_order:i+1
+    });
+  }
+
+  for(var j=0;j<updates.length;j++){
+    var {error}=await supabaseClient
+      .from('collections')
+      .update({
+        sort_order:updates[j].sort_order
+      })
+      .eq('id',updates[j].id)
+      .eq('user_id',user.id);
+
+    if(error){
+      console.error('Kunde inte spara sorteringen:',error);
+      return;
+    }
+  }
+
+  await window.loadCollection();
+}
     
 function buildGrid(){
   collection.className='collection grid';
@@ -439,6 +535,7 @@ function buildGrid(){
 
   collection.innerHTML=html;
   attachAlbumClicks();
+  enableGridSorting();
   loadVisibleImages();
 }
 
