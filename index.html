@@ -1039,7 +1039,7 @@ function escapeHTML(text){
 async function searchMusicBrainz(query){
     albumSearchResults.innerHTML='<p>Söker...</p>';
 
-    const url='https://musicbrainz.org/ws/2/release/?query='+encodeURIComponent(query)+'&fmt=json&limit=25';
+    const url='https://musicbrainz.org/ws/2/release/?query='+encodeURIComponent(query)+'&fmt=json&limit=100';
 
     try{
         const response=await fetch(url);
@@ -1069,29 +1069,53 @@ async function searchMusicBrainz(query){
 
         const search=query.toLowerCase().trim();
 
+        function getArtist(release){
+            return release['artist-credit']&&release['artist-credit'][0]
+                ?(release['artist-credit'][0].name||'').toLowerCase()
+                :'';
+        }
+
+        function getTitle(release){
+            return (release.title||'').toLowerCase();
+        }
+
+        function getVinylPriority(release){
+            let priority=0;
+
+            (release.media||[]).forEach(function(media){
+                const format=(media.format||'').toLowerCase();
+
+                if(format.indexOf('12" vinyl')>-1)priority=Math.max(priority,30);
+                else if(format.indexOf('10" vinyl')>-1)priority=Math.max(priority,20);
+                else if(format.indexOf('7" vinyl')>-1)priority=Math.max(priority,10);
+                else if(format.indexOf('vinyl')>-1)priority=Math.max(priority,5);
+            });
+
+            return priority;
+        }
+
+        function score(release){
+            const title=getTitle(release);
+            const artist=getArtist(release);
+
+            let score=0;
+
+            if(title===search)score+=1000;
+            if(artist===search)score+=900;
+
+            if(title.indexOf(search)===0)score+=700;
+            if(artist.indexOf(search)===0)score+=600;
+
+            if(title.indexOf(search)>-1)score+=400;
+            if(artist.indexOf(search)>-1)score+=300;
+
+            score+=getVinylPriority(release);
+
+            return score;
+        }
+
         vinylReleases.sort(function(a,b){
-            const titleA=(a.title||'').toLowerCase();
-            const titleB=(b.title||'').toLowerCase();
-
-            const artistA=a['artist-credit']&&a['artist-credit'][0]
-                ?(a['artist-credit'][0].name||'').toLowerCase()
-                :'';
-
-            const artistB=b['artist-credit']&&b['artist-credit'][0]
-                ?(b['artist-credit'][0].name||'').toLowerCase()
-                :'';
-
-            function score(title,artist){
-                if(title===search)return 100;
-                if(artist===search)return 90;
-                if(title.indexOf(search)===0)return 80;
-                if(artist.indexOf(search)===0)return 70;
-                if(title.indexOf(search)>-1)return 60;
-                if(artist.indexOf(search)>-1)return 50;
-                return 0;
-            }
-
-            return score(titleB,artistB)-score(titleA,artistA);
+            return score(b)-score(a);
         });
 
         vinylReleases.slice(0,10).forEach(function(release){
