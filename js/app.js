@@ -496,7 +496,7 @@ async function saveGridOrder(){
     if(!record)continue;
 
     updates.push({
-      id:record.collectionId,
+      id:record[9],
       user_id:user.id,
       sort_order:i+1
     });
