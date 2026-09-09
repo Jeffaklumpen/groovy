@@ -239,11 +239,6 @@ body{padding:15px}
 .album-tracks{grid-column:2;grid-row:1 / span 2;position:relative;right:auto;top:auto;bottom:auto;width:100%;height:100%;padding:30px 25px;overflow-y:auto}
 }
 
-.grid .record{cursor:grab}
+.grid .record{cursor:grab;transition:transform .15s ease,box-shadow .15s ease}
 .grid .record:active{cursor:grabbing}
-.grid .record.dragging{opacity:.45}
-
-@media screen and (max-width:600px){
-.grid .record{touch-action:pan-y}
-.grid .record.dragging{opacity:.45}
-}
+.grid .record.dragging{opacity:.75;transform:scale(1.04);-webkit-transform:scale(1.04);filter:brightness(1.15);box-shadow:0 18px 40px rgba(0,0,0,.45);z-index:20;transition:transform .15s ease,opacity .15s ease,box-shadow .15s ease;cursor:grabbing}
