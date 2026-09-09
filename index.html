@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -6,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>Vinylskivor</title>
+
 <style>
 *{box-sizing:border-box}
 
@@ -27,23 +29,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 
 .collection{max-width:1400px;margin:0 auto}
 
-/* One shared DOM for both views. Switching views now only changes CSS classes. */
-.view-surface{width:100%}
-.view-track{font-size:0}
+.grid:after{content:"";display:table;clear:both}
 
-.grid .view-viewport{width:100%}
-.grid .view-track{display:block;margin-right:-1.3333%}
-.grid .view-track:after{content:"";display:block;clear:both}
-.grid .carousel-card{display:block;float:left;width:24%;margin:0 1.3333% 38px 0;white-space:normal;vertical-align:top;min-width:0}
-/* Override carousel sizing while in grid: 4 albums per row. */
-.grid .carousel-card{display:block;width:auto;margin:0;white-space:normal;vertical-align:top;min-width:0}
-.grid .record{min-width:0}
+.grid .record{float:left;width:24%;margin-right:1.3333%;margin-bottom:38px;min-width:0}
+
+.grid .record:nth-child(4n){margin-right:0}
 
 .cover-wrapper{position:relative;width:100%;height:0;padding-bottom:100%;overflow:hidden;background:#161618;border:1px solid #29292c;box-shadow:0 8px 12px rgba(0,0,0,.28),0 18px 35px rgba(0,0,0,.48),0 2px 3px rgba(0,0,0,.55);-webkit-transform:translateZ(0);transform:translateZ(0)}
 
 .cover{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block}
 
-.grid .record{transition:-webkit-transform .18s ease;transition:transform .18s ease}
+.grid .record{transition:transform .18s ease;-webkit-transition:-webkit-transform .18s ease}
 .grid .record:active{-webkit-transform:scale(.985);transform:scale(.985)}
 
 .number{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:13px;font-weight:bold;letter-spacing:1px}
@@ -61,25 +57,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 
 .year{margin-top:5px;font-size:13px;color:#777}
 
-/* Carousel uses the exact same record elements as grid. */
-.carousel .view-viewport{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;white-space:nowrap;padding:42px 0 55px;position:relative;-ms-overflow-style:none;scrollbar-width:none}
+.carousel{width:100%}
 
-.carousel .view-viewport::-webkit-scrollbar{display:none}
+.carousel-viewport{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;white-space:nowrap;padding:42px 0 55px;position:relative;-ms-overflow-style:none;scrollbar-width:none}
 
-.carousel .view-track{display:inline-block;white-space:nowrap}
+.carousel-viewport::-webkit-scrollbar{display:none}
 
-.carousel .carousel-card{display:inline-block;vertical-align:top;width:300px;margin:0 14px;white-space:normal;cursor:pointer;-webkit-transform:scale(1);transform:scale(1);transform-origin:center center;-webkit-transition:none;transition:none;-webkit-backface-visibility:hidden;backface-visibility:hidden;-webkit-tap-highlight-color:transparent}
+.carousel-track{display:inline-block;white-space:nowrap;font-size:0}
 
-.carousel .carousel-card .cover-wrapper{box-shadow:0 7px 10px rgba(0,0,0,.25),0 18px 32px rgba(0,0,0,.52),0 28px 48px rgba(0,0,0,.25);border:1px solid #2d2d30}
+.carousel-card{display:inline-block;vertical-align:top;width:300px;margin:0 14px;white-space:normal;cursor:pointer;transform:scale(1);-webkit-transform:scale(1);transform-origin:center center;transition:none;-webkit-transition:none;-webkit-backface-visibility:hidden;backface-visibility:hidden;-webkit-tap-highlight-color:transparent}
+.carousel-card .cover-wrapper{box-shadow:0 7px 10px rgba(0,0,0,.25),0 18px 32px rgba(0,0,0,.52),0 28px 48px rgba(0,0,0,.25);border:1px solid #2d2d30}
+.carousel-card.active .cover-wrapper{box-shadow:0 9px 12px rgba(0,0,0,.30),0 22px 42px rgba(0,0,0,.62),0 32px 55px rgba(0,0,0,.28)}
 
-.carousel .carousel-card.active .cover-wrapper{box-shadow:0 9px 12px rgba(0,0,0,.30),0 22px 42px rgba(0,0,0,.62),0 32px 55px rgba(0,0,0,.28)}
+.carousel-card.active{transform:scale(1.08);-webkit-transform:scale(1.08);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
 
-.carousel .carousel-card.active{-webkit-transform:scale(1.08);transform:scale(1.08);-webkit-transition:-webkit-transform .45s ease;transition:transform .45s ease}
-
-.carousel .carousel-card .info{transition:none}
-.carousel .carousel-card .artist{font-size:18px}
-.carousel .carousel-card .album{font-size:15px}
-.carousel .carousel-card .year{font-size:13px}
+.carousel-card .info{transition:none}
+.carousel-card .artist{font-size:18px}
+.carousel-card .album{font-size:15px}
+.carousel-card .year{font-size:13px}
 
 .album-overlay{position:fixed;z-index:1000;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0);display:block;padding:28px;overflow:auto;-webkit-overflow-scrolling:touch;visibility:hidden;opacity:0;-webkit-transition:opacity .28s ease,visibility 0s linear .32s;transition:opacity .28s ease,visibility 0s linear .32s}
 .album-overlay.visible{visibility:visible;opacity:1;background:rgba(0,0,0,.90);-webkit-transition:opacity .28s ease,visibility 0s linear 0s;transition:opacity .28s ease,visibility 0s linear 0s}
@@ -92,7 +87,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .album-detail-cover img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;display:block;opacity:1}
 
 .album-detail-main:before{content:"";position:absolute;z-index:-1;left:-40px;right:0;top:-200px;bottom:-15px;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.45) 30%,rgba(0,0,0,.85) 60%,rgba(0,0,0,.95) 100%);pointer-events:none}
-
+  
 .album-detail-main{position:absolute;z-index:5;left:0;bottom:0;width:620px;padding:35px 42px 38px;text-shadow:0 2px 8px rgba(0,0,0,.95)}
 
 .detail-number{font-size:12px;color:#aaa;letter-spacing:2px;margin-bottom:9px}
@@ -143,16 +138,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 body{padding:20px}
 .header{margin-bottom:24px}
 .title{font-size:28px}
-.grid .view-track{margin-right:-1.3333%}
-.grid .carousel-card{width:24%;margin:0 1.3333% 30px 0}
+.grid .record{width:24%;margin-right:1.3333%;margin-bottom:30px}
 .grid .artist{font-size:15px}
 .grid .album{font-size:13px}
 .grid .year{font-size:12px}
-.carousel .view-viewport{padding-top:32px;padding-bottom:58px}
-.carousel .carousel-card{width:300px;margin-left:12px;margin-right:12px}
-.carousel .carousel-card.active{-webkit-transform:scale(1.10);transform:scale(1.10)}
-.carousel .carousel-card .artist{font-size:16px}
-.carousel .carousel-card .album{font-size:14px}
+.carousel-viewport{padding-top:32px;padding-bottom:58px}
+.carousel-card{width:300px;margin-left:12px;margin-right:12px}
+.carousel-card.active{transform:scale(1.10);-webkit-transform:scale(1.10);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
+.carousel-card .artist{font-size:16px}
+.carousel-card .album{font-size:14px}
 .album-overlay{padding:20px}
 .album-detail{min-height:620px}
 .album-detail-main{padding:28px 30px 30px}
@@ -170,9 +164,11 @@ body{padding:15px}
 .subtitle{font-size:12px}
 .view-toggle{top:-2px}
 .view-toggle button{padding:7px 8px;font-size:12px}
-.grid .view-track{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:4%;row-gap:28px}
-.carousel .carousel-card{width:260px;margin-left:9px;margin-right:9px}
-.carousel .carousel-card.active{-webkit-transform:scale(1.07);transform:scale(1.07);-webkit-transition:-webkit-transform .4s ease;transition:transform .4s ease}
+.grid .record{width:48%;margin-right:4%;margin-bottom:28px}
+.grid .record:nth-child(4n){margin-right:4%}
+.grid .record:nth-child(2n){margin-right:0}
+.carousel-card{width:260px;margin-left:9px;margin-right:9px}
+.carousel-card.active{transform:scale(1.07);-webkit-transform:scale(1.07);transition:transform .4s ease;-webkit-transition:-webkit-transform .4s ease}
 .album-overlay{padding:10px}
 .album-detail{min-height:0;height:auto}
 .album-detail-cover{position:relative;width:100%;height:75vw;min-height:270px;max-height:430px}
@@ -185,15 +181,10 @@ body{padding:15px}
 .tracks-list li{font-size:13px}
 .track-side{margin-bottom:22px}
 }
-
-/* iPad 3 / older WebKit: avoid expensive visual effects during active scrolling. */
-@media screen and (max-device-width:1024px){
-.cover-wrapper{box-shadow:0 5px 10px rgba(0,0,0,.35)}
-.carousel .carousel-card .cover-wrapper{box-shadow:0 5px 12px rgba(0,0,0,.38)}
-.carousel .carousel-card.active .cover-wrapper{box-shadow:0 6px 15px rgba(0,0,0,.45)}
-}
 </style>
+
 </head>
+
 <body>
 
 <header class="header">
@@ -219,35 +210,38 @@ body{padding:15px}
 
 <div class="album-overlay" id="albumOverlay">
   <div class="album-detail">
-    <button type="button" class="album-close" id="albumClose" aria-label="Stäng">×</button>
 
-    <div class="album-detail-cover">
-      <img id="detailCover" src="" alt="">
-    </div>
+```
+<button type="button" class="album-close" id="albumClose" aria-label="Stäng">×</button>
 
-    <div class="album-detail-main">
-      <div class="detail-number" id="detailNumber"></div>
-      <div class="detail-artist" id="detailArtist"></div>
-      <div class="detail-album" id="detailAlbum"></div>
+<div class="album-detail-cover">
+  <img id="detailCover" src="" alt="">
+</div>
 
-      <div class="detail-meta">
-        <span id="detailYear"></span>
-        <span id="detailGenre"></span>
-      </div>
+<div class="album-detail-main">
+  <div class="detail-number" id="detailNumber"></div>
+  <div class="detail-artist" id="detailArtist"></div>
+  <div class="detail-album" id="detailAlbum"></div>
 
-      <div class="detail-rating" id="detailRating"></div>
-    </div>
+  <div class="detail-meta">
+    <span id="detailYear"></span>
+    <span id="detailGenre"></span>
+  </div>
 
-    <div class="album-tracks">
-      <div class="tracks-title">LÅTLISTA</div>
-      <div id="detailTracks"></div>
-    </div>
+  <div class="detail-rating" id="detailRating"></div>
+</div>
+
+<div class="album-tracks">
+  <div class="tracks-title">LÅTLISTA</div>
+  <div id="detailTracks"></div>
+</div>
+```
+
   </div>
 </div>
 
 <script>
 (function(){
-  'use strict';
 
 var records = [
 
@@ -523,471 +517,422 @@ var records = [
 
 ];
 
-  var collection = document.getElementById('collection');
-  var gridButton = document.getElementById('gridButton');
-  var carouselButton = document.getElementById('carouselButton');
-  var albumOverlay = document.getElementById('albumOverlay');
-  var albumClose = document.getElementById('albumClose');
-  var detailCover = document.getElementById('detailCover');
-  var detailNumber = document.getElementById('detailNumber');
-  var detailArtist = document.getElementById('detailArtist');
-  var detailAlbum = document.getElementById('detailAlbum');
-  var detailYear = document.getElementById('detailYear');
-  var detailGenre = document.getElementById('detailGenre');
-  var detailRating = document.getElementById('detailRating');
-  var detailTracks = document.getElementById('detailTracks');
+var collection=document.getElementById('collection');
+var gridButton=document.getElementById('gridButton');
+var carouselButton=document.getElementById('carouselButton');
+var albumOverlay=document.getElementById('albumOverlay');
+var albumClose=document.getElementById('albumClose');
+var detailCover=document.getElementById('detailCover');
+var detailNumber=document.getElementById('detailNumber');
+var detailArtist=document.getElementById('detailArtist');
+var detailAlbum=document.getElementById('detailAlbum');
+var detailYear=document.getElementById('detailYear');
+var detailGenre=document.getElementById('detailGenre');
+var detailRating=document.getElementById('detailRating');
+var detailTracks=document.getElementById('detailTracks');
 
-  var view = 'grid';
-  var activeIndex = 0;
-  var selectedRating = 'all';
+var view='grid';
+var activeIndex=0;
+var drag=false;
+var selectedRating='all';
+var startX=0;
+var startY=0;
+var startScroll=0;
+var scrollTimer=null;
 
-  var viewport = null;
-  var track = null;
-  var cards = [];
-  var filteredIndexes = [];
-  var scrollTimer = null;
-  var animationFrame = 0;
-  var isDragging = false;
-  var touchStartX = 0;
-  var touchStartY = 0;
+function esc(value){
+  return String(value)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
 
-  function esc(value){
-    return String(value)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;');
+function recordHTML(record, className){
+  var html='<article class="record '+(className||'')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
+    '<div class="cover-wrapper">'+
+      '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+record[6]+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
+      '<div class="number">'+record[0]+'</div>'+
+      '<div class="cover-rating">';
+
+  for(var r=1;r<=5;r++){
+    html+=r<=record[5]?'★':'<span class="empty">★</span>';
   }
 
-  function starHTML(rating, emptyCharacter){
-    var html = '';
-    var empty = emptyCharacter || '★';
+  html+='</div>'+
+    '</div>'+
+    '<div class="info">'+
+      '<div class="artist">'+esc(record[1])+'</div>'+
+      '<div class="album">'+esc(record[2])+'</div>'+
+      '<div class="year">'+esc(record[3])+'</div>'+
+    '</div>'+
+  '</article>';
 
-    for(var i=1;i<=5;i++){
-      html += i <= rating ? '★' : '<span class="empty">'+empty+'</span>';
+  return html;
+}
+
+function loadVisibleImages(){
+  var images=document.querySelectorAll('.cover');
+  var height=window.innerHeight||600;
+
+  for(var i=0;i<images.length;i++){
+    var img=images[i];
+    var dataSrc=img.getAttribute('data-src');
+
+    if(!dataSrc)continue;
+
+    var rect=img.getBoundingClientRect();
+
+    if(rect.top<height+700&&rect.bottom>-700){
+      img.src=dataSrc;
+      img.removeAttribute('data-src');
     }
+  }
+}
 
-    return html;
+function openAlbum(index){
+  var record=records[index];
+  if(!record)return;
+
+  detailNumber.innerHTML=esc(record[0]);
+  detailArtist.innerHTML=esc(record[1]);
+  detailAlbum.innerHTML=esc(record[2]);
+  detailYear.innerHTML=esc(record[3]);
+  detailGenre.innerHTML=esc(record[4]||'Genre saknas');
+
+  detailCover.src=record[6];
+  detailCover.alt=record[1]+' - '+record[2];
+
+  var rating=parseInt(record[5],10);
+  if(isNaN(rating))rating=0;
+  rating=Math.max(0,Math.min(5,rating));
+
+  var stars='';
+  for(var i=1;i<=5;i++){
+    stars+=i<=rating?'★':'<span class="empty">★</span>';
+  }
+  detailRating.innerHTML=stars;
+
+  var sides=record[7]||{};
+  var sideNames=['A','B','C','D'];
+  var html='';
+
+  for(i=0;i<sideNames.length;i++){
+    var side=sideNames[i];
+    var tracks=sides[side];
+
+    if(!tracks||!tracks.length)continue;
+
+    html+='<section class="track-side">'+
+      '<div class="side-title"><span>SIDA</span>'+side+'</div>'+
+      '<ol class="tracks-list">';
+
+  for(var j=0;j<tracks.length;j++){
+    var track=String(tracks[j]);
+    var parts=track.split('|');
+    var title=parts[0];
+    var rating=parseInt(parts[1],10);
+  
+    if(isNaN(rating))rating=0;
+    rating=Math.max(0,Math.min(5,rating));
+  
+    var trackStars='';
+    for(var s=1;s<=5;s++){
+      trackStars+=s<=rating?'★':'<span class="empty">☆</span>';
+    }
+  
+    html+='<li><span class="track-title">'+esc(title)+'</span><span class="track-rating">'+trackStars+'</span></li>';
   }
 
-  function recordHTML(record, className){
-    return '<article class="record '+className+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
-      '<div class="cover-wrapper">'+
-        '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+esc(record[6])+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
-        '<div class="number">'+record[0]+'</div>'+
-        '<div class="cover-rating">'+starHTML(Math.max(0,Math.min(5,parseInt(record[5],10)||0)))+'</div>'+
-      '</div>'+
-      '<div class="info">'+
-        '<div class="artist">'+esc(record[1])+'</div>'+
-        '<div class="album">'+esc(record[2])+'</div>'+
-        '<div class="year">'+esc(record[3])+'</div>'+
-      '</div>'+
-    '</article>';
+    html+='</ol></section>';
   }
 
-  function rebuildFilteredIndexes(){
-    filteredIndexes.length = 0;
+  detailTracks.innerHTML=html||
+    '<div style="color:#666;font-size:13px">Ingen låtlista tillagd</div>';
 
-    var wanted = selectedRating === 'all' ? -1 : parseInt(selectedRating,10);
+  albumOverlay.className='album-overlay visible';
+  document.body.style.overflow='hidden';
+}
 
-    for(var i=0;i<records.length;i++){
-      var rating = parseInt(records[i][5],10) || 0;
+function closeAlbum(){
+  albumOverlay.className='album-overlay';
+  document.body.style.overflow='';
 
-      if(wanted === -1 || rating === wanted){
-        filteredIndexes.push(i);
+  setTimeout(function(){
+    if(albumOverlay.className.indexOf('visible')===-1){
+      detailCover.src='';
+    }
+  },350);
+}
+
+
+function attachAlbumClicks(){
+  var elements=document.getElementsByClassName('record');
+
+  for(var i=0;i<elements.length;i++){
+    elements[i].onclick=function(){
+      if(view==='carousel'&&drag)return;
+
+      var index=parseInt(this.getAttribute('data-index'),10);
+
+      if(!isNaN(index)){
+        openAlbum(index);
       }
-    }
+    };
+  }
+}
 
-    if(activeIndex >= filteredIndexes.length){
-      activeIndex = 0;
+function buildGrid(){
+  collection.className='collection grid';
+
+  var html='';
+
+  for(var i=0;i<records.length;i++){
+    var rating=parseInt(records[i][5],10);
+
+    if(selectedRating==='all'||rating===parseInt(selectedRating,10)){
+      html+=recordHTML(records[i],'');
     }
   }
 
-  function loadVisibleImages(){
-    if(!track) return;
+  collection.innerHTML=html;
+  attachAlbumClicks();
+  loadVisibleImages();
+}
 
-    var viewportRect = viewport.getBoundingClientRect();
-    var images = track.getElementsByClassName('cover');
-    var verticalMargin = 500;
-    var horizontalMargin = 700;
+function setActive(index){
+  activeIndex=index;
 
-    for(var i=0;i<images.length;i++){
-      var img = images[i];
-      var dataSrc = img.getAttribute('data-src');
+  var cards=document.getElementsByClassName('carousel-card');
 
-      if(!dataSrc) continue;
+  for(var i=0;i<cards.length;i++){
+    cards[i].className=cards[i].className.replace(/\sactive\b/g,'');
 
-      var rect = img.getBoundingClientRect();
+    if(i===index){
+      cards[i].className+=' active';
+    }
+  }
+}
 
-      if(
-        rect.bottom >= viewportRect.top - verticalMargin &&
-        rect.top <= viewportRect.bottom + verticalMargin &&
-        rect.right >= viewportRect.left - horizontalMargin &&
-        rect.left <= viewportRect.right + horizontalMargin
-      ){
-        img.src = dataSrc;
-        img.removeAttribute('data-src');
-      }
+function animateScroll(element,to,smooth){
+  if(!smooth){
+    element.scrollLeft=to;
+    return;
+  }
+
+  var from=element.scrollLeft;
+  var change=to-from;
+  var duration=650;
+  var start=new Date().getTime();
+
+  function step(){
+    var time=new Date().getTime();
+    var progress=Math.min(1,(time-start)/duration);
+    var easing=progress*(2-progress);
+
+    element.scrollLeft=from+change*easing;
+
+    if(progress<1){
+      setTimeout(step,16);
     }
   }
 
-  function scheduleImageLoad(){
-    if(animationFrame) return;
+  step();
+}
 
-    animationFrame = window.requestAnimationFrame ?
-      window.requestAnimationFrame(function(){
-        animationFrame = 0;
-        loadVisibleImages();
-      }) :
-      setTimeout(function(){
-        animationFrame = 0;
-        loadVisibleImages();
-      },50);
-  }
+function centerCard(index,smooth){
+  var viewport=document.getElementById('carouselViewport');
+  var cards=document.getElementsByClassName('carousel-card');
+  var card=cards[index];
 
-  function openAlbum(index){
-    var record = records[index];
-    if(!record) return;
+  if(!viewport||!card)return;
 
-    detailNumber.textContent = record[0];
-    detailArtist.textContent = record[1];
-    detailAlbum.textContent = record[2];
-    detailYear.textContent = record[3];
-    detailGenre.textContent = record[4] || 'Genre saknas';
+  var target=card.offsetLeft-(viewport.clientWidth-card.offsetWidth)/2;
+  var max=viewport.scrollWidth-viewport.clientWidth;
 
-    detailCover.src = record[6];
-    detailCover.alt = record[1]+' - '+record[2];
+  target=Math.max(0,Math.min(target,max));
 
-    var rating = parseInt(record[5],10) || 0;
-    rating = Math.max(0,Math.min(5,rating));
-    detailRating.innerHTML = starHTML(rating);
+  setActive(index);
+  animateScroll(viewport,target,smooth);
+}
 
-    var sides = record[7] || {};
-    var sideNames = ['A','B','C','D'];
-    var html = '';
+function nearest(){
+  var viewport=document.getElementById('carouselViewport');
+  var cards=document.getElementsByClassName('carousel-card');
+  var center=viewport.scrollLeft+viewport.clientWidth/2;
 
-    for(var i=0;i<sideNames.length;i++){
-      var side = sideNames[i];
-      var tracks = sides[side];
+  var best=0;
+  var distance=Infinity;
 
-      if(!tracks || !tracks.length) continue;
+  for(var i=0;i<cards.length;i++){
+    var card=cards[i];
+    var cardCenter=card.offsetLeft+card.offsetWidth/2;
+    var currentDistance=Math.abs(cardCenter-center);
 
-      html += '<section class="track-side">'+
-        '<div class="side-title"><span>SIDA</span>'+side+'</div>'+
-        '<ol class="tracks-list">';
-
-      for(var j=0;j<tracks.length;j++){
-        var parts = String(tracks[j]).split('|');
-        var title = parts[0];
-        var trackRating = parseInt(parts[1],10) || 0;
-        trackRating = Math.max(0,Math.min(5,trackRating));
-
-        html += '<li>'+
-          '<span class="track-title">'+esc(title)+'</span>'+
-          '<span class="track-rating">'+starHTML(trackRating,'☆')+'</span>'+
-        '</li>';
-      }
-
-      html += '</ol></section>';
-    }
-
-    detailTracks.innerHTML = html ||
-      '<div style="color:#666;font-size:13px">Ingen låtlista tillagd</div>';
-
-    albumOverlay.className = 'album-overlay visible';
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeAlbum(){
-    albumOverlay.className = 'album-overlay';
-    document.body.style.overflow = '';
-
-    setTimeout(function(){
-      if(albumOverlay.className.indexOf('visible') === -1){
-        detailCover.removeAttribute('src');
-      }
-    },350);
-  }
-
-  function setActive(index){
-    if(view !== 'carousel') return;
-
-    var previous = cards[activeIndex];
-    var next = cards[index];
-
-    if(previous && previous !== next){
-      previous.className = previous.className.replace(/\sactive/g,'');
-    }
-
-    if(next){
-      next.className = next.className.replace(/\sactive/g,'') + ' active';
-      activeIndex = index;
+    if(currentDistance<distance){
+      distance=currentDistance;
+      best=i;
     }
   }
 
-  function centerCard(index, smooth){
-    if(!viewport || !cards.length) return;
+  return best;
+}
 
-    index = Math.max(0,Math.min(index,cards.length-1));
+function buildCarousel(){
+  collection.className='collection carousel';
 
-    var card = cards[index];
-    var target = card.offsetLeft - (viewport.clientWidth - card.offsetWidth) / 2;
-    var max = viewport.scrollWidth - viewport.clientWidth;
+  var html=
+    '<div class="carousel-viewport" id="carouselViewport">'+
+      '<div class="carousel-track" id="carouselTrack">';
 
-    target = Math.max(0,Math.min(target,max));
-    setActive(index);
-
-    if(!smooth){
-      viewport.scrollLeft = target;
-      return;
+  for(var i=0;i<records.length;i++){
+    var rating=parseInt(records[i][5],10);
+  
+    if(selectedRating==='all'||rating===parseInt(selectedRating,10)){
+      html+=recordHTML(records[i],'carousel-card');
     }
-
-    if(viewport.scrollTo){
-      try{
-        viewport.scrollTo({left:target,behavior:'smooth'});
-        return;
-      }catch(error){}
-    }
-
-    animateScroll(viewport,target);
   }
 
-  function animateScroll(element,to){
-    var from = element.scrollLeft;
-    var change = to - from;
-    var duration = 420;
-    var start = new Date().getTime();
+  html+='</div></div>';
+  collection.innerHTML=html;
+  loadVisibleImages();
+  
+  var viewport=document.getElementById('carouselViewport');
+  var cards=document.getElementsByClassName('carousel-card');
 
-    function step(){
-      var progress = Math.min(1,(new Date().getTime()-start)/duration);
-      var easing = progress*(2-progress);
-
-      element.scrollLeft = from + change*easing;
-
-      if(progress < 1){
-        setTimeout(step,16);
-      }
-    }
-
-    step();
-  }
-
-  function nearestCard(){
-    if(!viewport || !cards.length) return 0;
-
-    var center = viewport.scrollLeft + viewport.clientWidth / 2;
-    var best = 0;
-    var distance = Infinity;
-
-    for(var i=0;i<cards.length;i++){
-      var cardCenter = cards[i].offsetLeft + cards[i].offsetWidth / 2;
-      var currentDistance = Math.abs(cardCenter-center);
-
-      if(currentDistance < distance){
-        distance = currentDistance;
-        best = i;
-      }
-    }
-
-    return best;
-  }
+  attachAlbumClicks();
 
   function scheduleSettle(){
-    if(scrollTimer) clearTimeout(scrollTimer);
+    if(scrollTimer)clearTimeout(scrollTimer);
 
-    scrollTimer = setTimeout(function(){
-      scrollTimer = null;
-      setActive(nearestCard());
-    },140);
+    scrollTimer=setTimeout(function(){
+      setActive(nearest());
+    },180);
   }
 
-  function buildView(){
-    rebuildFilteredIndexes();
-
-    var html =
-      '<div class="view-surface">'+
-        '<div class="view-viewport" id="viewViewport">'+
-          '<div class="view-track" id="viewTrack">';
-
-    for(var i=0;i<filteredIndexes.length;i++){
-      var record = records[filteredIndexes[i]];
-      html += recordHTML(record,'carousel-card');
-    }
-
-    html += '</div></div></div>';
-
-    collection.className = 'collection '+view;
-    collection.innerHTML = html;
-
-    viewport = document.getElementById('viewViewport');
-    track = document.getElementById('viewTrack');
-    cards = view === 'carousel' ? track.getElementsByClassName('carousel-card') : [];
-
-    loadVisibleImages();
-
-    if(view === 'carousel'){
-      attachCarouselEvents();
-      setTimeout(function(){
-        centerCard(activeIndex,false);
-        scheduleImageLoad();
-      },20);
-    }
-  }
-
-  /*
-   * Important performance change:
-   * The grid and carousel no longer have separate DOM trees.
-   * A view switch rebuilds the shared structure only when the filter changes.
-   */
-  function setView(nextView){
-    if(view === nextView) return;
-
-    view = nextView;
-    gridButton.className = view === 'grid' ? 'active' : '';
-    carouselButton.className = view === 'carousel' ? 'active' : '';
-
-    gridButton.setAttribute('aria-pressed',view === 'grid' ? 'true' : 'false');
-    carouselButton.setAttribute('aria-pressed',view === 'carousel' ? 'true' : 'false');
-
-    collection.className = 'collection '+view;
-
-    if(view === 'carousel'){
-      setTimeout(function(){
-        centerCard(Math.min(activeIndex,cards.length-1),false);
-        scheduleImageLoad();
-      },20);
-    }else{
-      scheduleImageLoad();
-    }
-  }
-
-  function attachCarouselEvents(){
-    if(!viewport) return;
-
-    viewport.onscroll = function(){
-      scheduleSettle();
-      scheduleImageLoad();
-    };
-
-    viewport.ontouchstart = function(event){
-      if(!event.touches || !event.touches.length) return;
-
-      isDragging = false;
-      touchStartX = event.touches[0].pageX;
-      touchStartY = event.touches[0].pageY;
-
-      if(scrollTimer) clearTimeout(scrollTimer);
-    };
-
-    viewport.ontouchmove = function(event){
-      if(!event.touches || !event.touches.length) return;
-
-      var dx = event.touches[0].pageX - touchStartX;
-      var dy = event.touches[0].pageY - touchStartY;
-
-      if(Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)){
-        isDragging = true;
-      }
-    };
-
-    viewport.ontouchend = function(){
-      scheduleSettle();
-
-      setTimeout(function(){
-        isDragging = false;
-      },120);
-    };
-  }
-
-  /*
-   * One click handler for the whole collection instead of one handler per album.
-   * This reduces event-handler overhead and survives view/filter changes.
-   */
-  collection.onclick = function(event){
-    var target = event.target;
-
-    while(target && target !== collection && target.nodeType === 1){
-      if((' '+target.className+' ').indexOf(' record ') !== -1){
-        if(view === 'carousel' && isDragging) return;
-
-        var index = parseInt(target.getAttribute('data-index'),10);
-
-        if(!isNaN(index)){
-          openAlbum(index);
-        }
-
-        return;
-      }
-
-      target = target.parentNode;
-    }
+  viewport.onscroll=function(){
+    setActive(-1);
+    scheduleSettle();
   };
 
-  gridButton.onclick = function(){
-    setView('grid');
+  viewport.ontouchstart=function(event){
+    if(!event.touches||!event.touches.length)return;
+
+    drag=false;
+    startX=event.touches[0].pageX;
+    startY=event.touches[0].pageY;
+    startScroll=viewport.scrollLeft;
+
+    if(scrollTimer)clearTimeout(scrollTimer);
+    setActive(-1);
   };
 
-  carouselButton.onclick = function(){
-    setView('carousel');
+  viewport.ontouchmove=function(event){
+    if(!event.touches||!event.touches.length)return;
+
+    var dx=event.touches[0].pageX-startX;
+
+    if(Math.abs(dx)>8)drag=true;
+
+    setActive(-1);
   };
 
-  albumClose.onclick = function(){
+  viewport.ontouchend=function(){
+    scheduleSettle();
+
+    setTimeout(function(){
+      drag=false;
+    },120);
+  };
+
+  setTimeout(function(){
+    centerCard(activeIndex,false);
+  },30);
+}
+
+function setView(nextView){
+  view=nextView;
+
+  gridButton.className=view==='grid'?'active':'';
+  carouselButton.className=view==='carousel'?'active':'';
+
+  gridButton.setAttribute('aria-pressed',view==='grid'?'true':'false');
+  carouselButton.setAttribute('aria-pressed',view==='carousel'?'true':'false');
+
+  if(view==='grid'){
+    buildGrid();
+  }else{
+    buildCarousel();
+  }
+}
+
+gridButton.onclick=function(){
+  setView('grid');
+};
+
+carouselButton.onclick=function(){
+  setView('carousel');
+};
+
+albumClose.onclick=function(){
+  closeAlbum();
+};
+
+albumOverlay.onclick=function(event){
+  if((event||window.event).target===albumOverlay){
     closeAlbum();
-  };
+  }
+};
 
-  albumOverlay.onclick = function(event){
-    if((event || window.event).target === albumOverlay){
+document.onkeydown=function(event){
+  event=event||window.event;
+
+  if(event.keyCode===27){
+    if(albumOverlay.className.indexOf('visible')!==-1){
       closeAlbum();
     }
-  };
-
-  document.onkeydown = function(event){
-    event = event || window.event;
-
-    if(event.keyCode === 27){
-      if(albumOverlay.className.indexOf('visible') !== -1){
-        closeAlbum();
-      }
-      return;
-    }
-
-    if(view !== 'carousel' || !cards.length) return;
-
-    if(event.keyCode === 39 && activeIndex < cards.length-1){
-      centerCard(activeIndex+1,true);
-    }else if(event.keyCode === 37 && activeIndex > 0){
-      centerCard(activeIndex-1,true);
-    }
-  };
-
-  var ratingFilter = document.querySelectorAll('.rating-filter button');
-
-  for(var f=0;f<ratingFilter.length;f++){
-    ratingFilter[f].onclick = function(){
-      selectedRating = this.getAttribute('data-rating');
-
-      for(var i=0;i<ratingFilter.length;i++){
-        ratingFilter[i].className = '';
-      }
-
-      this.className = 'active';
-      activeIndex = 0;
-
-      /*
-       * Filtering does rebuild the list because the visible set changes.
-       * View switching itself does not.
-       */
-      buildView();
-    };
+    return;
   }
 
-  window.onscroll = scheduleImageLoad;
-  window.onresize = scheduleImageLoad;
+  if(view!=='carousel')return;
 
-  rebuildFilteredIndexes();
-  buildView();
+  if(event.keyCode===39&&activeIndex<records.length-1){
+    centerCard(activeIndex+1,true);
+  }else if(event.keyCode===37&&activeIndex>0){
+    centerCard(activeIndex-1,true);
+  }
+};
+
+var ratingFilter=document.querySelectorAll('.rating-filter button');
+
+for(var f=0;f<ratingFilter.length;f++){
+  ratingFilter[f].onclick=function(){
+    selectedRating=this.getAttribute('data-rating');
+
+    for(var i=0;i<ratingFilter.length;i++){
+      ratingFilter[i].className='';
+    }
+
+    this.className='active';
+
+    activeIndex=0;
+
+    if(view==='grid'){
+      buildGrid();
+    }else{
+      buildCarousel();
+    }
+  };
+}
+
+window.onscroll=function(){
+  loadVisibleImages();
+};
+
+buildGrid();
 
 })();
 </script>
+
 </body>
 </html>
