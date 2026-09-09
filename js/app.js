@@ -506,8 +506,6 @@ function enableGridSorting(){
     console.log('NY ORDNING:',records);
 
     await saveGridOrder();
-
-    dragged.classList.remove('dragging');
     dragged=null;
   };
 }
