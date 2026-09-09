@@ -433,6 +433,11 @@ function enableGridSorting(){
   var touchTimer=null;
   var touchDragging=false;
 
+    collection.oncontextmenu=function(event){
+      event.preventDefault();
+      return false;
+    };
+
   collection.ondragstart=function(event){
     var record=event.target.closest('.record');
 
