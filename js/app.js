@@ -113,10 +113,12 @@ window.loadCollection=async function(){
     .eq('user_id',user.id)
     .order('id',{ascending:true});
 
-  if(collectionError){
-    console.error('Kunde inte hämta samlingen:',collectionError);
-    return;
-  }
+    if(collectionError){
+        console.error('Kunde inte hämta samlingen:',collectionError);
+        return;
+    }
+    
+    console.log('SUPABASE COLLECTION:', collectionData);
 
   var albumIds=collectionData.map(function(item){
     return item.albums&&item.albums.id;
@@ -186,6 +188,7 @@ window.loadCollection=async function(){
       ];
     });
 
+  console.log('RECORDS:', records);
   buildGrid();
 }
 
