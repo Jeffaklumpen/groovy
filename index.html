@@ -1045,6 +1045,15 @@ let musicBrainzController=null;
 let musicBrainzSearchNumber=0;
 
 async function searchMusicBrainz(query){
+    const { data, error } = await supabase.functions.invoke('discogs-search', {
+        body: { query: query }
+    });
+
+    console.log('Discogs test:', data);
+    console.log('Discogs error:', error);
+
+    return;
+
     const searchNumber=++musicBrainzSearchNumber;
     if(musicBrainzController)musicBrainzController.abort();
     musicBrainzController=new AbortController();
