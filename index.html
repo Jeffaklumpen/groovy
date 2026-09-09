@@ -1035,7 +1035,7 @@ albumSearchInput.addEventListener('input',function(){
 async function searchMusicBrainz(query){
     albumSearchResults.innerHTML='<p>Söker...</p>';
 
-    const url='https://musicbrainz.org/ws/2/release-group/?query='+encodeURIComponent(query)+'&fmt=json&limit=25';
+    const url='https://musicbrainz.org/ws/2/release-group/?query='+encodeURIComponent(query)+'&fmt=json&limit=10';
 
     try{
         const response=await fetch(url);
@@ -1071,7 +1071,7 @@ async function searchMusicBrainz(query){
             return score(titleB,artistB)-score(titleA,artistA);
         });
 
-        data['release-groups'].slice(0,10).forEach(function(album){
+        data['release-groups'].forEach(function(album){
             const artist=album['artist-credit']&&album['artist-credit'][0]
                 ?album['artist-credit'][0].name
                 :'Okänd artist';
