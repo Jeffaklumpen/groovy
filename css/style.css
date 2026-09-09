@@ -199,3 +199,15 @@ body{padding:15px}
 .delete-cover-button{position:absolute;right:8px;top:8px;z-index:10;width:34px;height:34px;border:0;border-radius:50%;background:rgba(0,0,0,.72);color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .15s ease,background .15s ease}
 .cover-wrapper:hover .delete-cover-button{opacity:1;pointer-events:auto}
 .delete-cover-button:hover{background:#c62828}
+
+.delete-mode-button{display:none;width:36px;height:36px;border:0;border-radius:50%;background:#242426;color:#fff;font-size:17px;align-items:center;justify-content:center;cursor:pointer}
+.delete-mode-button.active{background:#c62828}
+.delete-cover-button{position:absolute;right:8px;top:8px;z-index:10;width:34px;height:34px;border:0;border-radius:50%;background:rgba(0,0,0,.72);color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .15s ease,background .15s ease}
+.cover-wrapper:hover .delete-cover-button{opacity:1;pointer-events:auto}
+.delete-cover-button:hover{background:#c62828}
+@media screen and (max-width:600px){
+.delete-mode-button{display:flex}
+.delete-mode-button.active{background:#c62828}
+.delete-mode-button.active~.rating-filter{}
+.delete-cover-button{opacity:0;pointer-events:none}
+.delete-mode-active .delete-cover-button{opacity:1;pointer-events:auto}
