@@ -858,7 +858,7 @@ async function searchMusicBrainz(query){
 
 
         // ========================================
-        // FILTRERA VINYL
+        // 1. ENDAST VINYL
         // ========================================
 
         const vinylResults=results.filter(function(release){
@@ -871,7 +871,6 @@ async function searchMusicBrainz(query){
 
             const formatText=formats.join(' ');
 
-            // Måste vara vinyl
             const isVinyl=formats.some(function(format){
                 return format.indexOf('vinyl')>-1;
             });
@@ -880,7 +879,7 @@ async function searchMusicBrainz(query){
 
 
             // ========================================
-            // TA BORT REMASTERS / MODERNA UTGÅVOR
+            // 2. TA BORT REMASTERS / REISSUES
             // ========================================
 
             const blockedWords=[
@@ -901,8 +900,7 @@ async function searchMusicBrainz(query){
             if(isBlocked)return false;
 
 
-            // Även titel/description kan innehålla
-            // information om remaster/reissue.
+            // Kontrollera även övrig text
             const text=String(
                 (release.title||'')+' '+
                 (release.notes||'')+' '+
@@ -930,141 +928,133 @@ async function searchMusicBrainz(query){
 
 
         // ========================================
-        // RANKA RESULTAT
+        // 3. LANDSPRIORITET
+        //
+        // UK först
+        // US om UK saknas
+        // Europe om UK + US saknas
         // ========================================
 
-        function releaseScore(release){
-
-            const formats=Array.isArray(release.format)
-                ?release.format.map(function(format){
-                    return String(format).toLowerCase();
-                })
-                :[];
-
-            const formatText=formats.join(' ');
-
-            let score=0;
-
-            const year=parseInt(release.year,10);
-
-
-            // ----------------------------------------
-            // ÄLDRE UTGÅVOR PRIORITERAS
-            // ----------------------------------------
-
-            if(year){
-
-                // Äldre år får högre poäng.
-                // Detta gör att originalperioden
-                // normalt hamnar före senare pressningar.
-
-                score+=Math.max(0,300-(year-1950));
-            }
-
-
-            // ----------------------------------------
-            // LP PRIORITERAS
-            // ----------------------------------------
-
-            if(formatText.indexOf('lp')>-1){
-                score+=60;
-            }
-
-
-            // ----------------------------------------
-            // 12" PRIORITERAS
-            // ----------------------------------------
-
-            if(formatText.indexOf('12"')>-1){
-                score+=30;
-            }
-
-
-            // ----------------------------------------
-            // ORIGINAL / ALBUM
-            // ----------------------------------------
-
-            if(formatText.indexOf('album')>-1){
-                score+=20;
-            }
-
-
-            // ----------------------------------------
-            // LAND
-            // ----------------------------------------
+        function getCountryGroup(release){
 
             const country=String(
                 release.country||''
-            ).toLowerCase();
+            ).toLowerCase().trim();
 
-            if(country==='uk'){
-                score+=20;
-            }
-            else if(country==='us'){
-                score+=19;
-            }
-            else if(country==='europe'){
-                score+=17;
-            }
-            else if(country==='germany'){
-                score+=15;
-            }
-            else if(country==='france'){
-                score+=14;
-            }
-            else if(country==='netherlands'){
-                score+=14;
-            }
-            else if(country==='sweden'){
-                score+=14;
+
+            // UK
+            if(
+                country==='uk' ||
+                country==='united kingdom' ||
+                country==='uk & europe'
+            ){
+                return 1;
             }
 
 
-            return score;
+            // US
+            if(
+                country==='us' ||
+                country==='usa' ||
+                country==='united states'
+            ){
+                return 2;
+            }
+
+
+            // Europe
+            if(
+                country==='europe' ||
+                country==='eu'
+            ){
+                return 3;
+            }
+
+
+            return 99;
         }
 
 
-        vinylResults.sort(function(a,b){
+        // ========================================
+        // 4. VÄLJ ENDAST BÄSTA LANDGRUPPEN
+        // ========================================
 
-            const scoreDifference=
-                releaseScore(b)-releaseScore(a);
+        let selectedCountryGroup=null;
 
-            if(scoreDifference!==0){
-                return scoreDifference;
-            }
 
-            // Om två resultat får samma score,
-            // lägg det äldre först.
+        if(vinylResults.some(function(release){
+            return getCountryGroup(release)===1;
+        })){
+            selectedCountryGroup=1;
+        }
+        else if(vinylResults.some(function(release){
+            return getCountryGroup(release)===2;
+        })){
+            selectedCountryGroup=2;
+        }
+        else if(vinylResults.some(function(release){
+            return getCountryGroup(release)===3;
+        })){
+            selectedCountryGroup=3;
+        }
 
-            const yearA=parseInt(a.year,10)||9999;
-            const yearB=parseInt(b.year,10)||9999;
+
+        let preferredResults=vinylResults;
+
+
+        if(selectedCountryGroup!==null){
+
+            preferredResults=vinylResults.filter(function(release){
+                return getCountryGroup(release)===selectedCountryGroup;
+            });
+
+        }
+
+
+        // ========================================
+        // 5. SORTERA ÄLDSTA FÖRST
+        // ========================================
+
+        preferredResults.sort(function(a,b){
+
+            const yearA=parseInt(a.year,10);
+            const yearB=parseInt(b.year,10);
+
+
+            // Releases utan år hamnar sist
+            if(!yearA && !yearB)return 0;
+            if(!yearA)return 1;
+            if(!yearB)return -1;
+
 
             return yearA-yearB;
         });
 
 
         console.log(
-            'Filtrerade/rankade Discogs-resultat:',
-            vinylResults
+            'Valda Discogs-resultat:',
+            preferredResults
         );
 
 
         // ========================================
-        // VISA RESULTAT
+        // 6. VISA RESULTAT
         // ========================================
 
-        vinylResults.slice(0,10).forEach(function(release){
+        preferredResults.slice(0,10).forEach(function(release){
 
             const title=release.title||'Okänd titel';
 
 
-            // Discogs returnerar normalt:
-            // "Artist - Album"
+            // Discogs brukar returnera:
+            // Artist - Album
             const parts=title.split(' - ');
+
 
             const artist=parts.length>1
                 ?parts[0]
                 :'Okänd artist';
+
 
             const albumTitle=parts.length>1
                 ?parts.slice(1).join(' - ')
@@ -1073,19 +1063,16 @@ async function searchMusicBrainz(query){
 
             const year=release.year||'';
 
+            const country=release.country||'';
+
+
             const formats=Array.isArray(release.format)
                 ?release.format.join(', ')
                 :'';
 
 
-            const country=release.country||'';
-
             const imageUrl=release.thumb||'';
 
-
-            // ========================================
-            // RESULTATKORT
-            // ========================================
 
             const div=document.createElement('div');
 
@@ -1110,6 +1097,7 @@ async function searchMusicBrainz(query){
                     '</div>'+
 
                     '<div class="mb-year">'+
+
                         escapeHTML(String(year))+
 
                         (country
@@ -1169,7 +1157,6 @@ async function searchMusicBrainz(query){
         }
     }
 }
-
 
 async function addAlbumFromMusicBrainz(album,artist,year,button){
     if(button.classList.contains('mb-added'))return;
