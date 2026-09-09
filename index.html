@@ -183,6 +183,16 @@ body{padding:15px}
 .view-toggle{order:2}
 .add-album-button{order:1}
 }
+
+.mb-result{display:flex;align-items:center;gap:12px;padding:9px;margin-bottom:6px;background:#242424;border-radius:8px}
+.mb-cover{width:52px;height:52px;flex-shrink:0;object-fit:cover;border-radius:4px;background:#181818}
+.mb-info{flex:1;min-width:0}
+.mb-title{font-size:14px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mb-artist{margin-top:3px;font-size:12px;color:#bbb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mb-year{margin-top:2px;font-size:11px;color:#777}
+.mb-add-button{flex-shrink:0;background:#22c55e;color:#fff;border:0;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer}
+.mb-add-button:hover{background:#16a34a}
+.mb-added{background:#555;color:#ccc;cursor:default}
 </style>
 
 </head>
@@ -985,9 +995,6 @@ const albumSearchResults=document.getElementById('albumSearchResults');
 
 let searchTimer=null;
 
-
-// OPEN / CLOSE
-
 addAlbumButton.addEventListener('click',function(){
     addAlbumModal.style.display='flex';
     albumSearchInput.focus();
@@ -1007,12 +1014,8 @@ addAlbumModal.addEventListener('click',function(event){
     }
 });
 
-
-// LIVE SEARCH
-
 albumSearchInput.addEventListener('input',function(){
     const query=albumSearchInput.value.trim();
-
     clearTimeout(searchTimer);
 
     if(query.length<2){
@@ -1020,25 +1023,21 @@ albumSearchInput.addEventListener('input',function(){
         return;
     }
 
+    albumSearchResults.innerHTML='<p>Söker...</p>';
+
     searchTimer=setTimeout(function(){
         searchMusicBrainz(query);
     },400);
 });
 
-
 async function searchMusicBrainz(query){
-
-    albumSearchResults.innerHTML='<p>Söker...</p>';
-
     const url='https://musicbrainz.org/ws/2/release-group/?query='+encodeURIComponent(query)+'&fmt=json&limit=10';
 
     try{
         const response=await fetch(url);
-
         if(!response.ok)throw new Error('HTTP '+response.status);
 
         const data=await response.json();
-
         albumSearchResults.innerHTML='';
 
         if(!data['release-groups']||!data['release-groups'].length){
@@ -1047,7 +1046,6 @@ async function searchMusicBrainz(query){
         }
 
         data['release-groups'].forEach(function(album){
-
             const artist=album['artist-credit']&&album['artist-credit'][0]
                 ?album['artist-credit'][0].name
                 :'Okänd artist';
@@ -1056,16 +1054,19 @@ async function searchMusicBrainz(query){
                 ?album['first-release-date'].substring(0,4)
                 :'';
 
+            const imageUrl='https://coverartarchive.org/release-group/'+album.id+'/front-250';
+
             const div=document.createElement('div');
             div.className='mb-result';
 
             div.innerHTML=
+                '<img class="mb-cover" src="'+imageUrl+'" alt="" onerror="this.style.display=\'none\'">'+
                 '<div class="mb-info">'+
                     '<div class="mb-title">'+escapeHTML(album.title)+'</div>'+
                     '<div class="mb-artist">'+escapeHTML(artist)+'</div>'+
                     '<div class="mb-year">'+escapeHTML(year)+'</div>'+
                 '</div>'+
-                '<button class="mb-add-button" data-album-id="'+album.id+'">Add</button>';
+                '<button class="mb-add-button">Add</button>';
 
             const addButton=div.querySelector('.mb-add-button');
 
@@ -1082,11 +1083,7 @@ async function searchMusicBrainz(query){
     }
 }
 
-
-// ADD ALBUM
-
 function addAlbumFromMusicBrainz(album,artist,year,button){
-
     console.log('Album valt:',album);
 
     button.textContent='Added';
@@ -1095,9 +1092,6 @@ function addAlbumFromMusicBrainz(album,artist,year,button){
 
     alert(artist+' – '+album.title+' har valts!');
 }
-
-
-// SECURITY
 
 function escapeHTML(text){
     return String(text)
