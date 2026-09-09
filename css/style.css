@@ -244,6 +244,6 @@ body{padding:15px}
 .grid .record.dragging{opacity:.45}
 
 @media screen and (max-width:600px){
-.grid .record{touch-action:pan-y}
+.grid .record{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .grid .record.dragging{opacity:.45}
 }
