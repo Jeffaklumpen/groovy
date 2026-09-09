@@ -27,11 +27,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 
 .collection{max-width:1400px;margin:0 auto}
 
+/* One shared DOM for both views. Switching views now only changes CSS classes. */
 .view-surface{width:100%}
 .view-track{font-size:0}
 
 .grid .view-viewport{width:100%}
-.grid .view-track{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:1.3333%;row-gap:38px}
+.grid .view-track{display:block;margin-right:-1.3333%}
+.grid .view-track:after{content:"";display:block;clear:both}
+.grid .carousel-card{display:block;float:left;width:24%;margin:0 1.3333% 38px 0;white-space:normal;vertical-align:top;min-width:0}
+/* Override carousel sizing while in grid: 4 albums per row. */
+.grid .carousel-card{display:block;width:auto;margin:0;white-space:normal;vertical-align:top;min-width:0}
 .grid .record{min-width:0}
 
 .cover-wrapper{position:relative;width:100%;height:0;padding-bottom:100%;overflow:hidden;background:#161618;border:1px solid #29292c;box-shadow:0 8px 12px rgba(0,0,0,.28),0 18px 35px rgba(0,0,0,.48),0 2px 3px rgba(0,0,0,.55);-webkit-transform:translateZ(0);transform:translateZ(0)}
@@ -56,6 +61,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 
 .year{margin-top:5px;font-size:13px;color:#777}
 
+/* Carousel uses the exact same record elements as grid. */
 .carousel .view-viewport{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;white-space:nowrap;padding:42px 0 55px;position:relative;-ms-overflow-style:none;scrollbar-width:none}
 
 .carousel .view-viewport::-webkit-scrollbar{display:none}
@@ -137,7 +143,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 body{padding:20px}
 .header{margin-bottom:24px}
 .title{font-size:28px}
-.grid .view-track{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:30px}
+.grid .view-track{margin-right:-1.3333%}
+.grid .carousel-card{width:24%;margin:0 1.3333% 30px 0}
 .grid .artist{font-size:15px}
 .grid .album{font-size:13px}
 .grid .year{font-size:12px}
@@ -179,6 +186,7 @@ body{padding:15px}
 .track-side{margin-bottom:22px}
 }
 
+/* iPad 3 / older WebKit: avoid expensive visual effects during active scrolling. */
 @media screen and (max-device-width:1024px){
 .cover-wrapper{box-shadow:0 5px 10px rgba(0,0,0,.35)}
 .carousel .carousel-card .cover-wrapper{box-shadow:0 5px 12px rgba(0,0,0,.38)}
@@ -826,6 +834,11 @@ var records = [
     }
   }
 
+  /*
+   * Important performance change:
+   * The grid and carousel no longer have separate DOM trees.
+   * A view switch rebuilds the shared structure only when the filter changes.
+   */
   function setView(nextView){
     if(view === nextView) return;
 
@@ -886,6 +899,10 @@ var records = [
     };
   }
 
+  /*
+   * One click handler for the whole collection instead of one handler per album.
+   * This reduces event-handler overhead and survives view/filter changes.
+   */
   collection.onclick = function(event){
     var target = event.target;
 
@@ -956,6 +973,10 @@ var records = [
       this.className = 'active';
       activeIndex = 0;
 
+      /*
+       * Filtering does rebuild the list because the visible set changes.
+       * View switching itself does not.
+       */
       buildView();
     };
   }
