@@ -239,6 +239,6 @@ body{padding:15px}
 .album-tracks{grid-column:2;grid-row:1 / span 2;position:relative;right:auto;top:auto;bottom:auto;width:100%;height:100%;padding:30px 25px;overflow-y:auto}
 }
 
-.grid .record{cursor:grab}
+.grid .record{cursor:grab;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease}
 .grid .record:active{cursor:grabbing}
-.grid .record.dragging{opacity:.45}
+.grid .record.dragging{opacity:1;transform:scale(1.06) rotate(2deg);-webkit-transform:scale(1.06) rotate(2deg);filter:brightness(1.08);box-shadow:0 20px 45px rgba(0,0,0,.55);z-index:20;cursor:grabbing}
