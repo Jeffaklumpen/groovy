@@ -64,7 +64,6 @@ supabaseClient.auth.onAuthStateChange(function(){
 
 updateAuthUI();
 
-<script>
 (function(){
 
 var records = [
