@@ -952,75 +952,84 @@ async function searchDiscogs(query){
     }
 }
 
-
-async function addAlbumFromMusicBrainz(album,artist,year,button){
+async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
     if(button.classList.contains('mb-added'))return;
 
     button.textContent='Hämtar...';
     button.disabled=true;
 
     try{
-        const url='https://musicbrainz.org/ws/2/release-group/'+album.id+'?inc=releases+artist-credits&fmt=json';
 
-        const response=await fetch(url);
+        // ========================================
+        // 1. MASTER RELEASE
+        // ========================================
 
-        if(!response.ok)throw new Error('HTTP '+response.status);
+        const masterId=master.id;
 
-        const data=await response.json();
-
-        console.log('MusicBrainz album:',data);
-
-        const releases=data.releases||[];
-
-        if(!releases.length){
-            throw new Error('Inga releases hittades');
+        if(!masterId){
+            throw new Error('Master Release saknar ID');
         }
 
-        const release=releases[0];
+        console.log('Discogs Master Release ID:',masterId);
 
-        console.log('Vald release:',release);
 
-        const tracksUrl='https://musicbrainz.org/ws/2/release/'+release.id+'?inc=recordings+media&fmt=json';
+        // ========================================
+        // 2. HÄMTA MASTER RELEASE
+        // ========================================
 
-        const tracksResponse=await fetch(tracksUrl);
+        const {data,error}=await supabaseClient.functions.invoke(
+            'discogs-search',
+            {
+                body:{
+                    action:'master',
+                    masterId:masterId
+                }
+            }
+        );
 
-        if(!tracksResponse.ok)throw new Error('HTTP '+tracksResponse.status);
+        if(error){
+            console.error('Discogs master error:',error);
+            throw error;
+        }
 
-        const releaseData=await tracksResponse.json();
+        console.log('Discogs Master Release:',data);
 
-        console.log('Release med låtar:',releaseData);
 
-        const tracks=[];
+        // ========================================
+        // 3. VISA GRUNDINFORMATION
+        // ========================================
 
-        (releaseData.media||[]).forEach(function(media){
-            const side=media.position||1;
-
-            (media.tracks||[]).forEach(function(track){
-                tracks.push({
-                    side:side,
-                    number:track.position||0,
-                    title:track.title||''
-                });
-            });
-        });
-
-        const coverUrl='https://coverartarchive.org/release/'+release.id+'/front-1200';
-
-        console.log('Album:',album.title);
+        console.log('Album:',albumTitle);
         console.log('Artist:',artist);
         console.log('År:',year);
-        console.log('Omslag:',coverUrl);
-        console.log('Låtar:',tracks);
+        console.log('Master ID:',masterId);
+
+
+        // ========================================
+        // TILLFÄLLIGT
+        //
+        // Vi sparar inget ännu.
+        // Nästa steg blir att välja rätt
+        // fysisk release och hämta dess
+        // riktiga A/B-tracklist.
+        // ========================================
 
         button.textContent='✓ Added';
         button.classList.add('mb-added');
 
+
     }catch(error){
-        console.error('Kunde inte hämta album:',error);
+
+        console.error(
+            'Kunde inte hämta Discogs-album:',
+            error
+        );
 
         button.textContent='Add';
         button.disabled=false;
 
-        alert('Kunde inte hämta albuminformationen.');
+        alert(
+            'Kunde inte hämta albuminformationen.'
+        );
     }
 }
