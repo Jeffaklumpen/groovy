@@ -238,3 +238,7 @@ body{padding:15px}
 .album-detail-cover img{object-fit:contain}
 .album-tracks{grid-column:2;grid-row:1 / span 2;position:relative;right:auto;top:auto;bottom:auto;width:100%;height:100%;padding:30px 25px;overflow-y:auto}
 }
+
+.grid .record{cursor:grab}
+.grid .record:active{cursor:grabbing}
+.grid .record.dragging{opacity:.45}
