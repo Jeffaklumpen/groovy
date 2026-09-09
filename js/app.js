@@ -427,85 +427,80 @@ function attachAlbumClicks(){
 }
 
 function enableGridSorting(){
-    console.log('DRAGSTART FUNGERAR');
-  if(collection._sortingAttached)return;
-  collection._sortingAttached=true;
+  if(view!=='grid'||selectedRating!=='all')return;
 
+  var cards=collection.querySelectorAll('.record');
   var dragged=null;
 
-  collection.addEventListener('dragstart',function(event){
-    var record=event.target.closest('.record');
+  for(var i=0;i<cards.length;i++){
+    cards[i].setAttribute('draggable','true');
 
-    if(!record||selectedRating!=='all')return;
+    cards[i].ondragstart=function(event){
+      dragged=this;
+      this.classList.add('dragging');
 
-    dragged=record;
-    record.classList.add('dragging');
-
-    event.dataTransfer.effectAllowed='move';
-  });
-
-  collection.addEventListener('dragend',function(){
-    if(dragged){
-      dragged.classList.remove('dragging');
-    }
-
-    dragged=null;
-  });
-
-  collection.addEventListener('dragover',function(event){
-    if(!dragged||selectedRating!=='all')return;
-
-    var target=event.target.closest('.record');
-
-    if(!target||target===dragged)return;
-
-    event.preventDefault();
-
-    var rect=target.getBoundingClientRect();
-    var after=event.clientY>rect.top+rect.height/2;
-
-    if(after){
-      target.parentNode.insertBefore(dragged,target.nextSibling);
-    }else{
-      target.parentNode.insertBefore(dragged,target);
-    }
-  });
-
-  collection.addEventListener('drop',async function(event){
-    if(!dragged||selectedRating!=='all')return;
-
-    event.preventDefault();
-
-    var cards=collection.querySelectorAll('.record');
-    var newRecords=[];
-
-    for(var i=0;i<cards.length;i++){
-      var index=parseInt(cards[i].getAttribute('data-index'),10);
-      var record=records[index];
-
-      if(!record)continue;
-
-      record[0]=i+1;
-
-      var numberElement=cards[i].querySelector('.number');
-
-      if(numberElement){
-        numberElement.textContent=i+1;
+      if(event.dataTransfer){
+        event.dataTransfer.effectAllowed='move';
+        event.dataTransfer.setData('text/plain',this.getAttribute('data-index'));
       }
 
-      newRecords.push(record);
-    }
+      console.log('DRAGSTART FUNGERAR');
+    };
 
-    records=newRecords;
-
-    dragged.classList.remove('dragging');
-
-    var saved=await saveGridOrder();
-    
-    if(saved){
+    cards[i].ondragend=function(){
+      this.classList.remove('dragging');
       dragged=null;
-    }
-  });
+    };
+
+    cards[i].ondragover=function(event){
+      if(!dragged||this===dragged)return;
+
+      event.preventDefault();
+
+      var rect=this.getBoundingClientRect();
+      var after=event.clientY>rect.top+rect.height/2;
+
+      if(after){
+        this.parentNode.insertBefore(dragged,this.nextSibling);
+      }else{
+        this.parentNode.insertBefore(dragged,this);
+      }
+    };
+
+    cards[i].ondrop=async function(event){
+      event.preventDefault();
+
+      if(!dragged||this===dragged)return;
+
+      var orderedCards=collection.querySelectorAll('.record');
+      var newRecords=[];
+
+      for(var j=0;j<orderedCards.length;j++){
+        var index=parseInt(orderedCards[j].getAttribute('data-index'),10);
+        var record=records[index];
+
+        if(!record)continue;
+
+        record[0]=j+1;
+
+        var numberElement=orderedCards[j].querySelector('.number');
+
+        if(numberElement){
+          numberElement.textContent=j+1;
+        }
+
+        newRecords.push(record);
+      }
+
+      records=newRecords;
+
+      console.log('NY ORDNING:',records);
+
+      await saveGridOrder();
+
+      dragged=null;
+    };
+  }
 }
 
 async function saveGridOrder(){
