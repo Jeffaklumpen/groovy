@@ -955,11 +955,10 @@ async function searchDiscogs(query){
 async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
     if(button.classList.contains('mb-added'))return;
 
-    button.textContent='Hämtar...';
+    button.textContent='Sparar...';
     button.disabled=true;
 
     try{
-
         const masterId=master.id;
 
         if(!masterId){
@@ -985,39 +984,170 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
 
         console.log('Discogs Master Release:',data);
 
-        console.log('Album:',albumTitle);
-        console.log('Artist:',artist);
-        console.log('År:',year);
-        console.log('Master ID:',masterId);
+        const discogsTitle=data.title||albumTitle;
+        const discogsYear=data.year||year;
 
-        const tracklist=data&&Array.isArray(data.tracklist)
-            ?data.tracklist
-            :[];
+        const discogsArtist=
+            data.artists &&
+            data.artists.length &&
+            data.artists[0].name
+                ?data.artists[0].name
+                :artist;
 
-        console.log('Discogs tracklist:',tracklist);
+        const tracklist=
+            data &&
+            Array.isArray(data.tracklist)
+                ?data.tracklist
+                :[];
 
-        if(!tracklist.length){
-            console.warn('Master Release saknar tracklist.');
+        let coverUrl='';
+
+        if(
+            data.images &&
+            data.images.length &&
+            data.images[0].uri
+        ){
+            coverUrl=data.images[0].uri;
         }
 
-        tracklist.forEach(function(track){
+        let artistId=null;
 
-            const position=track.position||'';
-            const title=track.title||'Okänd låt';
+        const {
+            data:existingArtists,
+            error:artistSearchError
+        }=await supabaseClient
+            .from('artists')
+            .select('id,name')
+            .eq('name',discogsArtist)
+            .limit(1);
 
-            console.log(
-                position,
-                title
+        if(artistSearchError){
+            throw artistSearchError;
+        }
+
+        if(existingArtists && existingArtists.length){
+            artistId=existingArtists[0].id;
+        }else{
+            const {
+                data:newArtist,
+                error:newArtistError
+            }=await supabaseClient
+                .from('artists')
+                .insert({
+                    name:discogsArtist
+                })
+                .select('id')
+                .single();
+
+            if(newArtistError){
+                throw newArtistError;
+            }
+
+            artistId=newArtist.id;
+        }
+
+        const {
+            data:newAlbum,
+            error:albumError
+        }=await supabaseClient
+            .from('albums')
+            .insert({
+                artist_id:artistId,
+                title:discogsTitle,
+                release_year:discogsYear,
+                cover_url:coverUrl
+            })
+            .select('id')
+            .single();
+
+        if(albumError){
+            throw albumError;
+        }
+
+        const albumId=newAlbum.id;
+
+        if(tracklist.length){
+            const tracks=tracklist
+                .filter(function(track){
+                    return track.type_==='track';
+                })
+                .map(function(track){
+                    const position=track.position||'';
+
+                    let discSide='';
+
+                    if(position.startsWith('A')){
+                        discSide='A';
+                    }else if(position.startsWith('B')){
+                        discSide='B';
+                    }
+
+                    const trackNumber=parseInt(
+                        position.substring(1),
+                        10
+                    );
+
+                    return {
+                        album_id:albumId,
+                        disc_side:discSide,
+                        track_number:
+                            Number.isNaN(trackNumber)
+                                ?null
+                                :trackNumber,
+                        title:track.title||'Okänd låt'
+                    };
+                });
+
+            if(tracks.length){
+                const {
+                    error:tracksError
+                }=await supabaseClient
+                    .from('tracks')
+                    .insert(tracks);
+
+                if(tracksError){
+                    throw tracksError;
+                }
+            }
+        }
+
+        const {
+            data:{
+                user
+            }
+        }=await supabaseClient.auth.getUser();
+
+        if(!user){
+            throw new Error(
+                'Du måste vara inloggad för att lägga till album.'
             );
-        });
+        }
+
+        const {
+            error:collectionError
+        }=await supabaseClient
+            .from('collections')
+            .insert({
+                user_id:user.id,
+                album_id:albumId
+            });
+
+        if(collectionError){
+            throw collectionError;
+        }
+
+        console.log(
+            'Album sparat i samlingen:',
+            discogsArtist,
+            discogsTitle
+        );
 
         button.textContent='✓ Added';
         button.classList.add('mb-added');
 
     }catch(error){
-
         console.error(
-            'Kunde inte hämta Discogs-album:',
+            'Kunde inte spara Discogs-album:',
             error
         );
 
@@ -1025,7 +1155,8 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
         button.disabled=false;
 
         alert(
-            'Kunde inte hämta albuminformationen.'
+            'Kunde inte spara albumet.\n\n'+
+            (error.message||error)
         );
     }
 }
