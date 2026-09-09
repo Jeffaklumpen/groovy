@@ -341,3 +341,697 @@ var records = [
 
 ];
 
+var collection=document.getElementById('collection');
+var gridButton=document.getElementById('gridButton');
+var carouselButton=document.getElementById('carouselButton');
+var albumOverlay=document.getElementById('albumOverlay');
+var albumClose=document.getElementById('albumClose');
+var detailCover=document.getElementById('detailCover');
+var detailNumber=document.getElementById('detailNumber');
+var detailArtist=document.getElementById('detailArtist');
+var detailAlbum=document.getElementById('detailAlbum');
+var detailYear=document.getElementById('detailYear');
+var detailGenre=document.getElementById('detailGenre');
+var detailRating=document.getElementById('detailRating');
+var detailTracks=document.getElementById('detailTracks');
+
+var view='grid';
+var activeIndex=0;
+var drag=false;
+var selectedRating='all';
+var startX=0;
+var startY=0;
+var startScroll=0;
+var scrollTimer=null;
+
+function esc(value){
+  return String(value)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function recordHTML(record, className){
+  var smallSrc=record[6].replace('covers/','covers_small/');
+  var html='<article class="record '+(className||'')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
+    '<div class="cover-wrapper">'+
+      '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+smallSrc+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
+      '<div class="number">'+record[0]+'</div>'+
+      '<div class="cover-rating">';
+
+  for(var r=1;r<=5;r++){
+    html+=r<=record[5]?'★':'<span class="empty">★</span>';
+  }
+
+  html+='</div>'+
+    '</div>'+
+    '<div class="info">'+
+      '<div class="artist">'+esc(record[1])+'</div>'+
+      '<div class="album">'+esc(record[2])+'</div>'+
+      '<div class="year">'+esc(record[3])+'</div>'+
+    '</div>'+
+  '</article>';
+
+  return html;
+}
+
+function loadVisibleImages(){
+  var images=document.querySelectorAll('.cover');
+  var height=window.innerHeight||600;
+  var width=window.innerWidth||1024;
+  var verticalMargin=450;
+  var horizontalMargin=500;
+
+  for(var i=0;i<images.length;i++){
+    var img=images[i];
+    var dataSrc=img.getAttribute('data-src');
+    if(!dataSrc)continue;
+
+    var rect=img.getBoundingClientRect();
+    if(rect.top<height+verticalMargin&&rect.bottom>-verticalMargin&&
+       rect.left<width+horizontalMargin&&rect.right>-horizontalMargin){
+      img.src=dataSrc;
+      img.removeAttribute('data-src');
+    }
+  }
+}
+
+function openAlbum(index){
+  var record=records[index];
+  if(!record)return;
+
+  detailNumber.innerHTML=esc(record[0]);
+  detailArtist.innerHTML=esc(record[1]);
+  detailAlbum.innerHTML=esc(record[2]);
+  detailYear.innerHTML=esc(record[3]);
+  detailGenre.innerHTML=esc(record[4]||'Genre saknas');
+
+  detailCover.src=record[6];
+  detailCover.alt=record[1]+' - '+record[2];
+
+  var rating=parseInt(record[5],10);
+  if(isNaN(rating))rating=0;
+  rating=Math.max(0,Math.min(5,rating));
+
+  var stars='';
+  for(var i=1;i<=5;i++){
+    stars+=i<=rating?'★':'<span class="empty">★</span>';
+  }
+  detailRating.innerHTML=stars;
+
+  var sides=record[7]||{};
+  var sideNames=['A','B','C','D'];
+  var html='';
+
+  for(i=0;i<sideNames.length;i++){
+    var side=sideNames[i];
+    var tracks=sides[side];
+
+    if(!tracks||!tracks.length)continue;
+
+    html+='<section class="track-side">'+
+      '<div class="side-title"><span>SIDA</span>'+side+'</div>'+
+      '<ol class="tracks-list">';
+
+  for(var j=0;j<tracks.length;j++){
+    var track=String(tracks[j]);
+    var parts=track.split('|');
+    var title=parts[0];
+    var rating=parseInt(parts[1],10);
+  
+    if(isNaN(rating))rating=0;
+    rating=Math.max(0,Math.min(5,rating));
+  
+    var trackStars='';
+    for(var s=1;s<=5;s++){
+      trackStars+=s<=rating?'★':'<span class="empty">☆</span>';
+    }
+  
+    html+='<li><span class="track-title">'+esc(title)+'</span><span class="track-rating">'+trackStars+'</span></li>';
+  }
+
+    html+='</ol></section>';
+  }
+
+  detailTracks.innerHTML=html||
+    '<div style="color:#666;font-size:13px">Ingen låtlista tillagd</div>';
+
+  albumOverlay.className='album-overlay visible';
+  document.body.style.overflow='hidden';
+}
+
+function closeAlbum(){
+  albumOverlay.className='album-overlay';
+  document.body.style.overflow='';
+
+  setTimeout(function(){
+    if(albumOverlay.className.indexOf('visible')===-1){
+      detailCover.src='';
+    }
+  },350);
+}
+
+
+function attachAlbumClicks(){
+  if(collection._albumClickAttached)return;
+  collection._albumClickAttached=true;
+
+  collection.onclick=function(event){
+    event=event||window.event;
+    var target=event.target||event.srcElement;
+
+    while(target&&target!==collection&&(!target.className||String(target.className).indexOf('record')===-1)){
+      target=target.parentNode;
+    }
+
+    if(!target||target===collection)return;
+    if(view==='carousel'&&drag)return;
+
+    var index=parseInt(target.getAttribute('data-index'),10);
+    if(!isNaN(index))openAlbum(index);
+  };
+}
+
+function buildGrid(){
+  collection.className='collection grid';
+
+  var html='';
+
+  for(var i=0;i<records.length;i++){
+    var rating=parseInt(records[i][5],10);
+
+    if(selectedRating==='all'||rating===parseInt(selectedRating,10)){
+      html+=recordHTML(records[i],'');
+    }
+  }
+
+  collection.innerHTML=html;
+  attachAlbumClicks();
+  loadVisibleImages();
+}
+
+function setActive(index){
+  activeIndex=index;
+
+  var cards=document.getElementsByClassName('carousel-card');
+
+  for(var i=0;i<cards.length;i++){
+    cards[i].className=cards[i].className.replace(/\sactive\b/g,'');
+
+    if(i===index){
+      cards[i].className+=' active';
+    }
+  }
+}
+
+function animateScroll(element,to,smooth){
+  if(!smooth){
+    element.scrollLeft=to;
+    return;
+  }
+
+  if(element.scrollTo){
+    try{
+      element.scrollTo({left:to,behavior:'smooth'});
+      return;
+    }catch(e){}
+  }
+
+  var from=element.scrollLeft;
+  var change=to-from;
+  var duration=420;
+  var start=new Date().getTime();
+
+  function step(){
+    var time=new Date().getTime();
+    var progress=Math.min(1,(time-start)/duration);
+    var easing=progress*(2-progress);
+    element.scrollLeft=from+change*easing;
+    if(progress<1)setTimeout(step,16);
+  }
+  step();
+}
+
+function centerCard(index,smooth){
+  var viewport=document.getElementById('carouselViewport');
+  var cards=document.getElementsByClassName('carousel-card');
+  var card=cards[index];
+
+  if(!viewport||!card)return;
+
+  var target=card.offsetLeft-(viewport.clientWidth-card.offsetWidth)/2;
+  var max=viewport.scrollWidth-viewport.clientWidth;
+
+  target=Math.max(0,Math.min(target,max));
+
+  setActive(index);
+  animateScroll(viewport,target,smooth);
+}
+
+function nearest(){
+  var viewport=document.getElementById('carouselViewport');
+  var cards=document.getElementsByClassName('carousel-card');
+  var center=viewport.scrollLeft+viewport.clientWidth/2;
+
+  var best=0;
+  var distance=Infinity;
+
+  for(var i=0;i<cards.length;i++){
+    var card=cards[i];
+    var cardCenter=card.offsetLeft+card.offsetWidth/2;
+    var currentDistance=Math.abs(cardCenter-center);
+
+    if(currentDistance<distance){
+      distance=currentDistance;
+      best=i;
+    }
+  }
+
+  return best;
+}
+
+function buildCarousel(){
+  collection.className='collection carousel';
+
+  var html=
+    '<div class="carousel-viewport" id="carouselViewport">'+
+      '<div class="carousel-track" id="carouselTrack">';
+
+  for(var i=0;i<records.length;i++){
+    var rating=parseInt(records[i][5],10);
+  
+    if(selectedRating==='all'||rating===parseInt(selectedRating,10)){
+      html+=recordHTML(records[i],'carousel-card');
+    }
+  }
+
+  html+='</div></div>';
+  collection.innerHTML=html;
+  loadVisibleImages();
+  
+  var viewport=document.getElementById('carouselViewport');
+  var cards=document.getElementsByClassName('carousel-card');
+
+  attachAlbumClicks();
+
+  function scheduleSettle(){
+    if(scrollTimer)clearTimeout(scrollTimer);
+
+    scrollTimer=setTimeout(function(){
+      setActive(nearest());
+    },180);
+  }
+
+  viewport.onscroll=function(){
+    scheduleImageLoad();
+    scheduleSettle();
+  };
+
+  viewport.ontouchstart=function(event){
+    if(!event.touches||!event.touches.length)return;
+
+    drag=false;
+    startX=event.touches[0].pageX;
+    startY=event.touches[0].pageY;
+    startScroll=viewport.scrollLeft;
+
+    if(scrollTimer)clearTimeout(scrollTimer);
+  };
+
+  viewport.ontouchmove=function(event){
+    if(!event.touches||!event.touches.length)return;
+
+    var dx=event.touches[0].pageX-startX;
+
+    if(Math.abs(dx)>8)drag=true;
+  };
+
+  viewport.ontouchend=function(){
+    scheduleSettle();
+
+    setTimeout(function(){
+      drag=false;
+    },120);
+  };
+
+  setTimeout(function(){
+    centerCard(activeIndex,false);
+    scheduleImageLoad();
+  },30);
+}
+
+function setView(nextView){
+  view=nextView;
+
+  gridButton.className=view==='grid'?'active':'';
+  carouselButton.className=view==='carousel'?'active':'';
+
+  gridButton.setAttribute('aria-pressed',view==='grid'?'true':'false');
+  carouselButton.setAttribute('aria-pressed',view==='carousel'?'true':'false');
+
+  if(view==='grid'){
+    buildGrid();
+  }else{
+    buildCarousel();
+  }
+}
+
+gridButton.onclick=function(){
+  setView('grid');
+};
+
+carouselButton.onclick=function(){
+  setView('carousel');
+};
+
+albumClose.onclick=function(){
+  closeAlbum();
+};
+
+albumOverlay.onclick=function(event){
+  if((event||window.event).target===albumOverlay){
+    closeAlbum();
+  }
+};
+
+document.onkeydown=function(event){
+  event=event||window.event;
+
+  if(event.keyCode===27){
+    if(albumOverlay.className.indexOf('visible')!==-1){
+      closeAlbum();
+    }
+    return;
+  }
+
+  if(view!=='carousel')return;
+
+  if(event.keyCode===39&&activeIndex<records.length-1){
+    centerCard(activeIndex+1,true);
+  }else if(event.keyCode===37&&activeIndex>0){
+    centerCard(activeIndex-1,true);
+  }
+};
+
+var ratingFilter=document.querySelectorAll('.rating-filter button');
+
+for(var f=0;f<ratingFilter.length;f++){
+  ratingFilter[f].onclick=function(){
+    selectedRating=this.getAttribute('data-rating');
+
+    for(var i=0;i<ratingFilter.length;i++){
+      ratingFilter[i].className='';
+    }
+
+    this.className='active';
+
+    activeIndex=0;
+
+    if(view==='grid'){
+      buildGrid();
+    }else{
+      buildCarousel();
+    }
+  };
+}
+
+var imageLoadScheduled=false;
+function scheduleImageLoad(){
+  if(imageLoadScheduled)return;
+  imageLoadScheduled=true;
+  var run=window.requestAnimationFrame||function(fn){return setTimeout(fn,50);};
+  run(function(){imageLoadScheduled=false;loadVisibleImages();});
+}
+
+window.onscroll=scheduleImageLoad;
+
+buildGrid();
+
+})();
+
+// ========================================
+// ADD ALBUM / MUSICBRAINZ
+// ========================================
+
+const addAlbumButton=document.getElementById('addAlbumButton');
+const addAlbumModal=document.getElementById('addAlbumModal');
+const closeAddAlbum=document.getElementById('closeAddAlbum');
+const albumSearchInput=document.getElementById('albumSearchInput');
+const albumSearchResults=document.getElementById('albumSearchResults');
+
+let searchTimer=null;
+
+addAlbumButton.addEventListener('click',function(){
+    addAlbumModal.style.display='flex';
+    albumSearchInput.focus();
+});
+
+closeAddAlbum.addEventListener('click',function(){
+    addAlbumModal.style.display='none';
+    albumSearchInput.value='';
+    albumSearchResults.innerHTML='';
+});
+
+addAlbumModal.addEventListener('click',function(event){
+    if(event.target===addAlbumModal){
+        addAlbumModal.style.display='none';
+        albumSearchInput.value='';
+        albumSearchResults.innerHTML='';
+    }
+});
+
+albumSearchInput.addEventListener('input',function(){
+    const query=albumSearchInput.value.trim();
+
+    clearTimeout(searchTimer);
+
+    if(query.length<2){
+        if(musicBrainzController){
+            musicBrainzController.abort();
+        }
+
+        albumSearchResults.innerHTML='';
+        return;
+    }
+
+    albumSearchResults.innerHTML='<p>Söker...</p>';
+
+    searchTimer=setTimeout(function(){
+        searchMusicBrainz(query);
+    },250);
+});
+
+function escapeHTML(text){
+    return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+let musicBrainzController=null;
+let musicBrainzSearchNumber=0;
+
+async function searchMusicBrainz(query){
+    const { data, error } = await supabaseClient.functions.invoke('discogs-search', {
+        body: { query: query }
+    });
+
+    console.log('Discogs test:', data);
+    console.log('Discogs error:', error);
+
+    return;
+
+    const searchNumber=++musicBrainzSearchNumber;
+    if(musicBrainzController)musicBrainzController.abort();
+    musicBrainzController=new AbortController();
+    albumSearchResults.innerHTML='<p>Söker...</p>';
+
+    const searchQuery='('+query+') AND format:Vinyl';
+    const url='https://musicbrainz.org/ws/2/release/?query='+encodeURIComponent(searchQuery)+'&fmt=json&limit=50';
+
+    try{
+        const response=await fetch(url,{signal:musicBrainzController.signal});
+        if(!response.ok)throw new Error('HTTP '+response.status);
+        const data=await response.json();
+        if(searchNumber!==musicBrainzSearchNumber)return;
+        albumSearchResults.innerHTML='';
+
+        if(!data.releases||!data.releases.length){
+            albumSearchResults.innerHTML='<p>Inga vinylalbum hittades.</p>';
+            return;
+        }
+
+        const vinylReleases=data.releases.filter(function(release){
+            return (release.media||[]).some(function(media){
+                return (media.format||'').toLowerCase().indexOf('vinyl')>-1;
+            });
+        });
+
+        if(!vinylReleases.length){
+            albumSearchResults.innerHTML='<p>Inga vinylalbum hittades.</p>';
+            return;
+        }
+
+        const search=query.toLowerCase().trim();
+
+        function getArtist(release){
+            return release['artist-credit']&&release['artist-credit'][0]?(release['artist-credit'][0].name||'').toLowerCase():'';
+        }
+
+        function getTitle(release){
+            return (release.title||'').toLowerCase();
+        }
+
+        function getCountryPriority(release){
+            const country=(release.country||'').toUpperCase();
+            if(country==='XW')return 30;
+            if(country==='US')return 20;
+            return 10;
+        }
+
+        function getVinylPriority(release){
+            let priority=0;
+            (release.media||[]).forEach(function(media){
+                const format=(media.format||'').toLowerCase();
+                if(format.indexOf('12" vinyl')>-1)priority=Math.max(priority,30);
+                else if(format.indexOf('10" vinyl')>-1)priority=Math.max(priority,20);
+                else if(format.indexOf('7" vinyl')>-1)priority=Math.max(priority,10);
+                else if(format.indexOf('vinyl')>-1)priority=Math.max(priority,5);
+            });
+            return priority;
+        }
+
+        function score(release){
+            const title=getTitle(release),artist=getArtist(release);
+            let score=0;
+            if(title===search)score+=1000;
+            if(artist===search)score+=900;
+            if(title.indexOf(search)===0)score+=700;
+            if(artist.indexOf(search)===0)score+=600;
+            if(title.indexOf(search)>-1)score+=400;
+            if(artist.indexOf(search)>-1)score+=300;
+            return score+getCountryPriority(release)+getVinylPriority(release);
+        }
+
+        vinylReleases.sort(function(a,b){return score(b)-score(a);});
+
+        const uniqueAlbums=[],seenAlbums={};
+
+        vinylReleases.forEach(function(release){
+            const key=getArtist(release)+'|'+getTitle(release);
+            if(seenAlbums[key])return;
+            seenAlbums[key]=true;
+            uniqueAlbums.push(release);
+        });
+
+        uniqueAlbums.slice(0,10).forEach(function(release){
+            const artist=release['artist-credit']&&release['artist-credit'][0]?release['artist-credit'][0].name:'Okänd artist';
+            const year=release.date?release.date.substring(0,4):'';
+            const vinylFormats=[];
+
+            (release.media||[]).forEach(function(media){
+                const format=media.format||'';
+                if(format.toLowerCase().indexOf('vinyl')>-1&&vinylFormats.indexOf(format)===-1)vinylFormats.push(format);
+            });
+
+            const formatText=vinylFormats.join(', ');
+            const imageUrl='https://coverartarchive.org/release/'+release.id+'/front-250';
+            const div=document.createElement('div');
+            div.className='mb-result';
+
+            div.innerHTML='<img class="mb-cover" src="'+imageUrl+'" alt="" onerror="this.style.display=\'none\'">'+
+                '<div class="mb-info"><div class="mb-title">'+escapeHTML(release.title)+'</div>'+
+                '<div class="mb-artist">'+escapeHTML(artist)+'</div>'+
+                '<div class="mb-year">'+escapeHTML(year)+' · '+escapeHTML(formatText)+'</div></div>'+
+                '<button class="mb-add-button">Add</button>';
+
+            const addButton=div.querySelector('.mb-add-button');
+
+            addButton.addEventListener('click',function(event){
+                event.stopPropagation();
+                addAlbumFromMusicBrainz(release,artist,year,addButton);
+            });
+
+            div.addEventListener('click',function(){
+                addAlbumFromMusicBrainz(release,artist,year,addButton);
+            });
+
+            albumSearchResults.appendChild(div);
+        });
+    }catch(error){
+        if(error.name==='AbortError')return;
+        console.error('MusicBrainz-fel:',error);
+        if(searchNumber===musicBrainzSearchNumber)albumSearchResults.innerHTML='<p>Kunde inte kontakta MusicBrainz.</p>';
+    }
+}
+
+
+async function addAlbumFromMusicBrainz(album,artist,year,button){
+    if(button.classList.contains('mb-added'))return;
+
+    button.textContent='Hämtar...';
+    button.disabled=true;
+
+    try{
+        const url='https://musicbrainz.org/ws/2/release-group/'+album.id+'?inc=releases+artist-credits&fmt=json';
+
+        const response=await fetch(url);
+
+        if(!response.ok)throw new Error('HTTP '+response.status);
+
+        const data=await response.json();
+
+        console.log('MusicBrainz album:',data);
+
+        const releases=data.releases||[];
+
+        if(!releases.length){
+            throw new Error('Inga releases hittades');
+        }
+
+        const release=releases[0];
+
+        console.log('Vald release:',release);
+
+        const tracksUrl='https://musicbrainz.org/ws/2/release/'+release.id+'?inc=recordings+media&fmt=json';
+
+        const tracksResponse=await fetch(tracksUrl);
+
+        if(!tracksResponse.ok)throw new Error('HTTP '+tracksResponse.status);
+
+        const releaseData=await tracksResponse.json();
+
+        console.log('Release med låtar:',releaseData);
+
+        const tracks=[];
+
+        (releaseData.media||[]).forEach(function(media){
+            const side=media.position||1;
+
+            (media.tracks||[]).forEach(function(track){
+                tracks.push({
+                    side:side,
+                    number:track.position||0,
+                    title:track.title||''
+                });
+            });
+        });
+
+        const coverUrl='https://coverartarchive.org/release/'+release.id+'/front-1200';
+
+        console.log('Album:',album.title);
+        console.log('Artist:',artist);
+        console.log('År:',year);
+        console.log('Omslag:',coverUrl);
+        console.log('Låtar:',tracks);
+
+        button.textContent='✓ Added';
+        button.classList.add('mb-added');
+
+    }catch(error){
+        console.error('Kunde inte hämta album:',error);
+
+        button.textContent='Add';
+        button.disabled=false;
+
+        alert('Kunde inte hämta albuminformationen.');
+    }
+}
