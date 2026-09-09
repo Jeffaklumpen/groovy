@@ -831,7 +831,7 @@ let musicBrainzSearchNumber=0;
 
 
 
-async function searchMusicBrainz(query){
+async function searchDiscogs(query){
     const searchNumber=++musicBrainzSearchNumber;
 
     albumSearchResults.innerHTML='<p>Söker...</p>';
@@ -858,27 +858,13 @@ async function searchMusicBrainz(query){
             albumSearchResults.innerHTML='<p>Inga album hittades.</p>';
             return;
         }
-
-
-        // ========================================
-        // VISA MASTER RELEASES
-        // ========================================
-
         results.slice(0,10).forEach(function(master){
 
             const title=master.title||'Okänd titel';
-
-
-            // Discogs Master Release brukar returnera:
-            // Artist - Album
             const parts=title.split(' - ');
-
-
             const artist=parts.length>1
                 ?parts[0]
                 :'Okänd artist';
-
-
             const albumTitle=parts.length>1
                 ?parts.slice(1).join(' - ')
                 :title;
@@ -965,6 +951,7 @@ async function searchMusicBrainz(query){
         }
     }
 }
+
 
 async function addAlbumFromMusicBrainz(album,artist,year,button){
     if(button.classList.contains('mb-added'))return;
