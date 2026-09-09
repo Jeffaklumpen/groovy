@@ -7,18 +7,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .subtitle{margin-top:8px;color:#999;font-size:14px;letter-spacing:1px}
 
 /* HEADER CONTROLS */
-.header-controls{position:absolute;right:0;top:0;display:flex;align-items:center;gap:8px;z-index:20}
-.add-album-button{border:0;background:#22c55e;color:#fff;padding:8px 13px;border-radius:7px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.header-controls{position:absolute;right:0;top:0;display:flex;align-items:center;gap:7px;z-index:20}
+.add-album-button{border:0;background:#22c55e;color:#fff;padding:8px 12px;border-radius:7px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
 .add-album-button:hover{background:#16a34a}
 .add-album-button:active{background:#15803d;transform:scale(.97)}
-
-.view-toggle{display:table;padding:4px;background:#171719;border:1px solid #2b2b2e;border-radius:10px}
-.view-toggle button{border:0;background:transparent;color:#aaa;padding:8px 12px;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.view-toggle button.active{background:#303033;color:#fff}
-
-.rating-filter{display:table;padding:4px;background:#171719;border:1px solid #2b2b2e;border-radius:10px}
-.rating-filter button{border:0;background:transparent;color:#aaa;padding:8px 10px;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.rating-filter button.active{background:#303033;color:#fff}
+.view-toggle,.rating-filter{display:flex;padding:3px;background:#171719;border:1px solid #2b2b2e;border-radius:9px;white-space:nowrap}
+.view-toggle button,.rating-filter button{border:0;background:transparent;color:#999;padding:7px 9px;border-radius:6px;font-family:inherit;font-size:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.view-toggle button.active,.rating-filter button.active{background:#303033;color:#fff}
 
 .collection{max-width:1400px;margin:0 auto}
 .grid:after{content:"";display:table;clear:both}
@@ -167,10 +162,10 @@ body{padding:15px}
 }
 
 @media screen and (max-width:400px){
-.header-controls{width:100%}
-.rating-filter{order:3}
-.view-toggle{order:2}
-.add-album-button{order:1}
+.header-controls{gap:4px}
+.add-album-button{padding:6px 9px;font-size:11px}
+.delete-mode-button{width:30px;height:30px}
+.rating-filter button,.view-toggle button{padding:5px 7px;font-size:10px}
 }
 
 .mb-result{display:flex;align-items:center;gap:12px;padding:9px;margin-bottom:6px;background:#242424;border-radius:8px;cursor:pointer;transition:filter .15s ease,background .15s ease}
@@ -185,9 +180,21 @@ body{padding:15px}
 .mb-add-button:hover{background:#16a34a}
 .mb-added{background:#555;color:#ccc;cursor:default}
 
-.delete-mode-button{display:none;width:36px;height:36px;border:0;border-radius:50%;background:#242426;color:#fff;font-size:17px;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.delete-mode-button{display:none;width:34px;height:34px;border:0;border-radius:50%;background:#242426;color:#fff;font-size:16px;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0}
 .delete-mode-button.active{background:#c62828;color:#fff}
 .delete-cover-button{position:absolute;right:8px;top:8px;z-index:10;width:34px;height:34px;border:0;border-radius:50%;background:rgba(0,0,0,.78);color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .15s ease,background .15s ease;-webkit-tap-highlight-color:transparent}
 .delete-cover-button:hover{background:#c62828}
 @media screen and (min-width:601px){.cover-wrapper:hover .delete-cover-button{opacity:1;pointer-events:auto}}
-@media screen and (max-width:600px){.delete-mode-button{display:flex}.delete-cover-button{opacity:0;pointer-events:none}.delete-mode-active .delete-cover-button{opacity:1;pointer-events:auto}}
+@media screen and (max-width:600px){
+body{padding:15px}
+.header{padding-bottom:14px;margin-bottom:18px}
+.title{font-size:23px;padding-right:0;letter-spacing:2px}
+.subtitle{font-size:12px}
+.header-controls{position:relative;top:auto;right:auto;width:100%;margin-top:11px;display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:5px}
+.add-album-button{padding:7px 10px;font-size:12px;border-radius:7px}
+.delete-mode-button{display:flex;width:32px;height:32px;font-size:15px}
+.rating-filter,.view-toggle{padding:2px;border-radius:8px}
+.rating-filter button,.view-toggle button{padding:6px 8px;font-size:11px;border-radius:6px}
+.delete-cover-button{opacity:0;pointer-events:none}
+.delete-mode-active .delete-cover-button{opacity:1;pointer-events:auto}
+}
