@@ -1197,15 +1197,32 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             );
         }
 
+        const {data:lastCollection,error:lastCollectionError}=await supabaseClient
+            .from('collections')
+            .select('sort_order')
+            .eq('user_id',user.id)
+            .order('sort_order',{ascending:false})
+            .limit(1);
+        
+        if(lastCollectionError){
+            throw lastCollectionError;
+        }
+        
+        const nextSortOrder=
+            lastCollection&&lastCollection.length
+                ?lastCollection[0].sort_order+1
+                :1;
+        
         const {
             error:collectionError
         }=await supabaseClient
             .from('collections')
             .insert({
                 user_id:user.id,
-                album_id:albumId
+                album_id:albumId,
+                sort_order:nextSortOrder
             });
-
+        
         if(collectionError){
             throw collectionError;
         }
