@@ -829,136 +829,96 @@ let musicBrainzController=null;
 let musicBrainzSearchNumber=0;
 
 async function searchMusicBrainz(query){
-    const { data, error } = await supabaseClient.functions.invoke('discogs-search', {
-        body: { query: query }
-    });
-
-    console.log('Discogs test:', data);
-    console.log('Discogs error:', error);
-
-    return;
-
     const searchNumber=++musicBrainzSearchNumber;
-    if(musicBrainzController)musicBrainzController.abort();
-    musicBrainzController=new AbortController();
+
     albumSearchResults.innerHTML='<p>Söker...</p>';
 
-    const searchQuery='('+query+') AND format:Vinyl';
-    const url='https://musicbrainz.org/ws/2/release/?query='+encodeURIComponent(searchQuery)+'&fmt=json&limit=50';
-
     try{
-        const response=await fetch(url,{signal:musicBrainzController.signal});
-        if(!response.ok)throw new Error('HTTP '+response.status);
-        const data=await response.json();
+        const {data,error}=await supabaseClient.functions.invoke('discogs-search',{
+            body:{query:query}
+        });
+
+        if(error){
+            console.error('Discogs error:',error);
+            throw error;
+        }
+
+        console.log('Discogs results:',data);
+
         if(searchNumber!==musicBrainzSearchNumber)return;
+
         albumSearchResults.innerHTML='';
 
-        if(!data.releases||!data.releases.length){
-            albumSearchResults.innerHTML='<p>Inga vinylalbum hittades.</p>';
+        const results=data&&data.results?data.results:[];
+
+        if(!results.length){
+            albumSearchResults.innerHTML='<p>Inga album hittades.</p>';
             return;
         }
 
-        const vinylReleases=data.releases.filter(function(release){
-            return (release.media||[]).some(function(media){
-                return (media.format||'').toLowerCase().indexOf('vinyl')>-1;
-            });
-        });
+        results.slice(0,10).forEach(function(release){
 
-        if(!vinylReleases.length){
-            albumSearchResults.innerHTML='<p>Inga vinylalbum hittades.</p>';
-            return;
-        }
+            const title=release.title||'Okänd titel';
 
-        const search=query.toLowerCase().trim();
+            const parts=title.split(' - ');
+            const artist=parts.length>1
+                ?parts[0]
+                :'Okänd artist';
 
-        function getArtist(release){
-            return release['artist-credit']&&release['artist-credit'][0]?(release['artist-credit'][0].name||'').toLowerCase():'';
-        }
+            const albumTitle=parts.length>1
+                ?parts.slice(1).join(' - ')
+                :title;
 
-        function getTitle(release){
-            return (release.title||'').toLowerCase();
-        }
+            const year=release.year||'';
 
-        function getCountryPriority(release){
-            const country=(release.country||'').toUpperCase();
-            if(country==='XW')return 30;
-            if(country==='US')return 20;
-            return 10;
-        }
+            const formats=release.format||'';
 
-        function getVinylPriority(release){
-            let priority=0;
-            (release.media||[]).forEach(function(media){
-                const format=(media.format||'').toLowerCase();
-                if(format.indexOf('12" vinyl')>-1)priority=Math.max(priority,30);
-                else if(format.indexOf('10" vinyl')>-1)priority=Math.max(priority,20);
-                else if(format.indexOf('7" vinyl')>-1)priority=Math.max(priority,10);
-                else if(format.indexOf('vinyl')>-1)priority=Math.max(priority,5);
-            });
-            return priority;
-        }
+            const imageUrl=release.thumb||'';
 
-        function score(release){
-            const title=getTitle(release),artist=getArtist(release);
-            let score=0;
-            if(title===search)score+=1000;
-            if(artist===search)score+=900;
-            if(title.indexOf(search)===0)score+=700;
-            if(artist.indexOf(search)===0)score+=600;
-            if(title.indexOf(search)>-1)score+=400;
-            if(artist.indexOf(search)>-1)score+=300;
-            return score+getCountryPriority(release)+getVinylPriority(release);
-        }
-
-        vinylReleases.sort(function(a,b){return score(b)-score(a);});
-
-        const uniqueAlbums=[],seenAlbums={};
-
-        vinylReleases.forEach(function(release){
-            const key=getArtist(release)+'|'+getTitle(release);
-            if(seenAlbums[key])return;
-            seenAlbums[key]=true;
-            uniqueAlbums.push(release);
-        });
-
-        uniqueAlbums.slice(0,10).forEach(function(release){
-            const artist=release['artist-credit']&&release['artist-credit'][0]?release['artist-credit'][0].name:'Okänd artist';
-            const year=release.date?release.date.substring(0,4):'';
-            const vinylFormats=[];
-
-            (release.media||[]).forEach(function(media){
-                const format=media.format||'';
-                if(format.toLowerCase().indexOf('vinyl')>-1&&vinylFormats.indexOf(format)===-1)vinylFormats.push(format);
-            });
-
-            const formatText=vinylFormats.join(', ');
-            const imageUrl='https://coverartarchive.org/release/'+release.id+'/front-250';
             const div=document.createElement('div');
             div.className='mb-result';
 
-            div.innerHTML='<img class="mb-cover" src="'+imageUrl+'" alt="" onerror="this.style.display=\'none\'">'+
-                '<div class="mb-info"><div class="mb-title">'+escapeHTML(release.title)+'</div>'+
-                '<div class="mb-artist">'+escapeHTML(artist)+'</div>'+
-                '<div class="mb-year">'+escapeHTML(year)+' · '+escapeHTML(formatText)+'</div></div>'+
+            div.innerHTML=
+                (imageUrl
+                    ?'<img class="mb-cover" src="'+escapeHTML(imageUrl)+'" alt="" onerror="this.style.display=\'none\'">'
+                    :'')+
+                '<div class="mb-info">'+
+                    '<div class="mb-title">'+escapeHTML(albumTitle)+'</div>'+
+                    '<div class="mb-artist">'+escapeHTML(artist)+'</div>'+
+                    '<div class="mb-year">'+
+                        escapeHTML(String(year))+
+                        (formats?' · '+escapeHTML(formats):'')+
+                    '</div>'+
+                '</div>'+
                 '<button class="mb-add-button">Add</button>';
 
             const addButton=div.querySelector('.mb-add-button');
 
             addButton.addEventListener('click',function(event){
                 event.stopPropagation();
-                addAlbumFromMusicBrainz(release,artist,year,addButton);
-            });
 
-            div.addEventListener('click',function(){
-                addAlbumFromMusicBrainz(release,artist,year,addButton);
+                console.log('Valt Discogs-release:',release);
+
+                addAlbumFromDiscogs(
+                    release,
+                    artist,
+                    albumTitle,
+                    year,
+                    addButton
+                );
             });
 
             albumSearchResults.appendChild(div);
         });
+
     }catch(error){
-        if(error.name==='AbortError')return;
-        console.error('MusicBrainz-fel:',error);
-        if(searchNumber===musicBrainzSearchNumber)albumSearchResults.innerHTML='<p>Kunde inte kontakta MusicBrainz.</p>';
+
+        console.error('Discogs-fel:',error);
+
+        if(searchNumber===musicBrainzSearchNumber){
+            albumSearchResults.innerHTML=
+                '<p>Kunde inte kontakta Discogs.</p>';
+        }
     }
 }
 
