@@ -308,5 +308,5 @@ body{padding:15px}
 #profileMenu #searchUserButton:hover,#profileMenu #myCollectionButton:hover{background:#242426}
 
 .detail-cover-wrapper{position:relative}
-#detailCoverFlipButton{position:absolute;right:10px;bottom:10px;padding:8px 14px;border:0;border-radius:6px;background:#222;color:#fff;font-size:13px;cursor:pointer}
+#detailCoverFlipButton{position:absolute;right:24px;bottom:24px;padding:10px 16px;border:0;border-radius:6px;background:#222;color:#fff;font-size:13px;cursor:pointer;z-index:10}
 #detailCoverFlipButton:hover{background:#333}
