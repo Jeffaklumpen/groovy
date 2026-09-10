@@ -1437,7 +1437,7 @@ window.buildGrid=function(){
   collection.className='collection grid';
 
   var emptyCollection=document.getElementById('emptyCollection');
-    emptyCollection.style.display=(viewedUserId===null&&records.length===0)?'flex':'none';
+    emptyCollection.style.display=(viewedUserId===null&&records.length===0&&!window.loginRequiredForViewedCollection)?'flex':'none';
     loginToViewCollection.style.display=window.loginRequiredForViewedCollection?'flex':'none';
 
   var html='';
