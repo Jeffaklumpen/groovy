@@ -542,7 +542,7 @@ function esc(value){
 function recordHTML(record, className){
   var smallSrc=record[6];
 
-  var html='<article class="record '+(className||'')+'" draggable="'+(view==='grid'&&viewedUserId===null?'true':'false')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
+  var html='<article class="record '+(className||'')+'" draggable="false" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
       '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
       '<div class="number">'+record[0]+'</div>'+
@@ -1335,94 +1335,163 @@ function enableGridSorting(){
     }
 
     removeDragPreview();
+    touchDragging=false;
+    resetPointerState();
   });
 
+  collection.ondragstart=null;
+  collection.ondragover=null;
+  collection.ondragenter=null;
+  collection.ondrop=null;
+  collection.ondragend=null;
+
   var cards=collection.querySelectorAll('.record');
+  var pointerId=null;
+  var pointerCard=null;
+  var pointerStartX=0;
+  var pointerStartY=0;
+
+  function resetPointerState(){
+    clearTimeout(touchTimer);
+    stopAutoScroll();
+
+    if(pointerCard&&pointerCard.releasePointerCapture&&pointerId!==null){
+      try{pointerCard.releasePointerCapture(pointerId);}catch(error){}
+    }
+
+    pointerId=null;
+    pointerCard=null;
+  }
+
+  function startPointerDrag(card,event){
+    dragged=card;
+    touchDragging=true;
+    suppressAlbumClick=true;
+    touchX=event.clientX;
+    touchY=event.clientY;
+    card.classList.add('dragging');
+    createDragPreview(card,touchX,touchY);
+
+    if(card.setPointerCapture&&event.pointerId!==undefined){
+      try{card.setPointerCapture(event.pointerId);}catch(error){}
+    }
+
+    autoScroll();
+  }
+
+  function updatePointerDrag(event){
+    if(!touchDragging||!dragged)return;
+
+    event.preventDefault();
+
+    touchX=event.clientX;
+    touchY=event.clientY;
+    updateDragPreview(touchX,touchY);
+
+    var target=document.elementFromPoint(touchX,touchY);
+    var card=target&&target.closest
+      ?target.closest('.record')
+      :null;
+
+    if(card&&card!==dragged){
+      moveDragged(card,touchX,touchY);
+    }
+  }
+
+  async function finishPointerDrag(){
+    clearTimeout(touchTimer);
+    stopAutoScroll();
+
+    if(!touchDragging||!dragged){
+      removeDragPreview();
+      resetPointerState();
+      touchDragging=false;
+      dragged=null;
+      return;
+    }
+
+    var releasedDragged=dragged;
+
+    releasedDragged.classList.remove('dragging');
+    removeDragPreview();
+    dragged=null;
+    touchDragging=false;
+    resetPointerState();
+
+    suppressAlbumClick=true;
+    await finishDrag();
+
+    setTimeout(function(){
+      suppressAlbumClick=false;
+    },300);
+  }
+
+  function cancelPointerDrag(){
+    clearTimeout(touchTimer);
+    stopAutoScroll();
+
+    if(dragged){
+      dragged.classList.remove('dragging');
+    }
+
+    removeDragPreview();
+    dragged=null;
+    touchDragging=false;
+    suppressAlbumClick=false;
+    resetPointerState();
+  }
 
   for(var i=0;i<cards.length;i++){
-    cards[i].ontouchstart=function(event){
-      if(event.touches.length!==1)return;
+    cards[i].onpointerdown=function(event){
+      if(pointerId!==null)return;
+      if(event.button!==undefined&&event.button!==0)return;
 
-      var card=this;
-
-      touchX=event.touches[0].clientX;
-      touchY=event.touches[0].clientY;
+      pointerId=event.pointerId;
+      pointerCard=this;
+      pointerStartX=event.clientX;
+      pointerStartY=event.clientY;
+      touchX=event.clientX;
+      touchY=event.clientY;
 
       clearTimeout(touchTimer);
 
-      touchTimer=setTimeout(function(){
-        dragged=card;
-        touchDragging=true;
-        suppressAlbumClick=true;
-        card.classList.add('dragging');
-        createDragPreview(card,touchX,touchY);
-        autoScroll();
-      },350);
+      if(event.pointerType==='mouse'||event.pointerType==='pen'){
+        startPointerDrag(this,event);
+      }else{
+        touchTimer=setTimeout(function(){
+          if(pointerId!==null&&!touchDragging){
+            startPointerDrag(pointerCard,event);
+          }
+        },350);
+      }
     };
 
-    cards[i].ontouchmove=function(event){
-      if(!touchDragging||!dragged)return;
+    cards[i].onpointermove=function(event){
+      if(pointerId===null||event.pointerId!==pointerId)return;
 
-      event.preventDefault();
+      if(!touchDragging){
+        var movedX=Math.abs(event.clientX-pointerStartX);
+        var movedY=Math.abs(event.clientY-pointerStartY);
 
-      var touch=event.touches[0];
+        if(movedX>8||movedY>8){
+          clearTimeout(touchTimer);
+          resetPointerState();
+        }
 
-      touchX=touch.clientX;
-      touchY=touch.clientY;
-      updateDragPreview(touchX,touchY);
-
-      var target=document.elementFromPoint(touchX,touchY);
-
-      if(!target)return;
-
-      var card=target.closest
-        ?target.closest('.record')
-        :null;
-
-      if(!card||card===dragged)return;
-
-      moveDragged(card,touchX,touchY);
-    };
-
-    cards[i].ontouchend=async function(){
-      clearTimeout(touchTimer);
-      stopAutoScroll();
-
-      if(!touchDragging||!dragged){
-        touchDragging=false;
-        dragged=null;
         return;
       }
 
-      var releasedDragged=dragged;
-
-      releasedDragged.classList.remove('dragging');
-      removeDragPreview();
-
-      dragged=null;
-      touchDragging=false;
-
-      suppressAlbumClick=true;
-
-      await finishDrag();
-
-      setTimeout(function(){
-        suppressAlbumClick=false;
-      },300);
+      updatePointerDrag(event);
     };
 
-    cards[i].ontouchcancel=function(){
-      clearTimeout(touchTimer);
-      stopAutoScroll();
+    cards[i].onpointerup=function(event){
+      if(pointerId===null||event.pointerId!==pointerId)return;
+      finishPointerDrag();
+    };
 
-      if(dragged){
-        dragged.classList.remove('dragging');
-      }
-
-      removeDragPreview();
-      dragged=null;
-      touchDragging=false;
-      suppressAlbumClick=false;
+    cards[i].onpointercancel=function(event){
+      if(pointerId===null||event.pointerId!==pointerId)return;
+      cancelPointerDrag();
     };
   }
 }
