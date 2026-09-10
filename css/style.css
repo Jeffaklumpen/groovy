@@ -269,3 +269,6 @@ body{padding:15px}
 @media screen and (min-width:601px){
 .cover-wrapper{transition:transform .18s ease;transform-style:preserve-3d;will-change:transform}
 }
+
+.user-search-result{display:flex;align-items:center;gap:10px}
+.user-search-avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0;background-size:cover;background-position:center}
