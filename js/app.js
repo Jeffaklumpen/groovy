@@ -93,6 +93,12 @@ profileImageInput.addEventListener('change',async function(){
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
 
+    console.log('Auth debug:',{
+    userId:user&&user.id,
+    role:user&&user.role,
+    session:!!session
+});
+
     if(!user){
         alert('Du måste vara inloggad.');
         return;
