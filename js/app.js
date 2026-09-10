@@ -1044,9 +1044,13 @@ confirmRemoveAlbum.addEventListener('click',async function(){
 });
 
 function enableGridSorting(){
-    if(view!=='grid'||selectedRating!=='all')return;
+    if(view!=='grid'||selectedRating!=='all'){
+      collection.classList.remove('grid-sort-enabled');
+      return;
+    }
     
     if(viewedUserId!==null){
+      collection.classList.remove('grid-sort-enabled');
       collection.ondragstart=null;
       collection.ondragover=null;
       collection.ondrop=null;
@@ -1054,6 +1058,10 @@ function enableGridSorting(){
       collection.oncontextmenu=null;
       return;
     }
+
+  // Mark the editable grid so touch-action can be limited to the sortable cards.
+  // This prevents the browser from stealing a long-press as a scroll gesture.
+  collection.classList.add('grid-sort-enabled');
 
   var dragged=null;
   var touchTimer=null;
@@ -1350,6 +1358,8 @@ function enableGridSorting(){
   var pointerCard=null;
   var pointerStartX=0;
   var pointerStartY=0;
+  var lastPointerY=0;
+  var touchScrolling=false;
 
   function resetPointerState(){
     clearTimeout(touchTimer);
@@ -1361,6 +1371,7 @@ function enableGridSorting(){
 
     pointerId=null;
     pointerCard=null;
+    touchScrolling=false;
   }
 
   function startPointerDrag(card,event){
@@ -1407,6 +1418,7 @@ function enableGridSorting(){
       resetPointerState();
       touchDragging=false;
       dragged=null;
+      suppressAlbumClick=false;
       return;
     }
 
@@ -1452,8 +1464,15 @@ function enableGridSorting(){
       pointerStartY=event.clientY;
       touchX=event.clientX;
       touchY=event.clientY;
+      lastPointerY=event.clientY;
+      touchScrolling=false;
 
       clearTimeout(touchTimer);
+
+      // Keep receiving pointer events even when the finger moves off the card.
+      if(event.pointerType==='touch'&&this.setPointerCapture){
+        try{this.setPointerCapture(event.pointerId);}catch(error){}
+      }
 
       if(event.pointerType==='mouse'||event.pointerType==='pen'){
         startPointerDrag(this,event);
@@ -1473,9 +1492,17 @@ function enableGridSorting(){
         var movedX=Math.abs(event.clientX-pointerStartX);
         var movedY=Math.abs(event.clientY-pointerStartY);
 
-        if(movedX>8||movedY>8){
+        if(!touchScrolling&&(movedX>8||movedY>8)){
           clearTimeout(touchTimer);
-          resetPointerState();
+          touchScrolling=true;
+          suppressAlbumClick=true;
+        }
+
+        // touch-action:none keeps the browser from stealing the gesture. Before
+        // long-press activation, reproduce normal page scrolling ourselves.
+        if(touchScrolling){
+          window.scrollBy(0,lastPointerY-event.clientY);
+          lastPointerY=event.clientY;
         }
 
         return;
@@ -3012,3 +3039,4 @@ async function renderCurrentRoute(){
 }
 
 renderCurrentRoute();
+
