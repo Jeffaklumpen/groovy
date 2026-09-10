@@ -1333,12 +1333,12 @@ function addCoverTilt(){
       var x=(event.clientX-rect.left)/rect.width-.5;
       var y=(event.clientY-rect.top)/rect.height-.5;
 
-      cover.style.transform='perspective(800px) rotateX('+(-y*8)+'deg) rotateY('+(x*8)+'deg)';
+      cover.querySelector('.cover-wrapper').style.transform='perspective(800px) rotateX('+(-y*8)+'deg) rotateY('+(x*8)+'deg)';
 console.log('X:',x,'TRANSFORM:',cover.style.transform);
     });
 
     cover.addEventListener('mouseleave',function(){
-      cover.style.transform='';
+      cover.querySelector('.cover-wrapper').style.transform='';
     });
   });
 }
