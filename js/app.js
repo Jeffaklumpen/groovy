@@ -134,8 +134,13 @@ async function updateAuthUI(){
         profileMenu.classList.remove('open');
         loginPanel.classList.remove('open');
 
-        profileImage.style.backgroundImage='';
-        profileImageMenu.style.backgroundImage='';
+        profileImage.style.backgroundImage='url("avatar_placeholder.png")';
+        profileImage.style.backgroundSize='cover';
+        profileImage.style.backgroundPosition='center';
+        
+        profileImageMenu.style.backgroundImage='url("avatar_placeholder.png")';
+        profileImageMenu.style.backgroundSize='cover';
+        profileImageMenu.style.backgroundPosition='center';
     }
 }
 
