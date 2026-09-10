@@ -2427,7 +2427,12 @@ async function searchAppleAlbumArtwork(artist,albumTitle){
         }
 
         const data=await response.json();
-        console.log('Apple artwork results:',data.results);
+        console.log('Apple artwork matches:',data.results.map(function(item){
+            return {
+                artist:item.artistName,
+                album:item.collectionName
+            };
+        }));
 
         if(!data.results||!data.results.length){
             return '';
