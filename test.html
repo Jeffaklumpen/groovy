@@ -2,24 +2,23 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>iPad test</title>
+<title>iPad test 2</title>
 </head>
 <body>
 
-<h1>iPad-test</h1>
-
-<button id="testButton" type="button">Klicka här</button>
+<h1>iPad-test 2</h1>
 
 <div id="result"></div>
 
 <script>
 var result=document.getElementById('result');
 
-result.innerHTML='JavaScript fungerar.';
-
-document.getElementById('testButton').onclick=function(){
-  result.innerHTML='KNAPPEN FUNGERAR!';
-};
+try{
+  eval('(async function(){return 1;})');
+  result.innerHTML='ASYNC FUNGERAR!';
+}catch(error){
+  result.innerHTML='ASYNC FUNGERAR INTE: '+error;
+}
 </script>
 
 </body>
