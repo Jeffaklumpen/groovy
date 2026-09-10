@@ -2427,6 +2427,7 @@ async function searchAppleAlbumArtwork(artist,albumTitle){
         }
 
         const data=await response.json();
+        console.log('Apple artwork results:',data.results);
 
         if(!data.results||!data.results.length){
             return '';
