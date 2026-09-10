@@ -359,8 +359,11 @@ updateAuthUI();
 (function(){
 
 window.records = [];
+var viewedUserId=null;
 
 window.loadCollection=async function(){
+  viewedUserId=null;
+    
   var {data:{session}}=await supabaseClient.auth.getSession();
 
   if(!session||!session.user){
@@ -547,7 +550,7 @@ function esc(value){
 function recordHTML(record, className){
   var smallSrc=record[6];
 
-  var html='<article class="record '+(className||'')+'" draggable="'+(view==='grid'?'true':'false')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
+  var html='<article class="record '+(className||'')+'" draggable="'+(view==='grid'&&viewedUserId===null?'true':'false')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
       '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+smallSrc+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
       '<div class="number">'+record[0]+'</div>'+
@@ -558,7 +561,7 @@ function recordHTML(record, className){
   }
 
   html+='</div>'+
-    '<button class="delete-cover-button" type="button" aria-label="Ta bort album">🗑</button>'+
+    (viewedUserId===null?'<button class="delete-cover-button" type="button" aria-label="Ta bort album">🗑</button>':'')+
     '</div>'+
     '<div class="info">'+
       '<div class="artist">'+esc(record[1])+'</div>'+
@@ -1828,6 +1831,8 @@ let musicBrainzController=null;
 let musicBrainzSearchNumber=0;
 
 async function loadOtherUserCollection(userId){
+    viewedUserId=userId;
+    
     const {data:profile,error:profileError}=await supabaseClient
         .from('profiles')
         .select('username,avatar_url')
