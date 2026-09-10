@@ -1713,7 +1713,7 @@ async function searchUsers(query){
         avatar.style.backgroundPosition='center';
     
         const username=document.createElement('span');
-        username.textContent='@'+user.username;
+        username.textContent=user.username;
     
         div.appendChild(avatar);
         div.appendChild(username);
