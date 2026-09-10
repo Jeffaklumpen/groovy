@@ -220,15 +220,15 @@ body{padding:15px}
 #authBox button:hover{background:#444}
 #loginStatus{font-size:12px;color:#aaa;white-space:nowrap}
 @media screen and (max-width:600px){
-#authBox{position:relative;top:auto;right:auto;left:auto;width:100%;max-width:none;margin:10px 0 18px;padding:8px;justify-content:flex-end}
-#authBox input{width:110px}
-#authBox button{padding:7px 9px}
+#authBox{position:absolute;top:10px;right:10px;width:auto;max-width:calc(100vw - 20px);margin:0;padding:6px;background:rgba(36,36,36,.92);border-radius:8px;gap:4px}
+#authBox input{width:100px;padding:6px 7px;font-size:11px}
+#authBox button{padding:6px 8px;font-size:11px}
 #loginStatus{display:none}
 }
 @media screen and (max-width:400px){
-#authBox{gap:4px;padding:7px}
-#authBox input{width:85px;font-size:11px;padding:6px 7px}
-#authBox button{font-size:11px;padding:6px 7px}
+#authBox{top:8px;right:8px;gap:3px;padding:5px}
+#authBox input{width:82px;font-size:10px;padding:5px 6px}
+#authBox button{font-size:10px;padding:5px 7px}
 }
 @media screen and (max-width:900px) and (orientation:landscape){
 .album-overlay{padding:10px}
