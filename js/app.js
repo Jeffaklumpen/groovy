@@ -1886,7 +1886,10 @@ addAlbumButton.addEventListener('click',async function(event){
 
 const emptyCollectionAddButton=document.getElementById('emptyCollectionAddButton');
 
-emptyCollectionAddButton.addEventListener('click',async function(){
+emptyCollectionAddButton.addEventListener('click',async function(event){
+    event.preventDefault();
+    event.stopPropagation();
+
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
 
