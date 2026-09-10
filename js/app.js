@@ -1723,7 +1723,7 @@ async function searchUsers(query){
         userSearchResults.appendChild(div);
 
         div.addEventListener('click',function(){
-            console.log('Vald användare:',user.id);
+            loadOtherUserCollection(user.id);
         });
     });
 }
@@ -1819,7 +1819,9 @@ function escapeHTML(text){
 let musicBrainzController=null;
 let musicBrainzSearchNumber=0;
 
-
+async function loadOtherUserCollection(userId){
+    console.log('Laddar användarens samling:',userId);
+}
 
 
 async function searchDiscogs(query){
