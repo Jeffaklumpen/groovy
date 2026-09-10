@@ -15,9 +15,10 @@ loginClose.addEventListener('click',function(){
 profileButton.addEventListener('click',async function(event){
     event.stopPropagation();
 
-    const {data:{user}}=await supabaseClient.auth.getUser();
-
-    if(user){
+        const {data:{session}}=await supabaseClient.auth.getSession();
+        const user=session&&session.user;
+        
+        if(user){
         loginPanel.classList.remove('open');
         profileMenu.classList.toggle('open');
     }else{
@@ -44,7 +45,8 @@ document.addEventListener('click',function(){
 });
 
 async function updateAuthUI(){
-    const {data:{user}}=await supabaseClient.auth.getUser();
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
 
     if(user){
         profileButton.style.display='flex';
@@ -134,18 +136,15 @@ updateAuthUI();
 var records = [];
 
 window.loadCollection=async function(){
-  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+  var {data:{session}}=await supabaseClient.auth.getSession();
 
-  if(userError){
-    console.error(userError);
-    return;
-  }
-
-  if(!user){
+  if(!session||!session.user){
     records=[];
     buildGrid();
     return;
   }
+
+  var user=session.user;
 
   var {data:collectionData,error:collectionError}=await supabaseClient
     .from('collections')
