@@ -621,8 +621,10 @@ function openAlbum(index){
 
   var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
 
-   for(var r=0;r<ratingButtons.length;r++){
+  for(var r=0;r<ratingButtons.length;r++){
     ratingButtons[r].addEventListener('mouseenter',function(){
+      if(viewedUserId!==null)return;
+
       var hoverRating=parseInt(this.getAttribute('data-rating'),10);
 
       for(var i=0;i<ratingButtons.length;i++){
@@ -643,6 +645,8 @@ function openAlbum(index){
       event.preventDefault();
       event.stopPropagation();
 
+      if(viewedUserId!==null)return;
+
       var newRating=parseInt(
         this.getAttribute('data-rating'),
         10
@@ -654,6 +658,8 @@ function openAlbum(index){
     ratingButtons[r].addEventListener('touchend',function(event){
       event.preventDefault();
       event.stopPropagation();
+
+      if(viewedUserId!==null)return;
 
       var newRating=parseInt(
         this.getAttribute('data-rating'),
@@ -682,15 +688,15 @@ function openAlbum(index){
       var track=tracks[j];
 
       var title=track.title||'Okänd låt';
-      var rating=parseInt(track.rating,10);
+      var trackRating=parseInt(track.rating,10);
 
-      if(isNaN(rating))rating=0;
-      rating=Math.max(0,Math.min(5,rating));
+      if(isNaN(trackRating))trackRating=0;
+      trackRating=Math.max(0,Math.min(5,trackRating));
 
       var trackStars='';
 
       for(var s=1;s<=5;s++){
-        trackStars+='<button class="track-rating-star '+(s<=rating?'filled':'empty')+'" type="button" data-track-id="'+track.id+'" data-rating="'+s+'">★</button>';
+        trackStars+='<button class="track-rating-star '+(s<=trackRating?'filled':'empty')+'" type="button" data-track-id="'+track.id+'" data-rating="'+s+'">★</button>';
       }
 
       html+='<li data-track-id="'+track.id+'">'+
@@ -712,6 +718,8 @@ function openAlbum(index){
       event.preventDefault();
       event.stopPropagation();
 
+      if(viewedUserId!==null)return;
+
       var trackId=parseInt(
         this.getAttribute('data-track-id'),
         10
@@ -729,6 +737,8 @@ function openAlbum(index){
       event.preventDefault();
       event.stopPropagation();
 
+      if(viewedUserId!==null)return;
+
       var trackId=parseInt(
         this.getAttribute('data-track-id'),
         10
@@ -745,9 +755,12 @@ function openAlbum(index){
 
   for(var h=0;h<trackRatingButtons.length;h++){
     trackRatingButtons[h].addEventListener('mouseenter',function(){
+      if(viewedUserId!==null)return;
+
       var buttons=detailTracks.querySelectorAll(
         '.track-rating-star[data-track-id="'+this.getAttribute('data-track-id')+'"]'
       );
+
       var hoverRating=parseInt(this.getAttribute('data-rating'),10);
 
       for(var i=0;i<buttons.length;i++){
