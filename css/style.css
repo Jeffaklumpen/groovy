@@ -282,5 +282,9 @@ body{padding:15px}
 .user-search-result{display:flex;align-items:center;gap:10px}
 .user-search-avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0;background-size:cover;background-position:center}
 
+.user-search-info{display:flex;flex-direction:column;gap:2px}
+.user-search-username{font-size:14px;color:#fff}
+.user-search-count{font-size:11px;color:#777}
+
 .user-search-result{padding:8px;border-radius:8px;cursor:pointer;transition:background .15s ease}
 .user-search-result:hover{background:#242426}
