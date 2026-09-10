@@ -101,11 +101,16 @@
 </script>
 
 <div id="authBox">
-    <input id="loginEmail" type="email" placeholder="E-post">
-    <input id="loginPassword" type="password" placeholder="Lösenord">
-    <button id="loginButton">Logga in</button>
-    <button id="logoutButton" style="display:none;">Logga ut</button>
-    <span id="loginStatus" style="margin-left:8px;"></span>
+    <button id="authButton" type="button">Logga in</button>
+
+    <div id="loginPanel">
+        <input id="loginEmail" type="email" placeholder="E-post">
+        <input id="loginPassword" type="password" placeholder="Lösenord">
+        <button id="loginButton" type="button">Logga in</button>
+    </div>
+
+    <span id="loginStatus"></span>
+    <button id="logoutButton" type="button" style="display:none;">Logga ut</button>
 </div>
 
 <script src="js/app.js"></script>
