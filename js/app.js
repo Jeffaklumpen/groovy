@@ -1752,9 +1752,14 @@ async function searchUsers(query){
     });
 }
 
-searchUserButton.addEventListener('click',function(event){
+searchUserButton.addEventListener('click',async function(event){
     event.preventDefault();
     event.stopPropagation();
+
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
+
+    if(!user)return;
 
     searchUserModal.style.display='flex';
 });
@@ -1772,6 +1777,11 @@ searchUserModal.addEventListener('click',function(event){
 const myCollectionButton=document.getElementById('myCollectionButton');
 
 myCollectionButton.addEventListener('click',async function(){
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
+
+    if(!user)return;
+
     deleteMode=false;
     deleteModeButton.classList.remove('active');
     document.body.classList.remove('delete-mode-active');
