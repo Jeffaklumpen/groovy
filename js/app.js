@@ -1333,6 +1333,7 @@ function addCoverTilt(){
 
   document.querySelectorAll('.cover-wrapper').forEach(function(cover){
     cover.addEventListener('mousemove',function(event){
+      console.log('MOUSEMOVE PÅ COVER');
       var rect=cover.getBoundingClientRect();
       var x=(event.clientX-rect.left)/rect.width-.5;
       var y=(event.clientY-rect.top)/rect.height-.5;
