@@ -108,6 +108,9 @@ logoutButton.addEventListener('click',async function(){
 
     profileMenu.classList.remove('open');
 
+    records=[];
+    collection.innerHTML='';
+
     await updateAuthUI();
 });
 
