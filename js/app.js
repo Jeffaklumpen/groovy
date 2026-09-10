@@ -2476,7 +2476,7 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
 
 async function loadUserFromUrl(){
     var path=window.location.pathname;
-    var match=path.match(/^\/user\/([^\/]+)\/?$/);
+    var match=path.match(/^\/groovy\/user\/([^\/]+)\/?$/);
 
     if(!match)return;
 
