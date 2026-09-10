@@ -14,8 +14,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 
 .header-controls{position:absolute;right:0;top:0;display:flex;align-items:center;gap:7px;z-index:20}
 .add-album-button{border:0;background:#E85301;color:#fff;padding:8px 12px;border-radius:7px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
-.add-album-button:hover{background:#16a34a}
-.add-album-button:active{background:#15803d;transform:scale(.97)}
+.add-album-button:hover{background:#F06A24}
+.add-album-button:active{background:#C94300;transform:scale(.97)}
 .menu-dropdown{position:relative}
 .menu-button{border:1px solid #2b2b2e;background:#171719;color:#aaa;padding:8px 11px;border-radius:9px;font-family:inherit;font-size:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
 .menu-button:hover{background:#202023;color:#fff}
@@ -111,8 +111,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .mb-title{font-size:16px;font-weight:bold}
 .mb-artist{margin-top:4px;opacity:.8}
 .mb-year{margin-top:3px;opacity:.6}
-.mb-add-button{flex-shrink:0;background:#22c55e;color:#fff;border:0;padding:9px 16px;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer}
-.mb-add-button:hover{background:#16a34a}
+.mb-add-button{flex-shrink:0;background:#E85301;color:#fff;border:0;padding:9px 16px;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer}
+.mb-add-button:hover{background:#F06A24}
 .mb-added{background:#555;color:#ccc;cursor:default}
 
 @media screen and (min-width:601px) and (max-width:1100px){
@@ -191,8 +191,8 @@ body{padding:15px}
 .mb-title{font-size:14px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mb-artist{margin-top:3px;font-size:12px;color:#bbb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mb-year{margin-top:2px;font-size:11px;color:#777}
-.mb-add-button{flex-shrink:0;background:#22c55e;color:#fff;border:0;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer}
-.mb-add-button:hover{background:#16a34a}
+.mb-add-button{flex-shrink:0;background:#E85301;color:#fff;border:0;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer}
+.mb-add-button:hover{background:#F06A24}
 .mb-added{background:#555;color:#ccc;cursor:default}
 
 .delete-mode-button{display:none;width:34px;height:34px;border:0;border-radius:50%;background:#242426;color:#fff;font-size:16px;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0}
@@ -292,8 +292,8 @@ body{padding:15px}
 .empty-collection{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
 .empty-collection-title{font-size:32px;font-weight:600;letter-spacing:-.5px;color:#fff}
 .empty-collection-text{margin-top:8px;font-size:14px;color:#777}
-.empty-collection button{margin-top:22px;padding:11px 22px;border:0;border-radius:8px;background:#3fa66b;color:#fff;font-size:14px;font-weight:600;cursor:pointer;pointer-events:auto;transition:background .15s ease,transform .15s ease}
-.empty-collection button:hover{background:#4dbd7c;transform:translateY(-1px)}
+.empty-collection button{margin-top:22px;padding:11px 22px;border:0;border-radius:8px;background:#E85301;color:#fff;font-size:14px;font-weight:600;cursor:pointer;pointer-events:auto;transition:background .15s ease,transform .15s ease}
+.empty-collection button:hover{background:#F06A24;transform:translateY(-1px)}
 
 .remove-album-box{text-align:center}
 .remove-album-box h2{margin-bottom:12px}
