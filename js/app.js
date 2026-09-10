@@ -1656,6 +1656,59 @@ const searchUserButton=document.getElementById('searchUserButton');
 const searchUserModal=document.getElementById('searchUserModal');
 const closeSearchUser=document.getElementById('closeSearchUser');
 
+const userSearchInput=document.getElementById('userSearchInput');
+const userSearchResults=document.getElementById('userSearchResults');
+
+let userSearchTimer=null;
+
+userSearchInput.addEventListener('input',function(){
+    const query=userSearchInput.value.trim();
+
+    clearTimeout(userSearchTimer);
+
+    if(query.length<2){
+        userSearchResults.innerHTML='';
+        return;
+    }
+
+    userSearchResults.innerHTML='<p>Searching...</p>';
+
+    userSearchTimer=setTimeout(function(){
+        searchUsers(query);
+    },250);
+});
+
+async function searchUsers(query){
+    const {data,error}=await supabaseClient
+        .from('profiles')
+        .select('id,username')
+        .ilike('username','%'+query+'%')
+        .limit(10);
+
+    if(error){
+        console.error('User search error:',error);
+        userSearchResults.innerHTML='<p>Could not search users.</p>';
+        return;
+    }
+
+    userSearchResults.innerHTML='';
+
+    if(!data||!data.length){
+        userSearchResults.innerHTML='<p>No users found.</p>';
+        return;
+    }
+
+    data.forEach(function(user){
+        const div=document.createElement('div');
+
+        div.className='user-search-result';
+
+        div.textContent='@'+user.username;
+
+        userSearchResults.appendChild(div);
+    });
+}
+
 searchUserButton.addEventListener('click',function(event){
     event.preventDefault();
     event.stopPropagation();
