@@ -433,6 +433,7 @@ function enableGridSorting(){
   var dragged=null;
   var touchTimer=null;
   var touchDragging=false;
+  var suppressAlbumClick=false;
 
   collection.oncontextmenu=function(event){
     event.preventDefault();
@@ -467,19 +468,35 @@ function enableGridSorting(){
 
         if(x||y){
           card.style.transition='none';
-          card.style.transform='translate('+x+'px,'+y+'px)';
+          card.style.transform='translate3d('+x+'px,'+y+'px,0)';
 
-          requestAnimationFrame(function(){
-            card.style.transition='transform .22s cubic-bezier(.2,.8,.2,1)';
-            card.style.transform='translate(0,0)';
-          });
+          (function(card){
+            requestAnimationFrame(function(){
+              card.style.transition='transform .24s cubic-bezier(.2,.8,.2,1)';
+              card.style.transform='translate3d(0,0,0)';
+
+              setTimeout(function(){
+                card.style.transition='';
+                card.style.transform='';
+              },260);
+            });
+          })(card);
         }
       }
     });
   }
 
-  function moveDragged(target,after){
+  function moveDragged(target,pointerX,pointerY){
     if(!dragged||!target||target===dragged)return;
+
+    var rect=target.getBoundingClientRect();
+    var after;
+
+    if(pointerX<rect.left||pointerX>rect.right){
+      after=pointerX>rect.left+rect.width/2;
+    }else{
+      after=pointerY>rect.top+rect.height/2;
+    }
 
     if(after){
       if(target.nextSibling!==dragged){
@@ -545,10 +562,7 @@ function enableGridSorting(){
 
     if(!target||target===dragged)return;
 
-    var rect=target.getBoundingClientRect();
-    var after=event.clientY>rect.top+rect.height/2;
-
-    moveDragged(target,after);
+    moveDragged(target,event.clientX,event.clientY);
   };
 
   collection.ondrop=async function(event){
@@ -557,6 +571,10 @@ function enableGridSorting(){
     event.preventDefault();
 
     await finishDrag();
+
+    if(dragged){
+      dragged.classList.remove('dragging');
+    }
 
     dragged=null;
   };
@@ -600,10 +618,7 @@ function enableGridSorting(){
 
       if(!card||card===dragged)return;
 
-      var rect=card.getBoundingClientRect();
-      var after=touch.clientY>rect.top+rect.height/2;
-
-      moveDragged(card,after);
+      moveDragged(card,touch.clientX,touch.clientY);
     };
 
     cards[i].ontouchend=async function(){
@@ -614,10 +629,20 @@ function enableGridSorting(){
         return;
       }
 
+      suppressAlbumClick=true;
+
       await finishDrag();
+
+      if(dragged){
+        dragged.classList.remove('dragging');
+      }
 
       dragged=null;
       touchDragging=false;
+
+      setTimeout(function(){
+        suppressAlbumClick=false;
+      },300);
     };
 
     cards[i].ontouchcancel=function(){
