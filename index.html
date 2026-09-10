@@ -101,16 +101,40 @@
 </script>
 
 <div id="authBox">
-    <button id="authButton" type="button">Logga in</button>
 
-    <div id="loginPanel">
-        <input id="loginEmail" type="email" placeholder="E-post">
-        <input id="loginPassword" type="password" placeholder="Lösenord">
-        <button id="loginButton" type="button">Login</button>
+    <button id="profileButton" type="button" aria-label="Profil">
+        <span id="profileImage"></span>
+    </button>
+
+    <div id="profileMenu">
+
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <span id="profileImageMenu"></span>
+            </div>
+
+            <span id="profileUsername"></span>
+        </div>
+
+        <div class="profile-divider"></div>
+
+        <button id="logoutButton" type="button">
+            Logga ut
+        </button>
+
     </div>
 
-    <span id="loginStatus"></span>
-    <button id="logoutButton" type="button" style="display:none;">Logout</button>
+    <div id="loginPanel">
+
+        <input id="loginEmail" type="email" placeholder="E-post">
+        <input id="loginPassword" type="password" placeholder="Lösenord">
+
+        <button id="loginButton" type="button">
+            Logga in
+        </button>
+
+    </div>
+
 </div>
 
 <script src="js/app.js"></script>
