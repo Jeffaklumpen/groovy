@@ -214,21 +214,20 @@ body{padding:15px}
 .menu-panel button{padding:7px 8px;font-size:10px}
 }
 
-#authBox{position:fixed;top:10px;right:10px;z-index:900;background:#242424;padding:10px;border-radius:8px;display:flex;align-items:center;gap:6px;max-width:calc(100vw - 20px)}
-#authBox input{background:#181818;color:#fff;border:1px solid #444;border-radius:6px;padding:7px 9px;font-family:inherit;font-size:12px;min-width:0}
-#authBox button{background:#333;color:#fff;border:1px solid #555;border-radius:6px;padding:7px 10px;font-family:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
-#authBox button:hover{background:#444}
+#authBox{position:absolute;top:10px;right:10px;z-index:900;display:flex;align-items:center;gap:6px}
+#authButton,#logoutButton{background:#242426;color:#fff;border:1px solid #3a3a3d;border-radius:8px;padding:7px 10px;font-family:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+#authButton:hover,#logoutButton:hover{background:#303033}
+#loginPanel{display:none;position:absolute;right:0;top:calc(100% + 7px);width:220px;padding:10px;background:#18181a;border:1px solid #303033;border-radius:10px;box-shadow:0 15px 40px rgba(0,0,0,.55)}
+#loginPanel.open{display:flex;flex-direction:column;gap:7px}
+#loginPanel input{width:100%;background:#101012;color:#fff;border:1px solid #3a3a3d;border-radius:7px;padding:8px 9px;font-family:inherit;font-size:12px;outline:none}
+#loginPanel input:focus{border-color:#666}
+#loginPanel #loginButton{background:#22c55e;color:#fff;border:0;border-radius:7px;padding:8px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+#loginPanel #loginButton:hover{background:#16a34a}
 #loginStatus{font-size:12px;color:#aaa;white-space:nowrap}
 @media screen and (max-width:600px){
-#authBox{position:absolute;top:10px;right:10px;width:auto;max-width:calc(100vw - 20px);margin:0;padding:6px;background:rgba(36,36,36,.92);border-radius:8px;gap:4px}
-#authBox input{width:100px;padding:6px 7px;font-size:11px}
-#authBox button{padding:6px 8px;font-size:11px}
-#loginStatus{display:none}
-}
-@media screen and (max-width:400px){
-#authBox{top:8px;right:8px;gap:3px;padding:5px}
-#authBox input{width:82px;font-size:10px;padding:5px 6px}
-#authBox button{font-size:10px;padding:5px 7px}
+#authBox{top:8px;right:8px}
+#loginPanel{right:0;width:205px}
+#authButton,#logoutButton{padding:6px 9px;font-size:11px}
 }
 @media screen and (max-width:900px) and (orientation:landscape){
 .album-overlay{padding:10px}
