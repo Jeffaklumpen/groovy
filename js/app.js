@@ -1699,9 +1699,11 @@ async function searchUsers(query){
 
     data.forEach(function(user){
         const div=document.createElement('div');
-    
+
         div.className='user-search-result';
-    
+        div.dataset.userId=user.id;
+        div.style.cursor='pointer';
+        
         const avatar=document.createElement('div');
         avatar.className='user-search-avatar';
     
