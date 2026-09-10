@@ -2473,3 +2473,36 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
         );
     }
 }
+
+async function loadUserFromUrl(){
+    var path=window.location.pathname;
+    var match=path.match(/^\/user\/([^\/]+)\/?$/);
+
+    if(!match)return;
+
+    var username=decodeURIComponent(match[1]);
+
+    const {data:user,error}=await supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('username',username)
+        .maybeSingle();
+
+    if(error){
+        console.error('Kunde inte hitta användaren:',error);
+        return;
+    }
+
+    if(!user){
+        console.error('Användaren finns inte:',username);
+        return;
+    }
+
+    await loadOtherUserCollection(user.id);
+}
+
+window.addEventListener('popstate',function(){
+    loadUserFromUrl();
+});
+
+loadUserFromUrl();
