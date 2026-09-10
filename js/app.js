@@ -1061,6 +1061,9 @@ function enableGridSorting(){
   var touchX=0;
   var touchY=0;
   var autoScrollFrame=null;
+  var dragPreview=null;
+  var dragPreviewOffsetX=0;
+  var dragPreviewOffsetY=0;
 
   collection.oncontextmenu=function(event){
     event.preventDefault();
@@ -1147,6 +1150,41 @@ function enableGridSorting(){
     }
   }
 
+  function createDragPreview(card,pointerX,pointerY){
+    removeDragPreview();
+
+    var rect=card.getBoundingClientRect();
+
+    dragPreview=card.cloneNode(true);
+    dragPreview.classList.remove('dragging');
+    dragPreview.classList.add('drag-preview');
+    dragPreview.removeAttribute('draggable');
+    dragPreview.style.width=rect.width+'px';
+    dragPreview.style.height=rect.height+'px';
+    dragPreview.style.left=(pointerX-rect.width/2)+'px';
+    dragPreview.style.top=(pointerY-rect.height/2)+'px';
+
+    dragPreviewOffsetX=rect.width/2;
+    dragPreviewOffsetY=rect.height/2;
+
+    document.body.appendChild(dragPreview);
+  }
+
+  function updateDragPreview(pointerX,pointerY){
+    if(!dragPreview)return;
+
+    dragPreview.style.left=(pointerX-dragPreviewOffsetX)+'px';
+    dragPreview.style.top=(pointerY-dragPreviewOffsetY)+'px';
+  }
+
+  function removeDragPreview(){
+    if(dragPreview&&dragPreview.parentNode){
+      dragPreview.parentNode.removeChild(dragPreview);
+    }
+
+    dragPreview=null;
+  }
+
   function autoScroll(){
     if(!touchDragging||!dragged){
       stopAutoScroll();
@@ -1221,10 +1259,22 @@ function enableGridSorting(){
 
     dragged=record;
     record.classList.add('dragging');
+    createDragPreview(record,event.clientX,event.clientY);
 
     if(event.dataTransfer){
       event.dataTransfer.effectAllowed='move';
       event.dataTransfer.setData('text/plain',record.getAttribute('data-index'));
+
+      if(dragPreview){
+        event.dataTransfer.setDragImage(
+          dragPreview,
+          dragPreviewOffsetX,
+          dragPreviewOffsetY
+        );
+      }
+
+      // Native drag uses the cloned card as its floating preview.
+      setTimeout(removeDragPreview,0);
     }
   };
 
@@ -1233,6 +1283,8 @@ function enableGridSorting(){
     if(!dragged)return;
 
     event.preventDefault();
+
+    updateDragPreview(event.clientX,event.clientY);
 
     var target=event.target.closest('.record');
 
@@ -1250,6 +1302,7 @@ function enableGridSorting(){
     var releasedDragged=dragged;
 
     releasedDragged.classList.remove('dragging');
+    removeDragPreview();
     dragged=null;
 
     await finishDrag();
@@ -1260,6 +1313,7 @@ function enableGridSorting(){
       dragged.classList.remove('dragging');
     }
 
+    removeDragPreview();
     dragged=null;
   };
 
@@ -1281,6 +1335,7 @@ function enableGridSorting(){
         touchDragging=true;
         suppressAlbumClick=true;
         card.classList.add('dragging');
+        createDragPreview(card,touchX,touchY);
         autoScroll();
       },350);
     };
@@ -1294,6 +1349,7 @@ function enableGridSorting(){
 
       touchX=touch.clientX;
       touchY=touch.clientY;
+      updateDragPreview(touchX,touchY);
 
       var target=document.elementFromPoint(touchX,touchY);
 
@@ -1321,6 +1377,7 @@ function enableGridSorting(){
       var releasedDragged=dragged;
 
       releasedDragged.classList.remove('dragging');
+      removeDragPreview();
 
       dragged=null;
       touchDragging=false;
@@ -1342,6 +1399,7 @@ function enableGridSorting(){
         dragged.classList.remove('dragging');
       }
 
+      removeDragPreview();
       dragged=null;
       touchDragging=false;
       suppressAlbumClick=false;
