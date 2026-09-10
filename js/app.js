@@ -1833,6 +1833,7 @@ searchUserModal.addEventListener('click',function(event){
 const myCollectionButton=document.getElementById('myCollectionButton');
 
 myCollectionButton.addEventListener('click',async function(){
+    console.log('MY COLLECTION CLICK');
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
 
