@@ -115,11 +115,11 @@ async function updateAuthUI(){
             profileImageMenu.style.backgroundSize='cover';
             profileImageMenu.style.backgroundPosition='center';
         }else{
-            profileImage.style.backgroundImage='url("avatar_placeholder.png")';
+            profileImage.style.backgroundImage='url("/groovy/avatar_placeholder.png")';
             profileImage.style.backgroundSize='cover';
             profileImage.style.backgroundPosition='center';
         
-            profileImageMenu.style.backgroundImage='url("avatar_placeholder.png")';
+            profileImageMenu.style.backgroundImage='url("/groovy/avatar_placeholder.png")';
             profileImageMenu.style.backgroundSize='cover';
             profileImageMenu.style.backgroundPosition='center';
         }
@@ -132,11 +132,11 @@ async function updateAuthUI(){
         profileMenu.classList.remove('open');
         loginPanel.classList.remove('open');
 
-        profileImage.style.backgroundImage='url("avatar_placeholder.png")';
+        profileImage.style.backgroundImage='url("/groovy/avatar_placeholder.png")';
         profileImage.style.backgroundSize='cover';
         profileImage.style.backgroundPosition='center';
         
-        profileImageMenu.style.backgroundImage='url("avatar_placeholder.png")';
+        profileImageMenu.style.backgroundImage='url("/groovy/avatar_placeholder.png")';
         profileImageMenu.style.backgroundSize='cover';
         profileImageMenu.style.backgroundPosition='center';
     }
@@ -1992,7 +1992,7 @@ async function loadTopUsers(){
         avatar.className='user-search-avatar';
 
         avatar.style.backgroundImage='url("'+
-            (user.avatar_url||'avatar_placeholder.png')+
+            (user.avatar_url||'/groovy/avatar_placeholder.png')+
             '")';
 
         avatar.style.backgroundSize='cover';
@@ -2076,7 +2076,7 @@ async function searchUsers(query){
         avatar.className='user-search-avatar';
     
         avatar.style.backgroundImage='url("'+
-            (user.avatar_url||'avatar_placeholder.png')+
+            (user.avatar_url||'/groovy/avatar_placeholder.png')+
             '")';
     
         avatar.style.backgroundSize='cover';
@@ -2285,7 +2285,7 @@ async function loadOtherUserCollection(userId){
     viewedUserAvatar.style.backgroundImage='url("'+
         (profile&&profile.avatar_url
             ?profile.avatar_url
-            :'avatar_placeholder.png')+
+            :'/groovy/avatar_placeholder.png')+
         '")';
 
     viewedUserAvatar.style.backgroundSize='cover';
