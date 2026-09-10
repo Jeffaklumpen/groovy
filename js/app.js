@@ -1721,6 +1721,10 @@ async function searchUsers(query){
         div.appendChild(username);
     
         userSearchResults.appendChild(div);
+
+        div.addEventListener('click',function(){
+            console.log('Vald användare:',user.id);
+        });
     });
 }
 
