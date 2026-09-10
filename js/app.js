@@ -1734,6 +1734,26 @@ async function searchUsers(query){
         return;
     }
 
+    const userCollectionCounts=await Promise.all(
+        data.map(async function(user){
+            const {count,error}=await supabaseClient
+                .from('collections')
+                .select('id',{count:'exact',head:true})
+                .eq('user_id',user.id);
+    
+            return {
+                id:user.id,
+                count:error?0:(count||0)
+            };
+        })
+    );
+    
+    const collectionCountMap={};
+    
+    userCollectionCounts.forEach(function(item){
+        collectionCountMap[item.id]=item.count;
+    });
+
     data.forEach(function(user){
         const div=document.createElement('div');
 
@@ -1751,11 +1771,22 @@ async function searchUsers(query){
         avatar.style.backgroundSize='cover';
         avatar.style.backgroundPosition='center';
     
+        const userInfo=document.createElement('div');
+        userInfo.className='user-search-info';
+        
         const username=document.createElement('span');
+        username.className='user-search-username';
         username.textContent=user.username;
-    
+        
+        const collectionCount=document.createElement('span');
+        collectionCount.className='user-search-count';
+        collectionCount.textContent=(collectionCountMap[user.id]||0)+' collected records';
+        
+        userInfo.appendChild(username);
+        userInfo.appendChild(collectionCount);
+        
         div.appendChild(avatar);
-        div.appendChild(username);
+        div.appendChild(userInfo);
     
         userSearchResults.appendChild(div);
 
