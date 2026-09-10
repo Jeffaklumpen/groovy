@@ -1,3 +1,5 @@
+console.log('NY APP.JS KÖRS');
+
 const profileButton=document.getElementById('profileButton');
 const profileMenu=document.getElementById('profileMenu');
 const profileUsername=document.getElementById('profileUsername');
