@@ -1439,6 +1439,7 @@ window.buildGrid=function(){
   var emptyCollection=document.getElementById('emptyCollection');
     emptyCollection.style.display=(viewedUserId===null&&records.length===0&&!window.loginRequiredForViewedCollection)?'flex':'none';
     loginToViewCollection.style.display=window.loginRequiredForViewedCollection?'flex':'none';
+    emptyViewedCollection.style.display=(viewedUserId!==null&&records.length===0&&!window.loginRequiredForViewedCollection)?'flex':'none';
 
   var html='';
 
@@ -2023,6 +2024,7 @@ addAlbumButton.addEventListener('click',async function(event){
 const emptyCollectionAddButton=document.getElementById('emptyCollectionAddButton');
 const loginToViewCollection=document.getElementById('loginToViewCollection');
 const loginToViewCollectionButton=document.getElementById('loginToViewCollectionButton');
+const emptyViewedCollection=document.getElementById('emptyViewedCollection');
 
 emptyCollectionAddButton.addEventListener('click',async function(event){
     event.preventDefault();
