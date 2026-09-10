@@ -362,44 +362,6 @@ updateAuthUI();
 
 var records = [];
 
-if(window.matchMedia('(hover:hover) and (pointer:fine)').matches){
-  document.addEventListener('mousemove',function(event){
-    var element=event.target;
-
-    while(element&&element!==document){
-      if(element.classList&&element.classList.contains('cover-wrapper')){
-
-        var rect=element.getBoundingClientRect();
-        var x=(event.clientX-rect.left)/rect.width-.5;
-        var y=(event.clientY-rect.top)/rect.height-.5;
-
-        element.style.transform='perspective(800px) rotateX('+(-y*6)+'deg) rotateY('+(x*6)+'deg)';
-
-        return;
-      }
-
-      element=element.parentElement;
-    }
-  });
-
-  document.addEventListener('mouseout',function(event){
-    var element=event.target;
-
-    while(element&&element!==document){
-      if(element.classList&&element.classList.contains('cover-wrapper')){
-
-        if(!event.relatedTarget||!element.contains(event.relatedTarget)){
-          element.style.transform='';
-        }
-
-        return;
-      }
-
-      element=element.parentElement;
-    }
-  });
-}
-
 window.loadCollection=async function(){
   var {data:{session}}=await supabaseClient.auth.getSession();
 
@@ -1363,6 +1325,24 @@ async function saveGridOrder(){
   await window.loadCollection();
   return true;
 }
+
+function addCoverTilt(){
+  if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches)return;
+
+  document.querySelectorAll('.cover-wrapper').forEach(function(cover){
+    cover.addEventListener('mousemove',function(event){
+      var rect=cover.getBoundingClientRect();
+      var x=(event.clientX-rect.left)/rect.width-.5;
+      var y=(event.clientY-rect.top)/rect.height-.5;
+
+      cover.style.transform='perspective(800px) rotateX('+(-y*6)+'deg) rotateY('+(x*6)+'deg)';
+    });
+
+    cover.addEventListener('mouseleave',function(){
+      cover.style.transform='';
+    });
+  });
+}
     
 function buildGrid(){
   collection.className='collection grid';
@@ -1378,6 +1358,7 @@ function buildGrid(){
   }
 
   collection.innerHTML=html;
+  addCoverTilt();
   attachAlbumClicks();
   enableGridSorting();
   loadVisibleImages();
