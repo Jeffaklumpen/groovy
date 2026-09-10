@@ -2416,7 +2416,7 @@ async function searchDiscogs(query){
 
 async function searchAppleAlbumArtwork(artist,albumTitle){
     try{
-        const query=encodeURIComponent(artist+' '+albumTitle);
+        const query=encodeURIComponent(albumTitle);
 
         const response=await fetch(
             'https://itunes.apple.com/search?term='+query+'&entity=album&limit=10'
