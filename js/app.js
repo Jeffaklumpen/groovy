@@ -1391,6 +1391,9 @@ function addCoverTilt(){
 window.buildGrid=function(){
   collection.className='collection grid';
 
+  var emptyCollection=document.getElementById('emptyCollection');
+  emptyCollection.style.display=(viewedUserId===null&&records.length===0)?'flex':'none';
+
   var html='';
 
   for(var i=0;i<records.length;i++){
@@ -1879,6 +1882,20 @@ addAlbumButton.addEventListener('click',async function(event){
 
     addAlbumModal.style.display='flex';
     albumSearchInput.focus();
+});
+
+const emptyCollectionAddButton=document.getElementById('emptyCollectionAddButton');
+
+emptyCollectionAddButton.addEventListener('click',async function(){
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
+
+    if(!user){
+        loginPanel.classList.add('open');
+        return;
+    }
+
+    addAlbumModal.style.display='flex';
 });
 
 closeAddAlbum.addEventListener('click',function(){
