@@ -1178,8 +1178,12 @@ function enableGridSorting(){
   }
 
   function removeDragPreview(){
-    if(dragPreview&&dragPreview.parentNode){
-      dragPreview.parentNode.removeChild(dragPreview);
+    var previews=document.querySelectorAll('.drag-preview');
+
+    for(var i=0;i<previews.length;i++){
+      if(previews[i].parentNode){
+        previews[i].parentNode.removeChild(previews[i]);
+      }
     }
 
     dragPreview=null;
@@ -1322,6 +1326,16 @@ function enableGridSorting(){
     removeDragPreview();
     dragged=null;
   };
+
+  window.addEventListener('dragend',removeDragPreview);
+  window.addEventListener('blur',function(){
+    if(dragged){
+      dragged.classList.remove('dragging');
+      dragged=null;
+    }
+
+    removeDragPreview();
+  });
 
   var cards=collection.querySelectorAll('.record');
 
