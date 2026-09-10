@@ -608,7 +608,7 @@ function loadVisibleImages(){
   }
 }
 
-async function openAlbum(index){
+function openAlbum(index){
   var record=records[index];
   if(!record)return;
 
@@ -624,16 +624,17 @@ async function openAlbum(index){
     var detailBackCover='';
 
     if(record[10]){
-      try{
-        const {data:imageData,error:imageError}=await supabaseClient.functions.invoke(
-          'discogs-search',
-          {
-            body:{
-              action:'master',
-              masterId:record[10]
-            }
+      supabaseClient.functions.invoke(
+        'discogs-search',
+        {
+          body:{
+            action:'master',
+            masterId:record[10]
           }
-        );
+        }
+      ).then(function(result){
+        var imageData=result.data;
+        var imageError=result.error;
     
         if(!imageError&&imageData&&Array.isArray(imageData.images)){
           var backImage=imageData.images.find(function(image){
@@ -642,11 +643,15 @@ async function openAlbum(index){
     
           if(backImage){
             detailBackCover=backImage.uri;
+    
+            if(detailCoverFlipButton){
+              detailCoverFlipButton.textContent='Back';
+            }
           }
         }
-      }catch(error){
+      }).catch(function(error){
         console.error('Kunde inte hämta baksidesbild:',error);
-      }
+      });
     }
 
     var detailCoverWrapper=detailCover.parentElement;
