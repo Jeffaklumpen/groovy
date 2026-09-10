@@ -349,8 +349,9 @@ logoutButton.addEventListener('click',async function(){
 supabaseClient.auth.onAuthStateChange(async function(){
     await updateAuthUI();
 
-    if(typeof window.loadCollection==='function' &&
-       !/^\/groovy\/user\/[^\/]+\/?$/.test(window.location.pathname)){
+    if(/^\/groovy\/user\/[^\/]+\/?$/.test(window.location.pathname)){
+        await loadUserFromUrl();
+    }else if(typeof window.loadCollection==='function'){
         await window.loadCollection();
     }
 });
@@ -2016,6 +2017,8 @@ addAlbumButton.addEventListener('click',async function(event){
 });
 
 const emptyCollectionAddButton=document.getElementById('emptyCollectionAddButton');
+const loginToViewCollection=document.getElementById('loginToViewCollection');
+const loginToViewCollectionButton=document.getElementById('loginToViewCollectionButton');
 
 emptyCollectionAddButton.addEventListener('click',async function(event){
     event.preventDefault();
@@ -2030,6 +2033,17 @@ emptyCollectionAddButton.addEventListener('click',async function(event){
     }
 
     addAlbumModal.style.display='flex';
+});
+
+loginToViewCollectionButton.addEventListener('click',function(event){
+    event.preventDefault();
+    event.stopPropagation();
+
+    loginPanel.classList.add('open');
+
+    if(!registerMode){
+        authSwitchButton.click();
+    }
 });
 
 closeAddAlbum.addEventListener('click',function(){
@@ -2709,6 +2723,18 @@ async function loadUserFromUrl(){
         return;
     }
 
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    
+    if(!session||!session.user){
+        viewedUserId=user.id;
+        records=[];
+    
+        document.getElementById('emptyCollection').style.display='none';
+        document.getElementById('loginToViewCollection').style.display='flex';
+    
+        return;
+    }
+    
     await loadOtherUserCollection(user.id);
 }
 
