@@ -154,12 +154,6 @@ profileImageInput.addEventListener('change',async function(){
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
 
-    console.log('Auth debug:',{
-    userId:user&&user.id,
-    role:user&&user.role,
-    session:!!session
-});
-
     if(!user){
         alert('Du måste vara inloggad.');
         return;
@@ -183,12 +177,6 @@ profileImageInput.addEventListener('change',async function(){
         const extension=file.name.split('.').pop().toLowerCase();
         const filePath=user.id+'/avatar.'+extension;
 
-console.log('Storage upload:',{
-    userId:user.id,
-    filePath:filePath,
-    fileType:file.type
-});
-
         const {error:uploadError}=await supabaseClient
             .storage
             .from('profile-images')
@@ -207,7 +195,7 @@ console.log('Storage upload:',{
 
         const avatarUrl=publicUrlData.publicUrl+'?t='+Date.now();
 
-        const {data:updateData,error:updateError}=await supabaseClient
+        const {error:updateError}=await supabaseClient
             .from('profiles')
             .update({
                 avatar_url:avatarUrl
@@ -215,8 +203,6 @@ console.log('Storage upload:',{
             .eq('id',user.id)
             .select('id,avatar_url');
         
-        console.log('Profil uppdaterad:',updateData);
-
         if(updateError)throw updateError;
 
         profileImage.style.backgroundImage='url("'+avatarUrl+'")';
@@ -260,8 +246,6 @@ loginButton.addEventListener('click',async function(){
         loginButton.textContent='Logga in';
         return;
     }
-
-    console.log('Inloggad användare:',data.user);
 
     loginButton.disabled=false;
     loginButton.textContent='Logga in';
@@ -310,8 +294,6 @@ registerButton.addEventListener('click',async function(){
         return;
     }
 
-    console.log('Registrerad användare:',data.user);
-
     if(data.session){
         await supabaseClient
             .from('profiles')
@@ -346,23 +328,18 @@ logoutButton.addEventListener('click',async function(){
     await updateAuthUI();
 });
 
-supabaseClient.auth.onAuthStateChange(async function(){
-    await updateAuthUI();
-
-    if(/^\/groovy\/user\/[^\/]+\/?$/.test(window.location.pathname)){
-        await loadUserFromUrl();
-    }else if(typeof window.loadCollection==='function'){
-        await window.loadCollection();
-    }
+supabaseClient.auth.onAuthStateChange(function(){
+    setTimeout(function(){
+        renderCurrentRoute();
+    },0);
 });
-
-updateAuthUI();
 
 (function(){
 
 window.records = [];
 window.viewedUserId=null;
 window.loginRequiredForViewedCollection=false;
+window.profileNotFound=false;
 window.collectionLoadVersion=0;
 
 window.loadCollection=async function(){
@@ -374,7 +351,9 @@ window.loadCollection=async function(){
   }
 
   viewedUserId=null;
-    window.loginRequiredForViewedCollection=false;
+  window.loginRequiredForViewedCollection=false;
+  window.profileNotFound=false;
+  document.getElementById('viewedUserHeader').style.display='none';
     
   var {data:{session}}=await supabaseClient.auth.getSession();
 
@@ -419,8 +398,6 @@ window.loadCollection=async function(){
         return;
     }
     
-    console.log('SUPABASE COLLECTION:', collectionData);
-
   var albumIds=collectionData.map(function(item){
     return item.albums&&item.albums.id;
   }).filter(Boolean);
@@ -470,6 +447,8 @@ window.loadCollection=async function(){
       });
     }
   }
+
+  if(loadVersion!==window.collectionLoadVersion)return;
 
   records=collectionData
     .filter(function(item){
@@ -522,7 +501,6 @@ window.loadCollection=async function(){
         ];
     });
 
-  console.log('RECORDS:', records);
   document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';
   buildGrid();
 }
@@ -566,7 +544,7 @@ function recordHTML(record, className){
 
   var html='<article class="record '+(className||'')+'" draggable="'+(view==='grid'&&viewedUserId===null?'true':'false')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
-      '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+smallSrc+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
+      '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
       '<div class="number">'+record[0]+'</div>'+
       '<div class="cover-rating">';
 
@@ -1437,9 +1415,16 @@ window.buildGrid=function(){
   collection.className='collection grid';
 
   var emptyCollection=document.getElementById('emptyCollection');
-    emptyCollection.style.display=(viewedUserId===null&&records.length===0&&!window.loginRequiredForViewedCollection)?'flex':'none';
-    loginToViewCollection.style.display=window.loginRequiredForViewedCollection?'flex':'none';
-    emptyViewedCollection.style.display=(viewedUserId!==null&&records.length===0&&!window.loginRequiredForViewedCollection)?'flex':'none';
+  var profileNotFound=document.getElementById('profileNotFound');
+  var hasBlockingState=window.loginRequiredForViewedCollection||window.profileNotFound;
+  var isViewingProfile=viewedUserId!==null;
+
+  emptyCollection.style.display=(viewedUserId===null&&records.length===0&&!hasBlockingState)?'flex':'none';
+  loginToViewCollection.style.display=window.loginRequiredForViewedCollection?'flex':'none';
+  profileNotFound.style.display=window.profileNotFound?'flex':'none';
+  emptyViewedCollection.style.display=(isViewingProfile&&records.length===0&&!hasBlockingState)?'flex':'none';
+  document.getElementById('addAlbumButton').style.display=isViewingProfile?'none':'';
+  document.getElementById('deleteModeButton').style.display=isViewingProfile?'none':'';
 
   var html='';
 
@@ -1733,10 +1718,6 @@ function scheduleImageLoad(){
 
 window.onscroll=scheduleImageLoad;
 
-if(!/^\/groovy\/user\/[^\/]+\/?$/.test(window.location.pathname)){
-  loadCollection();
-}
-
 })();
 
 // ========================================
@@ -1858,7 +1839,7 @@ async function loadTopUsers(){
         div.addEventListener('click',function(){
             searchUserModal.style.display='none';
             history.pushState({},'','/groovy/user/'+encodeURIComponent(user.username));
-            loadOtherUserCollection(user.id);
+            renderCurrentRoute();
         });
     });
 }
@@ -1942,7 +1923,7 @@ async function searchUsers(query){
         div.addEventListener('click',function(){
             searchUserModal.style.display='none';
             history.pushState({},'','/groovy/user/'+encodeURIComponent(user.username));
-            loadOtherUserCollection(user.id);
+            renderCurrentRoute();
         });
     });
 }
@@ -2054,10 +2035,7 @@ loginToViewCollectionButton.addEventListener('click',function(event){
     event.stopPropagation();
 
     loginPanel.classList.add('open');
-
-    if(!registerMode){
-        authSwitchButton.click();
-    }
+    loginEmail.focus();
 });
 
 closeAddAlbum.addEventListener('click',function(){
@@ -2080,9 +2058,6 @@ albumSearchInput.addEventListener('input',function(){
     clearTimeout(searchTimer);
 
     if(query.length<2){
-        if(musicBrainzController){
-            musicBrainzController.abort();
-        }
 
         albumSearchResults.innerHTML='';
         return;
@@ -2099,7 +2074,6 @@ function escapeHTML(text){
     return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
-let musicBrainzController=null;
 let musicBrainzSearchNumber=0;
 
 async function loadOtherUserCollection(userId){
@@ -2298,8 +2272,6 @@ async function searchDiscogs(query){
             throw error;
         }
 
-        console.log('Discogs Master Release results:',data);
-
         if(searchNumber!==musicBrainzSearchNumber)return;
 
         albumSearchResults.innerHTML='';
@@ -2404,11 +2376,6 @@ async function searchDiscogs(query){
         
                     event.stopPropagation();
         
-                    console.log(
-                        'Vald Discogs Master Release:',
-                        master
-                    );
-        
                     addAlbumFromDiscogs(
                         master,
                         artist,
@@ -2508,8 +2475,6 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             throw new Error('Master Release saknar ID');
         }
 
-        console.log('Discogs Master Release ID:',masterId);
-
         const {data,error}=await supabaseClient.functions.invoke(
             'discogs-search',
             {
@@ -2524,8 +2489,6 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             console.error('Discogs master error:',error);
             throw error;
         }
-
-        console.log('Discogs Master Release:',data);
 
         const discogsTitle=data.title||albumTitle;
         const discogsYear=parseInt(data.year||year,10)||null;
@@ -2557,10 +2520,6 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
         });
         
         if(!hasDiscSides){
-            console.log(
-                'Master saknar riktiga vinylpositioner. Hämtar vinyl-release...'
-            );
-        
             const {
                 data:vinylData,
                 error:vinylError
@@ -2586,10 +2545,6 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             ){
                 finalTracklist=vinylData.tracklist;
         
-                console.log(
-                    'Vinyl-release tracklist hämtad:',
-                    finalTracklist
-                );
             }
         }
 
@@ -2781,12 +2736,6 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             throw collectionError;
         }
 
-        console.log(
-            'Album sparat i samlingen:',
-            discogsArtist,
-            discogsTitle
-        );
-        
         button.textContent='✓ Added';
         button.classList.add('mb-added');
         
@@ -2809,12 +2758,24 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
 }
 
 async function loadUserFromUrl(){
-    var path=window.location.pathname;
-    var match=path.match(/^\/groovy\/user\/([^\/]+)\/?$/);
+    var username=GroovyRouteState.profileUsernameFromPath(window.location.pathname);
 
-    if(!match)return;
+    if(!username)return window.loadCollection();
 
-    var username=decodeURIComponent(match[1]);
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const sessionUser=session&&session.user;
+    const unresolvedState=GroovyRouteState.resolveProfileView(sessionUser,null);
+
+    if(unresolvedState==='login-required'){
+        viewedUserId='profile-route';
+        records=[];
+        window.loginRequiredForViewedCollection=true;
+        window.profileNotFound=false;
+        document.getElementById('viewedUserHeader').style.display='none';
+        document.getElementById('collectionCount').textContent='0 RECORDS';
+        buildGrid();
+        return;
+    }
 
     const {data:user,error}=await supabaseClient
         .from('profiles')
@@ -2828,32 +2789,36 @@ async function loadUserFromUrl(){
     }
 
     if(!user){
-        viewedUserId=null;
+        viewedUserId='profile-route';
         records=[];
-        window.loginRequiredForViewedCollection=true;
-    
+        window.loginRequiredForViewedCollection=false;
+        window.profileNotFound=true;
+        document.getElementById('viewedUserHeader').style.display='none';
+        document.getElementById('collectionCount').textContent='0 RECORDS';
         buildGrid();
         return;
     }
 
-    const {data:{session}}=await supabaseClient.auth.getSession();
-    
-    if(!session||!session.user){
-        viewedUserId=user.id;
-        records=[];
-        window.loginRequiredForViewedCollection=true;
+    const resolvedState=GroovyRouteState.resolveProfileView(sessionUser,user);
 
-        console.log('LOGIN REQUIRED:',window.loginRequiredForViewedCollection,'VIEWED USER:',viewedUserId);
-    
-        buildGrid();
+    if(resolvedState==='own'){
+        history.replaceState({},'','/groovy/');
+        await window.loadCollection();
         return;
     }
+
     window.loginRequiredForViewedCollection=false;
+    window.profileNotFound=false;
     await loadOtherUserCollection(user.id);
 }
 
 window.addEventListener('popstate',function(){
-    loadUserFromUrl();
+    renderCurrentRoute();
 });
 
-loadUserFromUrl();
+async function renderCurrentRoute(){
+    await updateAuthUI();
+    await loadUserFromUrl();
+}
+
+renderCurrentRoute();
