@@ -395,6 +395,7 @@ window.loadCollection=async function(){
         release_year,
         genre,
         cover_url,
+        discogs_master_id,
         artists(
           id,
           name
@@ -513,7 +514,8 @@ window.loadCollection=async function(){
           album.cover_url||'',
           sides,
           album.id,
-          item.id
+          item.id,
+          album.discogs_master_id||''
         ];
     });
 
@@ -2145,6 +2147,12 @@ async function searchDiscogs(query){
 
         albumSearchResults.innerHTML='';
 
+        const existingMasterIds=records
+            .map(function(record){
+                return String(record[10]||'');
+            })
+            .filter(Boolean);
+
         const results=data&&data.results?data.results:[];
 
         if(!results.length){
@@ -2152,6 +2160,8 @@ async function searchDiscogs(query){
             return;
         }
         results.slice(0,10).forEach(function(master){
+
+            const isAdded=existingMasterIds.includes(String(master.id));
 
             const title=master.title||'Okänd titel';
             const parts=title.split(' - ');
@@ -2198,7 +2208,9 @@ async function searchDiscogs(query){
 
                 '</div>'+
 
-                '<button class="mb-add-button">Add</button>';
+                (isAdded
+                    ?'<button class="mb-add-button mb-added" disabled>✓ Added</button>'
+                    :'<button class="mb-add-button">Add</button>');
 
 
             const addButton=
@@ -2399,7 +2411,8 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
                 title:discogsTitle,
                 release_year:discogsYear,
                 genre:discogsGenre,
-                cover_url:coverUrl
+                cover_url:coverUrl,
+                discogs_master_id:String(masterId)
             })
             .select('id')
             .single();
