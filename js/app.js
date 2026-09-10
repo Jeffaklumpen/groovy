@@ -82,8 +82,6 @@ async function updateAuthUI(){
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
 
-    console.log('Inloggad användare:',user&&user.id);
-
     if(user){
         profileButton.style.display='flex';
         profileMenu.classList.remove('open');
@@ -1327,18 +1325,15 @@ async function saveGridOrder(){
 }
 
 function addCoverTilt(){
-  console.log('TILT-FUNKTION KÖRS');
-  console.log('TILT MEDIA:',window.matchMedia('(hover:hover) and (pointer:fine)').matches);
   if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches)return;
 
   document.querySelectorAll('.cover-wrapper').forEach(function(cover){
     cover.addEventListener('mousemove',function(event){
-      console.log('MOUSEMOVE PÅ COVER');
       var rect=cover.getBoundingClientRect();
       var x=(event.clientX-rect.left)/rect.width-.5;
       var y=(event.clientY-rect.top)/rect.height-.5;
 
-      cover.style.transform='rotateY(20deg)';
+      cover.style.transform='perspective(800px) rotateX('+(-y*10)+'deg) rotateY('+(x*10)+'deg)';
     });
 
     cover.addEventListener('mouseleave',function(){
@@ -1348,7 +1343,6 @@ function addCoverTilt(){
 }
     
 function buildGrid(){
-  console.log('BUILDGRID KÖRS');
   collection.className='collection grid';
 
   var html='';
@@ -1362,7 +1356,6 @@ function buildGrid(){
   }
 
   collection.innerHTML=html;
-  console.log('ANROPAR TILT');  
   addCoverTilt();
   attachAlbumClicks();
   enableGridSorting();
