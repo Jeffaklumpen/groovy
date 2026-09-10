@@ -1342,7 +1342,7 @@ function addCoverTilt(){
   });
 }
     
-function buildGrid(){
+window.buildGrid=function(){
   collection.className='collection grid';
 
   var html='';
