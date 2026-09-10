@@ -1820,7 +1820,39 @@ let musicBrainzController=null;
 let musicBrainzSearchNumber=0;
 
 async function loadOtherUserCollection(userId){
-    console.log('Laddar användarens samling:',userId);
+    const {data,error}=await supabaseClient
+        .from('collections')
+        .select(`
+            id,
+            collection_number,
+            sort_order,
+            albums(
+                id,
+                title,
+                release_year,
+                genre,
+                cover_url,
+                artists(
+                    id,
+                    name
+                ),
+                tracks(
+                    id,
+                    disc_side,
+                    track_number,
+                    title
+                )
+            )
+        `)
+        .eq('user_id',userId)
+        .order('sort_order',{ascending:true});
+
+    if(error){
+        console.error('Kunde inte hämta användarens samling:',error);
+        return;
+    }
+
+    console.log('ANDRA ANVÄNDARENS SAMLING:',data);
 }
 
 
