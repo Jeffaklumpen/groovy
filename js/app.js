@@ -1327,6 +1327,7 @@ async function saveGridOrder(){
 }
 
 function addCoverTilt(){
+  console.log('TILT-FUNKTION KÖRS');
   if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches)return;
 
   document.querySelectorAll('.cover-wrapper').forEach(function(cover){
