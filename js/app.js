@@ -756,7 +756,7 @@ function openAlbum(index){
       var hoverRating=parseInt(this.getAttribute('data-rating'),10);
 
       for(var i=0;i<buttons.length;i++){
-        buttons[i].style.color=buttons[i].classList.contains('filled')?'#fff':(i<hoverRating?'#aaa':'#555');
+        buttons[i].style.color=buttons[i].classList.contains('filled')?'#E85301':(i<hoverRating?'#aaa':'#555');
       }
     });
 
@@ -766,7 +766,7 @@ function openAlbum(index){
       );
 
       for(var i=0;i<buttons.length;i++){
-        buttons[i].style.color=buttons[i].classList.contains('filled')?'#fff':'#555';
+        buttons[i].style.color=buttons[i].classList.contains('filled')?'#E85301':'#555';
       }
     });
   }
@@ -895,7 +895,7 @@ async function saveTrackRating(trackId,rating){
   }
 
   for(var i=0;i<trackButtons.length;i++){
-    trackButtons[i].style.color=trackButtons[i].classList.contains('filled')?'#fff':'#555';
+    trackButtons[i].style.color=trackButtons[i].classList.contains('filled')?'#E85301':'#555';
   }
 
   for(var r=0;r<records.length;r++){
@@ -1469,14 +1469,12 @@ function enableGridSorting(){
 
       clearTimeout(touchTimer);
 
-      // Keep receiving pointer events even when the finger moves off the card.
-      if(event.pointerType==='touch'&&this.setPointerCapture){
+      // Keep receiving pointer events even when the pointer moves off the card.
+      if(this.setPointerCapture){
         try{this.setPointerCapture(event.pointerId);}catch(error){}
       }
 
-      if(event.pointerType==='mouse'||event.pointerType==='pen'){
-        startPointerDrag(this,event);
-      }else{
+      if(event.pointerType!=='mouse'&&event.pointerType!=='pen'){
         touchTimer=setTimeout(function(){
           if(pointerId!==null&&!touchDragging){
             startPointerDrag(pointerCard,event);
@@ -1491,6 +1489,15 @@ function enableGridSorting(){
       if(!touchDragging){
         var movedX=Math.abs(event.clientX-pointerStartX);
         var movedY=Math.abs(event.clientY-pointerStartY);
+
+        if(event.pointerType==='mouse'||event.pointerType==='pen'){
+          if(movedX>6||movedY>6){
+            startPointerDrag(this,event);
+            updatePointerDrag(event);
+          }
+
+          return;
+        }
 
         if(!touchScrolling&&(movedX>8||movedY>8)){
           clearTimeout(touchTimer);

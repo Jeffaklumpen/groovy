@@ -19,7 +19,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>Groovy – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=5">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=16">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
 </head>
 
@@ -54,6 +54,25 @@
     <div id="viewMenu" class="menu-panel">
       <button type="button" data-view="grid" class="active">Grid</button>
       <button type="button" data-view="carousel">Carousel</button>
+    </div>
+  </div>
+</div>
+
+<div id="authBox">
+  <button id="profileButton" type="button" aria-label="Profil"><span id="profileImage"></span></button>
+  <div id="profileMenu">
+    <div class="profile-header"><button id="profileAvatarButton" class="profile-avatar" type="button" aria-label="Byt profilbild"><span id="profileImageMenu"></span></button><span id="profileUsername"></span></div>
+    <input id="profileImageInput" type="file" accept="image/*" style="display:none;">
+    <button id="searchUserButton" class="menu-button" type="button">Search User</button>
+    <button id="myCollectionButton" class="menu-button" type="button">My Collection</button>
+    <div class="profile-divider"></div><button id="logoutButton" type="button">Logout</button>
+  </div>
+  <div id="loginPanel">
+    <div class="login-modal">
+      <button id="loginClose" type="button" aria-label="Stäng">×</button><div class="login-title" id="authTitle">Login</div>
+      <div id="registerFields" style="display:none;"><input id="registerUsername" type="text" placeholder="Användarnamn" autocomplete="username"></div>
+      <input id="loginEmail" type="email" placeholder="E-post" autocomplete="email"><input id="loginPassword" type="password" placeholder="Lösenord" autocomplete="current-password">
+      <button id="loginButton" type="button">Login</button><button id="registerButton" type="button" style="display:none;">Create account</button><button id="authSwitchButton" type="button">Create account</button>
     </div>
   </div>
 </div>
@@ -149,7 +168,7 @@
   const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 </script>
 
-<div id="authBox">
+<div id="legacyAuthBox" aria-hidden="true">
 
     <button id="profileButton" type="button" aria-label="Profil">
         <span id="profileImage"></span>
@@ -226,7 +245,7 @@
     </div>
 </div>
 
-<script src="/groovy/js/route-state.js?v=5"></script>
-<script src="/groovy/js/app.js?v=5"></script>
+<script src="/groovy/js/route-state.js?v=11"></script>
+<script src="/groovy/js/app.js?v=11"></script>
 </body>
 </html>

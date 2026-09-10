@@ -1,5 +1,15 @@
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;min-height:100%;background:#0b0b0c;color:#f5f5f5}
+html{scroll-behavior:smooth;scrollbar-color:#555 #171719}
+*{scrollbar-width:thin;scrollbar-color:#a33b08 #171719}
+html::-webkit-scrollbar,body::-webkit-scrollbar{width:10px;height:10px}
+html::-webkit-scrollbar-track,body::-webkit-scrollbar-track{background:#171719}
+html::-webkit-scrollbar-thumb,body::-webkit-scrollbar-thumb{background:#555;border:2px solid #171719;border-radius:10px}
+html::-webkit-scrollbar-thumb:hover,body::-webkit-scrollbar-thumb:hover{background:#777}
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-track{background:#171719}
+*::-webkit-scrollbar-thumb{background:#a33b08;border:2px solid #171719;border-radius:10px}
+*::-webkit-scrollbar-thumb:hover{background:#E85301}
 body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;padding:28px;overflow-x:hidden}
 
 .header{max-width:1400px;margin:0 auto 32px;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:20px;position:relative}
@@ -12,7 +22,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .viewed-user-avatar{width:30px;height:30px;border-radius:50%;background-size:cover;background-position:center;flex-shrink:0}
 .viewed-user-name{font-size:14px;font-weight:500;line-height:30px}
 
-.header-controls{position:absolute;right:0;top:0;display:flex;align-items:center;gap:7px;z-index:20}
+.header-controls{position:absolute;left:300px;right:62px;top:0;display:flex;align-items:center;justify-content:flex-end;gap:7px;z-index:20;flex-wrap:wrap;row-gap:8px}
 .add-album-button{border:0;background:#E85301;color:#fff;padding:8px 12px;border-radius:7px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
 .add-album-button:hover{background:#F06A24}
 .add-album-button:active{background:#C94300;transform:scale(.97)}
@@ -36,7 +46,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .grid .record:active{-webkit-transform:scale(.985);transform:scale(.985)}
 
 .number{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:13px;font-weight:bold;letter-spacing:1px}
-.cover-rating{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:15px;letter-spacing:2px;color:#fff;line-height:1}
+.cover-rating{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:15px;letter-spacing:2px;color:#E85301;line-height:1}
 .cover-rating .empty{color:#555}
 
 .info{padding-top:12px;min-width:0}
@@ -58,7 +68,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .carousel-card .album{font-size:15px}
 .carousel-card .year{font-size:13px}
 
-.album-overlay{position:fixed;z-index:1000;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0);display:block;padding:28px;overflow:auto;-webkit-overflow-scrolling:touch;visibility:hidden;opacity:0;-webkit-transition:opacity .28s ease,visibility 0s linear .32s;transition:opacity .28s ease,visibility 0s linear .32s}
+.album-overlay{position:fixed;z-index:1000;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0);display:block;padding:28px;overflow:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;visibility:hidden;opacity:0;-webkit-transition:opacity .28s ease,visibility 0s linear .32s;transition:opacity .28s ease,visibility 0s linear .32s}
 .album-overlay.visible{visibility:visible;opacity:1;background:rgba(0,0,0,.90);-webkit-transition:opacity .28s ease,visibility 0s linear 0s;transition:opacity .28s ease,visibility 0s linear 0s}
 
 .album-detail{position:relative;width:100%;max-width:1180px;min-height:620px;margin:0 auto;background:#111113;box-shadow:0 25px 70px rgba(0,0,0,.8);overflow:hidden;-webkit-transform:scale(.88);transform:scale(.88);opacity:0;-webkit-transition:-webkit-transform .32s cubic-bezier(.2,.8,.2,1),opacity .22s ease;transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .22s ease}
@@ -74,10 +84,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .detail-album{font-size:22px;color:#ddd;line-height:1.2}
 .detail-meta{margin-top:16px;color:#aaa;font-size:13px;letter-spacing:.7px}
 .detail-meta span{display:inline-block;margin-right:17px}
-.detail-rating{margin-top:13px;font-size:22px;letter-spacing:3px;color:#fff}
+.detail-rating{margin-top:13px;font-size:22px;letter-spacing:3px;color:#E85301}
 .detail-rating .empty{color:#555}
 
-.album-tracks{position:absolute;z-index:4;right:0;top:0;bottom:0;width:calc(100% - 620px);padding:55px 38px 35px;background:rgba(12,12,14,.97);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;-webkit-transform:translateZ(0);transform:translateZ(0)}
+.album-tracks{position:absolute;z-index:4;right:0;top:0;bottom:0;width:calc(100% - 620px);padding:55px 38px 35px;background:rgba(12,12,14,.97);overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;-webkit-transform:translateZ(0);transform:translateZ(0)}
 .tracks-title{font-size:12px;color:#777;letter-spacing:2px;margin-bottom:22px;text-transform:uppercase}
 .track-side{margin-bottom:24px}
 .track-side:last-child{margin-bottom:0}
@@ -88,7 +98,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .tracks-list li:before{position:absolute;left:0;top:6px;width:21px;color:#555;counter-increment:track;content:counter(track,decimal-leading-zero);font-size:10px}
 .track-rating{position:absolute;right:0;top:6px;display:flex;gap:1px;white-space:nowrap}
 .track-rating-star{border:0;background:none;padding:0;margin:0;color:#555;font-size:13px;line-height:1;cursor:pointer;touch-action:manipulation}
-.track-rating-star.filled{color:#fff}
+.track-rating-star.filled{color:#E85301}
 .track-rating-star.empty{color:#555}
 .track-rating-star:hover{color:#fff}
 .track-title{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:75px}
@@ -115,11 +125,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .mb-add-button:hover{background:#F06A24}
 .mb-added{background:#555;color:#ccc;cursor:default}
 
-@media screen and (min-width:601px) and (max-width:1100px){
+@media screen and (min-width:601px) and (max-width:1000px){
 body{padding:20px}
 .header{margin-bottom:24px}
 .title{font-size:28px;padding-right:0}
-.header-controls{position:relative;top:auto;right:auto;margin-top:14px;justify-content:flex-end;flex-wrap:wrap}
+.header-controls{position:relative;left:auto;top:auto;right:auto;margin-top:14px;padding-top:2px;justify-content:flex-end;flex-wrap:wrap;row-gap:8px}
 .grid .record{width:24%;margin-right:1.3333%;margin-bottom:30px}
 .grid .artist{font-size:15px}
 .grid .album{font-size:13px}
@@ -168,7 +178,7 @@ body{padding:15px}
 .add-album-box{padding:20px;max-height:90vh}
 .add-album-search{display:flex;margin-bottom:8px}
 .add-album-search input{width:100%}
-#albumSearchResults{max-height:55vh;overflow-y:auto}
+#albumSearchResults{max-height:55vh;overflow-y:auto;scroll-behavior:smooth}
 .add-album-search button{padding:11px}
 .mb-result{gap:10px;padding:10px}
 .mb-add-button{padding:8px 11px;font-size:12px}
@@ -226,7 +236,8 @@ body{padding:15px}
 .menu-panel button{padding:7px 8px;font-size:10px}
 }
 
-#authBox{position:absolute;top:10px;right:10px;z-index:900}
+#authBox{position:absolute;top:0;right:10px;z-index:900}
+#legacyAuthBox{display:none}
 #profileButton{width:36px;height:36px;padding:0;border:1px solid #3a3a3d;border-radius:50%;background:#242426;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 #profileButton:hover{background:#303033}
 #profileImage{width:100%;height:100%;display:block;border-radius:50%}
@@ -281,6 +292,10 @@ body{padding:15px}
 @media screen and (min-width:601px){
 .grid .record:hover{transform:scale(1.015);z-index:2}
 .cover-wrapper{transition:transform .18s ease;transform-style:preserve-3d;will-change:transform}
+}
+
+@media (prefers-reduced-motion:reduce){
+html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 }
 
 .user-search-result{display:flex;align-items:center;gap:10px}
