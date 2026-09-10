@@ -1680,7 +1680,9 @@ function scheduleImageLoad(){
 
 window.onscroll=scheduleImageLoad;
 
-loadCollection();
+if(!/^\/groovy\/user\/[^\/]+\/?$/.test(window.location.pathname)){
+  loadCollection();
+}
 
 })();
 
