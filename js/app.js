@@ -82,6 +82,8 @@ async function updateAuthUI(){
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
 
+    console.log('Inloggad användare:',user&&user.id);
+
     if(user){
         profileButton.style.display='flex';
         profileMenu.classList.remove('open');
