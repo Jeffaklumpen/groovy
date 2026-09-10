@@ -13,7 +13,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .viewed-user-name{font-size:14px;font-weight:500;line-height:30px}
 
 .header-controls{position:absolute;right:0;top:0;display:flex;align-items:center;gap:7px;z-index:20}
-.add-album-button{border:0;background:#22c55e;color:#fff;padding:8px 12px;border-radius:7px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.add-album-button{border:0;background:#E85301;color:#fff;padding:8px 12px;border-radius:7px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
 .add-album-button:hover{background:#16a34a}
 .add-album-button:active{background:#15803d;transform:scale(.97)}
 .menu-dropdown{position:relative}
