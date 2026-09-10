@@ -6,6 +6,11 @@ const loginEmail=document.getElementById('loginEmail');
 const loginPassword=document.getElementById('loginPassword');
 const loginButton=document.getElementById('loginButton');
 const logoutButton=document.getElementById('logoutButton');
+const loginClose=document.getElementById('loginClose');
+
+loginClose.addEventListener('click',function(){
+    loginPanel.classList.remove('open');
+});
 
 profileButton.addEventListener('click',async function(event){
     event.stopPropagation();
