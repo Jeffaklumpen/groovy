@@ -359,7 +359,7 @@ updateAuthUI();
 (function(){
 
 window.records = [];
-var viewedUserId=null;
+window.viewedUserId=null;
 
 window.loadCollection=async function(){
   viewedUserId=null;
@@ -771,6 +771,7 @@ function openAlbum(index){
 }
 
 async function saveAlbumRating(index,rating){
+  if(viewedUserId!==null)return;  
   var record=records[index];
 
   if(!record)return;
@@ -846,6 +847,7 @@ async function saveAlbumRating(index,rating){
 }
 
 async function saveTrackRating(trackId,rating){
+  if(viewedUserId!==null)return;  
   var {data:{user},error:userError}=await supabaseClient.auth.getUser();
 
   if(userError||!user){
@@ -918,6 +920,7 @@ function closeAlbum(){
 }
 
 async function deleteCollectionAlbum(index){
+  if(viewedUserId!==null)return;  
   var record=records[index];
 
   if(!record)return;
@@ -958,6 +961,8 @@ function attachAlbumClicks(){
       :null;
 
     if(deleteButton){
+      if(viewedUserId!==null)return;
+        
       event.preventDefault();
       event.stopPropagation();
 
@@ -995,7 +1000,16 @@ function attachAlbumClicks(){
 }
 
 function enableGridSorting(){
-  if(view!=='grid'||selectedRating!=='all')return;
+    if(view!=='grid'||selectedRating!=='all')return;
+    
+    if(viewedUserId!==null){
+      collection.ondragstart=null;
+      collection.ondragover=null;
+      collection.ondrop=null;
+      collection.ondragend=null;
+      collection.oncontextmenu=null;
+      return;
+    }
 
   var dragged=null;
   var touchTimer=null;
@@ -1151,10 +1165,15 @@ function enableGridSorting(){
     return saveGridOrder();
   }
 
-  collection.ondragstart=function(event){
-    var record=event.target.closest('.record');
-
-    if(!record)return;
+    collection.ondragstart=function(event){
+      if(viewedUserId!==null){
+        event.preventDefault();
+        return;
+      }
+    
+      var record=event.target.closest('.record');
+    
+      if(!record)return;
 
     dragged=record;
     record.classList.add('dragging');
@@ -1166,6 +1185,7 @@ function enableGridSorting(){
   };
 
   collection.ondragover=function(event){
+    if(viewedUserId!==null)return;
     if(!dragged)return;
 
     event.preventDefault();
@@ -1178,6 +1198,7 @@ function enableGridSorting(){
   };
 
   collection.ondrop=async function(event){
+    if(viewedUserId!==null)return;  
     if(!dragged)return;
 
     event.preventDefault();
@@ -1751,8 +1772,11 @@ searchUserModal.addEventListener('click',function(event){
 const myCollectionButton=document.getElementById('myCollectionButton');
 
 myCollectionButton.addEventListener('click',async function(){
-    document.getElementById('viewedUserHeader').style.display='none';
+    deleteMode=false;
+    deleteModeButton.classList.remove('active');
+    document.body.classList.remove('delete-mode-active');
 
+    document.getElementById('viewedUserHeader').style.display='none';
     await window.loadCollection();
 });
 
@@ -1773,6 +1797,7 @@ deleteModeButton.addEventListener('click',function(event){
 let searchTimer=null;
 
 addAlbumButton.addEventListener('click',async function(event){
+    if(viewedUserId!==null)return;
     event.preventDefault();
     event.stopPropagation();
 
@@ -1832,6 +1857,10 @@ let musicBrainzSearchNumber=0;
 
 async function loadOtherUserCollection(userId){
     viewedUserId=userId;
+
+    deleteMode=false;
+    deleteModeButton.classList.remove('active');
+    document.body.classList.remove('delete-mode-active');
     
     const {data:profile,error:profileError}=await supabaseClient
         .from('profiles')
