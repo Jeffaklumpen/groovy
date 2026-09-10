@@ -2416,46 +2416,57 @@ async function searchDiscogs(query){
 
 async function searchAppleAlbumArtwork(artist,albumTitle){
     try{
-        const query=encodeURIComponent(artist);
+        const artistQuery=encodeURIComponent(artist);
 
-        const response=await fetch(
-            'https://itunes.apple.com/search?term='+query+'&entity=album&attribute=artistTerm&limit=50'
+        const artistResponse=await fetch(
+            'https://itunes.apple.com/search?term='+artistQuery+'&entity=musicArtist&limit=10'
         );
 
-        if(!response.ok){
-            throw new Error('Apple artwork search failed');
+        if(!artistResponse.ok){
+            throw new Error('Apple artist search failed');
         }
 
-        const data=await response.json();
-        console.log('Apple artwork matches:',data.results.map(function(item){
-            return {
-                artist:item.artistName,
-                album:item.collectionName
-            };
-        }));
+        const artistData=await artistResponse.json();
 
-        if(!data.results||!data.results.length){
+        if(!artistData.results||!artistData.results.length){
             return '';
         }
 
-        const exactResult=data.results.find(function(item){
+        const artistResult=artistData.results.find(function(item){
+            return item.artistName&&
+                item.artistName.toLowerCase()===artist.toLowerCase();
+        });
+
+        if(!artistResult||!artistResult.artistId){
+            return '';
+        }
+
+        const lookupResponse=await fetch(
+            'https://itunes.apple.com/lookup?id='+artistResult.artistId+'&entity=album&limit=200'
+        );
+
+        if(!lookupResponse.ok){
+            throw new Error('Apple album lookup failed');
+        }
+
+        const lookupData=await lookupResponse.json();
+
+        if(!lookupData.results||!lookupData.results.length){
+            return '';
+        }
+
+        const albumResult=lookupData.results.find(function(item){
             return item.artistName&&
                 item.collectionName&&
                 item.artistName.toLowerCase()===artist.toLowerCase()&&
                 item.collectionName.toLowerCase()===albumTitle.toLowerCase();
         });
 
-        const result=exactResult;
-        
-        if(!result){
+        if(!albumResult||!albumResult.artworkUrl100){
             return '';
         }
 
-        if(!result.artworkUrl100){
-            return '';
-        }
-
-        return result.artworkUrl100.replace('100x100bb','1200x1200bb');
+        return albumResult.artworkUrl100.replace('100x100bb','1200x1200bb');
 
     }catch(error){
         console.error('Apple artwork error:',error);
