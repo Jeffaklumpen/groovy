@@ -219,6 +219,7 @@ var startX=0;
 var startY=0;
 var startScroll=0;
 var scrollTimer=null;
+var suppressAlbumClick=false;
 
 function esc(value){
   return String(value)
@@ -433,7 +434,6 @@ function enableGridSorting(){
   var dragged=null;
   var touchTimer=null;
   var touchDragging=false;
-  var suppressAlbumClick=false;
   var touchX=0;
   var touchY=0;
   var autoScrollFrame=null;
