@@ -431,14 +431,90 @@ function enableGridSorting(){
   if(view!=='grid'||selectedRating!=='all')return;
 
   var dragged=null;
+  var placeholder=null;
   var touchTimer=null;
   var touchDragging=false;
   var suppressAlbumClick=false;
+  var dragOffsetX=0;
+  var dragOffsetY=0;
+  var startX=0;
+  var startY=0;
+  var touchMoved=false;
 
   collection.oncontextmenu=function(event){
     event.preventDefault();
     return false;
   };
+
+  function createPlaceholder(card){
+    placeholder=document.createElement('div');
+    placeholder.className='record drag-placeholder';
+    placeholder.style.height=card.offsetHeight+'px';
+    placeholder.style.width=card.offsetWidth+'px';
+  }
+
+  function liftCard(card,x,y){
+    var rect=card.getBoundingClientRect();
+
+    dragOffsetX=x-rect.left;
+    dragOffsetY=y-rect.top;
+
+    createPlaceholder(card);
+
+    card.parentNode.insertBefore(placeholder,card);
+
+    card.style.width=rect.width+'px';
+    card.style.height=rect.height+'px';
+    card.style.position='fixed';
+    card.style.left=rect.left+'px';
+    card.style.top=rect.top+'px';
+    card.style.margin='0';
+    card.style.zIndex='9999';
+    card.style.pointerEvents='none';
+    card.style.transition='transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease';
+    card.style.transform='scale(1.06) rotate(2deg)';
+    card.style.webkitTransform='scale(1.06) rotate(2deg)';
+    card.style.filter='brightness(1.08)';
+    card.style.boxShadow='0 20px 45px rgba(0,0,0,.55)';
+  }
+
+  function moveCard(x,y){
+    if(!dragged)return;
+
+    dragged.style.left=(x-dragOffsetX)+'px';
+    dragged.style.top=(y-dragOffsetY)+'px';
+
+    var target=document.elementFromPoint(x,y);
+
+    if(!target)return;
+
+    var card=target.closest
+      ?target.closest('.record')
+      :null;
+
+    if(!card||card===dragged||card===placeholder)return;
+
+    var rect=card.getBoundingClientRect();
+    var after=y>rect.top+rect.height/2;
+
+    var oldPlaceholder=placeholder;
+
+    if(after){
+      if(card.nextSibling!==placeholder){
+        animateCards(function(){
+          card.parentNode.insertBefore(placeholder,card.nextSibling);
+        });
+      }
+    }else{
+      if(card!==placeholder.nextSibling){
+        animateCards(function(){
+          card.parentNode.insertBefore(placeholder,card);
+        });
+      }
+    }
+
+    if(oldPlaceholder!==placeholder)return;
+  }
 
   function animateCards(moveFunction){
     var cards=collection.querySelectorAll('.record');
@@ -486,34 +562,36 @@ function enableGridSorting(){
     });
   }
 
-  function moveDragged(target,pointerX,pointerY){
-    if(!dragged||!target||target===dragged)return;
+  function startDrag(card,x,y){
+    if(dragged)return;
 
-    var rect=target.getBoundingClientRect();
-    var after;
+    dragged=card;
+    touchDragging=true;
 
-    if(pointerX<rect.left||pointerX>rect.right){
-      after=pointerX>rect.left+rect.width/2;
-    }else{
-      after=pointerY>rect.top+rect.height/2;
-    }
-
-    if(after){
-      if(target.nextSibling!==dragged){
-        animateCards(function(){
-          target.parentNode.insertBefore(dragged,target.nextSibling);
-        });
-      }
-    }else{
-      if(target!==dragged.nextSibling){
-        animateCards(function(){
-          target.parentNode.insertBefore(dragged,target);
-        });
-      }
-    }
+    liftCard(card,x,y);
   }
 
-  function finishDrag(){
+  async function finishDrag(){
+    if(!dragged)return;
+
+    if(placeholder&&placeholder.parentNode){
+      placeholder.parentNode.insertBefore(dragged,placeholder);
+    }
+
+    dragged.style.position='';
+    dragged.style.left='';
+    dragged.style.top='';
+    dragged.style.width='';
+    dragged.style.height='';
+    dragged.style.margin='';
+    dragged.style.zIndex='';
+    dragged.style.pointerEvents='';
+    dragged.style.transition='transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease';
+    dragged.style.transform='scale(1) rotate(0deg)';
+    dragged.style.webkitTransform='scale(1) rotate(0deg)';
+    dragged.style.filter='';
+    dragged.style.boxShadow='';
+
     var orderedCards=collection.querySelectorAll('.record');
     var newRecords=[];
 
@@ -536,55 +614,81 @@ function enableGridSorting(){
 
     records=newRecords;
 
-    return saveGridOrder();
+    if(placeholder&&placeholder.parentNode){
+      placeholder.parentNode.removeChild(placeholder);
+    }
+
+    placeholder=null;
+
+    await new Promise(function(resolve){
+      setTimeout(resolve,220);
+    });
+
+    await saveGridOrder();
+
+    dragged=null;
+    touchDragging=false;
+  }
+
+  function cancelDrag(){
+    if(!dragged)return;
+
+    if(placeholder&&placeholder.parentNode){
+      placeholder.parentNode.insertBefore(dragged,placeholder);
+    }
+
+    dragged.style.position='';
+    dragged.style.left='';
+    dragged.style.top='';
+    dragged.style.width='';
+    dragged.style.height='';
+    dragged.style.margin='';
+    dragged.style.zIndex='';
+    dragged.style.pointerEvents='';
+    dragged.style.transition='';
+    dragged.style.transform='';
+    dragged.style.webkitTransform='';
+    dragged.style.filter='';
+    dragged.style.boxShadow='';
+
+    if(placeholder&&placeholder.parentNode){
+      placeholder.parentNode.removeChild(placeholder);
+    }
+
+    placeholder=null;
+    dragged=null;
+    touchDragging=false;
   }
 
   collection.ondragstart=function(event){
-    var record=event.target.closest('.record');
-
-    if(!record)return;
-
-    dragged=record;
-    record.classList.add('dragging');
-
-    if(event.dataTransfer){
-      event.dataTransfer.effectAllowed='move';
-      event.dataTransfer.setData('text/plain',record.getAttribute('data-index'));
-    }
+    event.preventDefault();
+    return false;
   };
 
   collection.ondragover=function(event){
-    if(!dragged)return;
-
     event.preventDefault();
-
-    var target=event.target.closest('.record');
-
-    if(!target||target===dragged)return;
-
-    moveDragged(target,event.clientX,event.clientY);
   };
 
-  collection.ondrop=async function(event){
-    if(!dragged)return;
-
+  collection.ondrop=function(event){
     event.preventDefault();
+  };
+
+  document.onmousemove=function(event){
+    if(!dragged||touchDragging===false)return;
+
+    moveCard(event.clientX,event.clientY);
+  };
+
+  document.onmouseup=async function(){
+    if(!dragged||touchDragging===false)return;
+
+    suppressAlbumClick=true;
 
     await finishDrag();
 
-    if(dragged){
-      dragged.classList.remove('dragging');
-    }
-
-    dragged=null;
-  };
-
-  collection.ondragend=function(){
-    if(dragged){
-      dragged.classList.remove('dragging');
-    }
-
-    dragged=null;
+    setTimeout(function(){
+      suppressAlbumClick=false;
+    },300);
   };
 
   var cards=collection.querySelectorAll('.record');
@@ -594,31 +698,38 @@ function enableGridSorting(){
       if(event.touches.length!==1)return;
 
       var card=this;
+      var touch=event.touches[0];
+
+      startX=touch.clientX;
+      startY=touch.clientY;
+      touchMoved=false;
+
+      clearTimeout(touchTimer);
 
       touchTimer=setTimeout(function(){
-        dragged=card;
-        touchDragging=true;
-        card.classList.add('dragging');
+        if(!touchMoved){
+          startDrag(card,startX,startY);
+        }
       },350);
     };
 
     cards[i].ontouchmove=function(event){
-      if(!touchDragging||!dragged)return;
+      if(event.touches.length!==1)return;
+
+      var touch=event.touches[0];
+
+      if(!touchDragging){
+        if(Math.abs(touch.clientX-startX)>8||Math.abs(touch.clientY-startY)>8){
+          touchMoved=true;
+          clearTimeout(touchTimer);
+        }
+
+        return;
+      }
 
       event.preventDefault();
 
-      var touch=event.touches[0];
-      var target=document.elementFromPoint(touch.clientX,touch.clientY);
-
-      if(!target)return;
-
-      var card=target.closest
-        ?target.closest('.record')
-        :null;
-
-      if(!card||card===dragged)return;
-
-      moveDragged(card,touch.clientX,touch.clientY);
+      moveCard(touch.clientX,touch.clientY);
     };
 
     cards[i].ontouchend=async function(){
@@ -633,13 +744,6 @@ function enableGridSorting(){
 
       await finishDrag();
 
-      if(dragged){
-        dragged.classList.remove('dragging');
-      }
-
-      dragged=null;
-      touchDragging=false;
-
       setTimeout(function(){
         suppressAlbumClick=false;
       },300);
@@ -647,15 +751,11 @@ function enableGridSorting(){
 
     cards[i].ontouchcancel=function(){
       clearTimeout(touchTimer);
-
-      if(dragged){
-        dragged.classList.remove('dragging');
-      }
-
-      dragged=null;
-      touchDragging=false;
+      cancelDrag();
     };
   }
+
+  collection._suppressAlbumClick=suppressAlbumClick;
 }
 
 async function saveGridOrder(){
