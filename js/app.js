@@ -1333,7 +1333,7 @@ function addCoverTilt(){
       var x=(event.clientX-rect.left)/rect.width-.5;
       var y=(event.clientY-rect.top)/rect.height-.5;
 
-      cover.style.transform='rotateY('+(x*60)+'deg)';
+      cover.style.transform='rotateX('+(-y*60)+'deg)';
 console.log('X:',x,'TRANSFORM:',cover.style.transform);
     });
 
