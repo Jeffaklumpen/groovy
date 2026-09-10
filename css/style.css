@@ -276,6 +276,7 @@ body{padding:15px}
 .album-rating-star.hover-filled{opacity:1}
 
 @media screen and (min-width:601px){
+.grid .record:hover{transform:scale(1.015);z-index:2}
 .cover-wrapper{transition:transform .18s ease;transform-style:preserve-3d;will-change:transform}
 }
 
