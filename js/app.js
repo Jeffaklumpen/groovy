@@ -116,6 +116,12 @@ profileImageInput.addEventListener('change',async function(){
         const extension=file.name.split('.').pop().toLowerCase();
         const filePath=user.id+'/avatar.'+extension;
 
+console.log('Storage upload:',{
+    userId:user.id,
+    filePath:filePath,
+    fileType:file.type
+});
+
         const {error:uploadError}=await supabaseClient
             .storage
             .from('profile-images')
