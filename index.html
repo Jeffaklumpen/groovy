@@ -130,13 +130,28 @@
     
             <button id="loginClose" type="button" aria-label="Stäng">×</button>
     
-            <div class="login-title">Logga in</div>
+            <div class="login-title" id="authTitle">Logga in</div>
     
-            <input id="loginEmail" type="email" placeholder="E-post">
-            <input id="loginPassword" type="password" placeholder="Lösenord">
+            <div id="registerFields" style="display:none;">
+    
+                <input id="registerUsername" type="text" placeholder="Användarnamn" autocomplete="username">
+    
+            </div>
+    
+            <input id="loginEmail" type="email" placeholder="E-post" autocomplete="email">
+    
+            <input id="loginPassword" type="password" placeholder="Lösenord" autocomplete="current-password">
     
             <button id="loginButton" type="button">
                 Logga in
+            </button>
+    
+            <button id="registerButton" type="button" style="display:none;">
+                Skapa konto
+            </button>
+    
+            <button id="authSwitchButton" type="button">
+                Skapa konto
             </button>
     
         </div>
