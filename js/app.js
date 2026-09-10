@@ -1,5 +1,3 @@
-console.log('NY APP.JS KÖRS');
-
 const profileButton=document.getElementById('profileButton');
 const profileMenu=document.getElementById('profileMenu');
 const profileUsername=document.getElementById('profileUsername');
@@ -1330,6 +1328,7 @@ async function saveGridOrder(){
 
 function addCoverTilt(){
   console.log('TILT-FUNKTION KÖRS');
+  console.log('TILT MEDIA:',window.matchMedia('(hover:hover) and (pointer:fine)').matches);
   if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches)return;
 
   document.querySelectorAll('.cover-wrapper').forEach(function(cover){
