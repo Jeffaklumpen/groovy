@@ -1,0 +1,3014 @@
+const profileButton=document.getElementById('profileButton');
+const profileMenu=document.getElementById('profileMenu');
+const profileUsername=document.getElementById('profileUsername');
+const profileAvatarButton=document.getElementById('profileAvatarButton');
+const profileImageInput=document.getElementById('profileImageInput');
+const profileImageMenu=document.getElementById('profileImageMenu');
+const profileImage=document.getElementById('profileImage');
+const loginPanel=document.getElementById('loginPanel');
+const loginEmail=document.getElementById('loginEmail');
+const loginPassword=document.getElementById('loginPassword');
+const loginButton=document.getElementById('loginButton');
+const logoutButton=document.getElementById('logoutButton');
+const loginClose=document.getElementById('loginClose');
+
+const authTitle=document.getElementById('authTitle');
+const registerFields=document.getElementById('registerFields');
+const registerUsername=document.getElementById('registerUsername');
+const registerButton=document.getElementById('registerButton');
+const authSwitchButton=document.getElementById('authSwitchButton');
+
+let registerMode=false;
+
+loginClose.addEventListener('click',function(){
+    loginPanel.classList.remove('open');
+});
+
+profileButton.addEventListener('click',async function(event){
+    event.stopPropagation();
+
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
+
+    if(user){
+        loginPanel.classList.remove('open');
+        profileMenu.classList.toggle('open');
+    }else{
+        profileMenu.classList.remove('open');
+        loginPanel.classList.toggle('open');
+
+        if(loginPanel.classList.contains('open')){
+            loginEmail.focus();
+        }
+    }
+});
+
+loginPanel.addEventListener('click',function(event){
+    event.stopPropagation();
+});
+
+profileMenu.addEventListener('click',function(event){
+    event.stopPropagation();
+});
+
+document.addEventListener('click',function(){
+    profileMenu.classList.remove('open');
+    loginPanel.classList.remove('open');
+});
+
+authSwitchButton.addEventListener('click',function(){
+    registerMode=!registerMode;
+
+    if(registerMode){
+        authTitle.textContent='Skapa konto';
+        registerFields.style.display='block';
+        loginButton.style.display='none';
+        registerButton.style.display='block';
+        authSwitchButton.textContent='Har redan konto';
+        loginPassword.setAttribute('autocomplete','new-password');
+        registerUsername.focus();
+    }else{
+        authTitle.textContent='Logga in';
+        registerFields.style.display='none';
+        loginButton.style.display='block';
+        registerButton.style.display='none';
+        authSwitchButton.textContent='Skapa konto';
+        loginPassword.setAttribute('autocomplete','current-password');
+        loginEmail.focus();
+    }
+});
+
+async function updateAuthUI(){
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
+
+    if(user){
+        profileButton.style.display='flex';
+        profileMenu.classList.remove('open');
+        loginPanel.classList.remove('open');
+
+        const {data:profile,error:profileError}=await supabaseClient
+            .from('profiles')
+            .select('username,avatar_url')
+            .eq('id',user.id)
+            .maybeSingle();
+
+        if(profileError){
+            console.error('Kunde inte hämta profil:',profileError);
+        }
+
+        const username=
+            profile&&profile.username
+                ?profile.username
+                :user.email
+                    ?user.email.split('@')[0]
+                    :'användare';
+
+        profileUsername.textContent=username;
+
+        if(profile&&profile.avatar_url){
+            profileImage.style.backgroundImage='url("'+profile.avatar_url+'")';
+            profileImage.style.backgroundSize='cover';
+            profileImage.style.backgroundPosition='center';
+
+            profileImageMenu.style.backgroundImage='url("'+profile.avatar_url+'")';
+            profileImageMenu.style.backgroundSize='cover';
+            profileImageMenu.style.backgroundPosition='center';
+        }else{
+            profileImage.style.backgroundImage='url("avatar_placeholder.png")';
+            profileImage.style.backgroundSize='cover';
+            profileImage.style.backgroundPosition='center';
+        
+            profileImageMenu.style.backgroundImage='url("avatar_placeholder.png")';
+            profileImageMenu.style.backgroundSize='cover';
+            profileImageMenu.style.backgroundPosition='center';
+        }
+
+        loginEmail.value='';
+        loginPassword.value='';
+        registerUsername.value='';
+    }else{
+        profileButton.style.display='flex';
+        profileMenu.classList.remove('open');
+        loginPanel.classList.remove('open');
+
+        profileImage.style.backgroundImage='url("avatar_placeholder.png")';
+        profileImage.style.backgroundSize='cover';
+        profileImage.style.backgroundPosition='center';
+        
+        profileImageMenu.style.backgroundImage='url("avatar_placeholder.png")';
+        profileImageMenu.style.backgroundSize='cover';
+        profileImageMenu.style.backgroundPosition='center';
+    }
+}
+
+profileAvatarButton.addEventListener('click',function(){
+    profileImageInput.click();
+});
+
+profileImageInput.addEventListener('change',async function(){
+    const file=profileImageInput.files[0];
+
+    if(!file)return;
+
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
+
+    if(!user){
+        alert('Du måste vara inloggad.');
+        return;
+    }
+
+    if(!file.type.startsWith('image/')){
+        alert('Välj en bildfil.');
+        profileImageInput.value='';
+        return;
+    }
+
+    if(file.size>5*1024*1024){
+        alert('Bilden får vara högst 5 MB.');
+        profileImageInput.value='';
+        return;
+    }
+
+    profileAvatarButton.disabled=true;
+
+    try{
+        const extension=file.name.split('.').pop().toLowerCase();
+        const filePath=user.id+'/avatar.'+extension;
+
+        const {error:uploadError}=await supabaseClient
+            .storage
+            .from('profile-images')
+            .upload(filePath,file,{
+                upsert:true,
+                contentType:file.type,
+                cacheControl:'3600'
+            });
+
+        if(uploadError)throw uploadError;
+
+        const {data:publicUrlData}=supabaseClient
+            .storage
+            .from('profile-images')
+            .getPublicUrl(filePath);
+
+        const avatarUrl=publicUrlData.publicUrl+'?t='+Date.now();
+
+        const {error:updateError}=await supabaseClient
+            .from('profiles')
+            .update({
+                avatar_url:avatarUrl
+            })
+            .eq('id',user.id)
+            .select('id,avatar_url');
+        
+        if(updateError)throw updateError;
+
+        profileImage.style.backgroundImage='url("'+avatarUrl+'")';
+        profileImage.style.backgroundSize='cover';
+        profileImage.style.backgroundPosition='center';
+        
+        profileImageMenu.style.backgroundImage='url("'+avatarUrl+'")';
+        profileImageMenu.style.backgroundSize='cover';
+        profileImageMenu.style.backgroundPosition='center';
+
+    }catch(error){
+        console.error('Profilbild kunde inte laddas upp:',error);
+        alert('Kunde inte ladda upp profilbilden.\n\n'+error.message);
+    }
+
+    profileAvatarButton.disabled=false;
+    profileImageInput.value='';
+});
+
+loginButton.addEventListener('click',async function(){
+    const email=loginEmail.value.trim();
+    const password=loginPassword.value;
+
+    if(!email||!password){
+        alert('Fyll i e-post och lösenord.');
+        return;
+    }
+
+    loginButton.disabled=true;
+    loginButton.textContent='Loggar in...';
+
+    const {data,error}=await supabaseClient.auth.signInWithPassword({
+        email:email,
+        password:password
+    });
+
+    if(error){
+        console.error('Login error:',error);
+        alert(error.message);
+        loginButton.disabled=false;
+        loginButton.textContent='Logga in';
+        return;
+    }
+
+    loginButton.disabled=false;
+    loginButton.textContent='Logga in';
+
+    await updateAuthUI();
+});
+
+registerButton.addEventListener('click',async function(){
+    const username=registerUsername.value.trim();
+    const email=loginEmail.value.trim();
+    const password=loginPassword.value;
+
+    if(!username||!email||!password){
+        alert('Fyll i användarnamn, e-post och lösenord.');
+        return;
+    }
+
+    if(username.length<3){
+        alert('Användarnamnet måste vara minst 3 tecken.');
+        return;
+    }
+
+    if(password.length<6){
+        alert('Lösenordet måste vara minst 6 tecken.');
+        return;
+    }
+
+    registerButton.disabled=true;
+    registerButton.textContent='Skapar konto...';
+
+    const {data,error}=await supabaseClient.auth.signUp({
+        email:email,
+        password:password,
+        options:{
+            data:{
+                username:username
+            }
+        }
+    });
+
+    if(error){
+        console.error('Registration error:',error);
+        alert(error.message);
+        registerButton.disabled=false;
+        registerButton.textContent='Skapa konto';
+        return;
+    }
+
+    if(data.session){
+        await supabaseClient
+            .from('profiles')
+            .insert({
+                id:data.user.id,
+                username:username
+            });
+
+        await updateAuthUI();
+    }else{
+        alert('Kontot är skapat. Kontrollera din e-post för att bekräfta kontot.');
+    }
+
+    registerButton.disabled=false;
+    registerButton.textContent='Skapa konto';
+});
+
+logoutButton.addEventListener('click',async function(){
+    const {error}=await supabaseClient.auth.signOut();
+
+    if(error){
+        console.error('Logout error:',error);
+        alert(error.message);
+        return;
+    }
+
+    profileMenu.classList.remove('open');
+
+    records=[];
+    collection.innerHTML='';
+
+    await updateAuthUI();
+});
+
+supabaseClient.auth.onAuthStateChange(function(){
+    setTimeout(function(){
+        renderCurrentRoute();
+    },0);
+});
+
+(function(){
+
+window.records = [];
+window.viewedUserId=null;
+window.loginRequiredForViewedCollection=false;
+window.profileNotFound=false;
+window.collectionLoadVersion=0;
+
+window.loadCollection=async function(){
+  var loadVersion=++window.collectionLoadVersion;
+  var path=window.location.pathname;
+
+  if(/^\/groovy\/user\/[^\/]+\/?$/.test(path)){
+    return;
+  }
+
+  viewedUserId=null;
+  window.loginRequiredForViewedCollection=false;
+  window.profileNotFound=false;
+  document.getElementById('viewedUserHeader').style.display='none';
+    
+  var {data:{session}}=await supabaseClient.auth.getSession();
+
+  if(!session||!session.user){
+    records=[];
+    buildGrid();
+    return;
+  }
+
+  var user=session.user;
+
+  var {data:collectionData,error:collectionError}=await supabaseClient
+    .from('collections')
+    .select(`
+      id,
+      collection_number,
+      sort_order,
+      albums(
+        id,
+        title,
+        release_year,
+        genre,
+        cover_url,
+        discogs_master_id,
+        artists(
+          id,
+          name
+        ),
+        tracks(
+          id,
+          disc_side,
+          track_number,
+          title
+        )
+      )
+    `)
+    .eq('user_id',user.id)
+    .order('sort_order',{ascending:true});
+
+    if(collectionError){
+        console.error('Kunde inte hämta samlingen:',collectionError);
+        return;
+    }
+    
+  var albumIds=collectionData.map(function(item){
+    return item.albums&&item.albums.id;
+  }).filter(Boolean);
+
+  var ratings={};
+
+  if(albumIds.length){
+    var {data:ratingData,error:ratingError}=await supabaseClient
+      .from('album_ratings')
+      .select('album_id,rating')
+      .eq('user_id',user.id)
+      .in('album_id',albumIds);
+
+    if(ratingError){
+      console.error('Kunde inte hämta albumratings:',ratingError);
+    }else{
+      ratingData.forEach(function(item){
+        ratings[item.album_id]=item.rating||0;
+      });
+    }
+  }
+
+  var trackIds=[];
+
+  collectionData.forEach(function(item){
+    if(item.albums&&Array.isArray(item.albums.tracks)){
+      item.albums.tracks.forEach(function(track){
+        if(track.id)trackIds.push(track.id);
+      });
+    }
+  });
+
+  var trackRatings={};
+
+  if(trackIds.length){
+    var {data:trackRatingData,error:trackRatingError}=await supabaseClient
+      .from('track_ratings')
+      .select('track_id,rating')
+      .eq('user_id',user.id)
+      .in('track_id',trackIds);
+
+    if(trackRatingError){
+      console.error('Kunde inte hämta låtratings:',trackRatingError);
+    }else{
+      trackRatingData.forEach(function(item){
+        trackRatings[item.track_id]=item.rating||0;
+      });
+    }
+  }
+
+  if(loadVersion!==window.collectionLoadVersion)return;
+
+  records=collectionData
+    .filter(function(item){
+      return item.albums;
+    })
+    .map(function(item,index){
+      var album=item.albums;
+      var artist=
+        album.artists&&album.artists.name
+          ?album.artists.name
+          :'Okänd artist';
+
+      var sides={
+        A:[],
+        B:[],
+        C:[],
+        D:[]
+      };
+
+      if(Array.isArray(album.tracks)){
+        album.tracks
+          .sort(function(a,b){
+            return (a.id||0)-(b.id||0);
+          })
+          .forEach(function(track){
+            var side=track.disc_side;
+
+            if(!sides[side])return;
+
+            sides[side].push({
+              id:track.id,
+              title:track.title||'Okänd låt',
+              rating:trackRatings[track.id]||0
+            });
+          });
+      }
+
+        return [
+          index+1,
+          artist,
+          album.title||'Okänd titel',
+          album.release_year||'',
+          album.genre||'',
+          ratings[album.id]||0,
+          album.cover_url||'',
+          sides,
+          album.id,
+          item.id,
+          album.discogs_master_id||''
+        ];
+    });
+
+  document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';
+  buildGrid();
+}
+
+var collection=document.getElementById('collection');
+var filterButton=document.getElementById('filterButton');
+var filterMenu=document.getElementById('filterMenu');
+var viewButton=document.getElementById('viewButton');
+var viewMenu=document.getElementById('viewMenu');
+var albumOverlay=document.getElementById('albumOverlay');
+var albumClose=document.getElementById('albumClose');
+var detailCover=document.getElementById('detailCover');
+var detailNumber=document.getElementById('detailNumber');
+var detailArtist=document.getElementById('detailArtist');
+var detailAlbum=document.getElementById('detailAlbum');
+var detailYear=document.getElementById('detailYear');
+var detailGenre=document.getElementById('detailGenre');
+var detailRating=document.getElementById('detailRating');
+var detailTracks=document.getElementById('detailTracks');
+
+var view='grid';
+var activeIndex=0;
+var drag=false;
+var selectedRating='all';
+var startX=0;
+var startY=0;
+var startScroll=0;
+var scrollTimer=null;
+var suppressAlbumClick=false;
+
+function esc(value){
+  return String(value)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function recordHTML(record, className){
+  var smallSrc=record[6];
+
+  var html='<article class="record '+(className||'')+'" draggable="false" data-index="'+(parseInt(record[0],10)-1)+'">'+
+    '<div class="cover-wrapper">'+
+      '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
+      '<div class="number">'+record[0]+'</div>'+
+      '<div class="cover-rating">';
+
+  for(var r=1;r<=5;r++){
+    html+=r<=record[5]?'★':'<span class="empty">★</span>';
+  }
+
+  html+='</div>'+
+    (viewedUserId===null?'<button class="delete-cover-button" type="button" aria-label="Ta bort album">🗑</button>':'')+
+    '</div>'+
+    '<div class="info">'+
+      '<div class="artist">'+esc(record[1])+'</div>'+
+      '<div class="album">'+esc(record[2])+'</div>'+
+      '<div class="year">'+esc(record[3])+'</div>'+
+    '</div>'+
+  '</article>';
+
+  return html;
+}
+
+function loadVisibleImages(){
+  var images=document.querySelectorAll('.cover');
+  var height=window.innerHeight||600;
+  var width=window.innerWidth||1024;
+  var verticalMargin=450;
+  var horizontalMargin=500;
+
+  for(var i=0;i<images.length;i++){
+    var img=images[i];
+    var dataSrc=img.getAttribute('data-src');
+    if(!dataSrc)continue;
+
+    var rect=img.getBoundingClientRect();
+    if(rect.top<height+verticalMargin&&rect.bottom>-verticalMargin&&
+       rect.left<width+horizontalMargin&&rect.right>-horizontalMargin){
+      img.src=dataSrc;
+      img.removeAttribute('data-src');
+    }
+  }
+}
+
+function openAlbum(index){
+  var record=records[index];
+  if(!record)return;
+
+  detailNumber.innerHTML=esc(record[0]);
+  detailArtist.innerHTML=esc(record[1]);
+  detailAlbum.innerHTML=esc(record[2]);
+  detailYear.innerHTML=esc(record[3]);
+  detailGenre.innerHTML=esc(record[4]||'Genre saknas');
+
+  detailCover.src=record[6];
+  detailCover.alt=record[1]+' - '+record[2];
+
+  var rating=parseInt(record[5],10);
+  if(isNaN(rating))rating=0;
+  rating=Math.max(0,Math.min(5,rating));
+
+  var stars='';
+
+  for(var i=1;i<=5;i++){
+    stars+='<button class="album-rating-star '+(i<=rating?'filled':'empty')+'" type="button" data-rating="'+i+'">★</button>';
+  }
+
+  detailRating.innerHTML=stars;
+
+  var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
+
+  for(var r=0;r<ratingButtons.length;r++){
+    ratingButtons[r].addEventListener('mouseenter',function(){
+      if(viewedUserId!==null)return;
+
+      var hoverRating=parseInt(this.getAttribute('data-rating'),10);
+
+      for(var i=0;i<ratingButtons.length;i++){
+        ratingButtons[i].classList.toggle(
+          'hover-filled',
+          i<hoverRating
+        );
+      }
+    });
+
+    ratingButtons[r].addEventListener('mouseleave',function(){
+      for(var i=0;i<ratingButtons.length;i++){
+        ratingButtons[i].classList.remove('hover-filled');
+      }
+    });
+
+    ratingButtons[r].addEventListener('click',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+
+      if(viewedUserId!==null)return;
+
+      var newRating=parseInt(
+        this.getAttribute('data-rating'),
+        10
+      );
+
+      saveAlbumRating(index,newRating);
+    });
+
+    ratingButtons[r].addEventListener('touchend',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+
+      if(viewedUserId!==null)return;
+
+      var newRating=parseInt(
+        this.getAttribute('data-rating'),
+        10
+      );
+
+      saveAlbumRating(index,newRating);
+    },{passive:false});
+  }
+
+  var sides=record[7]||{};
+  var sideNames=['A','B','C','D'];
+  var html='';
+
+  for(i=0;i<sideNames.length;i++){
+    var side=sideNames[i];
+    var tracks=sides[side];
+
+    if(!tracks||!tracks.length)continue;
+
+    html+='<section class="track-side">'+
+      '<div class="side-title"><span>SIDA</span>'+side+'</div>'+
+      '<ol class="tracks-list">';
+
+    for(var j=0;j<tracks.length;j++){
+      var track=tracks[j];
+
+      var title=track.title||'Okänd låt';
+      var trackRating=parseInt(track.rating,10);
+
+      if(isNaN(trackRating))trackRating=0;
+      trackRating=Math.max(0,Math.min(5,trackRating));
+
+      var trackStars='';
+
+      for(var s=1;s<=5;s++){
+        trackStars+='<button class="track-rating-star '+(s<=trackRating?'filled':'empty')+'" type="button" data-track-id="'+track.id+'" data-rating="'+s+'">★</button>';
+      }
+
+      html+='<li data-track-id="'+track.id+'">'+
+        '<span class="track-title">'+esc(title)+'</span>'+
+        '<span class="track-rating">'+trackStars+'</span>'+
+      '</li>';
+    }
+
+    html+='</ol></section>';
+  }
+
+  detailTracks.innerHTML=html||
+    '<div style="color:#666;font-size:13px">Ingen låtlista tillagd</div>';
+
+  var trackRatingButtons=detailTracks.querySelectorAll('.track-rating-star');
+
+  for(var t=0;t<trackRatingButtons.length;t++){
+    trackRatingButtons[t].addEventListener('click',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+
+      if(viewedUserId!==null)return;
+
+      var trackId=parseInt(
+        this.getAttribute('data-track-id'),
+        10
+      );
+
+      var newRating=parseInt(
+        this.getAttribute('data-rating'),
+        10
+      );
+
+      saveTrackRating(trackId,newRating);
+    });
+
+    trackRatingButtons[t].addEventListener('touchend',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+
+      if(viewedUserId!==null)return;
+
+      var trackId=parseInt(
+        this.getAttribute('data-track-id'),
+        10
+      );
+
+      var newRating=parseInt(
+        this.getAttribute('data-rating'),
+        10
+      );
+
+      saveTrackRating(trackId,newRating);
+    },{passive:false});
+  }
+
+  for(var h=0;h<trackRatingButtons.length;h++){
+    trackRatingButtons[h].addEventListener('mouseenter',function(){
+      if(viewedUserId!==null)return;
+
+      var buttons=detailTracks.querySelectorAll(
+        '.track-rating-star[data-track-id="'+this.getAttribute('data-track-id')+'"]'
+      );
+
+      var hoverRating=parseInt(this.getAttribute('data-rating'),10);
+
+      for(var i=0;i<buttons.length;i++){
+        buttons[i].style.color=buttons[i].classList.contains('filled')?'#fff':(i<hoverRating?'#aaa':'#555');
+      }
+    });
+
+    trackRatingButtons[h].addEventListener('mouseleave',function(){
+      var buttons=detailTracks.querySelectorAll(
+        '.track-rating-star[data-track-id="'+this.getAttribute('data-track-id')+'"]'
+      );
+
+      for(var i=0;i<buttons.length;i++){
+        buttons[i].style.color=buttons[i].classList.contains('filled')?'#fff':'#555';
+      }
+    });
+  }
+
+  albumOverlay.className='album-overlay visible';
+  document.body.style.overflow='hidden';
+}
+
+async function saveAlbumRating(index,rating){
+  if(viewedUserId!==null)return;  
+  var record=records[index];
+
+  if(!record)return;
+
+  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+
+  if(userError||!user){
+    alert('Du måste vara inloggad.');
+    return;
+  }
+
+  var albumId=record[8];
+
+  var {error}=await supabaseClient
+    .from('album_ratings')
+    .upsert({
+      user_id:user.id,
+      album_id:albumId,
+      rating:rating
+    },{
+      onConflict:'user_id,album_id'
+    });
+
+  if(error){
+    console.error('Kunde inte spara albumrating:',error);
+    alert('Kunde inte spara ratingen.\n\n'+error.message);
+    return;
+  }
+
+  record[5]=rating;
+
+  var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
+
+  for(var i=0;i<ratingButtons.length;i++){
+    var starRating=i+1;
+
+    ratingButtons[i].classList.remove('hover-filled');
+    ratingButtons[i].classList.toggle(
+      'filled',
+      starRating<=rating
+    );
+    ratingButtons[i].classList.toggle(
+      'empty',
+      starRating>rating
+    );
+  }
+
+  var cards=collection.querySelectorAll('.record');
+
+  for(var c=0;c<cards.length;c++){
+    var cardIndex=parseInt(
+      cards[c].getAttribute('data-index'),
+      10
+    );
+
+    if(cardIndex!==index)continue;
+
+    var coverRating=cards[c].querySelector('.cover-rating');
+
+    if(!coverRating)continue;
+
+    var coverStars='';
+
+    for(var s=1;s<=5;s++){
+      coverStars+=s<=rating
+        ?'★'
+        :'<span class="empty">★</span>';
+    }
+
+    coverRating.innerHTML=coverStars;
+    break;
+  }
+}
+
+async function saveTrackRating(trackId,rating){
+  if(viewedUserId!==null)return;  
+  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+
+  if(userError||!user){
+    alert('Du måste vara inloggad.');
+    return;
+  }
+
+  var {error}=await supabaseClient
+    .from('track_ratings')
+    .upsert({
+      user_id:user.id,
+      track_id:trackId,
+      rating:rating
+    },{
+      onConflict:'user_id,track_id'
+    });
+
+  if(error){
+    console.error('Kunde inte spara låtrating:',error);
+    alert('Kunde inte spara ratingen.\n\n'+error.message);
+    return;
+  }
+
+  var trackButtons=detailTracks.querySelectorAll(
+    '.track-rating-star[data-track-id="'+trackId+'"]'
+  );
+
+  for(var i=0;i<trackButtons.length;i++){
+    var starRating=i+1;
+
+    trackButtons[i].classList.toggle(
+      'filled',
+      starRating<=rating
+    );
+
+    trackButtons[i].classList.toggle(
+      'empty',
+      starRating>rating
+    );
+  }
+
+  for(var i=0;i<trackButtons.length;i++){
+    trackButtons[i].style.color=trackButtons[i].classList.contains('filled')?'#fff':'#555';
+  }
+
+  for(var r=0;r<records.length;r++){
+    var sides=records[r][7]||{};
+
+    for(var side in sides){
+      if(!sides.hasOwnProperty(side))continue;
+
+      for(var j=0;j<sides[side].length;j++){
+        if(sides[side][j].id===trackId){
+          sides[side][j].rating=rating;
+        }
+      }
+    }
+  }
+}
+    
+function closeAlbum(){
+  albumOverlay.className='album-overlay';
+  document.body.style.overflow='';
+
+  setTimeout(function(){
+    if(albumOverlay.className.indexOf('visible')===-1){
+      detailCover.src='';
+    }
+  },350);
+}
+
+async function deleteCollectionAlbum(index){
+  if(viewedUserId!==null)return;  
+  var record=records[index];
+
+  if(!record)return;
+
+  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+
+  if(userError||!user){
+    alert('Du måste vara inloggad.');
+    return;
+  }
+
+  var albumId=record[8];
+
+  var {error}=await supabaseClient
+    .from('collections')
+    .delete()
+    .eq('user_id',user.id)
+    .eq('album_id',albumId);
+
+  if(error){
+    console.error('Kunde inte ta bort albumet:',error);
+    alert('Kunde inte ta bort albumet.');
+    return;
+  }
+
+  await window.loadCollection();
+}
+
+function attachAlbumClicks(){
+  if(collection._albumClickAttached)return;
+  collection._albumClickAttached=true;
+
+  collection.addEventListener('click',async function(event){
+    var target=event.target||event.srcElement;
+
+    var deleteButton=target.closest
+      ?target.closest('.delete-cover-button')
+      :null;
+
+    if(deleteButton){
+      if(viewedUserId!==null)return;
+        
+      event.preventDefault();
+      event.stopPropagation();
+
+      var recordElement=deleteButton.closest('.record');
+
+      if(!recordElement)return;
+
+      var index=parseInt(recordElement.getAttribute('data-index'),10);
+
+      if(isNaN(index))return;
+
+        const record=records[index];
+        
+        if(!record)return;
+        
+        removeAlbumIndex=index;
+        
+        const removeAlbumModal=document.getElementById('removeAlbumModal');
+        const removeAlbumMessage=document.getElementById('removeAlbumMessage');
+        
+        removeAlbumMessage.textContent='Are you sure you want to remove "'+record[2]+'" from your collection?';
+        
+        removeAlbumModal.style.display='flex';
+        
+        return;
+    }
+      
+    if(suppressAlbumClick)return;
+    if(deleteMode)return;
+
+    var recordElement=target.closest
+      ?target.closest('.record')
+      :null;
+
+    if(!recordElement)return;
+
+    var index=parseInt(recordElement.getAttribute('data-index'),10);
+
+    if(isNaN(index))return;
+
+    if(view==='carousel'&&drag)return;
+
+    openAlbum(index);
+  });
+}
+
+const removeAlbumModal=document.getElementById('removeAlbumModal');
+const cancelRemoveAlbum=document.getElementById('cancelRemoveAlbum');
+const confirmRemoveAlbum=document.getElementById('confirmRemoveAlbum');
+
+let removeAlbumIndex=null;
+
+cancelRemoveAlbum.addEventListener('click',function(){
+    removeAlbumModal.style.display='none';
+    removeAlbumIndex=null;
+});
+
+removeAlbumModal.addEventListener('click',function(event){
+    if(event.target===removeAlbumModal){
+        removeAlbumModal.style.display='none';
+        removeAlbumIndex=null;
+    }
+});
+
+confirmRemoveAlbum.addEventListener('click',async function(){
+    if(removeAlbumIndex===null)return;
+
+    const index=removeAlbumIndex;
+
+    removeAlbumModal.style.display='none';
+    removeAlbumIndex=null;
+
+    await deleteCollectionAlbum(index);
+});
+
+function enableGridSorting(){
+    if(view!=='grid'||selectedRating!=='all')return;
+    
+    if(viewedUserId!==null){
+      collection.ondragstart=null;
+      collection.ondragover=null;
+      collection.ondrop=null;
+      collection.ondragend=null;
+      collection.oncontextmenu=null;
+      return;
+    }
+
+  var dragged=null;
+  var touchTimer=null;
+  var touchDragging=false;
+  var touchX=0;
+  var touchY=0;
+  var autoScrollFrame=null;
+  var dragPreview=null;
+  var dragPreviewOffsetX=0;
+  var dragPreviewOffsetY=0;
+
+  collection.oncontextmenu=function(event){
+    event.preventDefault();
+    return false;
+  };
+
+  function animateCards(moveFunction){
+    var cards=collection.querySelectorAll('.record');
+    var positions=new Map();
+
+    for(var i=0;i<cards.length;i++){
+      if(cards[i]!==dragged){
+        positions.set(cards[i],cards[i].getBoundingClientRect());
+      }
+    }
+
+    moveFunction();
+
+    requestAnimationFrame(function(){
+      for(var i=0;i<cards.length;i++){
+        var card=cards[i];
+
+        if(card===dragged)continue;
+
+        var oldRect=positions.get(card);
+
+        if(!oldRect)continue;
+
+        var newRect=card.getBoundingClientRect();
+        var x=oldRect.left-newRect.left;
+        var y=oldRect.top-newRect.top;
+
+        if(x||y){
+          card.style.transition='none';
+          card.style.transform='translate3d('+x+'px,'+y+'px,0)';
+
+          (function(card){
+            requestAnimationFrame(function(){
+              card.style.transition='transform .24s cubic-bezier(.2,.8,.2,1)';
+              card.style.transform='translate3d(0,0,0)';
+
+              setTimeout(function(){
+                card.style.transition='';
+                card.style.transform='';
+              },260);
+            });
+          })(card);
+        }
+      }
+    });
+  }
+
+  function moveDragged(target,pointerX,pointerY){
+    if(!dragged||!target||target===dragged)return;
+
+    var rect=target.getBoundingClientRect();
+    var after;
+
+    if(pointerX<rect.left||pointerX>rect.right){
+      after=pointerX>rect.left+rect.width/2;
+    }else{
+      after=pointerY>rect.top+rect.height/2;
+    }
+
+    if(after){
+      if(target.nextSibling!==dragged){
+        animateCards(function(){
+          target.parentNode.insertBefore(dragged,target.nextSibling);
+        });
+      }
+    }else{
+      if(target!==dragged.nextSibling){
+        animateCards(function(){
+          target.parentNode.insertBefore(dragged,target);
+        });
+      }
+    }
+  }
+
+  function stopAutoScroll(){
+    if(autoScrollFrame){
+      cancelAnimationFrame(autoScrollFrame);
+      autoScrollFrame=null;
+    }
+  }
+
+  function createDragPreview(card,pointerX,pointerY){
+    removeDragPreview();
+
+    var rect=card.getBoundingClientRect();
+
+    dragPreview=card.cloneNode(true);
+    dragPreview.classList.remove('dragging');
+    dragPreview.classList.add('drag-preview');
+    dragPreview.removeAttribute('draggable');
+    dragPreview.style.width=rect.width+'px';
+    dragPreview.style.height=rect.height+'px';
+    dragPreview.style.left=(pointerX-rect.width/2)+'px';
+    dragPreview.style.top=(pointerY-rect.height/2)+'px';
+
+    dragPreviewOffsetX=rect.width/2;
+    dragPreviewOffsetY=rect.height/2;
+
+    document.body.appendChild(dragPreview);
+  }
+
+  function updateDragPreview(pointerX,pointerY){
+    if(!dragPreview)return;
+
+    dragPreview.style.left=(pointerX-dragPreviewOffsetX)+'px';
+    dragPreview.style.top=(pointerY-dragPreviewOffsetY)+'px';
+  }
+
+  function removeDragPreview(){
+    var previews=document.querySelectorAll('.drag-preview');
+
+    for(var i=0;i<previews.length;i++){
+      if(previews[i].parentNode){
+        previews[i].parentNode.removeChild(previews[i]);
+      }
+    }
+
+    dragPreview=null;
+  }
+
+  function autoScroll(){
+    if(!touchDragging||!dragged){
+      stopAutoScroll();
+      return;
+    }
+
+    var edge=100;
+    var maxSpeed=14;
+    var height=window.innerHeight;
+    var speed=0;
+
+    if(touchY<edge){
+      speed=-maxSpeed*(1-touchY/edge);
+    }else if(touchY>height-edge){
+      speed=maxSpeed*(1-(height-touchY)/edge);
+    }
+
+    if(speed){
+      window.scrollBy(0,speed);
+
+      var target=document.elementFromPoint(touchX,touchY);
+
+      if(target){
+        var card=target.closest
+          ?target.closest('.record')
+          :null;
+
+        if(card&&card!==dragged){
+          moveDragged(card,touchX,touchY);
+        }
+      }
+    }
+
+    autoScrollFrame=requestAnimationFrame(autoScroll);
+  }
+
+  function finishDrag(){
+    var orderedCards=collection.querySelectorAll('.record');
+    var newRecords=[];
+
+    for(var i=0;i<orderedCards.length;i++){
+      var index=parseInt(orderedCards[i].getAttribute('data-index'),10);
+      var record=records[index];
+
+      if(!record)continue;
+
+      record[0]=i+1;
+
+      var numberElement=orderedCards[i].querySelector('.number');
+
+      if(numberElement){
+        numberElement.textContent=i+1;
+      }
+
+      newRecords.push(record);
+    }
+
+    records=newRecords;
+
+    return saveGridOrder();
+  }
+
+    collection.ondragstart=function(event){
+      if(viewedUserId!==null){
+        event.preventDefault();
+        return;
+      }
+    
+      var record=event.target.closest('.record');
+    
+      if(!record)return;
+
+    dragged=record;
+    record.classList.add('dragging');
+    createDragPreview(record,event.clientX,event.clientY);
+
+    if(event.dataTransfer){
+      event.dataTransfer.effectAllowed='move';
+      event.dataTransfer.setData('text/plain',record.getAttribute('data-index'));
+
+      if(dragPreview){
+        // Dölj webbläsarens halvtransparenta standard-ghost. Vår egen
+        // kopia följer musen och förblir helt ogenomskinlig.
+        var transparentDragImage=document.createElement('canvas');
+        transparentDragImage.width=1;
+        transparentDragImage.height=1;
+        event.dataTransfer.setDragImage(transparentDragImage,0,0);
+      }
+    }
+  };
+
+  collection.ondragover=function(event){
+    if(viewedUserId!==null)return;
+    if(!dragged)return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect='move';
+
+    updateDragPreview(event.clientX,event.clientY);
+
+    var target=event.target.closest('.record');
+
+    if(!target||target===dragged)return;
+
+    moveDragged(target,event.clientX,event.clientY);
+  };
+
+  collection.ondragenter=function(event){
+    if(viewedUserId===null&&dragged){
+      event.preventDefault();
+      event.dataTransfer.dropEffect='move';
+    }
+  };
+
+  collection.ondrop=async function(event){
+    if(viewedUserId!==null)return;  
+    if(!dragged)return;
+
+    event.preventDefault();
+
+    var releasedDragged=dragged;
+
+    releasedDragged.classList.remove('dragging');
+    removeDragPreview();
+    dragged=null;
+
+    await finishDrag();
+  };
+
+  collection.ondragend=function(){
+    if(dragged){
+      dragged.classList.remove('dragging');
+    }
+
+    removeDragPreview();
+    dragged=null;
+  };
+
+  window.addEventListener('dragend',removeDragPreview);
+  window.addEventListener('blur',function(){
+    if(dragged){
+      dragged.classList.remove('dragging');
+      dragged=null;
+    }
+
+    removeDragPreview();
+    touchDragging=false;
+    resetPointerState();
+  });
+
+  collection.ondragstart=null;
+  collection.ondragover=null;
+  collection.ondragenter=null;
+  collection.ondrop=null;
+  collection.ondragend=null;
+
+  var cards=collection.querySelectorAll('.record');
+  var pointerId=null;
+  var pointerCard=null;
+  var pointerStartX=0;
+  var pointerStartY=0;
+
+  function resetPointerState(){
+    clearTimeout(touchTimer);
+    stopAutoScroll();
+
+    if(pointerCard&&pointerCard.releasePointerCapture&&pointerId!==null){
+      try{pointerCard.releasePointerCapture(pointerId);}catch(error){}
+    }
+
+    pointerId=null;
+    pointerCard=null;
+  }
+
+  function startPointerDrag(card,event){
+    dragged=card;
+    touchDragging=true;
+    suppressAlbumClick=true;
+    touchX=event.clientX;
+    touchY=event.clientY;
+    card.classList.add('dragging');
+    createDragPreview(card,touchX,touchY);
+
+    if(card.setPointerCapture&&event.pointerId!==undefined){
+      try{card.setPointerCapture(event.pointerId);}catch(error){}
+    }
+
+    autoScroll();
+  }
+
+  function updatePointerDrag(event){
+    if(!touchDragging||!dragged)return;
+
+    event.preventDefault();
+
+    touchX=event.clientX;
+    touchY=event.clientY;
+    updateDragPreview(touchX,touchY);
+
+    var target=document.elementFromPoint(touchX,touchY);
+    var card=target&&target.closest
+      ?target.closest('.record')
+      :null;
+
+    if(card&&card!==dragged){
+      moveDragged(card,touchX,touchY);
+    }
+  }
+
+  async function finishPointerDrag(){
+    clearTimeout(touchTimer);
+    stopAutoScroll();
+
+    if(!touchDragging||!dragged){
+      removeDragPreview();
+      resetPointerState();
+      touchDragging=false;
+      dragged=null;
+      return;
+    }
+
+    var releasedDragged=dragged;
+
+    releasedDragged.classList.remove('dragging');
+    removeDragPreview();
+    dragged=null;
+    touchDragging=false;
+    resetPointerState();
+
+    suppressAlbumClick=true;
+    await finishDrag();
+
+    setTimeout(function(){
+      suppressAlbumClick=false;
+    },300);
+  }
+
+  function cancelPointerDrag(){
+    clearTimeout(touchTimer);
+    stopAutoScroll();
+
+    if(dragged){
+      dragged.classList.remove('dragging');
+    }
+
+    removeDragPreview();
+    dragged=null;
+    touchDragging=false;
+    suppressAlbumClick=false;
+    resetPointerState();
+  }
+
+  for(var i=0;i<cards.length;i++){
+    cards[i].onpointerdown=function(event){
+      if(pointerId!==null)return;
+      if(event.button!==undefined&&event.button!==0)return;
+
+      pointerId=event.pointerId;
+      pointerCard=this;
+      pointerStartX=event.clientX;
+      pointerStartY=event.clientY;
+      touchX=event.clientX;
+      touchY=event.clientY;
+
+      clearTimeout(touchTimer);
+
+      if(event.pointerType==='mouse'||event.pointerType==='pen'){
+        startPointerDrag(this,event);
+      }else{
+        touchTimer=setTimeout(function(){
+          if(pointerId!==null&&!touchDragging){
+            startPointerDrag(pointerCard,event);
+          }
+        },350);
+      }
+    };
+
+    cards[i].onpointermove=function(event){
+      if(pointerId===null||event.pointerId!==pointerId)return;
+
+      if(!touchDragging){
+        var movedX=Math.abs(event.clientX-pointerStartX);
+        var movedY=Math.abs(event.clientY-pointerStartY);
+
+        if(movedX>8||movedY>8){
+          clearTimeout(touchTimer);
+          resetPointerState();
+        }
+
+        return;
+      }
+
+      updatePointerDrag(event);
+    };
+
+    cards[i].onpointerup=function(event){
+      if(pointerId===null||event.pointerId!==pointerId)return;
+      finishPointerDrag();
+    };
+
+    cards[i].onpointercancel=function(event){
+      if(pointerId===null||event.pointerId!==pointerId)return;
+      cancelPointerDrag();
+    };
+  }
+}
+
+async function saveGridOrder(){
+  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+
+  if(userError||!user){
+    alert('Du måste vara inloggad.');
+    return false;
+  }
+
+  for(var i=0;i<records.length;i++){
+    var record=records[i];
+
+    if(!record||!record[9]){
+      console.error('Saknar collection-id:',record);
+      alert('Kunde inte hitta albumets collection-id.');
+      return false;
+    }
+
+    var {data,error}=await supabaseClient
+      .from('collections')
+      .update({
+        sort_order:i+1
+      })
+      .eq('id',record[9])
+      .eq('user_id',user.id)
+      .select('id,sort_order');
+
+    if(error){
+      console.error('Kunde inte spara sorteringen:',error);
+      alert('Kunde inte spara sorteringen.\n\n'+error.message);
+      return false;
+    }
+
+    if(!data||!data.length){
+      console.error('Ingen collection uppdaterades:',record[9]);
+      alert('Supabase uppdaterade ingen rad. Kontrollera RLS-policyn för collections.');
+      return false;
+    }
+  }
+
+  await window.loadCollection();
+  return true;
+}
+
+function addCoverTilt(){
+  if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches)return;
+
+  document.querySelectorAll('.record').forEach(function(cover){
+    cover.addEventListener('mousemove',function(event){
+      var rect=cover.getBoundingClientRect();
+      var x=(event.clientX-rect.left)/rect.width-.5;
+      var y=(event.clientY-rect.top)/rect.height-.5;
+
+      cover.querySelector('.cover-wrapper').style.transform='perspective(800px) rotateX('+(-y*10)+'deg) rotateY('+(x*10)+'deg)';
+    });
+
+    cover.addEventListener('mouseleave',function(){
+      cover.querySelector('.cover-wrapper').style.transform='';
+    });
+  });
+}
+    
+window.buildGrid=function(){
+    
+  collection.className='collection grid';
+
+  var emptyCollection=document.getElementById('emptyCollection');
+  var profileNotFound=document.getElementById('profileNotFound');
+  var hasBlockingState=window.loginRequiredForViewedCollection||window.profileNotFound;
+  var isViewingProfile=viewedUserId!==null;
+
+  emptyCollection.style.display=(viewedUserId===null&&records.length===0&&!hasBlockingState)?'flex':'none';
+  loginToViewCollection.style.display=window.loginRequiredForViewedCollection?'flex':'none';
+  profileNotFound.style.display=window.profileNotFound?'flex':'none';
+  emptyViewedCollection.style.display=(isViewingProfile&&records.length===0&&!hasBlockingState)?'flex':'none';
+  document.getElementById('addAlbumButton').style.display=isViewingProfile?'none':'';
+  document.getElementById('deleteModeButton').style.display=isViewingProfile?'none':'';
+
+  var html='';
+
+  for(var i=0;i<records.length;i++){
+    var rating=parseInt(records[i][5],10);
+
+    if(selectedRating==='all'||rating===parseInt(selectedRating,10)){
+      html+=recordHTML(records[i],'');
+    }
+  }
+
+  collection.innerHTML=html;
+  addCoverTilt();
+  attachAlbumClicks();
+  enableGridSorting();
+  loadVisibleImages();
+}
+
+function setActive(index){
+  activeIndex=index;
+
+  var cards=document.getElementsByClassName('carousel-card');
+
+  for(var i=0;i<cards.length;i++){
+    cards[i].className=cards[i].className.replace(/\sactive\b/g,'');
+
+    if(i===index){
+      cards[i].className+=' active';
+    }
+  }
+}
+
+function animateScroll(element,to,smooth){
+  if(!smooth){
+    element.scrollLeft=to;
+    return;
+  }
+
+  if(element.scrollTo){
+    try{
+      element.scrollTo({left:to,behavior:'smooth'});
+      return;
+    }catch(e){}
+  }
+
+  var from=element.scrollLeft;
+  var change=to-from;
+  var duration=420;
+  var start=new Date().getTime();
+
+  function step(){
+    var time=new Date().getTime();
+    var progress=Math.min(1,(time-start)/duration);
+    var easing=progress*(2-progress);
+    element.scrollLeft=from+change*easing;
+    if(progress<1)setTimeout(step,16);
+  }
+  step();
+}
+
+function centerCard(index,smooth){
+  var viewport=document.getElementById('carouselViewport');
+  var cards=document.getElementsByClassName('carousel-card');
+  var card=cards[index];
+
+  if(!viewport||!card)return;
+
+  var target=card.offsetLeft-(viewport.clientWidth-card.offsetWidth)/2;
+  var max=viewport.scrollWidth-viewport.clientWidth;
+
+  target=Math.max(0,Math.min(target,max));
+
+  setActive(index);
+  animateScroll(viewport,target,smooth);
+}
+
+function nearest(){
+  var viewport=document.getElementById('carouselViewport');
+  var cards=document.getElementsByClassName('carousel-card');
+  var center=viewport.scrollLeft+viewport.clientWidth/2;
+
+  var best=0;
+  var distance=Infinity;
+
+  for(var i=0;i<cards.length;i++){
+    var card=cards[i];
+    var cardCenter=card.offsetLeft+card.offsetWidth/2;
+    var currentDistance=Math.abs(cardCenter-center);
+
+    if(currentDistance<distance){
+      distance=currentDistance;
+      best=i;
+    }
+  }
+
+  return best;
+}
+
+function buildCarousel(){
+  collection.className='collection carousel';
+
+  var html=
+    '<div class="carousel-viewport" id="carouselViewport">'+
+      '<div class="carousel-track" id="carouselTrack">';
+
+  for(var i=0;i<records.length;i++){
+    var rating=parseInt(records[i][5],10);
+  
+    if(selectedRating==='all'||rating===parseInt(selectedRating,10)){
+      html+=recordHTML(records[i],'carousel-card');
+    }
+  }
+
+  html+='</div></div>';
+  collection.innerHTML=html;
+  loadVisibleImages();
+  
+  var viewport=document.getElementById('carouselViewport');
+  var cards=document.getElementsByClassName('carousel-card');
+
+  attachAlbumClicks();
+
+  function scheduleSettle(){
+    if(scrollTimer)clearTimeout(scrollTimer);
+
+    scrollTimer=setTimeout(function(){
+      setActive(nearest());
+    },180);
+  }
+
+  viewport.onscroll=function(){
+    scheduleImageLoad();
+    scheduleSettle();
+  };
+
+  viewport.ontouchstart=function(event){
+    if(!event.touches||!event.touches.length)return;
+
+    drag=false;
+    startX=event.touches[0].pageX;
+    startY=event.touches[0].pageY;
+    startScroll=viewport.scrollLeft;
+
+    if(scrollTimer)clearTimeout(scrollTimer);
+  };
+
+  viewport.ontouchmove=function(event){
+    if(!event.touches||!event.touches.length)return;
+
+    var dx=event.touches[0].pageX-startX;
+
+    if(Math.abs(dx)>8)drag=true;
+  };
+
+  viewport.ontouchend=function(){
+    scheduleSettle();
+
+    setTimeout(function(){
+      drag=false;
+    },120);
+  };
+
+  setTimeout(function(){
+    centerCard(activeIndex,false);
+    scheduleImageLoad();
+  },30);
+}
+
+function setView(nextView){
+  view=nextView;
+
+  viewButton.textContent=(view==='grid'?'Grid':'Carousel')+' ▾';
+
+  if(view==='grid'){
+    buildGrid();
+  }else{
+    buildCarousel();
+  }
+}
+
+albumClose.onclick=function(){
+  closeAlbum();
+};
+
+albumOverlay.onclick=function(event){
+  if((event||window.event).target===albumOverlay){
+    closeAlbum();
+  }
+};
+
+document.onkeydown=function(event){
+  event=event||window.event;
+
+  if(event.keyCode===27){
+    if(albumOverlay.className.indexOf('visible')!==-1){
+      closeAlbum();
+    }
+    return;
+  }
+
+  if(view!=='carousel')return;
+
+  if(event.keyCode===39&&activeIndex<records.length-1){
+    centerCard(activeIndex+1,true);
+  }else if(event.keyCode===37&&activeIndex>0){
+    centerCard(activeIndex-1,true);
+  }
+};
+
+filterButton.onclick=function(event){
+  event.stopPropagation();
+  viewMenu.classList.remove('open');
+  filterMenu.classList.toggle('open');
+  filterButton.setAttribute('aria-expanded',filterMenu.classList.contains('open')?'true':'false');
+  viewButton.setAttribute('aria-expanded','false');
+};
+
+viewButton.onclick=function(event){
+  event.stopPropagation();
+  filterMenu.classList.remove('open');
+  viewMenu.classList.toggle('open');
+  viewButton.setAttribute('aria-expanded',viewMenu.classList.contains('open')?'true':'false');
+  filterButton.setAttribute('aria-expanded','false');
+};
+
+var filterButtons=filterMenu.querySelectorAll('button');
+
+for(var f=0;f<filterButtons.length;f++){
+  filterButtons[f].onclick=function(event){
+    event.stopPropagation();
+
+    selectedRating=this.getAttribute('data-rating');
+
+    for(var i=0;i<filterButtons.length;i++){
+      filterButtons[i].className='';
+    }
+
+    this.className='active';
+    filterButton.textContent=this.textContent+' ▾';
+
+    filterMenu.classList.remove('open');
+    filterButton.setAttribute('aria-expanded','false');
+
+    activeIndex=0;
+
+    if(view==='grid'){
+      buildGrid();
+    }else{
+      buildCarousel();
+    }
+  };
+}
+
+var viewButtons=viewMenu.querySelectorAll('button');
+
+for(var v=0;v<viewButtons.length;v++){
+  viewButtons[v].onclick=function(event){
+    event.stopPropagation();
+
+    for(var i=0;i<viewButtons.length;i++){
+      viewButtons[i].className='';
+    }
+
+    this.className='active';
+
+    var nextView=this.getAttribute('data-view');
+
+    viewButton.textContent=this.textContent+' ▾';
+
+    viewMenu.classList.remove('open');
+    viewButton.setAttribute('aria-expanded','false');
+
+    setView(nextView);
+  };
+}
+
+document.addEventListener('click',function(){
+  filterMenu.classList.remove('open');
+  viewMenu.classList.remove('open');
+  filterButton.setAttribute('aria-expanded','false');
+  viewButton.setAttribute('aria-expanded','false');
+});
+
+var imageLoadScheduled=false;
+function scheduleImageLoad(){
+  if(imageLoadScheduled)return;
+  imageLoadScheduled=true;
+  var run=window.requestAnimationFrame||function(fn){return setTimeout(fn,50);};
+  run(function(){imageLoadScheduled=false;loadVisibleImages();});
+}
+
+window.onscroll=scheduleImageLoad;
+
+})();
+
+// ========================================
+// ADD ALBUM / MUSICBRAINZ
+// ========================================
+
+const addAlbumButton=document.getElementById('addAlbumButton');
+const addAlbumModal=document.getElementById('addAlbumModal');
+const closeAddAlbum=document.getElementById('closeAddAlbum');
+const albumSearchInput=document.getElementById('albumSearchInput');
+const albumSearchResults=document.getElementById('albumSearchResults');
+
+const searchUserButton=document.getElementById('searchUserButton');
+const searchUserModal=document.getElementById('searchUserModal');
+const closeSearchUser=document.getElementById('closeSearchUser');
+
+const userSearchInput=document.getElementById('userSearchInput');
+const userSearchResults=document.getElementById('userSearchResults');
+
+let userSearchTimer=null;
+
+userSearchInput.addEventListener('input',function(){
+    const query=userSearchInput.value.trim();
+
+    clearTimeout(userSearchTimer);
+
+    if(query.length<2){
+        loadTopUsers();
+        return;
+    }
+
+    userSearchResults.innerHTML='<p>Searching...</p>';
+
+    userSearchTimer=setTimeout(function(){
+        searchUsers(query);
+    },250);
+});
+
+async function loadTopUsers(){
+    const {data:users,error}=await supabaseClient
+        .from('profiles')
+        .select('id,username,avatar_url');
+
+    if(error){
+        console.error('Top users error:',error);
+        userSearchResults.innerHTML='<p>Could not load users.</p>';
+        return;
+    }
+
+    if(!users||!users.length){
+        userSearchResults.innerHTML='<p>No users found.</p>';
+        return;
+    }
+
+    const userCollectionCounts=await Promise.all(
+        users.map(async function(user){
+            const {count,error}=await supabaseClient
+                .from('collections')
+                .select('id',{count:'exact',head:true})
+                .eq('user_id',user.id);
+
+            return {
+                id:user.id,
+                count:error?0:(count||0)
+            };
+        })
+    );
+
+    userCollectionCounts.sort(function(a,b){
+        return b.count-a.count;
+    });
+
+    const topUsers=userCollectionCounts.slice(0,10);
+
+    userSearchResults.innerHTML='';
+
+    topUsers.forEach(function(item){
+        const user=users.find(function(user){
+            return user.id===item.id;
+        });
+
+        if(!user)return;
+
+        const div=document.createElement('div');
+
+        div.className='user-search-result';
+        div.dataset.userId=user.id;
+        div.style.cursor='pointer';
+
+        const avatar=document.createElement('div');
+        avatar.className='user-search-avatar';
+
+        avatar.style.backgroundImage='url("'+
+            (user.avatar_url||'avatar_placeholder.png')+
+            '")';
+
+        avatar.style.backgroundSize='cover';
+        avatar.style.backgroundPosition='center';
+
+        const userInfo=document.createElement('div');
+        userInfo.className='user-search-info';
+
+        const username=document.createElement('span');
+        username.className='user-search-username';
+        username.textContent=user.username;
+
+        const collectionCount=document.createElement('span');
+        collectionCount.className='user-search-count';
+        collectionCount.textContent=item.count+' collected records';
+
+        userInfo.appendChild(username);
+        userInfo.appendChild(collectionCount);
+
+        div.appendChild(avatar);
+        div.appendChild(userInfo);
+
+        userSearchResults.appendChild(div);
+
+        div.addEventListener('click',function(){
+            searchUserModal.style.display='none';
+            history.pushState({},'','/groovy/user/'+encodeURIComponent(user.username));
+            renderCurrentRoute();
+        });
+    });
+}
+
+async function searchUsers(query){
+    const {data,error}=await supabaseClient
+        .from('profiles')
+        .select('id,username,avatar_url')
+        .ilike('username','%'+query+'%')
+        .limit(10);
+
+    if(error){
+        console.error('User search error:',error);
+        userSearchResults.innerHTML='<p>Could not search users.</p>';
+        return;
+    }
+
+    userSearchResults.innerHTML='';
+
+    if(!data||!data.length){
+        userSearchResults.innerHTML='<p>No users found.</p>';
+        return;
+    }
+
+    const userCollectionCounts=await Promise.all(
+        data.map(async function(user){
+            const {count,error}=await supabaseClient
+                .from('collections')
+                .select('id',{count:'exact',head:true})
+                .eq('user_id',user.id);
+    
+            return {
+                id:user.id,
+                count:error?0:(count||0)
+            };
+        })
+    );
+    
+    const collectionCountMap={};
+    
+    userCollectionCounts.forEach(function(item){
+        collectionCountMap[item.id]=item.count;
+    });
+
+    data.forEach(function(user){
+        const div=document.createElement('div');
+
+        div.className='user-search-result';
+        div.dataset.userId=user.id;
+        div.style.cursor='pointer';
+        
+        const avatar=document.createElement('div');
+        avatar.className='user-search-avatar';
+    
+        avatar.style.backgroundImage='url("'+
+            (user.avatar_url||'avatar_placeholder.png')+
+            '")';
+    
+        avatar.style.backgroundSize='cover';
+        avatar.style.backgroundPosition='center';
+    
+        const userInfo=document.createElement('div');
+        userInfo.className='user-search-info';
+        
+        const username=document.createElement('span');
+        username.className='user-search-username';
+        username.textContent=user.username;
+        
+        const collectionCount=document.createElement('span');
+        collectionCount.className='user-search-count';
+        collectionCount.textContent=(collectionCountMap[user.id]||0)+' collected records';
+        
+        userInfo.appendChild(username);
+        userInfo.appendChild(collectionCount);
+        
+        div.appendChild(avatar);
+        div.appendChild(userInfo);
+    
+        userSearchResults.appendChild(div);
+
+        div.addEventListener('click',function(){
+            searchUserModal.style.display='none';
+            history.pushState({},'','/groovy/user/'+encodeURIComponent(user.username));
+            renderCurrentRoute();
+        });
+    });
+}
+
+searchUserButton.addEventListener('click',async function(event){
+    event.preventDefault();
+    event.stopPropagation();
+
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
+
+    if(!user)return;
+
+    searchUserModal.style.display='flex';
+    userSearchInput.value='';
+    loadTopUsers();
+    userSearchInput.focus();
+});
+
+closeSearchUser.addEventListener('click',function(){
+    searchUserModal.style.display='none';
+});
+
+searchUserModal.addEventListener('click',function(event){
+    if(event.target===searchUserModal){
+        searchUserModal.style.display='none';
+    }
+});
+
+const myCollectionButton=document.getElementById('myCollectionButton');
+
+const logo=document.querySelector('.logo');
+
+logo.addEventListener('click',function(){
+    myCollectionButton.click();
+});
+
+myCollectionButton.addEventListener('click',async function(){
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
+
+    if(!user)return;
+
+    history.pushState({},'','/groovy/');
+
+    deleteMode=false;
+    deleteModeButton.classList.remove('active');
+    document.body.classList.remove('delete-mode-active');
+
+    document.getElementById('viewedUserHeader').style.display='none';
+    await window.loadCollection();
+});
+
+const deleteModeButton=document.getElementById('deleteModeButton');
+
+let deleteMode=false;
+
+deleteModeButton.addEventListener('click',function(event){
+  event.preventDefault();
+  event.stopPropagation();
+
+  deleteMode=!deleteMode;
+
+  deleteModeButton.classList.toggle('active',deleteMode);
+  document.body.classList.toggle('delete-mode-active',deleteMode);
+});
+
+let searchTimer=null;
+
+addAlbumButton.addEventListener('click',async function(event){
+    if(viewedUserId!==null)return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const {data:{session}}=await supabaseClient.auth.getSession();
+
+    if(!session||!session.user){
+        loginPanel.classList.add('open');
+        loginEmail.focus();
+        return;
+    }
+
+    addAlbumModal.style.display='flex';
+    albumSearchInput.focus();
+});
+
+const emptyCollectionAddButton=document.getElementById('emptyCollectionAddButton');
+const loginToViewCollection=document.getElementById('loginToViewCollection');
+const loginToViewCollectionButton=document.getElementById('loginToViewCollectionButton');
+const emptyViewedCollection=document.getElementById('emptyViewedCollection');
+
+emptyCollectionAddButton.addEventListener('click',async function(event){
+    event.preventDefault();
+    event.stopPropagation();
+
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
+
+    if(!user){
+        loginPanel.classList.add('open');
+        return;
+    }
+
+    addAlbumModal.style.display='flex';
+});
+
+loginToViewCollectionButton.addEventListener('click',function(event){
+    event.preventDefault();
+    event.stopPropagation();
+
+    loginPanel.classList.add('open');
+    loginEmail.focus();
+});
+
+closeAddAlbum.addEventListener('click',function(){
+    addAlbumModal.style.display='none';
+    albumSearchInput.value='';
+    albumSearchResults.innerHTML='';
+});
+
+addAlbumModal.addEventListener('click',function(event){
+    if(event.target===addAlbumModal){
+        addAlbumModal.style.display='none';
+        albumSearchInput.value='';
+        albumSearchResults.innerHTML='';
+    }
+});
+
+albumSearchInput.addEventListener('input',function(){
+    const query=albumSearchInput.value.trim();
+
+    clearTimeout(searchTimer);
+
+    if(query.length<2){
+
+        albumSearchResults.innerHTML='';
+        return;
+    }
+
+    albumSearchResults.innerHTML='<p>Söker...</p>';
+
+    searchTimer=setTimeout(function(){
+        searchDiscogs(query);
+    },250);
+});
+
+function escapeHTML(text){
+    return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+let musicBrainzSearchNumber=0;
+
+async function loadOtherUserCollection(userId){
+    var loadVersion=++window.collectionLoadVersion;
+    viewedUserId=userId;
+
+    deleteMode=false;
+    deleteModeButton.classList.remove('active');
+    document.body.classList.remove('delete-mode-active');
+    
+    const {data:profile,error:profileError}=await supabaseClient
+        .from('profiles')
+        .select('username,avatar_url')
+        .eq('id',userId)
+        .maybeSingle();
+
+    if(profileError){
+        console.error('Kunde inte hämta användarprofil:',profileError);
+        return;
+    }
+
+    const viewedUserHeader=document.getElementById('viewedUserHeader');
+    const viewedUserAvatar=document.getElementById('viewedUserAvatar');
+    const viewedUserName=document.getElementById('viewedUserName');
+
+    viewedUserHeader.style.display='flex';
+
+    viewedUserAvatar.style.backgroundImage='url("'+
+        (profile&&profile.avatar_url
+            ?profile.avatar_url
+            :'avatar_placeholder.png')+
+        '")';
+
+    viewedUserAvatar.style.backgroundSize='cover';
+    viewedUserAvatar.style.backgroundPosition='center';
+
+    viewedUserName.textContent=(profile&&profile.username
+        ?profile.username
+        :'Unknown user')+"'s collection";
+
+    const {data,error}=await supabaseClient
+        .from('collections')
+        .select(`
+            id,
+            collection_number,
+            sort_order,
+            albums(
+                id,
+                title,
+                release_year,
+                genre,
+                cover_url,
+                artists(
+                    id,
+                    name
+                ),
+                tracks(
+                    id,
+                    disc_side,
+                    track_number,
+                    title
+                )
+            )
+        `)
+        .eq('user_id',userId)
+        .order('sort_order',{ascending:true});
+
+    if(error){
+        console.error('Kunde inte hämta användarens samling:',error);
+        return;
+    }
+
+    var albumIds=data
+        .map(function(item){
+            return item.albums&&item.albums.id;
+        })
+        .filter(Boolean);
+
+    var albumRatings={};
+
+    if(albumIds.length){
+        var {data:albumRatingData,error:albumRatingError}=await supabaseClient
+            .from('album_ratings')
+            .select('album_id,rating')
+            .eq('user_id',userId)
+            .in('album_id',albumIds);
+
+        if(albumRatingError){
+            console.error('Kunde inte hämta användarens albumratings:',albumRatingError);
+        }else{
+            albumRatingData.forEach(function(item){
+                albumRatings[item.album_id]=item.rating||0;
+            });
+        }
+    }
+
+    var trackIds=[];
+
+    data.forEach(function(item){
+        if(item.albums&&Array.isArray(item.albums.tracks)){
+            item.albums.tracks.forEach(function(track){
+                if(track.id)trackIds.push(track.id);
+            });
+        }
+    });
+
+    var trackRatings={};
+
+    if(trackIds.length){
+        var {data:trackRatingData,error:trackRatingError}=await supabaseClient
+            .from('track_ratings')
+            .select('track_id,rating')
+            .eq('user_id',userId)
+            .in('track_id',trackIds);
+
+        if(trackRatingError){
+            console.error('Kunde inte hämta användarens låtratings:',trackRatingError);
+        }else{
+            trackRatingData.forEach(function(item){
+                trackRatings[item.track_id]=item.rating||0;
+            });
+        }
+    }
+
+     if(loadVersion!==window.collectionLoadVersion)return;
+
+    records=data
+        .filter(function(item){
+            return item.albums;
+        })
+        .map(function(item,index){
+            var album=item.albums;
+
+            var artist=
+                album.artists&&album.artists.name
+                    ?album.artists.name
+                    :'Okänd artist';
+
+            var sides={
+                A:[],
+                B:[],
+                C:[],
+                D:[]
+            };
+
+            if(Array.isArray(album.tracks)){
+                album.tracks
+                    .sort(function(a,b){
+                        return (a.id||0)-(b.id||0);
+                    })
+                    .forEach(function(track){
+                        var side=track.disc_side;
+
+                        if(!sides[side])return;
+
+                        sides[side].push({
+                            id:track.id,
+                            title:track.title||'Okänd låt',
+                            rating:trackRatings[track.id]||0
+                        });
+                    });
+            }
+
+            return [
+                index+1,
+                artist,
+                album.title||'Okänd titel',
+                album.release_year||'',
+                album.genre||'',
+                albumRatings[album.id]||0,
+                album.cover_url||'',
+                sides,
+                album.id,
+                item.id
+            ];
+        });
+
+    document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';
+
+    buildGrid();
+}
+
+
+async function searchDiscogs(query){
+    const searchNumber=++musicBrainzSearchNumber;
+
+    albumSearchResults.innerHTML='<p>Söker...</p>';
+
+    try{
+        const {data,error}=await supabaseClient.functions.invoke('discogs-search',{
+            body:{query:query}
+        });
+
+        if(error){
+            console.error('Discogs error:',error);
+            throw error;
+        }
+
+        if(searchNumber!==musicBrainzSearchNumber)return;
+
+        albumSearchResults.innerHTML='';
+
+        const existingMasterIds=records
+            .map(function(record){
+                return String(record[10]||'');
+            })
+            .filter(Boolean);
+
+        const results=data&&data.results?data.results:[];
+
+        if(!results.length){
+            albumSearchResults.innerHTML='<p>Inga album hittades.</p>';
+            return;
+        }
+        const searchResults=results.slice(0,10);
+        
+        const appleArtworkResults=await Promise.all(
+            searchResults.map(async function(master){
+                const title=master.title||'Okänd titel';
+                const parts=title.split(' - ');
+        
+                const artist=parts.length>1
+                    ?parts[0]
+                    :'Okänd artist';
+        
+                const albumTitle=parts.length>1
+                    ?parts.slice(1).join(' - ')
+                    :title;
+        
+                const appleImage=await searchAppleAlbumArtwork(
+                    artist,
+                    albumTitle
+                );
+        
+                return appleImage;
+            })
+        );
+        
+        searchResults.forEach(function(master,index){
+        
+            const isAdded=existingMasterIds.includes(String(master.id));
+        
+            const title=master.title||'Okänd titel';
+            const parts=title.split(' - ');
+        
+            const artist=parts.length>1
+                ?parts[0]
+                :'Okänd artist';
+        
+            const albumTitle=parts.length>1
+                ?parts.slice(1).join(' - ')
+                :title;
+        
+            const year=master.year||'';
+        
+            const imageUrl=
+                appleArtworkResults[index]||
+                master.thumb||
+                '';
+        
+            const masterId=master.id||'';
+        
+            const div=document.createElement('div');
+        
+            div.className='mb-result';
+        
+            div.innerHTML=
+                (imageUrl
+                    ?'<img class="mb-cover" src="'+
+                        escapeHTML(imageUrl)+
+                        '" alt="" onerror="this.style.display=\'none\'">'
+                    :'')+
+        
+                '<div class="mb-info">'+
+        
+                    '<div class="mb-title">'+
+                        escapeHTML(albumTitle)+
+                    '</div>'+
+        
+                    '<div class="mb-artist">'+
+                        escapeHTML(artist)+
+                    '</div>'+
+        
+                    '<div class="mb-year">'+
+                        escapeHTML(String(year))+
+                    '</div>'+
+        
+                '</div>'+
+        
+                (isAdded
+                    ?'<button class="mb-add-button mb-added" disabled>✓ Added</button>'
+                    :'<button class="mb-add-button">Add</button>');
+        
+            const addButton=
+                div.querySelector('.mb-add-button');
+        
+            addButton.addEventListener(
+                'click',
+                function(event){
+        
+                    event.stopPropagation();
+        
+                    addAlbumFromDiscogs(
+                        master,
+                        artist,
+                        albumTitle,
+                        year,
+                        addButton
+                    );
+                }
+            );
+        
+            albumSearchResults.appendChild(div);
+        });
+
+
+    }catch(error){
+
+        console.error('Discogs-fel:',error);
+
+        if(searchNumber===musicBrainzSearchNumber){
+
+            albumSearchResults.innerHTML=
+                '<p>Kunde inte kontakta Discogs.</p>';
+        }
+    }
+}
+
+function normalizeAppleSearchText(value){
+    var text=String(value||'').toLowerCase();
+
+    if(text.normalize){
+        text=text.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    }
+
+    return text
+        .replace(/\([^)]*\)/g,' ')
+        .replace(/[^a-z0-9]+/g,' ')
+        .trim()
+        .replace(/\s+/g,' ');
+}
+
+function appleArtistMatches(candidate,artist){
+    var candidateText=normalizeAppleSearchText(candidate);
+    var artistText=normalizeAppleSearchText(artist);
+
+    return candidateText===artistText||
+        candidateText.indexOf(artistText+' ')===0||
+        artistText.indexOf(candidateText+' ')===0;
+}
+
+function appleAlbumMatches(candidate,albumTitle){
+    var candidateText=normalizeAppleSearchText(candidate);
+    var albumText=normalizeAppleSearchText(albumTitle);
+
+    return candidateText===albumText||
+        candidateText.indexOf(albumText+' ')===0||
+        candidateText.indexOf(' '+albumText+' ')!==-1;
+}
+
+function appleArtworkUrl(album){
+    return album&&album.artworkUrl100
+        ?album.artworkUrl100.replace('100x100bb','1200x1200bb')
+        :'';
+}
+
+async function searchAppleAlbumArtwork(artist,albumTitle){
+    try{
+        var directTerm=encodeURIComponent(artist+' '+albumTitle);
+        var directResponse=await fetch(
+            'https://itunes.apple.com/search?term='+directTerm+'&entity=album&limit=50'
+        );
+
+        if(!directResponse.ok){
+            throw new Error('Apple album search failed');
+        }
+
+        var directData=await directResponse.json();
+        var directResult=(directData.results||[]).find(function(item){
+            return appleArtistMatches(item.artistName,artist)&&
+                appleAlbumMatches(item.collectionName,albumTitle)&&
+                item.artworkUrl100;
+        });
+
+        if(directResult){
+            return appleArtworkUrl(directResult);
+        }
+
+        // Behåll artist-lookup som andra chans för album som Apple inte
+        // returnerar från den kombinerade sökningen.
+        var artistQuery=encodeURIComponent(artist);
+        var artistResponse=await fetch(
+            'https://itunes.apple.com/search?term='+artistQuery+'&entity=musicArtist&limit=10'
+        );
+
+        if(!artistResponse.ok){
+            throw new Error('Apple artist search failed');
+        }
+
+        var artistData=await artistResponse.json();
+        var artistResult=(artistData.results||[]).find(function(item){
+            return appleArtistMatches(item.artistName,artist)&&item.artistId;
+        });
+
+        if(!artistResult){
+            return '';
+        }
+
+        var lookupResponse=await fetch(
+            'https://itunes.apple.com/lookup?id='+artistResult.artistId+'&entity=album&limit=200'
+        );
+
+        if(!lookupResponse.ok){
+            throw new Error('Apple album lookup failed');
+        }
+
+        var lookupData=await lookupResponse.json();
+        var albumResult=(lookupData.results||[]).find(function(item){
+            return appleArtistMatches(item.artistName,artist)&&
+                appleAlbumMatches(item.collectionName,albumTitle)&&
+                item.artworkUrl100;
+        });
+
+        return appleArtworkUrl(albumResult);
+
+    }catch(error){
+        console.error('Apple artwork error:',error);
+        return '';
+    }
+}
+
+async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
+    if(button.classList.contains('mb-added'))return;
+
+    button.textContent='Sparar...';
+    button.disabled=true;
+
+    try{
+        const masterId=master.id;
+
+        if(!masterId){
+            throw new Error('Master Release saknar ID');
+        }
+
+        const {data,error}=await supabaseClient.functions.invoke(
+            'discogs-search',
+            {
+                body:{
+                    action:'master',
+                    masterId:masterId
+                }
+            }
+        );
+
+        if(error){
+            console.error('Discogs master error:',error);
+            throw error;
+        }
+
+        const discogsTitle=data.title||albumTitle;
+        const discogsYear=parseInt(data.year||year,10)||null;
+
+        const discogsGenre=
+            data.genres &&
+            data.genres.length
+                ?data.genres[0]
+                :'';
+
+        const discogsArtist=
+            data.artists &&
+            data.artists.length &&
+            data.artists[0].name
+                ?data.artists[0].name.replace(/\s*\(\d+\)$/,'')
+                :artist;
+
+        const tracklist=
+            data &&
+            Array.isArray(data.tracklist)
+                ?data.tracklist
+                :[];
+
+        let finalTracklist=tracklist;
+        
+        const hasDiscSides=tracklist.some(function(track){
+            const position=String(track.position||'').toUpperCase();
+            return /^[A-D]\d/.test(position);
+        });
+        
+        if(!hasDiscSides){
+            const {
+                data:vinylData,
+                error:vinylError
+            }=await supabaseClient.functions.invoke(
+                'discogs-search',
+                {
+                    body:{
+                        action:'vinylRelease',
+                        masterId:masterId
+                    }
+                }
+            );
+        
+            if(vinylError){
+                console.error(
+                    'Kunde inte hämta vinyl-release:',
+                    vinylError
+                );
+            }else if(
+                vinylData &&
+                Array.isArray(vinylData.tracklist) &&
+                vinylData.tracklist.length
+            ){
+                finalTracklist=vinylData.tracklist;
+        
+            }
+        }
+
+        let coverUrl=await searchAppleAlbumArtwork(
+            discogsArtist,
+            discogsTitle
+        );
+        
+        if(!coverUrl){
+            if(
+                data.images &&
+                data.images.length &&
+                data.images[0].uri
+            ){
+                coverUrl=data.images[0].uri;
+            }
+        }
+
+        let artistId=null;
+
+        const {
+            data:existingArtists,
+            error:artistSearchError
+        }=await supabaseClient
+            .from('artists')
+            .select('id,name')
+            .eq('name',discogsArtist)
+            .limit(1);
+
+        if(artistSearchError){
+            throw artistSearchError;
+        }
+
+        if(existingArtists && existingArtists.length){
+            artistId=existingArtists[0].id;
+        }else{
+            const {
+                data:newArtist,
+                error:newArtistError
+            }=await supabaseClient
+                .from('artists')
+                .insert({
+                    name:discogsArtist
+                })
+                .select('id')
+                .single();
+
+            if(newArtistError){
+                throw newArtistError;
+            }
+
+            artistId=newArtist.id;
+        }
+
+        const {
+            data:newAlbum,
+            error:albumError
+        }=await supabaseClient
+            .from('albums')
+            .insert({
+                artist_id:artistId,
+                title:discogsTitle,
+                release_year:discogsYear,
+                genre:discogsGenre,
+                cover_url:coverUrl,
+                discogs_master_id:String(masterId)
+            })
+            .select('id')
+            .single();
+
+        if(albumError){
+            throw albumError;
+        }
+
+        const albumId=newAlbum.id;
+
+        if(finalTracklist.length){
+        const rawTracks=[];
+        
+        finalTracklist.forEach(function(track){
+            if(track.type_==='track'){
+                rawTracks.push(track);
+            }
+        
+            if(Array.isArray(track.sub_tracks)){
+                track.sub_tracks.forEach(function(subTrack){
+                    if(subTrack.type_==='track'){
+                        rawTracks.push(subTrack);
+                    }
+                });
+            }
+        });
+            
+            const hasDiscSides=rawTracks.some(function(track){
+                const position=String(track.position||'').toUpperCase();
+                return /^[A-D]\d/.test(position);
+            });
+            
+            const tracks=rawTracks.map(function(track,index){
+                const position=String(track.position||'').toUpperCase();
+            
+                let discSide='';
+                let trackNumber=null;
+            
+                if(hasDiscSides){
+                    if(position.startsWith('A')){
+                        discSide='A';
+                    }else if(position.startsWith('B')){
+                        discSide='B';
+                    }else if(position.startsWith('C')){
+                        discSide='C';
+                    }else if(position.startsWith('D')){
+                        discSide='D';
+                    }
+            
+                    trackNumber=parseInt(position.substring(1),10);
+                }else{
+                    const middle=Math.ceil(rawTracks.length/2);
+            
+                    if(index<middle){
+                        discSide='A';
+                        trackNumber=index+1;
+                    }else{
+                        discSide='B';
+                        trackNumber=index-middle+1;
+                    }
+                }
+            
+                return {
+                    album_id:albumId,
+                    disc_side:discSide,
+                    track_number:Number.isNaN(trackNumber)?null:trackNumber,
+                    title:track.title||'Okänd låt'
+                };
+            });
+
+            if(tracks.length){
+                const {
+                    error:tracksError
+                }=await supabaseClient
+                    .from('tracks')
+                    .insert(tracks);
+
+                if(tracksError){
+                    throw tracksError;
+                }
+            }
+        }
+
+        const {
+            data:{
+                user
+            }
+        }=await supabaseClient.auth.getUser();
+
+        if(!user){
+            throw new Error(
+                'Du måste vara inloggad för att lägga till album.'
+            );
+        }
+
+        const {data:lastCollection,error:lastCollectionError}=await supabaseClient
+            .from('collections')
+            .select('sort_order')
+            .eq('user_id',user.id)
+            .order('sort_order',{ascending:false})
+            .limit(1);
+        
+        if(lastCollectionError){
+            throw lastCollectionError;
+        }
+        
+        const nextSortOrder=
+            lastCollection&&lastCollection.length
+                ?lastCollection[0].sort_order+1
+                :1;
+        
+        const {
+            error:collectionError
+        }=await supabaseClient
+            .from('collections')
+            .insert({
+                user_id:user.id,
+                album_id:albumId,
+                sort_order:nextSortOrder
+            });
+        
+        if(collectionError){
+            throw collectionError;
+        }
+
+        button.textContent='✓ Added';
+        button.classList.add('mb-added');
+        
+        await window.loadCollection();
+
+    }catch(error){
+        console.error(
+            'Kunde inte spara Discogs-album:',
+            error
+        );
+
+        button.textContent='Add';
+        button.disabled=false;
+
+        alert(
+            'Kunde inte spara albumet.\n\n'+
+            (error.message||error)
+        );
+    }
+}
+
+async function loadUserFromUrl(){
+    var username=GroovyRouteState.profileUsernameFromPath(window.location.pathname);
+
+    if(!username)return window.loadCollection();
+
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const sessionUser=session&&session.user;
+    const unresolvedState=GroovyRouteState.resolveProfileView(sessionUser,null);
+
+    if(unresolvedState==='login-required'){
+        viewedUserId='profile-route';
+        records=[];
+        window.loginRequiredForViewedCollection=true;
+        window.profileNotFound=false;
+        document.getElementById('viewedUserHeader').style.display='none';
+        document.getElementById('collectionCount').textContent='0 RECORDS';
+        buildGrid();
+        return;
+    }
+
+    const {data:user,error}=await supabaseClient
+        .from('profiles')
+        .select('id')
+        .ilike('username',username)
+        .maybeSingle();
+
+    if(error){
+        console.error('Kunde inte hitta användaren:',error);
+        return;
+    }
+
+    if(!user){
+        viewedUserId='profile-route';
+        records=[];
+        window.loginRequiredForViewedCollection=false;
+        window.profileNotFound=true;
+        document.getElementById('viewedUserHeader').style.display='none';
+        document.getElementById('collectionCount').textContent='0 RECORDS';
+        buildGrid();
+        return;
+    }
+
+    const resolvedState=GroovyRouteState.resolveProfileView(sessionUser,user);
+
+    if(resolvedState==='own'){
+        history.replaceState({},'','/groovy/');
+        await window.loadCollection();
+        return;
+    }
+
+    window.loginRequiredForViewedCollection=false;
+    window.profileNotFound=false;
+    await loadOtherUserCollection(user.id);
+}
+
+window.addEventListener('popstate',function(){
+    renderCurrentRoute();
+});
+
+async function renderCurrentRoute(){
+    await updateAuthUI();
+    await loadUserFromUrl();
+}
+
+renderCurrentRoute();
