@@ -1333,7 +1333,8 @@ function addCoverTilt(){
       var x=(event.clientX-rect.left)/rect.width-.5;
       var y=(event.clientY-rect.top)/rect.height-.5;
 
-      cover.style.transform='perspective(800px) rotateX('+(-y*10)+'deg) rotateY('+(x*10)+'deg)';
+      cover.style.transform='rotateY('+(x*20)+'deg)';
+console.log('X:',x,'TRANSFORM:',cover.style.transform);
     });
 
     cover.addEventListener('mouseleave',function(){
