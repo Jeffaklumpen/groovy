@@ -6,6 +6,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .title{font-size:34px;font-weight:600;letter-spacing:3px;margin:0;padding-right:520px}
 .subtitle{margin-top:8px;color:#999;font-size:14px;letter-spacing:1px}
 
+.viewed-user-header{display:none;align-items:center;gap:10px;margin-top:4px}
+.viewed-user-avatar{width:30px;height:30px;border-radius:50%;background-size:cover;background-position:center;flex-shrink:0}
+.viewed-user-name{font-size:14px;font-weight:500;line-height:30px}
+
 .header-controls{position:absolute;right:0;top:0;display:flex;align-items:center;gap:7px;z-index:20}
 .add-album-button{border:0;background:#22c55e;color:#fff;padding:8px 12px;border-radius:7px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
 .add-album-button:hover{background:#16a34a}
