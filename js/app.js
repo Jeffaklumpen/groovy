@@ -2704,6 +2704,8 @@ async function loadUserFromUrl(){
 
     if(!user){
         console.error('Användaren finns inte:',username);
+        console.log('Profile query result:',user);
+        console.log('Profile query error:',error);
         return;
     }
 
