@@ -741,6 +741,29 @@ function openAlbum(index){
     },{passive:false});
   }
 
+  for(var h=0;h<trackRatingButtons.length;h++){
+    trackRatingButtons[h].addEventListener('mouseenter',function(){
+      var buttons=detailTracks.querySelectorAll(
+        '.track-rating-star[data-track-id="'+this.getAttribute('data-track-id')+'"]'
+      );
+      var hoverRating=parseInt(this.getAttribute('data-rating'),10);
+
+      for(var i=0;i<buttons.length;i++){
+        buttons[i].style.color=i<hoverRating?'#aaa':'#555';
+      }
+    });
+
+    trackRatingButtons[h].addEventListener('mouseleave',function(){
+      var buttons=detailTracks.querySelectorAll(
+        '.track-rating-star[data-track-id="'+this.getAttribute('data-track-id')+'"]'
+      );
+
+      for(var i=0;i<buttons.length;i++){
+        buttons[i].style.color=buttons[i].classList.contains('filled')?'#fff':'#555';
+      }
+    });
+  }
+
   albumOverlay.className='album-overlay visible';
   document.body.style.overflow='hidden';
 }
