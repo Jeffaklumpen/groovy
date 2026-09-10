@@ -1,25 +1,29 @@
-const authButton=document.getElementById('authButton');
+const profileButton=document.getElementById('profileButton');
+const profileMenu=document.getElementById('profileMenu');
+const profileUsername=document.getElementById('profileUsername');
 const loginPanel=document.getElementById('loginPanel');
 const loginEmail=document.getElementById('loginEmail');
 const loginPassword=document.getElementById('loginPassword');
 const loginButton=document.getElementById('loginButton');
 const logoutButton=document.getElementById('logoutButton');
-const loginStatus=document.getElementById('loginStatus');
 
-authButton.addEventListener('click',function(event){
+profileButton.addEventListener('click',function(event){
     event.stopPropagation();
-    loginPanel.classList.toggle('open');
 
-    if(loginPanel.classList.contains('open')){
-        loginEmail.focus();
-    }
+    loginPanel.classList.remove('open');
+    profileMenu.classList.toggle('open');
 });
 
 loginPanel.addEventListener('click',function(event){
     event.stopPropagation();
 });
 
+profileMenu.addEventListener('click',function(event){
+    event.stopPropagation();
+});
+
 document.addEventListener('click',function(){
+    profileMenu.classList.remove('open');
     loginPanel.classList.remove('open');
 });
 
@@ -27,12 +31,9 @@ async function updateAuthUI(){
     const {data:{user}}=await supabaseClient.auth.getUser();
 
     if(user){
-        authButton.style.display='none';
+        profileButton.style.display='flex';
+        profileMenu.classList.remove('open');
         loginPanel.classList.remove('open');
-        loginEmail.style.display='none';
-        loginPassword.style.display='none';
-        loginButton.style.display='none';
-        logoutButton.style.display='inline-block';
 
         const username=
             user.user_metadata&&user.user_metadata.username
@@ -41,15 +42,14 @@ async function updateAuthUI(){
                     ?user.email.split('@')[0]
                     :'användare';
 
-        loginStatus.textContent='Hej, '+username;
+        profileUsername.textContent=username;
+
+        loginEmail.value='';
+        loginPassword.value='';
     }else{
-        authButton.style.display='inline-block';
+        profileButton.style.display='flex';
+        profileMenu.classList.remove('open');
         loginPanel.classList.remove('open');
-        loginEmail.style.display='block';
-        loginPassword.style.display='block';
-        loginButton.style.display='block';
-        logoutButton.style.display='none';
-        loginStatus.textContent='';
     }
 }
 
@@ -63,7 +63,7 @@ loginButton.addEventListener('click',async function(){
     }
 
     loginButton.disabled=true;
-    loginStatus.textContent='Loggar in...';
+    loginButton.textContent='Loggar in...';
 
     const {data,error}=await supabaseClient.auth.signInWithPassword({
         email:email,
@@ -72,20 +72,31 @@ loginButton.addEventListener('click',async function(){
 
     if(error){
         console.error('Login error:',error);
-        loginStatus.textContent='Inloggningen misslyckades';
         alert(error.message);
         loginButton.disabled=false;
+        loginButton.textContent='Logga in';
         return;
     }
 
     console.log('Inloggad användare:',data.user);
+
     loginButton.disabled=false;
+    loginButton.textContent='Logga in';
 
     await updateAuthUI();
 });
 
 logoutButton.addEventListener('click',async function(){
-    await supabaseClient.auth.signOut();
+    const {error}=await supabaseClient.auth.signOut();
+
+    if(error){
+        console.error('Logout error:',error);
+        alert(error.message);
+        return;
+    }
+
+    profileMenu.classList.remove('open');
+
     await updateAuthUI();
 });
 
