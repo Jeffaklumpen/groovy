@@ -1346,6 +1346,7 @@ function addCoverTilt(){
 }
     
 function buildGrid(){
+  console.log('BUILDGRID KÖRS');
   collection.className='collection grid';
 
   var html='';
