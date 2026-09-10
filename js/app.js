@@ -2459,7 +2459,7 @@ async function searchAppleAlbumArtwork(artist,albumTitle){
             return item.artistName&&
                 item.collectionName&&
                 item.artistName.toLowerCase()===artist.toLowerCase()&&
-                item.collectionName.toLowerCase()===albumTitle.toLowerCase();
+                item.collectionName.toLowerCase().startsWith(albumTitle.toLowerCase());
         });
 
         if(!albumResult||!albumResult.artworkUrl100){
