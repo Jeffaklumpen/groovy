@@ -998,10 +998,20 @@ function attachAlbumClicks(){
 
       if(isNaN(index))return;
 
-      if(!confirm('Vill du ta bort albumet från din samling?'))return;
-
-      await deleteCollectionAlbum(index);
-      return;
+        const record=records[index];
+        
+        if(!record)return;
+        
+        removeAlbumIndex=index;
+        
+        const removeAlbumModal=document.getElementById('removeAlbumModal');
+        const removeAlbumMessage=document.getElementById('removeAlbumMessage');
+        
+        removeAlbumMessage.textContent='Are you sure you want to remove "'+record[2]+'" from your collection?';
+        
+        removeAlbumModal.style.display='flex';
+        
+        return;
     }
       
     if(suppressAlbumClick)return;
@@ -1022,6 +1032,35 @@ function attachAlbumClicks(){
     openAlbum(index);
   });
 }
+
+const removeAlbumModal=document.getElementById('removeAlbumModal');
+const cancelRemoveAlbum=document.getElementById('cancelRemoveAlbum');
+const confirmRemoveAlbum=document.getElementById('confirmRemoveAlbum');
+
+let removeAlbumIndex=null;
+
+cancelRemoveAlbum.addEventListener('click',function(){
+    removeAlbumModal.style.display='none';
+    removeAlbumIndex=null;
+});
+
+removeAlbumModal.addEventListener('click',function(event){
+    if(event.target===removeAlbumModal){
+        removeAlbumModal.style.display='none';
+        removeAlbumIndex=null;
+    }
+});
+
+confirmRemoveAlbum.addEventListener('click',async function(){
+    if(removeAlbumIndex===null)return;
+
+    const index=removeAlbumIndex;
+
+    removeAlbumModal.style.display='none';
+    removeAlbumIndex=null;
+
+    await deleteCollectionAlbum(index);
+});
 
 function enableGridSorting(){
     if(view!=='grid'||selectedRating!=='all')return;
