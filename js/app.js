@@ -1836,6 +1836,8 @@ myCollectionButton.addEventListener('click',async function(){
 
     if(!user)return;
 
+    history.pushState({},'','/groovy/');
+
     deleteMode=false;
     deleteModeButton.classList.remove('active');
     document.body.classList.remove('delete-mode-active');
