@@ -1148,8 +1148,17 @@ addAlbumButton.addEventListener('click',async function(){
     const {data:{session}}=await supabaseClient.auth.getSession();
 
     if(!session||!session.user){
-        loginPanel.classList.add('open');
-        loginEmail.focus();
+        var loginPanelElement=document.getElementById('loginPanel');
+        var loginEmailElement=document.getElementById('loginEmail');
+
+        if(loginPanelElement){
+            loginPanelElement.classList.add('open');
+        }
+
+        if(loginEmailElement){
+            loginEmailElement.focus();
+        }
+
         return;
     }
 
