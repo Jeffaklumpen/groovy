@@ -1,24 +1,55 @@
+const authButton=document.getElementById('authButton');
+const loginPanel=document.getElementById('loginPanel');
 const loginEmail=document.getElementById('loginEmail');
 const loginPassword=document.getElementById('loginPassword');
 const loginButton=document.getElementById('loginButton');
 const logoutButton=document.getElementById('logoutButton');
 const loginStatus=document.getElementById('loginStatus');
 
+authButton.addEventListener('click',function(event){
+    event.stopPropagation();
+    loginPanel.classList.toggle('open');
+
+    if(loginPanel.classList.contains('open')){
+        loginEmail.focus();
+    }
+});
+
+loginPanel.addEventListener('click',function(event){
+    event.stopPropagation();
+});
+
+document.addEventListener('click',function(){
+    loginPanel.classList.remove('open');
+});
+
 async function updateAuthUI(){
     const {data:{user}}=await supabaseClient.auth.getUser();
 
     if(user){
+        authButton.style.display='none';
+        loginPanel.classList.remove('open');
         loginEmail.style.display='none';
         loginPassword.style.display='none';
         loginButton.style.display='none';
         logoutButton.style.display='inline-block';
-        loginStatus.textContent='Inloggad';
+
+        const username=
+            user.user_metadata&&user.user_metadata.username
+                ?user.user_metadata.username
+                :user.email
+                    ?user.email.split('@')[0]
+                    :'användare';
+
+        loginStatus.textContent='Hej, '+username;
     }else{
-        loginEmail.style.display='inline-block';
-        loginPassword.style.display='inline-block';
-        loginButton.style.display='inline-block';
+        authButton.style.display='inline-block';
+        loginPanel.classList.remove('open');
+        loginEmail.style.display='block';
+        loginPassword.style.display='block';
+        loginButton.style.display='block';
         logoutButton.style.display='none';
-        loginStatus.textContent='Ej inloggad';
+        loginStatus.textContent='';
     }
 }
 
@@ -51,7 +82,6 @@ loginButton.addEventListener('click',async function(){
     loginButton.disabled=false;
 
     await updateAuthUI();
-
 });
 
 logoutButton.addEventListener('click',async function(){
