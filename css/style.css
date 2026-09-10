@@ -288,3 +288,9 @@ body{padding:15px}
 
 .user-search-result{padding:8px;border-radius:8px;cursor:pointer;transition:background .15s ease}
 .user-search-result:hover{background:#242426}
+
+.empty-collection{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+.empty-collection-title{font-size:32px;font-weight:600;letter-spacing:-.5px;color:#fff}
+.empty-collection-text{margin-top:8px;font-size:14px;color:#777}
+.empty-collection button{margin-top:22px;padding:11px 22px;border:0;border-radius:8px;background:#3fa66b;color:#fff;font-size:14px;font-weight:600;cursor:pointer;pointer-events:auto;transition:background .15s ease,transform .15s ease}
+.empty-collection button:hover{background:#4dbd7c;transform:translateY(-1px)}
