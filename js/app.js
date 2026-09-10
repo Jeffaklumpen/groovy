@@ -1,6 +1,9 @@
 const profileButton=document.getElementById('profileButton');
 const profileMenu=document.getElementById('profileMenu');
 const profileUsername=document.getElementById('profileUsername');
+const profileAvatarButton=document.getElementById('profileAvatarButton');
+const profileImageInput=document.getElementById('profileImageInput');
+const profileImageMenu=document.getElementById('profileImageMenu');
 const loginPanel=document.getElementById('loginPanel');
 const loginEmail=document.getElementById('loginEmail');
 const loginPassword=document.getElementById('loginPassword');
@@ -75,32 +78,83 @@ authSwitchButton.addEventListener('click',function(){
 });
 
 async function updateAuthUI(){
+    // din befintliga/nya updateAuthUI-kod
+}
+
+profileAvatarButton.addEventListener('click',function(){
+    profileImageInput.click();
+});
+
+profileImageInput.addEventListener('change',async function(){
+    const file=profileImageInput.files[0];
+
+    if(!file)return;
+
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
 
-    if(user){
-        profileButton.style.display='flex';
-        profileMenu.classList.remove('open');
-        loginPanel.classList.remove('open');
-
-        const username=
-            user.user_metadata&&user.user_metadata.username
-                ?user.user_metadata.username
-                :user.email
-                    ?user.email.split('@')[0]
-                    :'användare';
-
-        profileUsername.textContent=username;
-
-        loginEmail.value='';
-        loginPassword.value='';
-        registerUsername.value='';
-    }else{
-        profileButton.style.display='flex';
-        profileMenu.classList.remove('open');
-        loginPanel.classList.remove('open');
+    if(!user){
+        alert('Du måste vara inloggad.');
+        return;
     }
-}
+
+    if(!file.type.startsWith('image/')){
+        alert('Välj en bildfil.');
+        profileImageInput.value='';
+        return;
+    }
+
+    if(file.size>5*1024*1024){
+        alert('Bilden får vara högst 5 MB.');
+        profileImageInput.value='';
+        return;
+    }
+
+    profileAvatarButton.disabled=true;
+
+    try{
+        const extension=file.name.split('.').pop().toLowerCase();
+        const filePath=user.id+'/avatar.'+extension;
+
+        const {error:uploadError}=await supabaseClient
+            .storage
+            .from('profile-images')
+            .upload(filePath,file,{
+                upsert:true,
+                contentType:file.type,
+                cacheControl:'3600'
+            });
+
+        if(uploadError)throw uploadError;
+
+        const {data:publicUrlData}=supabaseClient
+            .storage
+            .from('profile-images')
+            .getPublicUrl(filePath);
+
+        const avatarUrl=publicUrlData.publicUrl+'?t='+Date.now();
+
+        const {error:updateError}=await supabaseClient
+            .from('profiles')
+            .update({
+                avatar_url:avatarUrl
+            })
+            .eq('id',user.id);
+
+        if(updateError)throw updateError;
+
+        profileImageMenu.style.backgroundImage='url("'+avatarUrl+'")';
+        profileImageMenu.style.backgroundSize='cover';
+        profileImageMenu.style.backgroundPosition='center';
+
+    }catch(error){
+        console.error('Profilbild kunde inte laddas upp:',error);
+        alert('Kunde inte ladda upp profilbilden.\n\n'+error.message);
+    }
+
+    profileAvatarButton.disabled=false;
+    profileImageInput.value='';
+});
 
 loginButton.addEventListener('click',async function(){
     const email=loginEmail.value.trim();
