@@ -1820,6 +1820,36 @@ let musicBrainzController=null;
 let musicBrainzSearchNumber=0;
 
 async function loadOtherUserCollection(userId){
+    const {data:profile,error:profileError}=await supabaseClient
+        .from('profiles')
+        .select('username,avatar_url')
+        .eq('id',userId)
+        .maybeSingle();
+
+    if(profileError){
+        console.error('Kunde inte hämta användarprofil:',profileError);
+        return;
+    }
+
+    const viewedUserHeader=document.getElementById('viewedUserHeader');
+    const viewedUserAvatar=document.getElementById('viewedUserAvatar');
+    const viewedUserName=document.getElementById('viewedUserName');
+
+    viewedUserHeader.style.display='flex';
+
+    viewedUserAvatar.style.backgroundImage='url("'+
+        (profile&&profile.avatar_url
+            ?profile.avatar_url
+            :'avatar_placeholder.png')+
+        '")';
+
+    viewedUserAvatar.style.backgroundSize='cover';
+    viewedUserAvatar.style.backgroundPosition='center';
+
+    viewedUserName.textContent=(profile&&profile.username
+        ?profile.username
+        :'Unknown user')+"'s collection";
+
     const {data,error}=await supabaseClient
         .from('collections')
         .select(`
