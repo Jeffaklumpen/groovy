@@ -1144,21 +1144,15 @@ deleteModeButton.addEventListener('click',function(event){
 
 let searchTimer=null;
 
-addAlbumButton.addEventListener('click',async function(){
+addAlbumButton.addEventListener('click',async function(event){
+    event.preventDefault();
+    event.stopPropagation();
+
     const {data:{session}}=await supabaseClient.auth.getSession();
 
     if(!session||!session.user){
-        var loginPanelElement=document.getElementById('loginPanel');
-        var loginEmailElement=document.getElementById('loginEmail');
-
-        if(loginPanelElement){
-            loginPanelElement.classList.add('open');
-        }
-
-        if(loginEmailElement){
-            loginEmailElement.focus();
-        }
-
+        loginPanel.classList.add('open');
+        loginEmail.focus();
         return;
     }
 
