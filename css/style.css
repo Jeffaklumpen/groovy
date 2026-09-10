@@ -268,6 +268,7 @@ body{padding:15px}
 }
 
 .grid .record{cursor:grab;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease}
+.grid-sort-enabled .record{touch-action:none}
 .grid .record:active{cursor:grabbing}
 .grid .record.dragging{opacity:.22;transform:scale(.97);-webkit-transform:scale(.97);filter:brightness(1.08);box-shadow:0 16px 35px rgba(0,0,0,.25);z-index:20;cursor:grabbing;touch-action:none}
 .drag-preview{position:fixed!important;z-index:9999!important;pointer-events:none!important;margin:0!important;opacity:1;transform:rotate(2deg) scale(1.045)!important;-webkit-transform:rotate(2deg) scale(1.045)!important;transform-origin:center center;filter:brightness(1.08);box-shadow:0 24px 45px rgba(0,0,0,.48),0 5px 12px rgba(0,0,0,.36);transition:transform .14s ease-out;will-change:left,top,transform}
@@ -309,3 +310,4 @@ body{padding:15px}
 
 #profileMenu #searchUserButton,#profileMenu #myCollectionButton{display:block;width:100%;padding:8px;background:none;border:0;border-radius:6px;color:#fff;text-align:left;font-family:inherit;font-size:12px;cursor:pointer}
 #profileMenu #searchUserButton:hover,#profileMenu #myCollectionButton:hover{background:#242426}
+
