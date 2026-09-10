@@ -542,9 +542,9 @@ function esc(value){
 function recordHTML(record, className){
   var smallSrc=record[6];
 
-  var html='<article class="record '+(className||'')+'" draggable="'+(view==='grid'&&viewedUserId===null?'true':'false')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
+  var html='<article class="record '+(className||'')+'" draggable="false" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
-      '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
+      '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
       '<div class="number">'+record[0]+'</div>'+
       '<div class="cover-rating">';
 
@@ -1061,6 +1061,9 @@ function enableGridSorting(){
   var touchX=0;
   var touchY=0;
   var autoScrollFrame=null;
+  var dragPreview=null;
+  var dragPreviewOffsetX=0;
+  var dragPreviewOffsetY=0;
 
   collection.oncontextmenu=function(event){
     event.preventDefault();
@@ -1147,6 +1150,45 @@ function enableGridSorting(){
     }
   }
 
+  function createDragPreview(card,pointerX,pointerY){
+    removeDragPreview();
+
+    var rect=card.getBoundingClientRect();
+
+    dragPreview=card.cloneNode(true);
+    dragPreview.classList.remove('dragging');
+    dragPreview.classList.add('drag-preview');
+    dragPreview.removeAttribute('draggable');
+    dragPreview.style.width=rect.width+'px';
+    dragPreview.style.height=rect.height+'px';
+    dragPreview.style.left=(pointerX-rect.width/2)+'px';
+    dragPreview.style.top=(pointerY-rect.height/2)+'px';
+
+    dragPreviewOffsetX=rect.width/2;
+    dragPreviewOffsetY=rect.height/2;
+
+    document.body.appendChild(dragPreview);
+  }
+
+  function updateDragPreview(pointerX,pointerY){
+    if(!dragPreview)return;
+
+    dragPreview.style.left=(pointerX-dragPreviewOffsetX)+'px';
+    dragPreview.style.top=(pointerY-dragPreviewOffsetY)+'px';
+  }
+
+  function removeDragPreview(){
+    var previews=document.querySelectorAll('.drag-preview');
+
+    for(var i=0;i<previews.length;i++){
+      if(previews[i].parentNode){
+        previews[i].parentNode.removeChild(previews[i]);
+      }
+    }
+
+    dragPreview=null;
+  }
+
   function autoScroll(){
     if(!touchDragging||!dragged){
       stopAutoScroll();
@@ -1221,10 +1263,20 @@ function enableGridSorting(){
 
     dragged=record;
     record.classList.add('dragging');
+    createDragPreview(record,event.clientX,event.clientY);
 
     if(event.dataTransfer){
       event.dataTransfer.effectAllowed='move';
       event.dataTransfer.setData('text/plain',record.getAttribute('data-index'));
+
+      if(dragPreview){
+        // Dölj webbläsarens halvtransparenta standard-ghost. Vår egen
+        // kopia följer musen och förblir helt ogenomskinlig.
+        var transparentDragImage=document.createElement('canvas');
+        transparentDragImage.width=1;
+        transparentDragImage.height=1;
+        event.dataTransfer.setDragImage(transparentDragImage,0,0);
+      }
     }
   };
 
@@ -1233,12 +1285,22 @@ function enableGridSorting(){
     if(!dragged)return;
 
     event.preventDefault();
+    event.dataTransfer.dropEffect='move';
+
+    updateDragPreview(event.clientX,event.clientY);
 
     var target=event.target.closest('.record');
 
     if(!target||target===dragged)return;
 
     moveDragged(target,event.clientX,event.clientY);
+  };
+
+  collection.ondragenter=function(event){
+    if(viewedUserId===null&&dragged){
+      event.preventDefault();
+      event.dataTransfer.dropEffect='move';
+    }
   };
 
   collection.ondrop=async function(event){
@@ -1250,6 +1312,7 @@ function enableGridSorting(){
     var releasedDragged=dragged;
 
     releasedDragged.classList.remove('dragging');
+    removeDragPreview();
     dragged=null;
 
     await finishDrag();
@@ -1260,91 +1323,175 @@ function enableGridSorting(){
       dragged.classList.remove('dragging');
     }
 
+    removeDragPreview();
     dragged=null;
   };
 
+  window.addEventListener('dragend',removeDragPreview);
+  window.addEventListener('blur',function(){
+    if(dragged){
+      dragged.classList.remove('dragging');
+      dragged=null;
+    }
+
+    removeDragPreview();
+    touchDragging=false;
+    resetPointerState();
+  });
+
+  collection.ondragstart=null;
+  collection.ondragover=null;
+  collection.ondragenter=null;
+  collection.ondrop=null;
+  collection.ondragend=null;
+
   var cards=collection.querySelectorAll('.record');
+  var pointerId=null;
+  var pointerCard=null;
+  var pointerStartX=0;
+  var pointerStartY=0;
+
+  function resetPointerState(){
+    clearTimeout(touchTimer);
+    stopAutoScroll();
+
+    if(pointerCard&&pointerCard.releasePointerCapture&&pointerId!==null){
+      try{pointerCard.releasePointerCapture(pointerId);}catch(error){}
+    }
+
+    pointerId=null;
+    pointerCard=null;
+  }
+
+  function startPointerDrag(card,event){
+    dragged=card;
+    touchDragging=true;
+    suppressAlbumClick=true;
+    touchX=event.clientX;
+    touchY=event.clientY;
+    card.classList.add('dragging');
+    createDragPreview(card,touchX,touchY);
+
+    if(card.setPointerCapture&&event.pointerId!==undefined){
+      try{card.setPointerCapture(event.pointerId);}catch(error){}
+    }
+
+    autoScroll();
+  }
+
+  function updatePointerDrag(event){
+    if(!touchDragging||!dragged)return;
+
+    event.preventDefault();
+
+    touchX=event.clientX;
+    touchY=event.clientY;
+    updateDragPreview(touchX,touchY);
+
+    var target=document.elementFromPoint(touchX,touchY);
+    var card=target&&target.closest
+      ?target.closest('.record')
+      :null;
+
+    if(card&&card!==dragged){
+      moveDragged(card,touchX,touchY);
+    }
+  }
+
+  async function finishPointerDrag(){
+    clearTimeout(touchTimer);
+    stopAutoScroll();
+
+    if(!touchDragging||!dragged){
+      removeDragPreview();
+      resetPointerState();
+      touchDragging=false;
+      dragged=null;
+      return;
+    }
+
+    var releasedDragged=dragged;
+
+    releasedDragged.classList.remove('dragging');
+    removeDragPreview();
+    dragged=null;
+    touchDragging=false;
+    resetPointerState();
+
+    suppressAlbumClick=true;
+    await finishDrag();
+
+    setTimeout(function(){
+      suppressAlbumClick=false;
+    },300);
+  }
+
+  function cancelPointerDrag(){
+    clearTimeout(touchTimer);
+    stopAutoScroll();
+
+    if(dragged){
+      dragged.classList.remove('dragging');
+    }
+
+    removeDragPreview();
+    dragged=null;
+    touchDragging=false;
+    suppressAlbumClick=false;
+    resetPointerState();
+  }
 
   for(var i=0;i<cards.length;i++){
-    cards[i].ontouchstart=function(event){
-      if(event.touches.length!==1)return;
+    cards[i].onpointerdown=function(event){
+      if(pointerId!==null)return;
+      if(event.button!==undefined&&event.button!==0)return;
 
-      var card=this;
-
-      touchX=event.touches[0].clientX;
-      touchY=event.touches[0].clientY;
+      pointerId=event.pointerId;
+      pointerCard=this;
+      pointerStartX=event.clientX;
+      pointerStartY=event.clientY;
+      touchX=event.clientX;
+      touchY=event.clientY;
 
       clearTimeout(touchTimer);
 
-      touchTimer=setTimeout(function(){
-        dragged=card;
-        touchDragging=true;
-        suppressAlbumClick=true;
-        card.classList.add('dragging');
-        autoScroll();
-      },350);
+      if(event.pointerType==='mouse'||event.pointerType==='pen'){
+        startPointerDrag(this,event);
+      }else{
+        touchTimer=setTimeout(function(){
+          if(pointerId!==null&&!touchDragging){
+            startPointerDrag(pointerCard,event);
+          }
+        },350);
+      }
     };
 
-    cards[i].ontouchmove=function(event){
-      if(!touchDragging||!dragged)return;
+    cards[i].onpointermove=function(event){
+      if(pointerId===null||event.pointerId!==pointerId)return;
 
-      event.preventDefault();
+      if(!touchDragging){
+        var movedX=Math.abs(event.clientX-pointerStartX);
+        var movedY=Math.abs(event.clientY-pointerStartY);
 
-      var touch=event.touches[0];
+        if(movedX>8||movedY>8){
+          clearTimeout(touchTimer);
+          resetPointerState();
+        }
 
-      touchX=touch.clientX;
-      touchY=touch.clientY;
-
-      var target=document.elementFromPoint(touchX,touchY);
-
-      if(!target)return;
-
-      var card=target.closest
-        ?target.closest('.record')
-        :null;
-
-      if(!card||card===dragged)return;
-
-      moveDragged(card,touchX,touchY);
-    };
-
-    cards[i].ontouchend=async function(){
-      clearTimeout(touchTimer);
-      stopAutoScroll();
-
-      if(!touchDragging||!dragged){
-        touchDragging=false;
-        dragged=null;
         return;
       }
 
-      var releasedDragged=dragged;
-
-      releasedDragged.classList.remove('dragging');
-
-      dragged=null;
-      touchDragging=false;
-
-      suppressAlbumClick=true;
-
-      await finishDrag();
-
-      setTimeout(function(){
-        suppressAlbumClick=false;
-      },300);
+      updatePointerDrag(event);
     };
 
-    cards[i].ontouchcancel=function(){
-      clearTimeout(touchTimer);
-      stopAutoScroll();
+    cards[i].onpointerup=function(event){
+      if(pointerId===null||event.pointerId!==pointerId)return;
+      finishPointerDrag();
+    };
 
-      if(dragged){
-        dragged.classList.remove('dragging');
-      }
-
-      dragged=null;
-      touchDragging=false;
-      suppressAlbumClick=false;
+    cards[i].onpointercancel=function(event){
+      if(pointerId===null||event.pointerId!==pointerId)return;
+      cancelPointerDrag();
     };
   }
 }
@@ -2402,11 +2549,70 @@ async function searchDiscogs(query){
     }
 }
 
+function normalizeAppleSearchText(value){
+    var text=String(value||'').toLowerCase();
+
+    if(text.normalize){
+        text=text.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    }
+
+    return text
+        .replace(/\([^)]*\)/g,' ')
+        .replace(/[^a-z0-9]+/g,' ')
+        .trim()
+        .replace(/\s+/g,' ');
+}
+
+function appleArtistMatches(candidate,artist){
+    var candidateText=normalizeAppleSearchText(candidate);
+    var artistText=normalizeAppleSearchText(artist);
+
+    return candidateText===artistText||
+        candidateText.indexOf(artistText+' ')===0||
+        artistText.indexOf(candidateText+' ')===0;
+}
+
+function appleAlbumMatches(candidate,albumTitle){
+    var candidateText=normalizeAppleSearchText(candidate);
+    var albumText=normalizeAppleSearchText(albumTitle);
+
+    return candidateText===albumText||
+        candidateText.indexOf(albumText+' ')===0||
+        candidateText.indexOf(' '+albumText+' ')!==-1;
+}
+
+function appleArtworkUrl(album){
+    return album&&album.artworkUrl100
+        ?album.artworkUrl100.replace('100x100bb','1200x1200bb')
+        :'';
+}
+
 async function searchAppleAlbumArtwork(artist,albumTitle){
     try{
-        const artistQuery=encodeURIComponent(artist);
+        var directTerm=encodeURIComponent(artist+' '+albumTitle);
+        var directResponse=await fetch(
+            'https://itunes.apple.com/search?term='+directTerm+'&entity=album&limit=50'
+        );
 
-        const artistResponse=await fetch(
+        if(!directResponse.ok){
+            throw new Error('Apple album search failed');
+        }
+
+        var directData=await directResponse.json();
+        var directResult=(directData.results||[]).find(function(item){
+            return appleArtistMatches(item.artistName,artist)&&
+                appleAlbumMatches(item.collectionName,albumTitle)&&
+                item.artworkUrl100;
+        });
+
+        if(directResult){
+            return appleArtworkUrl(directResult);
+        }
+
+        // Behåll artist-lookup som andra chans för album som Apple inte
+        // returnerar från den kombinerade sökningen.
+        var artistQuery=encodeURIComponent(artist);
+        var artistResponse=await fetch(
             'https://itunes.apple.com/search?term='+artistQuery+'&entity=musicArtist&limit=10'
         );
 
@@ -2414,22 +2620,16 @@ async function searchAppleAlbumArtwork(artist,albumTitle){
             throw new Error('Apple artist search failed');
         }
 
-        const artistData=await artistResponse.json();
-
-        if(!artistData.results||!artistData.results.length){
-            return '';
-        }
-
-        const artistResult=artistData.results.find(function(item){
-            return item.artistName&&
-                item.artistName.toLowerCase()===artist.toLowerCase();
+        var artistData=await artistResponse.json();
+        var artistResult=(artistData.results||[]).find(function(item){
+            return appleArtistMatches(item.artistName,artist)&&item.artistId;
         });
 
-        if(!artistResult||!artistResult.artistId){
+        if(!artistResult){
             return '';
         }
 
-        const lookupResponse=await fetch(
+        var lookupResponse=await fetch(
             'https://itunes.apple.com/lookup?id='+artistResult.artistId+'&entity=album&limit=200'
         );
 
@@ -2437,24 +2637,14 @@ async function searchAppleAlbumArtwork(artist,albumTitle){
             throw new Error('Apple album lookup failed');
         }
 
-        const lookupData=await lookupResponse.json();
-
-        if(!lookupData.results||!lookupData.results.length){
-            return '';
-        }
-
-        const albumResult=lookupData.results.find(function(item){
-            return item.artistName&&
-                item.collectionName&&
-                item.artistName.toLowerCase()===artist.toLowerCase()&&
-                item.collectionName.toLowerCase().startsWith(albumTitle.toLowerCase());
+        var lookupData=await lookupResponse.json();
+        var albumResult=(lookupData.results||[]).find(function(item){
+            return appleArtistMatches(item.artistName,artist)&&
+                appleAlbumMatches(item.collectionName,albumTitle)&&
+                item.artworkUrl100;
         });
 
-        if(!albumResult||!albumResult.artworkUrl100){
-            return '';
-        }
-
-        return albumResult.artworkUrl100.replace('100x100bb','1200x1200bb');
+        return appleArtworkUrl(albumResult);
 
     }catch(error){
         console.error('Apple artwork error:',error);
