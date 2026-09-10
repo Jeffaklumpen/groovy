@@ -1652,6 +1652,27 @@ const closeAddAlbum=document.getElementById('closeAddAlbum');
 const albumSearchInput=document.getElementById('albumSearchInput');
 const albumSearchResults=document.getElementById('albumSearchResults');
 
+const searchUserButton=document.getElementById('searchUserButton');
+const searchUserModal=document.getElementById('searchUserModal');
+const closeSearchUser=document.getElementById('closeSearchUser');
+
+searchUserButton.addEventListener('click',function(event){
+    event.preventDefault();
+    event.stopPropagation();
+
+    searchUserModal.style.display='flex';
+});
+
+closeSearchUser.addEventListener('click',function(){
+    searchUserModal.style.display='none';
+});
+
+searchUserModal.addEventListener('click',function(event){
+    if(event.target===searchUserModal){
+        searchUserModal.style.display='none';
+    }
+});
+
 const deleteModeButton=document.getElementById('deleteModeButton');
 
 let deleteMode=false;
