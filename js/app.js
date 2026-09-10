@@ -749,7 +749,7 @@ function openAlbum(index){
       var hoverRating=parseInt(this.getAttribute('data-rating'),10);
 
       for(var i=0;i<buttons.length;i++){
-        buttons[i].style.color=i<hoverRating?'#aaa':'#555';
+        buttons[i].style.color=buttons[i].classList.contains('filled')?'#fff':(i<hoverRating?'#aaa':'#555');
       }
     });
 
