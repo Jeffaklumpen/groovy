@@ -1745,6 +1745,14 @@ searchUserModal.addEventListener('click',function(event){
     }
 });
 
+const myCollectionButton=document.getElementById('myCollectionButton');
+
+myCollectionButton.addEventListener('click',async function(){
+    document.getElementById('viewedUserHeader').style.display='none';
+
+    await window.loadCollection();
+});
+
 const deleteModeButton=document.getElementById('deleteModeButton');
 
 let deleteMode=false;
