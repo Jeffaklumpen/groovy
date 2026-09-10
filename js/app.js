@@ -362,6 +362,28 @@ updateAuthUI();
 
 var records = [];
 
+if(window.matchMedia('(hover:hover) and (pointer:fine)').matches){
+  document.addEventListener('mousemove',function(event){
+    var wrapper=event.target.closest('.cover-wrapper');
+    if(!wrapper)return;
+
+    var rect=wrapper.getBoundingClientRect();
+    var x=(event.clientX-rect.left)/rect.width-.5;
+    var y=(event.clientY-rect.top)/rect.height-.5;
+
+    wrapper.style.transform='perspective(800px) rotateX('+(-y*6)+'deg) rotateY('+(x*6)+'deg)';
+  });
+
+  document.addEventListener('mouseout',function(event){
+    var wrapper=event.target.closest('.cover-wrapper');
+    if(!wrapper)return;
+
+    if(event.relatedTarget&&wrapper.contains(event.relatedTarget))return;
+
+    wrapper.style.transform='';
+  });
+}
+
 window.loadCollection=async function(){
   var {data:{session}}=await supabaseClient.auth.getSession();
 
