@@ -2419,7 +2419,7 @@ async function searchAppleAlbumArtwork(artist,albumTitle){
         const query=encodeURIComponent(albumTitle);
 
         const response=await fetch(
-            'https://itunes.apple.com/search?term='+query+'&entity=album&limit=50'
+            'https://itunes.apple.com/search?term='+query+'&entity=album&attribute=albumTerm&limit=50'
         );
 
         if(!response.ok){
