@@ -2694,7 +2694,7 @@ async function loadUserFromUrl(){
     const {data:user,error}=await supabaseClient
         .from('profiles')
         .select('id')
-        .eq('username',username)
+        .ilike('username',username)
         .maybeSingle();
 
     if(error){
