@@ -618,86 +618,8 @@ function openAlbum(index){
   detailYear.innerHTML=esc(record[3]);
   detailGenre.innerHTML=esc(record[4]||'Genre saknas');
 
-    detailCover.src=record[6];
-    detailCover.alt=record[1]+' - '+record[2];
-    
-    var detailBackCover='';
-
-    if(record[10]){
-      supabaseClient.functions.invoke(
-        'discogs-search',
-        {
-          body:{
-            action:'master',
-            masterId:record[10]
-          }
-        }
-      ).then(function(result){
-        var imageData=result.data;
-        var imageError=result.error;
-    
-        if(!imageError&&imageData&&Array.isArray(imageData.images)){
-          var backImage=imageData.images.find(function(image){
-            return image.type==='secondary'&&image.uri;
-          });
-    
-            if(backImage){
-              detailBackCover=backImage.uri;
-            
-              if(!detailCoverFlipButton){
-                detailCoverFlipButton=document.createElement('button');
-                detailCoverFlipButton.id='detailCoverFlipButton';
-                detailCoverFlipButton.type='button';
-                detailCoverFlipButton.textContent='Back';
-                detailCoverWrapper.appendChild(detailCoverFlipButton);
-            
-                detailCoverFlipButton.onclick=function(){
-                  if(detailCover.src===detailBackCover){
-                    detailCover.src=record[6];
-                    detailCoverFlipButton.textContent='Back';
-                  }else{
-                    detailCover.src=detailBackCover;
-                    detailCoverFlipButton.textContent='Front';
-                  }
-                };
-              }
-            }
-        }
-      }).catch(function(error){
-        console.error('Kunde inte hämta baksidesbild:',error);
-      });
-    }
-
-    var detailCoverWrapper=detailCover.parentElement;
-    
-    if(!detailCoverWrapper.classList.contains('detail-cover-wrapper')){
-      detailCoverWrapper.classList.add('detail-cover-wrapper');
-    }
-    
-    var detailCoverFlipButton=document.getElementById('detailCoverFlipButton');
-    
-    if(detailBackCover){
-      if(!detailCoverFlipButton){
-        detailCoverFlipButton=document.createElement('button');
-        detailCoverFlipButton.id='detailCoverFlipButton';
-        detailCoverFlipButton.type='button';
-        detailCoverWrapper.appendChild(detailCoverFlipButton);
-      }
-    
-      detailCoverFlipButton.textContent='Back';
-    }
-
-    if(detailCoverFlipButton){
-      detailCoverFlipButton.onclick=function(){
-        if(detailCover.src===detailBackCover){
-          detailCover.src=record[6];
-          detailCoverFlipButton.textContent='Back';
-        }else{
-          detailCover.src=detailBackCover;
-          detailCoverFlipButton.textContent='Front';
-        }
-      };
-    }
+  detailCover.src=record[6];
+  detailCover.alt=record[1]+' - '+record[2];
 
   var rating=parseInt(record[5],10);
   if(isNaN(rating))rating=0;
