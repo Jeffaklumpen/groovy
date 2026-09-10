@@ -197,12 +197,15 @@ console.log('Storage upload:',{
 
         const avatarUrl=publicUrlData.publicUrl+'?t='+Date.now();
 
-        const {error:updateError}=await supabaseClient
+        const {data:updateData,error:updateError}=await supabaseClient
             .from('profiles')
             .update({
                 avatar_url:avatarUrl
             })
-            .eq('id',user.id);
+            .eq('id',user.id)
+            .select('id,avatar_url');
+        
+        console.log('Profil uppdaterad:',updateData);
 
         if(updateError)throw updateError;
 
