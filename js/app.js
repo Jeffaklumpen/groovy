@@ -885,6 +885,10 @@ async function saveTrackRating(trackId,rating){
     );
   }
 
+  for(var i=0;i<trackButtons.length;i++){
+    trackButtons[i].style.color=trackButtons[i].classList.contains('filled')?'#fff':'#555';
+  }
+
   for(var r=0;r<records.length;r++){
     var sides=records[r][7]||{};
 
