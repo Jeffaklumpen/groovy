@@ -706,8 +706,6 @@ async function saveAlbumRating(index,rating){
 
   record[5]=rating;
 
-  record[5]=rating;
-
   var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
 
   for(var i=0;i<ratingButtons.length;i++){
