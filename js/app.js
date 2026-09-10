@@ -1680,7 +1680,7 @@ userSearchInput.addEventListener('input',function(){
 async function searchUsers(query){
     const {data,error}=await supabaseClient
         .from('profiles')
-        .select('id,username')
+        .select('id,username,avatar_url')
         .ilike('username','%'+query+'%')
         .limit(10);
 
@@ -1699,11 +1699,25 @@ async function searchUsers(query){
 
     data.forEach(function(user){
         const div=document.createElement('div');
-
+    
         div.className='user-search-result';
-
-        div.textContent='@'+user.username;
-
+    
+        const avatar=document.createElement('div');
+        avatar.className='user-search-avatar';
+    
+        avatar.style.backgroundImage='url("'+
+            (user.avatar_url||'avatar_placeholder.png')+
+            '")';
+    
+        avatar.style.backgroundSize='cover';
+        avatar.style.backgroundPosition='center';
+    
+        const username=document.createElement('span');
+        username.textContent='@'+user.username;
+    
+        div.appendChild(avatar);
+        div.appendChild(username);
+    
         userSearchResults.appendChild(div);
     });
 }
