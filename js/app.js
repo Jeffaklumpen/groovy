@@ -1719,7 +1719,7 @@ userSearchInput.addEventListener('input',function(){
     clearTimeout(userSearchTimer);
 
     if(query.length<2){
-        userSearchResults.innerHTML='';
+        loadTopUsers();
         return;
     }
 
@@ -1729,6 +1729,93 @@ userSearchInput.addEventListener('input',function(){
         searchUsers(query);
     },250);
 });
+
+async function loadTopUsers(){
+    const {data:users,error}=await supabaseClient
+        .from('profiles')
+        .select('id,username,avatar_url');
+
+    if(error){
+        console.error('Top users error:',error);
+        userSearchResults.innerHTML='<p>Could not load users.</p>';
+        return;
+    }
+
+    if(!users||!users.length){
+        userSearchResults.innerHTML='<p>No users found.</p>';
+        return;
+    }
+
+    const userCollectionCounts=await Promise.all(
+        users.map(async function(user){
+            const {count,error}=await supabaseClient
+                .from('collections')
+                .select('id',{count:'exact',head:true})
+                .eq('user_id',user.id);
+
+            return {
+                id:user.id,
+                count:error?0:(count||0)
+            };
+        })
+    );
+
+    userCollectionCounts.sort(function(a,b){
+        return b.count-a.count;
+    });
+
+    const topUsers=userCollectionCounts.slice(0,10);
+
+    userSearchResults.innerHTML='';
+
+    topUsers.forEach(function(item){
+        const user=users.find(function(user){
+            return user.id===item.id;
+        });
+
+        if(!user)return;
+
+        const div=document.createElement('div');
+
+        div.className='user-search-result';
+        div.dataset.userId=user.id;
+        div.style.cursor='pointer';
+
+        const avatar=document.createElement('div');
+        avatar.className='user-search-avatar';
+
+        avatar.style.backgroundImage='url("'+
+            (user.avatar_url||'avatar_placeholder.png')+
+            '")';
+
+        avatar.style.backgroundSize='cover';
+        avatar.style.backgroundPosition='center';
+
+        const userInfo=document.createElement('div');
+        userInfo.className='user-search-info';
+
+        const username=document.createElement('span');
+        username.className='user-search-username';
+        username.textContent=user.username;
+
+        const collectionCount=document.createElement('span');
+        collectionCount.className='user-search-count';
+        collectionCount.textContent=item.count+' collected records';
+
+        userInfo.appendChild(username);
+        userInfo.appendChild(collectionCount);
+
+        div.appendChild(avatar);
+        div.appendChild(userInfo);
+
+        userSearchResults.appendChild(div);
+
+        div.addEventListener('click',function(){
+            history.pushState({},'','/groovy/user/'+encodeURIComponent(user.username));
+            loadOtherUserCollection(user.id);
+        });
+    });
+}
 
 async function searchUsers(query){
     const {data,error}=await supabaseClient
@@ -1823,6 +1910,9 @@ searchUserButton.addEventListener('click',async function(event){
     if(!user)return;
 
     searchUserModal.style.display='flex';
+    userSearchInput.value='';
+    loadTopUsers();
+    userSearchInput.focus();
 });
 
 closeSearchUser.addEventListener('click',function(){
