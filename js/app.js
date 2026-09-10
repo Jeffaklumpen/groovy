@@ -364,23 +364,39 @@ var records = [];
 
 if(window.matchMedia('(hover:hover) and (pointer:fine)').matches){
   document.addEventListener('mousemove',function(event){
-    var wrapper=event.target.closest('.cover-wrapper');
-    if(!wrapper)return;
+    var element=event.target;
 
-    var rect=wrapper.getBoundingClientRect();
-    var x=(event.clientX-rect.left)/rect.width-.5;
-    var y=(event.clientY-rect.top)/rect.height-.5;
+    while(element&&element!==document){
+      if(element.classList&&element.classList.contains('cover-wrapper')){
 
-    wrapper.style.transform='perspective(800px) rotateX('+(-y*6)+'deg) rotateY('+(x*6)+'deg)';
+        var rect=element.getBoundingClientRect();
+        var x=(event.clientX-rect.left)/rect.width-.5;
+        var y=(event.clientY-rect.top)/rect.height-.5;
+
+        element.style.transform='perspective(800px) rotateX('+(-y*6)+'deg) rotateY('+(x*6)+'deg)';
+
+        return;
+      }
+
+      element=element.parentElement;
+    }
   });
 
   document.addEventListener('mouseout',function(event){
-    var wrapper=event.target.closest('.cover-wrapper');
-    if(!wrapper)return;
+    var element=event.target;
 
-    if(event.relatedTarget&&wrapper.contains(event.relatedTarget))return;
+    while(element&&element!==document){
+      if(element.classList&&element.classList.contains('cover-wrapper')){
 
-    wrapper.style.transform='';
+        if(!event.relatedTarget||!element.contains(event.relatedTarget)){
+          element.style.transform='';
+        }
+
+        return;
+      }
+
+      element=element.parentElement;
+    }
   });
 }
 
