@@ -2447,7 +2447,7 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
         console.log('Discogs Master Release:',data);
 
         const discogsTitle=data.title||albumTitle;
-        const discogsYear=data.year||year;
+        const discogsYear=parseInt(data.year||year,10)||null;
 
         const discogsGenre=
             data.genres &&
