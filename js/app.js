@@ -2316,77 +2316,99 @@ async function searchDiscogs(query){
             albumSearchResults.innerHTML='<p>Inga album hittades.</p>';
             return;
         }
-        results.slice(0,10).forEach(function(master){
-
+        const searchResults=results.slice(0,10);
+        
+        const appleArtworkResults=await Promise.all(
+            searchResults.map(async function(master){
+                const title=master.title||'Okänd titel';
+                const parts=title.split(' - ');
+        
+                const artist=parts.length>1
+                    ?parts[0]
+                    :'Okänd artist';
+        
+                const albumTitle=parts.length>1
+                    ?parts.slice(1).join(' - ')
+                    :title;
+        
+                const appleImage=await searchAppleAlbumArtwork(
+                    artist,
+                    albumTitle
+                );
+        
+                return appleImage;
+            })
+        );
+        
+        searchResults.forEach(function(master,index){
+        
             const isAdded=existingMasterIds.includes(String(master.id));
-
+        
             const title=master.title||'Okänd titel';
             const parts=title.split(' - ');
+        
             const artist=parts.length>1
                 ?parts[0]
                 :'Okänd artist';
+        
             const albumTitle=parts.length>1
                 ?parts.slice(1).join(' - ')
                 :title;
-
-
+        
             const year=master.year||'';
-
-            const imageUrl=master.thumb||'';
-
+        
+            const imageUrl=
+                appleArtworkResults[index]||
+                master.thumb||
+                '';
+        
             const masterId=master.id||'';
-
-
+        
             const div=document.createElement('div');
-
+        
             div.className='mb-result';
-
-
+        
             div.innerHTML=
                 (imageUrl
                     ?'<img class="mb-cover" src="'+
                         escapeHTML(imageUrl)+
                         '" alt="" onerror="this.style.display=\'none\'">'
                     :'')+
-
+        
                 '<div class="mb-info">'+
-
+        
                     '<div class="mb-title">'+
                         escapeHTML(albumTitle)+
                     '</div>'+
-
+        
                     '<div class="mb-artist">'+
                         escapeHTML(artist)+
                     '</div>'+
-
+        
                     '<div class="mb-year">'+
                         escapeHTML(String(year))+
                     '</div>'+
-
+        
                 '</div>'+
-
+        
                 (isAdded
                     ?'<button class="mb-add-button mb-added" disabled>✓ Added</button>'
                     :'<button class="mb-add-button">Add</button>');
-
-
+        
             const addButton=
                 div.querySelector('.mb-add-button');
-
-
+        
             addButton.addEventListener(
                 'click',
                 function(event){
-
+        
                     event.stopPropagation();
-
-
+        
                     console.log(
                         'Vald Discogs Master Release:',
                         master
                     );
-
-
+        
                     addAlbumFromDiscogs(
                         master,
                         artist,
@@ -2396,8 +2418,7 @@ async function searchDiscogs(query){
                     );
                 }
             );
-
-
+        
             albumSearchResults.appendChild(div);
         });
 
