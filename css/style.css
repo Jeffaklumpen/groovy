@@ -80,8 +80,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .tracks-list{margin:0;padding:0;list-style:none;counter-reset:track}
 .tracks-list li{position:relative;padding:6px 0 6px 30px;border-bottom:1px solid rgba(255,255,255,.045);color:#d5d5d5;font-size:13px;line-height:1.25}
 .tracks-list li:before{position:absolute;left:0;top:6px;width:21px;color:#555;counter-increment:track;content:counter(track,decimal-leading-zero);font-size:10px}
-.track-rating{position:absolute;right:0;top:6px;color:#fff;font-size:13px;letter-spacing:1px;white-space:nowrap}
-.track-rating .empty{color:#555}
+.track-rating{position:absolute;right:0;top:6px;display:flex;gap:1px;white-space:nowrap}
+.track-rating-star{border:0;background:none;padding:0;margin:0;color:#555;font-size:13px;line-height:1;cursor:pointer;touch-action:manipulation}
+.track-rating-star.filled{color:#fff}
+.track-rating-star.empty{color:#555}
+.track-rating-star:hover{color:#fff}
 .track-title{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:75px}
 
 .album-close{position:absolute;z-index:20;right:14px;top:12px;width:46px;height:46px;border:0;background:rgba(0,0,0,.68);color:#fff;font-size:31px;line-height:42px;text-align:center;border-radius:23px;cursor:pointer;-webkit-tap-highlight-color:transparent}
