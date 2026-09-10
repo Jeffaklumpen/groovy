@@ -1334,7 +1334,6 @@ function addCoverTilt(){
       var y=(event.clientY-rect.top)/rect.height-.5;
 
       cover.querySelector('.cover-wrapper').style.transform='perspective(800px) rotateX('+(-y*10)+'deg) rotateY('+(x*10)+'deg)';
-console.log('X:',x,'TRANSFORM:',cover.style.transform);
     });
 
     cover.addEventListener('mouseleave',function(){
