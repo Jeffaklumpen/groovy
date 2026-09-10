@@ -117,8 +117,13 @@ async function updateAuthUI(){
             profileImageMenu.style.backgroundSize='cover';
             profileImageMenu.style.backgroundPosition='center';
         }else{
-            profileImage.style.backgroundImage='';
-            profileImageMenu.style.backgroundImage='';
+            profileImage.style.backgroundImage='url("avatar_placeholder.png")';
+            profileImage.style.backgroundSize='cover';
+            profileImage.style.backgroundPosition='center';
+        
+            profileImageMenu.style.backgroundImage='url("avatar_placeholder.png")';
+            profileImageMenu.style.backgroundSize='cover';
+            profileImageMenu.style.backgroundPosition='center';
         }
 
         loginEmail.value='';
