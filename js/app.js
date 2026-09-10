@@ -362,6 +362,12 @@ window.records = [];
 window.viewedUserId=null;
 
 window.loadCollection=async function(){
+  var path=window.location.pathname;
+
+  if(/^\/groovy\/user\/[^\/]+\/?$/.test(path)){
+    return;
+  }
+
   viewedUserId=null;
     
   var {data:{session}}=await supabaseClient.auth.getSession();
