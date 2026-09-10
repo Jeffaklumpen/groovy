@@ -1607,6 +1607,50 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
                 ?data.tracklist
                 :[];
 
+        let finalTracklist=tracklist;
+        
+        const hasDiscSides=tracklist.some(function(track){
+            const position=String(track.position||'').toUpperCase();
+            return /^[A-D]\d/.test(position);
+        });
+        
+        if(!hasDiscSides){
+            console.log(
+                'Master saknar riktiga vinylpositioner. Hämtar vinyl-release...'
+            );
+        
+            const {
+                data:vinylData,
+                error:vinylError
+            }=await supabaseClient.functions.invoke(
+                'discogs-search',
+                {
+                    body:{
+                        action:'vinylRelease',
+                        masterId:masterId
+                    }
+                }
+            );
+        
+            if(vinylError){
+                console.error(
+                    'Kunde inte hämta vinyl-release:',
+                    vinylError
+                );
+            }else if(
+                vinylData &&
+                Array.isArray(vinylData.tracklist) &&
+                vinylData.tracklist.length
+            ){
+                finalTracklist=vinylData.tracklist;
+        
+                console.log(
+                    'Vinyl-release tracklist hämtad:',
+                    finalTracklist
+                );
+            }
+        }
+
         let coverUrl='';
 
         if(
@@ -1674,8 +1718,8 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
 
         const albumId=newAlbum.id;
 
-        if(tracklist.length){
-            const rawTracks=tracklist
+        if(finalTracklist.length){
+            const rawTracks=finalTracklist
                 .filter(function(track){
                     return track.type_==='track';
                 });
