@@ -506,7 +506,7 @@ window.loadCollection=async function(){
     });
 
   console.log('RECORDS:', records);
-  document.getElementById('collectionCount').textContent=records.length+' RECORDS';
+  document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';
   buildGrid();
 }
 
