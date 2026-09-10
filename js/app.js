@@ -434,6 +434,9 @@ function enableGridSorting(){
   var touchTimer=null;
   var touchDragging=false;
   var suppressAlbumClick=false;
+  var touchX=0;
+  var touchY=0;
+  var autoScrollFrame=null;
 
   collection.oncontextmenu=function(event){
     event.preventDefault();
@@ -511,6 +514,49 @@ function enableGridSorting(){
         });
       }
     }
+  }
+
+  function stopAutoScroll(){
+    if(autoScrollFrame){
+      cancelAnimationFrame(autoScrollFrame);
+      autoScrollFrame=null;
+    }
+  }
+
+  function autoScroll(){
+    if(!touchDragging||!dragged){
+      stopAutoScroll();
+      return;
+    }
+
+    var edge=100;
+    var maxSpeed=14;
+    var height=window.innerHeight;
+    var speed=0;
+
+    if(touchY<edge){
+      speed=-maxSpeed*(1-touchY/edge);
+    }else if(touchY>height-edge){
+      speed=maxSpeed*(1-(height-touchY)/edge);
+    }
+
+    if(speed){
+      window.scrollBy(0,speed);
+
+      var target=document.elementFromPoint(touchX,touchY);
+
+      if(target){
+        var card=target.closest
+          ?target.closest('.record')
+          :null;
+
+        if(card&&card!==dragged){
+          moveDragged(card,touchX,touchY);
+        }
+      }
+    }
+
+    autoScrollFrame=requestAnimationFrame(autoScroll);
   }
 
   function finishDrag(){
@@ -595,10 +641,14 @@ function enableGridSorting(){
 
       var card=this;
 
+      touchX=event.touches[0].clientX;
+      touchY=event.touches[0].clientY;
+
       touchTimer=setTimeout(function(){
         dragged=card;
         touchDragging=true;
         card.classList.add('dragging');
+        autoScroll();
       },350);
     };
 
@@ -608,7 +658,11 @@ function enableGridSorting(){
       event.preventDefault();
 
       var touch=event.touches[0];
-      var target=document.elementFromPoint(touch.clientX,touch.clientY);
+
+      touchX=touch.clientX;
+      touchY=touch.clientY;
+
+      var target=document.elementFromPoint(touchX,touchY);
 
       if(!target)return;
 
@@ -618,11 +672,12 @@ function enableGridSorting(){
 
       if(!card||card===dragged)return;
 
-      moveDragged(card,touch.clientX,touch.clientY);
+      moveDragged(card,touchX,touchY);
     };
 
     cards[i].ontouchend=async function(){
       clearTimeout(touchTimer);
+      stopAutoScroll();
 
       if(!touchDragging||!dragged){
         touchDragging=false;
@@ -647,6 +702,7 @@ function enableGridSorting(){
 
     cards[i].ontouchcancel=function(){
       clearTimeout(touchTimer);
+      stopAutoScroll();
 
       if(dragged){
         dragged.classList.remove('dragging');
