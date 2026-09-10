@@ -1675,15 +1675,23 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
         const albumId=newAlbum.id;
 
         if(tracklist.length){
-            const tracks=tracklist
+            const rawTracks=tracklist
                 .filter(function(track){
                     return track.type_==='track';
-                })
-                .map(function(track){
-                    const position=track.position||'';
-
-                    let discSide='';
-                    
+                });
+            
+            const hasDiscSides=rawTracks.some(function(track){
+                const position=String(track.position||'').toUpperCase();
+                return /^[A-D]\d/.test(position);
+            });
+            
+            const tracks=rawTracks.map(function(track,index){
+                const position=String(track.position||'').toUpperCase();
+            
+                let discSide='';
+                let trackNumber=null;
+            
+                if(hasDiscSides){
                     if(position.startsWith('A')){
                         discSide='A';
                     }else if(position.startsWith('B')){
@@ -1693,22 +1701,27 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
                     }else if(position.startsWith('D')){
                         discSide='D';
                     }
-
-                    const trackNumber=parseInt(
-                        position.substring(1),
-                        10
-                    );
-
-                    return {
-                        album_id:albumId,
-                        disc_side:discSide,
-                        track_number:
-                            Number.isNaN(trackNumber)
-                                ?null
-                                :trackNumber,
-                        title:track.title||'Okänd låt'
-                    };
-                });
+            
+                    trackNumber=parseInt(position.substring(1),10);
+                }else{
+                    const middle=Math.ceil(rawTracks.length/2);
+            
+                    if(index<middle){
+                        discSide='A';
+                        trackNumber=index+1;
+                    }else{
+                        discSide='B';
+                        trackNumber=index-middle+1;
+                    }
+                }
+            
+                return {
+                    album_id:albumId,
+                    disc_side:discSide,
+                    track_number:Number.isNaN(trackNumber)?null:trackNumber,
+                    title:track.title||'Okänd låt'
+                };
+            });
 
             if(tracks.length){
                 const {
