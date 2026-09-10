@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <title>Vinylskivor</title>
+  <title>Vinylrecords</title>
   <link rel="stylesheet" href="css/style.css?v=2">
 </head>
 
@@ -24,7 +24,7 @@
   <div class="menu-dropdown">
     <button id="filterButton" class="menu-button" type="button" aria-expanded="false">Filter ▾</button>
     <div id="filterMenu" class="menu-panel">
-      <button type="button" data-rating="all" class="active">Alla</button>
+      <button type="button" data-rating="all" class="active">All</button>
       <button type="button" data-rating="1">★ 1</button>
       <button type="button" data-rating="2">★ 2</button>
       <button type="button" data-rating="3">★ 3</button>
@@ -68,7 +68,7 @@
 </div>
 
 <div class="album-tracks">
-  <div class="tracks-title">LÅTLISTA</div>
+  <div class="tracks-title">TRACKLIST</div>
   <div id="detailTracks"></div>
 </div>
 
@@ -98,7 +98,7 @@
       <button id="closeSearchUser" class="close-add-album">×</button>
       <h2>Search User</h2>
       <div class="add-album-search">
-        <input type="text" id="userSearchInput" placeholder="Sök användarnamn..." autocomplete="off">
+        <input type="text" id="userSearchInput" placeholder="search username..." autocomplete="off">
       </div>
       <div id="userSearchResults"></div>
     </div>
@@ -132,7 +132,7 @@
         <div class="profile-divider"></div>
     
         <button id="logoutButton" type="button">
-            Logga ut
+            Logout
         </button>
     
     </div>
@@ -143,7 +143,7 @@
     
             <button id="loginClose" type="button" aria-label="Stäng">×</button>
     
-            <div class="login-title" id="authTitle">Logga in</div>
+            <div class="login-title" id="authTitle">Login</div>
     
             <div id="registerFields" style="display:none;">
     
@@ -156,15 +156,15 @@
             <input id="loginPassword" type="password" placeholder="Lösenord" autocomplete="current-password">
     
             <button id="loginButton" type="button">
-                Logga in
+                Login
             </button>
     
             <button id="registerButton" type="button" style="display:none;">
-                Skapa konto
+                Create account
             </button>
     
             <button id="authSwitchButton" type="button">
-                Skapa konto
+                Create account
             </button>
     
         </div>
