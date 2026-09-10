@@ -237,6 +237,8 @@ body{padding:15px}
 #loginPanel input:focus{border-color:#666}
 #loginPanel #loginButton{width:100%;background:#22c55e;color:#fff;border:0;border-radius:8px;padding:11px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
 #loginPanel #loginButton:hover{background:#16a34a}
+#authSwitchButton,#registerButton{width:100%;margin-top:10px;background:#242426;color:#fff;border:1px solid #3a3a3d;border-radius:8px;padding:11px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;box-sizing:border-box}
+#authSwitchButton:hover,#registerButton:hover{background:#303033;border-color:#555}
 @media screen and (max-width:600px){
 #authBox{top:8px;right:8px}
 #profileButton{width:34px;height:34px}
