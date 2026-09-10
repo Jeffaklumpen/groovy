@@ -1359,6 +1359,7 @@ function buildGrid(){
   }
 
   collection.innerHTML=html;
+  console.log('ANROPAR TILT');  
   addCoverTilt();
   attachAlbumClicks();
   enableGridSorting();
