@@ -616,13 +616,12 @@ function enableGridSorting(){
 
     event.preventDefault();
 
-    await finishDrag();
+    var releasedDragged=dragged;
 
-    if(dragged){
-      dragged.classList.remove('dragging');
-    }
-
+    releasedDragged.classList.remove('dragging');
     dragged=null;
+
+    await finishDrag();
   };
 
   collection.ondragend=function(){
@@ -644,9 +643,12 @@ function enableGridSorting(){
       touchX=event.touches[0].clientX;
       touchY=event.touches[0].clientY;
 
+      clearTimeout(touchTimer);
+
       touchTimer=setTimeout(function(){
         dragged=card;
         touchDragging=true;
+        suppressAlbumClick=true;
         card.classList.add('dragging');
         autoScroll();
       },350);
@@ -681,19 +683,20 @@ function enableGridSorting(){
 
       if(!touchDragging||!dragged){
         touchDragging=false;
+        dragged=null;
         return;
       }
+
+      var releasedDragged=dragged;
+
+      releasedDragged.classList.remove('dragging');
+
+      dragged=null;
+      touchDragging=false;
 
       suppressAlbumClick=true;
 
       await finishDrag();
-
-      if(dragged){
-        dragged.classList.remove('dragging');
-      }
-
-      dragged=null;
-      touchDragging=false;
 
       setTimeout(function(){
         suppressAlbumClick=false;
@@ -710,6 +713,7 @@ function enableGridSorting(){
 
       dragged=null;
       touchDragging=false;
+      suppressAlbumClick=false;
     };
   }
 }
