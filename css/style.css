@@ -306,7 +306,3 @@ body{padding:15px}
 
 #profileMenu #searchUserButton,#profileMenu #myCollectionButton{display:block;width:100%;padding:8px;background:none;border:0;border-radius:6px;color:#fff;text-align:left;font-family:inherit;font-size:12px;cursor:pointer}
 #profileMenu #searchUserButton:hover,#profileMenu #myCollectionButton:hover{background:#242426}
-
-.detail-cover-wrapper{position:relative}
-#detailCoverFlipButton{position:absolute;right:24px;bottom:24px;padding:10px 16px;border:0;border-radius:6px;background:#222;color:#fff;font-size:13px;cursor:pointer;z-index:10}
-#detailCoverFlipButton:hover{background:#333}
