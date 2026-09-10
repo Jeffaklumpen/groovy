@@ -2581,10 +2581,21 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
         const albumId=newAlbum.id;
 
         if(finalTracklist.length){
-            const rawTracks=finalTracklist
-                .filter(function(track){
-                    return track.type_==='track';
+        const rawTracks=[];
+        
+        finalTracklist.forEach(function(track){
+            if(track.type_==='track'){
+                rawTracks.push(track);
+            }
+        
+            if(Array.isArray(track.sub_tracks)){
+                track.sub_tracks.forEach(function(subTrack){
+                    if(subTrack.type_==='track'){
+                        rawTracks.push(subTrack);
+                    }
                 });
+            }
+        });
             
             const hasDiscSides=rawTracks.some(function(track){
                 const position=String(track.position||'').toUpperCase();
