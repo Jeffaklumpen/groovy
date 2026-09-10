@@ -610,11 +610,26 @@ function openAlbum(index){
     ratingButtons[r].addEventListener('click',function(event){
       event.preventDefault();
       event.stopPropagation();
-
+    
       var newRating=parseInt(
         this.getAttribute('data-rating'),
         10
       );
+    
+      saveAlbumRating(index,newRating);
+    });
+    
+    ratingButtons[r].addEventListener('touchend',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+    
+      var newRating=parseInt(
+        this.getAttribute('data-rating'),
+        10
+      );
+    
+      saveAlbumRating(index,newRating);
+    },{passive:false});
 
       saveAlbumRating(index,newRating);
     });
