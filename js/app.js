@@ -2459,7 +2459,7 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             data.artists &&
             data.artists.length &&
             data.artists[0].name
-                ?data.artists[0].name
+                ?data.artists[0].name.replace(/\s*\(\d+\)$/,'')
                 :artist;
 
         const tracklist=
