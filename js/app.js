@@ -641,13 +641,27 @@ function openAlbum(index){
             return image.type==='secondary'&&image.uri;
           });
     
-          if(backImage){
-            detailBackCover=backImage.uri;
-    
-            if(detailCoverFlipButton){
-              detailCoverFlipButton.textContent='Back';
+            if(backImage){
+              detailBackCover=backImage.uri;
+            
+              if(!detailCoverFlipButton){
+                detailCoverFlipButton=document.createElement('button');
+                detailCoverFlipButton.id='detailCoverFlipButton';
+                detailCoverFlipButton.type='button';
+                detailCoverFlipButton.textContent='Back';
+                detailCoverWrapper.appendChild(detailCoverFlipButton);
+            
+                detailCoverFlipButton.onclick=function(){
+                  if(detailCover.src===detailBackCover){
+                    detailCover.src=record[6];
+                    detailCoverFlipButton.textContent='Back';
+                  }else{
+                    detailCover.src=detailBackCover;
+                    detailCoverFlipButton.textContent='Front';
+                  }
+                };
+              }
             }
-          }
         }
       }).catch(function(error){
         console.error('Kunde inte hämta baksidesbild:',error);
