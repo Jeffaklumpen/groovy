@@ -589,7 +589,7 @@ function openAlbum(index){
 
   var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
 
-  for(var r=0;r<ratingButtons.length;r++){
+   for(var r=0;r<ratingButtons.length;r++){
     ratingButtons[r].addEventListener('mouseenter',function(){
       var hoverRating=parseInt(this.getAttribute('data-rating'),10);
 
@@ -610,29 +610,26 @@ function openAlbum(index){
     ratingButtons[r].addEventListener('click',function(event){
       event.preventDefault();
       event.stopPropagation();
-    
+
       var newRating=parseInt(
         this.getAttribute('data-rating'),
         10
       );
-    
-      saveAlbumRating(index,newRating);
-    });
-    
-    ratingButtons[r].addEventListener('touchend',function(event){
-      event.preventDefault();
-      event.stopPropagation();
-    
-      var newRating=parseInt(
-        this.getAttribute('data-rating'),
-        10
-      );
-    
-      saveAlbumRating(index,newRating);
-    },{passive:false});
 
       saveAlbumRating(index,newRating);
     });
+
+    ratingButtons[r].addEventListener('touchend',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+
+      var newRating=parseInt(
+        this.getAttribute('data-rating'),
+        10
+      );
+
+      saveAlbumRating(index,newRating);
+    },{passive:false});
   }
 
   var sides=record[7]||{};
@@ -709,6 +706,8 @@ async function saveAlbumRating(index,rating){
 
   record[5]=rating;
 
+  record[5]=rating;
+
   var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
 
   for(var i=0;i<ratingButtons.length;i++){
@@ -723,6 +722,32 @@ async function saveAlbumRating(index,rating){
       'empty',
       starRating>rating
     );
+  }
+
+  var cards=collection.querySelectorAll('.record');
+
+  for(var c=0;c<cards.length;c++){
+    var cardIndex=parseInt(
+      cards[c].getAttribute('data-index'),
+      10
+    );
+
+    if(cardIndex!==index)continue;
+
+    var coverRating=cards[c].querySelector('.cover-rating');
+
+    if(!coverRating)continue;
+
+    var coverStars='';
+
+    for(var s=1;s<=5;s++){
+      coverStars+=s<=rating
+        ?'★'
+        :'<span class="empty">★</span>';
+    }
+
+    coverRating.innerHTML=coverStars;
+    break;
   }
 }
     
