@@ -580,10 +580,45 @@ function openAlbum(index){
   rating=Math.max(0,Math.min(5,rating));
 
   var stars='';
+
   for(var i=1;i<=5;i++){
-    stars+=i<=rating?'★':'<span class="empty">★</span>';
+    stars+='<button class="album-rating-star '+(i<=rating?'filled':'empty')+'" type="button" data-rating="'+i+'">★</button>';
   }
+
   detailRating.innerHTML=stars;
+
+  var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
+
+  for(var r=0;r<ratingButtons.length;r++){
+    ratingButtons[r].addEventListener('mouseenter',function(){
+      var hoverRating=parseInt(this.getAttribute('data-rating'),10);
+
+      for(var i=0;i<ratingButtons.length;i++){
+        ratingButtons[i].classList.toggle(
+          'hover-filled',
+          i<hoverRating
+        );
+      }
+    });
+
+    ratingButtons[r].addEventListener('mouseleave',function(){
+      for(var i=0;i<ratingButtons.length;i++){
+        ratingButtons[i].classList.remove('hover-filled');
+      }
+    });
+
+    ratingButtons[r].addEventListener('click',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+
+      var newRating=parseInt(
+        this.getAttribute('data-rating'),
+        10
+      );
+
+      saveAlbumRating(index,newRating);
+    });
+  }
 
   var sides=record[7]||{};
   var sideNames=['A','B','C','D'];
@@ -609,6 +644,7 @@ function openAlbum(index){
       rating=Math.max(0,Math.min(5,rating));
 
       var trackStars='';
+
       for(var s=1;s<=5;s++){
         trackStars+=s<=rating?'★':'<span class="empty">☆</span>';
       }
@@ -624,6 +660,55 @@ function openAlbum(index){
 
   albumOverlay.className='album-overlay visible';
   document.body.style.overflow='hidden';
+}
+
+async function saveAlbumRating(index,rating){
+  var record=records[index];
+
+  if(!record)return;
+
+  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+
+  if(userError||!user){
+    alert('Du måste vara inloggad.');
+    return;
+  }
+
+  var albumId=record[8];
+
+  var {error}=await supabaseClient
+    .from('album_ratings')
+    .upsert({
+      user_id:user.id,
+      album_id:albumId,
+      rating:rating
+    },{
+      onConflict:'user_id,album_id'
+    });
+
+  if(error){
+    console.error('Kunde inte spara albumrating:',error);
+    alert('Kunde inte spara ratingen.\n\n'+error.message);
+    return;
+  }
+
+  record[5]=rating;
+
+  var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
+
+  for(var i=0;i<ratingButtons.length;i++){
+    var starRating=i+1;
+
+    ratingButtons[i].classList.remove('hover-filled');
+    ratingButtons[i].classList.toggle(
+      'filled',
+      starRating<=rating
+    );
+    ratingButtons[i].classList.toggle(
+      'empty',
+      starRating>rating
+    );
+  }
 }
     
 function closeAlbum(){
