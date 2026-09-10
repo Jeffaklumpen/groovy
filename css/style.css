@@ -294,3 +294,12 @@ body{padding:15px}
 .empty-collection-text{margin-top:8px;font-size:14px;color:#777}
 .empty-collection button{margin-top:22px;padding:11px 22px;border:0;border-radius:8px;background:#3fa66b;color:#fff;font-size:14px;font-weight:600;cursor:pointer;pointer-events:auto;transition:background .15s ease,transform .15s ease}
 .empty-collection button:hover{background:#4dbd7c;transform:translateY(-1px)}
+
+.remove-album-box{text-align:center}
+.remove-album-box h2{margin-bottom:12px}
+.remove-album-box p{margin:0 auto 24px;max-width:320px;color:#aaa;font-size:14px;line-height:1.5}
+.remove-album-buttons{display:flex;gap:10px}
+.remove-album-buttons button{flex:1;padding:10px;border:0;border-radius:6px;font-size:14px;cursor:pointer}
+#cancelRemoveAlbum{background:#333;color:#fff}
+#confirmRemoveAlbum{background:#c62828;color:#fff}
+#confirmRemoveAlbum:hover{background:#e53935}
