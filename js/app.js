@@ -1822,15 +1822,90 @@ let musicBrainzSearchNumber=0;
 async function loadOtherUserCollection(userId){
     const {data,error}=await supabaseClient
         .from('collections')
-        .select('id,user_id,album_id,collection_number,sort_order')
-        .eq('user_id',userId);
+        .select(`
+            id,
+            collection_number,
+            sort_order,
+            albums(
+                id,
+                title,
+                release_year,
+                genre,
+                cover_url,
+                artists(
+                    id,
+                    name
+                ),
+                tracks(
+                    id,
+                    disc_side,
+                    track_number,
+                    title
+                )
+            )
+        `)
+        .eq('user_id',userId)
+        .order('sort_order',{ascending:true});
 
     if(error){
-        console.error('COLLECTION TEST FEL:',error);
+        console.error('Kunde inte hämta användarens samling:',error);
         return;
     }
 
-    console.log('COLLECTION TEST:',data);
+    records=data
+        .filter(function(item){
+            return item.albums;
+        })
+        .map(function(item,index){
+            var album=item.albums;
+
+            var artist=
+                album.artists&&album.artists.name
+                    ?album.artists.name
+                    :'Okänd artist';
+
+            var sides={
+                A:[],
+                B:[],
+                C:[],
+                D:[]
+            };
+
+            if(Array.isArray(album.tracks)){
+                album.tracks
+                    .sort(function(a,b){
+                        return (a.id||0)-(b.id||0);
+                    })
+                    .forEach(function(track){
+                        var side=track.disc_side;
+
+                        if(!sides[side])return;
+
+                        sides[side].push({
+                            id:track.id,
+                            title:track.title||'Okänd låt',
+                            rating:0
+                        });
+                    });
+            }
+
+            return [
+                index+1,
+                artist,
+                album.title||'Okänd titel',
+                album.release_year||'',
+                album.genre||'',
+                0,
+                album.cover_url||'',
+                sides,
+                album.id,
+                item.id
+            ];
+        });
+
+    document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';
+
+    buildGrid();
 }
 
 
