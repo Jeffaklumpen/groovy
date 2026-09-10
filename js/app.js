@@ -361,8 +361,10 @@ updateAuthUI();
 
 window.records = [];
 window.viewedUserId=null;
+window.collectionLoadVersion=0;
 
 window.loadCollection=async function(){
+  var loadVersion=++window.collectionLoadVersion;
   var path=window.location.pathname;
 
   if(/^\/groovy\/user\/[^\/]+\/?$/.test(path)){
@@ -1922,6 +1924,7 @@ let musicBrainzController=null;
 let musicBrainzSearchNumber=0;
 
 async function loadOtherUserCollection(userId){
+    var loadVersion=++window.collectionLoadVersion;
     viewedUserId=userId;
 
     deleteMode=false;
@@ -2041,6 +2044,8 @@ async function loadOtherUserCollection(userId){
             });
         }
     }
+
+     if(loadVersion!==window.collectionLoadVersion)return;
 
     records=data
         .filter(function(item){
