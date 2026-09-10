@@ -21,7 +21,7 @@ const authSwitchButton=document.getElementById('authSwitchButton');
 let registerMode=false;
 
 loginClose.addEventListener('click',function(){
-    loginPanel.style.display='none';
+    loginPanel.classList.remove('open');
 });
 
 profileButton.addEventListener('click',async function(event){
@@ -1891,7 +1891,7 @@ emptyCollectionAddButton.addEventListener('click',async function(){
     const user=session&&session.user;
 
     if(!user){
-        loginPanel.style.display='flex';
+        loginPanel.classList.add('open');
         return;
     }
 
