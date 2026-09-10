@@ -1972,6 +1972,12 @@ searchUserModal.addEventListener('click',function(event){
 
 const myCollectionButton=document.getElementById('myCollectionButton');
 
+const logo=document.querySelector('.logo');
+
+logo.addEventListener('click',function(){
+    myCollectionButton.click();
+});
+
 myCollectionButton.addEventListener('click',async function(){
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
