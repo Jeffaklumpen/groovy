@@ -227,17 +227,20 @@ body{padding:15px}
 .profile-divider{height:1px;background:#303033;margin:6px 0}
 #logoutButton{width:100%;background:none;color:#fff;border:0;border-radius:6px;padding:8px;text-align:left;font-family:inherit;font-size:12px;cursor:pointer}
 #logoutButton:hover{background:#242426}
-#loginPanel{display:none;position:absolute;top:calc(100% + 8px);right:0;width:220px;padding:10px;background:#18181a;border:1px solid #303033;border-radius:10px;box-shadow:0 15px 40px rgba(0,0,0,.55);box-sizing:border-box}
-#loginPanel.open{display:flex;flex-direction:column;gap:7px}
-#loginPanel input{width:100%;background:#101012;color:#fff;border:1px solid #3a3a3d;border-radius:7px;padding:8px 9px;font-family:inherit;font-size:12px;outline:none;box-sizing:border-box}
+#loginPanel{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.65);align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
+#loginPanel.open{display:flex}
+.login-modal{position:relative;width:100%;max-width:340px;padding:28px;background:#18181a;border:1px solid #303033;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.65);box-sizing:border-box}
+.login-title{margin-bottom:18px;color:#fff;font-size:20px;font-weight:600;text-align:center}
+#loginClose{position:absolute;top:10px;right:12px;width:30px;height:30px;padding:0;background:none;border:0;color:#888;font-size:25px;line-height:30px;cursor:pointer}
+#loginClose:hover{color:#fff}
+#loginPanel input{width:100%;margin-bottom:10px;background:#101012;color:#fff;border:1px solid #3a3a3d;border-radius:8px;padding:11px 12px;font-family:inherit;font-size:13px;outline:none;box-sizing:border-box}
 #loginPanel input:focus{border-color:#666}
-#loginPanel #loginButton{width:100%;background:#22c55e;color:#fff;border:0;border-radius:7px;padding:8px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+#loginPanel #loginButton{width:100%;background:#22c55e;color:#fff;border:0;border-radius:8px;padding:11px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
 #loginPanel #loginButton:hover{background:#16a34a}
 @media screen and (max-width:600px){
 #authBox{top:8px;right:8px}
 #profileButton{width:34px;height:34px}
 #profileMenu{width:205px}
-#loginPanel{width:205px}
 }
 @media screen and (max-width:900px) and (orientation:landscape){
 .album-overlay{padding:10px}
