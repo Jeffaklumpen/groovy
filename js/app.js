@@ -1856,6 +1856,7 @@ async function loadTopUsers(){
         userSearchResults.appendChild(div);
 
         div.addEventListener('click',function(){
+            searchUserModal.style.display='none';
             history.pushState({},'','/groovy/user/'+encodeURIComponent(user.username));
             loadOtherUserCollection(user.id);
         });
@@ -1939,7 +1940,8 @@ async function searchUsers(query){
         userSearchResults.appendChild(div);
 
         div.addEventListener('click',function(){
-            history.pushState({},'', '/groovy/user/'+encodeURIComponent(user.username));
+            searchUserModal.style.display='none';
+            history.pushState({},'','/groovy/user/'+encodeURIComponent(user.username));
             loadOtherUserCollection(user.id);
         });
     });
