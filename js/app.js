@@ -362,6 +362,7 @@ updateAuthUI();
 
 window.records = [];
 window.viewedUserId=null;
+window.loginRequiredForViewedCollection=false;
 window.collectionLoadVersion=0;
 
 window.loadCollection=async function(){
@@ -373,6 +374,7 @@ window.loadCollection=async function(){
   }
 
   viewedUserId=null;
+    window.loginRequiredForViewedCollection=false;
     
   var {data:{session}}=await supabaseClient.auth.getSession();
 
@@ -1431,10 +1433,12 @@ function addCoverTilt(){
 }
     
 window.buildGrid=function(){
+    
   collection.className='collection grid';
 
   var emptyCollection=document.getElementById('emptyCollection');
-  emptyCollection.style.display=(viewedUserId===null&&records.length===0)?'flex':'none';
+    emptyCollection.style.display=(viewedUserId===null&&records.length===0)?'flex':'none';
+    loginToViewCollection.style.display=window.loginRequiredForViewedCollection?'flex':'none';
 
   var html='';
 
@@ -2728,13 +2732,12 @@ async function loadUserFromUrl(){
     if(!session||!session.user){
         viewedUserId=user.id;
         records=[];
+        window.loginRequiredForViewedCollection=true;
     
-        document.getElementById('emptyCollection').style.display='none';
-        document.getElementById('loginToViewCollection').style.display='flex';
-    
+        buildGrid();
         return;
     }
-    
+    window.loginRequiredForViewedCollection=false;
     await loadOtherUserCollection(user.id);
 }
 
