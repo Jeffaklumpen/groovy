@@ -269,13 +269,16 @@ body{padding:15px}
 
 .grid .record{cursor:grab;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease}
 .grid .record:active{cursor:grabbing}
-.grid .record.dragging{opacity:1;transform:scale(1.04) rotate(1deg);-webkit-transform:scale(1.04) rotate(1deg);filter:brightness(1.08);box-shadow:0 16px 35px rgba(0,0,0,.45);z-index:20;cursor:grabbing}
+.grid .record.dragging{opacity:.22;transform:scale(.97);-webkit-transform:scale(.97);filter:brightness(1.08);box-shadow:0 16px 35px rgba(0,0,0,.25);z-index:20;cursor:grabbing;touch-action:none}
+.drag-preview{position:fixed!important;z-index:9999!important;pointer-events:none!important;margin:0!important;opacity:1;transform:rotate(2deg) scale(1.045)!important;-webkit-transform:rotate(2deg) scale(1.045)!important;transform-origin:center center;filter:brightness(1.08);box-shadow:0 24px 45px rgba(0,0,0,.48),0 5px 12px rgba(0,0,0,.36);transition:transform .14s ease-out;will-change:left,top,transform}
+.grid .record img{-webkit-user-drag:none;user-select:none}
 
 .album-rating-star{border:0;background:none;padding:0;margin:0;cursor:pointer;font-size:28px;line-height:1;color:inherit;touch-action:manipulation}
 .album-rating-star.empty{opacity:.25}
 .album-rating-star.hover-filled{opacity:1}
 
 @media screen and (min-width:601px){
+.grid .record:hover{transform:scale(1.015);z-index:2}
 .cover-wrapper{transition:transform .18s ease;transform-style:preserve-3d;will-change:transform}
 }
 
