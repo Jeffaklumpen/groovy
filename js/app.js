@@ -1338,7 +1338,7 @@ function addCoverTilt(){
       var x=(event.clientX-rect.left)/rect.width-.5;
       var y=(event.clientY-rect.top)/rect.height-.5;
 
-      cover.style.transform='perspective(800px) rotateX('+(-y*6)+'deg) rotateY('+(x*6)+'deg)';console.log('TRANSFORM:',cover.style.transform);
+      cover.style.transform='rotateY(20deg)';
     });
 
     cover.addEventListener('mouseleave',function(){
