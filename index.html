@@ -107,21 +107,23 @@
     </button>
 
     <div id="profileMenu">
-
+    
         <div class="profile-header">
-            <div class="profile-avatar">
+            <button id="profileAvatarButton" class="profile-avatar" type="button" aria-label="Byt profilbild">
                 <span id="profileImageMenu"></span>
-            </div>
-
+            </button>
+    
             <span id="profileUsername"></span>
         </div>
-
+    
+        <input id="profileImageInput" type="file" accept="image/*" style="display:none;">
+    
         <div class="profile-divider"></div>
-
+    
         <button id="logoutButton" type="button">
             Logga ut
         </button>
-
+    
     </div>
 
     <div id="loginPanel">
