@@ -2414,6 +2414,45 @@ async function searchDiscogs(query){
     }
 }
 
+async function searchAppleAlbumArtwork(artist,albumTitle){
+    try{
+        const query=encodeURIComponent(artist+' '+albumTitle);
+
+        const response=await fetch(
+            'https://itunes.apple.com/search?term='+query+'&entity=album&limit=10'
+        );
+
+        if(!response.ok){
+            throw new Error('Apple artwork search failed');
+        }
+
+        const data=await response.json();
+
+        if(!data.results||!data.results.length){
+            return '';
+        }
+
+        const exactResult=data.results.find(function(item){
+            return item.artistName&&
+                item.collectionName&&
+                item.artistName.toLowerCase()===artist.toLowerCase()&&
+                item.collectionName.toLowerCase()===albumTitle.toLowerCase();
+        });
+
+        const result=exactResult||data.results[0];
+
+        if(!result.artworkUrl100){
+            return '';
+        }
+
+        return result.artworkUrl100.replace('100x100bb','1200x1200bb');
+
+    }catch(error){
+        console.error('Apple artwork error:',error);
+        return '';
+    }
+}
+
 async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
     if(button.classList.contains('mb-added'))return;
 
@@ -2512,14 +2551,19 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             }
         }
 
-        let coverUrl='';
-
-        if(
-            data.images &&
-            data.images.length &&
-            data.images[0].uri
-        ){
-            coverUrl=data.images[0].uri;
+        let coverUrl=await searchAppleAlbumArtwork(
+            discogsArtist,
+            discogsTitle
+        );
+        
+        if(!coverUrl){
+            if(
+                data.images &&
+                data.images.length &&
+                data.images[0].uri
+            ){
+                coverUrl=data.images[0].uri;
+            }
         }
 
         let artistId=null;
