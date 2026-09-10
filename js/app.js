@@ -1820,6 +1820,7 @@ let musicBrainzController=null;
 let musicBrainzSearchNumber=0;
 
 async function loadOtherUserCollection(userId){
+    console.log('ANDRA ANVÄNDARE ID:',userId);
     const {data,error}=await supabaseClient
         .from('collections')
         .select(`
