@@ -1934,6 +1934,58 @@ async function loadOtherUserCollection(userId){
         return;
     }
 
+    var albumIds=data
+        .map(function(item){
+            return item.albums&&item.albums.id;
+        })
+        .filter(Boolean);
+
+    var albumRatings={};
+
+    if(albumIds.length){
+        var {data:albumRatingData,error:albumRatingError}=await supabaseClient
+            .from('album_ratings')
+            .select('album_id,rating')
+            .eq('user_id',userId)
+            .in('album_id',albumIds);
+
+        if(albumRatingError){
+            console.error('Kunde inte hämta användarens albumratings:',albumRatingError);
+        }else{
+            albumRatingData.forEach(function(item){
+                albumRatings[item.album_id]=item.rating||0;
+            });
+        }
+    }
+
+    var trackIds=[];
+
+    data.forEach(function(item){
+        if(item.albums&&Array.isArray(item.albums.tracks)){
+            item.albums.tracks.forEach(function(track){
+                if(track.id)trackIds.push(track.id);
+            });
+        }
+    });
+
+    var trackRatings={};
+
+    if(trackIds.length){
+        var {data:trackRatingData,error:trackRatingError}=await supabaseClient
+            .from('track_ratings')
+            .select('track_id,rating')
+            .eq('user_id',userId)
+            .in('track_id',trackIds);
+
+        if(trackRatingError){
+            console.error('Kunde inte hämta användarens låtratings:',trackRatingError);
+        }else{
+            trackRatingData.forEach(function(item){
+                trackRatings[item.track_id]=item.rating||0;
+            });
+        }
+    }
+
     records=data
         .filter(function(item){
             return item.albums;
@@ -1966,7 +2018,7 @@ async function loadOtherUserCollection(userId){
                         sides[side].push({
                             id:track.id,
                             title:track.title||'Okänd låt',
-                            rating:0
+                            rating:trackRatings[track.id]||0
                         });
                     });
             }
@@ -1977,7 +2029,7 @@ async function loadOtherUserCollection(userId){
                 album.title||'Okänd titel',
                 album.release_year||'',
                 album.genre||'',
-                0,
+                albumRatings[album.id]||0,
                 album.cover_url||'',
                 sides,
                 album.id,
