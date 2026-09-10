@@ -1891,7 +1891,7 @@ emptyCollectionAddButton.addEventListener('click',async function(){
     const user=session&&session.user;
 
     if(!user){
-        loginPanel.classList.add('open');
+        loginPanel.style.display='flex';
         return;
     }
 
