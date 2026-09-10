@@ -1760,6 +1760,7 @@ async function searchUsers(query){
         userSearchResults.appendChild(div);
 
         div.addEventListener('click',function(){
+            history.pushState({},'', '/user/'+encodeURIComponent(user.username));
             loadOtherUserCollection(user.id);
         });
     });
