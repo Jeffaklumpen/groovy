@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>iPad test</title>
+</head>
+<body>
+
+<h1>iPad-test</h1>
+
+<button id="testButton" type="button">Klicka här</button>
+
+<div id="result"></div>
+
+<script>
+var result=document.getElementById('result');
+
+result.innerHTML='JavaScript fungerar.';
+
+document.getElementById('testButton').onclick=function(){
+  result.innerHTML='KNAPPEN FUNGERAR!';
+};
+</script>
+
+</body>
+</html>
