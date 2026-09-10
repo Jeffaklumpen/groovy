@@ -349,7 +349,8 @@ logoutButton.addEventListener('click',async function(){
 supabaseClient.auth.onAuthStateChange(async function(){
     await updateAuthUI();
 
-    if(typeof window.loadCollection==='function'){
+    if(typeof window.loadCollection==='function' &&
+       !/^\/groovy\/user\/[^\/]+\/?$/.test(window.location.pathname)){
         await window.loadCollection();
     }
 });
