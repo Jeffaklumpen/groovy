@@ -1327,7 +1327,7 @@ async function saveGridOrder(){
 function addCoverTilt(){
   if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches)return;
 
-  document.querySelectorAll('.cover-wrapper').forEach(function(cover){
+  document.querySelectorAll('.record').forEach(function(cover){
     cover.addEventListener('mousemove',function(event){
       var rect=cover.getBoundingClientRect();
       var x=(event.clientX-rect.left)/rect.width-.5;
