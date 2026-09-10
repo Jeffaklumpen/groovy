@@ -2733,6 +2733,8 @@ async function loadUserFromUrl(){
         viewedUserId=user.id;
         records=[];
         window.loginRequiredForViewedCollection=true;
+
+        console.log('LOGIN REQUIRED:',window.loginRequiredForViewedCollection,'VIEWED USER:',viewedUserId);
     
         buildGrid();
         return;
