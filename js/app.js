@@ -7,11 +7,22 @@ const loginPassword=document.getElementById('loginPassword');
 const loginButton=document.getElementById('loginButton');
 const logoutButton=document.getElementById('logoutButton');
 
-profileButton.addEventListener('click',function(event){
+profileButton.addEventListener('click',async function(event){
     event.stopPropagation();
 
-    loginPanel.classList.remove('open');
-    profileMenu.classList.toggle('open');
+    const {data:{user}}=await supabaseClient.auth.getUser();
+
+    if(user){
+        loginPanel.classList.remove('open');
+        profileMenu.classList.toggle('open');
+    }else{
+        profileMenu.classList.remove('open');
+        loginPanel.classList.toggle('open');
+
+        if(loginPanel.classList.contains('open')){
+            loginEmail.focus();
+        }
+    }
 });
 
 loginPanel.addEventListener('click',function(event){
