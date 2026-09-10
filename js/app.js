@@ -508,6 +508,7 @@ window.loadCollection=async function(){
     });
 
   console.log('RECORDS:', records);
+  document.getElementById('collectionCount').textContent=records.length+' SKIVOR';
   buildGrid();
 }
 
