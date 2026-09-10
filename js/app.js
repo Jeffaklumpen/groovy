@@ -358,7 +358,7 @@ updateAuthUI();
 
 (function(){
 
-var records = [];
+window.records = [];
 
 window.loadCollection=async function(){
   var {data:{session}}=await supabaseClient.auth.getSession();
