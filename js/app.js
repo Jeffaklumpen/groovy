@@ -1144,7 +1144,15 @@ deleteModeButton.addEventListener('click',function(event){
 
 let searchTimer=null;
 
-addAlbumButton.addEventListener('click',function(){
+addAlbumButton.addEventListener('click',async function(){
+    const {data:{session}}=await supabaseClient.auth.getSession();
+
+    if(!session||!session.user){
+        loginPanel.classList.add('open');
+        loginEmail.focus();
+        return;
+    }
+
     addAlbumModal.style.display='flex';
     albumSearchInput.focus();
 });
