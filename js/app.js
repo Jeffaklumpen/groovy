@@ -8,6 +8,14 @@ const loginButton=document.getElementById('loginButton');
 const logoutButton=document.getElementById('logoutButton');
 const loginClose=document.getElementById('loginClose');
 
+const authTitle=document.getElementById('authTitle');
+const registerFields=document.getElementById('registerFields');
+const registerUsername=document.getElementById('registerUsername');
+const registerButton=document.getElementById('registerButton');
+const authSwitchButton=document.getElementById('authSwitchButton');
+
+let registerMode=false;
+
 loginClose.addEventListener('click',function(){
     loginPanel.classList.remove('open');
 });
@@ -15,10 +23,10 @@ loginClose.addEventListener('click',function(){
 profileButton.addEventListener('click',async function(event){
     event.stopPropagation();
 
-        const {data:{session}}=await supabaseClient.auth.getSession();
-        const user=session&&session.user;
-        
-        if(user){
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
+
+    if(user){
         loginPanel.classList.remove('open');
         profileMenu.classList.toggle('open');
     }else{
@@ -44,6 +52,28 @@ document.addEventListener('click',function(){
     loginPanel.classList.remove('open');
 });
 
+authSwitchButton.addEventListener('click',function(){
+    registerMode=!registerMode;
+
+    if(registerMode){
+        authTitle.textContent='Skapa konto';
+        registerFields.style.display='block';
+        loginButton.style.display='none';
+        registerButton.style.display='block';
+        authSwitchButton.textContent='Har redan konto';
+        loginPassword.setAttribute('autocomplete','new-password');
+        registerUsername.focus();
+    }else{
+        authTitle.textContent='Logga in';
+        registerFields.style.display='none';
+        loginButton.style.display='block';
+        registerButton.style.display='none';
+        authSwitchButton.textContent='Skapa konto';
+        loginPassword.setAttribute('autocomplete','current-password');
+        loginEmail.focus();
+    }
+});
+
 async function updateAuthUI(){
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
@@ -64,6 +94,7 @@ async function updateAuthUI(){
 
         loginEmail.value='';
         loginPassword.value='';
+        registerUsername.value='';
     }else{
         profileButton.style.display='flex';
         profileMenu.classList.remove('open');
@@ -102,6 +133,66 @@ loginButton.addEventListener('click',async function(){
     loginButton.textContent='Logga in';
 
     await updateAuthUI();
+});
+
+registerButton.addEventListener('click',async function(){
+    const username=registerUsername.value.trim();
+    const email=loginEmail.value.trim();
+    const password=loginPassword.value;
+
+    if(!username||!email||!password){
+        alert('Fyll i användarnamn, e-post och lösenord.');
+        return;
+    }
+
+    if(username.length<3){
+        alert('Användarnamnet måste vara minst 3 tecken.');
+        return;
+    }
+
+    if(password.length<6){
+        alert('Lösenordet måste vara minst 6 tecken.');
+        return;
+    }
+
+    registerButton.disabled=true;
+    registerButton.textContent='Skapar konto...';
+
+    const {data,error}=await supabaseClient.auth.signUp({
+        email:email,
+        password:password,
+        options:{
+            data:{
+                username:username
+            }
+        }
+    });
+
+    if(error){
+        console.error('Registration error:',error);
+        alert(error.message);
+        registerButton.disabled=false;
+        registerButton.textContent='Skapa konto';
+        return;
+    }
+
+    console.log('Registrerad användare:',data.user);
+
+    if(data.session){
+        await supabaseClient
+            .from('profiles')
+            .insert({
+                id:data.user.id,
+                username:username
+            });
+
+        await updateAuthUI();
+    }else{
+        alert('Kontot är skapat. Kontrollera din e-post för att bekräfta kontot.');
+    }
+
+    registerButton.disabled=false;
+    registerButton.textContent='Skapa konto';
 });
 
 logoutButton.addEventListener('click',async function(){
