@@ -544,7 +544,7 @@ function recordHTML(record, className){
 
   var html='<article class="record '+(className||'')+'" draggable="'+(view==='grid'&&viewedUserId===null?'true':'false')+'" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
-      '<img class="cover" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
+      '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
       '<div class="number">'+record[0]+'</div>'+
       '<div class="cover-rating">';
 
@@ -1266,15 +1266,13 @@ function enableGridSorting(){
       event.dataTransfer.setData('text/plain',record.getAttribute('data-index'));
 
       if(dragPreview){
-        event.dataTransfer.setDragImage(
-          dragPreview,
-          dragPreviewOffsetX,
-          dragPreviewOffsetY
-        );
+        // Dölj webbläsarens halvtransparenta standard-ghost. Vår egen
+        // kopia följer musen och förblir helt ogenomskinlig.
+        var transparentDragImage=document.createElement('canvas');
+        transparentDragImage.width=1;
+        transparentDragImage.height=1;
+        event.dataTransfer.setDragImage(transparentDragImage,0,0);
       }
-
-      // Native drag uses the cloned card as its floating preview.
-      setTimeout(removeDragPreview,0);
     }
   };
 
@@ -1283,6 +1281,7 @@ function enableGridSorting(){
     if(!dragged)return;
 
     event.preventDefault();
+    event.dataTransfer.dropEffect='move';
 
     updateDragPreview(event.clientX,event.clientY);
 
@@ -1291,6 +1290,13 @@ function enableGridSorting(){
     if(!target||target===dragged)return;
 
     moveDragged(target,event.clientX,event.clientY);
+  };
+
+  collection.ondragenter=function(event){
+    if(viewedUserId===null&&dragged){
+      event.preventDefault();
+      event.dataTransfer.dropEffect='move';
+    }
   };
 
   collection.ondrop=async function(event){
