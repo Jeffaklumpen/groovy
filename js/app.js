@@ -4,6 +4,7 @@ const profileUsername=document.getElementById('profileUsername');
 const profileAvatarButton=document.getElementById('profileAvatarButton');
 const profileImageInput=document.getElementById('profileImageInput');
 const profileImageMenu=document.getElementById('profileImageMenu');
+const profileImage=document.getElementById('profileImage');
 const loginPanel=document.getElementById('loginPanel');
 const loginEmail=document.getElementById('loginEmail');
 const loginPassword=document.getElementById('loginPassword');
@@ -78,7 +79,57 @@ authSwitchButton.addEventListener('click',function(){
 });
 
 async function updateAuthUI(){
-    // din befintliga/nya updateAuthUI-kod
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
+
+    if(user){
+        profileButton.style.display='flex';
+        profileMenu.classList.remove('open');
+        loginPanel.classList.remove('open');
+
+        const {data:profile,error:profileError}=await supabaseClient
+            .from('profiles')
+            .select('username,avatar_url')
+            .eq('id',user.id)
+            .maybeSingle();
+
+        if(profileError){
+            console.error('Kunde inte hämta profil:',profileError);
+        }
+
+        const username=
+            profile&&profile.username
+                ?profile.username
+                :user.email
+                    ?user.email.split('@')[0]
+                    :'användare';
+
+        profileUsername.textContent=username;
+
+        if(profile&&profile.avatar_url){
+            profileImage.style.backgroundImage='url("'+profile.avatar_url+'")';
+            profileImage.style.backgroundSize='cover';
+            profileImage.style.backgroundPosition='center';
+
+            profileImageMenu.style.backgroundImage='url("'+profile.avatar_url+'")';
+            profileImageMenu.style.backgroundSize='cover';
+            profileImageMenu.style.backgroundPosition='center';
+        }else{
+            profileImage.style.backgroundImage='';
+            profileImageMenu.style.backgroundImage='';
+        }
+
+        loginEmail.value='';
+        loginPassword.value='';
+        registerUsername.value='';
+    }else{
+        profileButton.style.display='flex';
+        profileMenu.classList.remove('open');
+        loginPanel.classList.remove('open');
+
+        profileImage.style.backgroundImage='';
+        profileImageMenu.style.backgroundImage='';
+    }
 }
 
 profileAvatarButton.addEventListener('click',function(){
@@ -155,6 +206,10 @@ console.log('Storage upload:',{
 
         if(updateError)throw updateError;
 
+        profileImage.style.backgroundImage='url("'+avatarUrl+'")';
+        profileImage.style.backgroundSize='cover';
+        profileImage.style.backgroundPosition='center';
+        
         profileImageMenu.style.backgroundImage='url("'+avatarUrl+'")';
         profileImageMenu.style.backgroundSize='cover';
         profileImageMenu.style.backgroundPosition='center';
