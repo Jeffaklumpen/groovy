@@ -377,7 +377,9 @@ function wishlistRecord(item,index){
 
   return [
     index+1,
-    album.artists&&album.artists.name?album.artists.name:'Okänd artist',
+    album.artists&&album.artists.name
+      ?album.artists.name.replace(/\s*\(\d+\)$/,'')
+      :'Okänd artist',
     album.title||'Okänd titel',
     album.release_year||'',
     album.genre||'',
@@ -553,7 +555,7 @@ window.loadCollection=async function(){
       var album=item.albums;
       var artist=
         album.artists&&album.artists.name
-          ?album.artists.name
+          ?album.artists.name.replace(/\s*\(\d+\)$/,'')
           :'Okänd artist';
 
       var sides={
@@ -2686,6 +2688,11 @@ function escapeHTML(text){
 }
 
 let musicBrainzSearchNumber=0;
+const appleAlbumSearchCache=new Map();
+const theAudioDBAlbumSearchCache=new Map();
+const THEAUDIODB_FREE_KEY='123';
+const THEAUDIODB_RATE_LIMIT_COOLDOWN=65000;
+let theAudioDBBlockedUntil=0;
 
 async function loadOtherUserCollection(userId){
     var loadVersion=++window.collectionLoadVersion;
@@ -2827,7 +2834,7 @@ async function loadOtherUserCollection(userId){
 
             var artist=
                 album.artists&&album.artists.name
-                    ?album.artists.name
+                    ?album.artists.name.replace(/\s*\(\d+\)$/,'')
                     :'Okänd artist';
 
             var sides={
@@ -2961,28 +2968,83 @@ async function searchDiscogs(query){
         }
         const searchResults=results.slice(0,10);
         
-        const appleArtworkResults=await Promise.all(
-            searchResults.map(async function(master){
-                const title=master.title||'Okänd titel';
-                const parts=title.split(' - ');
-        
-                const artist=parts.length>1
-                    ?parts[0]
-                    :'Okänd artist';
-        
-                const albumTitle=parts.length>1
-                    ?parts.slice(1).join(' - ')
-                    :title;
-        
-                const appleImage=await searchAppleAlbumArtwork(
-                    artist,
-                    albumTitle,
-                    master.year
+        // Prefer TheAudioDB for a stable, canonical album cover. Queries run
+        // sequentially so one search cannot create a burst of ten requests.
+        const theAudioDBArtworkResults=[];
+
+        for(let resultIndex=0;resultIndex<searchResults.length;resultIndex+=1){
+            if(searchNumber!==musicBrainzSearchNumber)return;
+
+            const resultTitle=searchResults[resultIndex].title||'Okänd titel';
+            const resultParts=resultTitle.split(' - ');
+            const resultArtist=resultParts.length>1
+                ?resultParts[0].replace(/\s*\(\d+\)$/,'')
+                :'Okänd artist';
+            const resultAlbumTitle=resultParts.length>1
+                ?resultParts.slice(1).join(' - ')
+                :resultTitle;
+            const theAudioDBResult=await searchTheAudioDBAlbumArtwork(
+                resultArtist,
+                resultAlbumTitle
+            );
+
+            theAudioDBArtworkResults.push(theAudioDBResult.url);
+
+            if(theAudioDBResult.rateLimited){
+                while(theAudioDBArtworkResults.length<searchResults.length){
+                    theAudioDBArtworkResults.push('');
+                }
+                break;
+            }
+        }
+
+        // Apple is a temporary fallback when TheAudioDB has no match, is
+        // unavailable or has returned 429. A short circuit breaker prevents
+        // repeated calls to TheAudioDB throughout its cooldown minute.
+        let appleSearchResults=[];
+        const appleQueryKey=normalizeAppleFullTitle(query);
+        const needsAppleFallback=theAudioDBArtworkResults.some(function(url){
+            return !url;
+        });
+
+        if(needsAppleFallback&&appleAlbumSearchCache.has(appleQueryKey)){
+            appleSearchResults=appleAlbumSearchCache.get(appleQueryKey);
+        }else if(needsAppleFallback){
+            try{
+                const appleResponse=await fetch(
+                    'https://itunes.apple.com/search?term='+
+                    encodeURIComponent(query)+
+                    '&entity=album&limit=100&country=SE'
                 );
-        
-                return appleImage;
-            })
-        );
+
+                if(appleResponse.ok){
+                    const appleData=await appleResponse.json();
+                    appleSearchResults=appleData.results||[];
+                    appleAlbumSearchCache.set(appleQueryKey,appleSearchResults);
+                }else{
+                    console.warn('Apple album search status:',appleResponse.status);
+                }
+            }catch(appleError){
+                console.warn('Apple album search unavailable:',appleError);
+            }
+        }
+
+        const appleArtworkResults=searchResults.map(function(master){
+            const title=master.title||'Okänd titel';
+            const parts=title.split(' - ');
+            const artist=parts.length>1
+                ?parts[0].replace(/\s*\(\d+\)$/,'')
+                :'Okänd artist';
+            const albumTitle=parts.length>1?parts.slice(1).join(' - '):title;
+            const appleAlbum=pickBestAppleAlbum(
+                appleSearchResults,
+                artist,
+                albumTitle,
+                master.year
+            );
+
+            return appleArtworkUrl(appleAlbum);
+        });
         
         searchResults.forEach(function(master,index){
         
@@ -2990,7 +3052,7 @@ async function searchDiscogs(query){
             const parts=title.split(' - ');
         
             const artist=parts.length>1
-                ?parts[0]
+                ?parts[0].replace(/\s*\(\d+\)$/,'')
                 :'Okänd artist';
         
             const albumTitle=parts.length>1
@@ -3002,9 +3064,13 @@ async function searchDiscogs(query){
         
             const year=master.year||'';
         
+            const theAudioDBImageUrl=theAudioDBArtworkResults[index]||'';
             const appleImageUrl=appleArtworkResults[index]||'';
-            const imageUrl=appleImageUrl||master.thumb||'';
-            const imageSource=appleImageUrl?'apple':(master.thumb?'discogs':'');
+            const discogsImageUrl=master.cover_image||master.thumb||'';
+            const imageUrl=theAudioDBImageUrl||appleImageUrl||discogsImageUrl;
+            const imageSource=theAudioDBImageUrl
+                ?'theaudiodb'
+                :(appleImageUrl?'apple':(discogsImageUrl?'discogs':''));
         
             const masterId=master.id||'';
         
@@ -3112,6 +3178,53 @@ function normalizeAppleSearchText(value){
         .replace(/\s+/g,' ');
 }
 
+async function searchTheAudioDBAlbumArtwork(artist,albumTitle){
+    var cacheKey=normalizeAppleFullTitle(artist)+'|'+normalizeAppleFullTitle(albumTitle);
+
+    if(theAudioDBAlbumSearchCache.has(cacheKey)){
+        return {url:theAudioDBAlbumSearchCache.get(cacheKey),rateLimited:false};
+    }
+
+    if(Date.now()<theAudioDBBlockedUntil){
+        return {url:'',rateLimited:true};
+    }
+
+    try{
+        var response=await fetch(
+            'https://www.theaudiodb.com/api/v1/json/'+THEAUDIODB_FREE_KEY+
+            '/searchalbum.php?s='+encodeURIComponent(artist)+
+            '&a='+encodeURIComponent(albumTitle)
+        );
+
+        if(response.status===429){
+            theAudioDBBlockedUntil=Date.now()+THEAUDIODB_RATE_LIMIT_COOLDOWN;
+            console.warn('TheAudioDB rate limit reached; using Apple temporarily.');
+            return {url:'',rateLimited:true};
+        }
+
+        if(!response.ok){
+            console.warn('TheAudioDB album search status:',response.status);
+            return {url:'',rateLimited:false};
+        }
+
+        var data=await response.json();
+        var wantedArtist=normalizeAppleFullTitle(artist);
+        var wantedAlbum=normalizeAppleFullTitle(albumTitle);
+        var match=(data.album||[]).find(function(item){
+            return normalizeAppleFullTitle(item.strArtist)===wantedArtist&&
+                normalizeAppleFullTitle(item.strAlbum)===wantedAlbum&&
+                item.strAlbumThumb;
+        });
+        var imageUrl=match&&match.strAlbumThumb?match.strAlbumThumb:'';
+
+        theAudioDBAlbumSearchCache.set(cacheKey,imageUrl);
+        return {url:imageUrl,rateLimited:false};
+    }catch(error){
+        console.warn('TheAudioDB album search unavailable:',error);
+        return {url:'',rateLimited:false};
+    }
+}
+
 function appleArtistMatches(candidate,artist){
     var candidateText=normalizeAppleSearchText(candidate);
     var artistText=normalizeAppleSearchText(artist);
@@ -3125,9 +3238,10 @@ function appleAlbumMatches(candidate,albumTitle){
     var candidateText=normalizeAppleSearchText(candidate);
     var albumText=normalizeAppleSearchText(albumTitle);
 
-    // Only accept the requested album title itself. Loose substring matching
-    // accidentally selected compilations such as “The Best Of …” or bundles.
-    return candidateText===albumText;
+    // Accept the exact title and Apple edition suffixes. The separate edition
+    // filter below still blocks deluxe, single, remix and live releases.
+    return candidateText===albumText||
+        candidateText.indexOf(albumText+' ')===0;
 }
 
 function appleArtworkUrl(album){
@@ -3173,9 +3287,6 @@ function appleReleaseIsExcluded(candidate){
     var excludedPatterns=[
         /\bsuper deluxe\b/,
         /\bdeluxe\b/,
-        /\bremaster(?:ed)?\b/,
-        /\banniversary\b/,
-        /\bexpanded\b/,
         /\bspecial edition\b/,
         /\bcollectors? edition\b/,
         /\bbonus tracks?\b/,
@@ -3245,6 +3356,27 @@ async function searchAppleAlbumArtwork(artist,albumTitle,originalYear){
 
         if(directResult){
             return appleArtworkUrl(directResult);
+        }
+
+        // A combined artist/title search occasionally fails to surface an
+        // exact album even though it exists in Apple's catalogue. Retry with
+        // the title alone and keep the same strict artist/title validation.
+        var titleResponse=await fetch(
+            'https://itunes.apple.com/search?term='+encodeURIComponent(albumTitle)+'&entity=album&limit=100'
+        );
+
+        if(titleResponse.ok){
+            var titleData=await titleResponse.json();
+            var titleResult=pickBestAppleAlbum(
+                titleData.results,
+                artist,
+                albumTitle,
+                originalYear
+            );
+
+            if(titleResult){
+                return appleArtworkUrl(titleResult);
+            }
         }
 
         // Vissa album finns i Apple-katalogen men returneras inte av
@@ -3403,6 +3535,13 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,previewCoverUr
         // also stored on the user's collection/wishlist row below, so a shared
         // album record cannot silently replace it with an older image.
         let coverUrl=previewCoverUrl||'';
+
+        // Discogs search results may use a small thumbnail. The master
+        // response contains the original image for the same release, so use
+        // that when Discogs supplied the preview.
+        if(previewCoverSource==='discogs'&&data.images&&data.images.length&&data.images[0].uri){
+            coverUrl=data.images[0].uri;
+        }
 
         if(!coverUrl){
             coverUrl=await searchAppleAlbumArtwork(
