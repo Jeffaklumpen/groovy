@@ -334,6 +334,71 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 .remove-album-box p{margin:0 auto 24px;max-width:320px;color:#aaa;font-size:14px;line-height:1.5}
 .remove-album-buttons{display:flex;gap:10px}
 .remove-album-buttons button{flex:1;padding:10px;border:0;border-radius:6px;font-size:14px;cursor:pointer}
+
+/* SEARCH MODALS */
+.add-album-modal{background:rgba(3,3,4,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:modal-backdrop-in .18s ease-out;overscroll-behavior:contain}
+.search-modal-box{width:min(680px,100%);max-width:680px;max-height:min(82vh,760px);overflow:hidden;display:flex;flex-direction:column;padding:32px;background:linear-gradient(145deg,#1a1a1d 0%,#111113 72%);border:1px solid rgba(255,255,255,.11);border-radius:20px;box-shadow:0 30px 90px rgba(0,0,0,.68),0 1px 0 rgba(255,255,255,.05) inset;animation:modal-panel-in .22s cubic-bezier(.2,.8,.2,1)}
+.search-modal-heading{padding-right:48px;margin-bottom:22px}
+.search-modal-kicker{display:block;margin-bottom:7px;color:#E85301;font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase}
+.search-modal-box .search-modal-heading h2{margin:0;color:#fff;font-size:29px;font-weight:650;letter-spacing:-.7px;line-height:1.12}
+.search-modal-heading p{margin:8px 0 0;color:#8f8f95;font-size:13px;line-height:1.45}
+.search-modal-box .close-add-album{top:20px;right:20px;width:38px;height:38px;padding:0;border:1px solid #323236;border-radius:50%;background:#202023;color:#aaa;font-size:25px;line-height:34px;text-align:center;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease;-webkit-tap-highlight-color:transparent}
+.search-modal-box .close-add-album:hover{background:#2a2a2e;border-color:#46464c;color:#fff;transform:rotate(4deg)}
+.search-modal-box .close-add-album:active{transform:scale(.94)}
+.search-modal-box .add-album-search{position:relative;display:block;margin:0 0 16px}
+.search-modal-box .add-album-search:before{content:"";position:absolute;z-index:2;left:17px;top:50%;width:12px;height:12px;border:2px solid #777;border-radius:50%;transform:translateY(-62%);pointer-events:none;transition:border-color .15s ease}
+.search-modal-box .add-album-search:after{content:"";position:absolute;z-index:2;left:29px;top:55%;width:7px;height:2px;border-radius:2px;background:#777;transform:rotate(45deg);pointer-events:none;transition:background .15s ease}
+.search-modal-box .add-album-search:focus-within:before{border-color:#E85301}
+.search-modal-box .add-album-search:focus-within:after{background:#E85301}
+.search-modal-box .add-album-search input{display:block;width:100%;height:52px;padding:0 18px 0 48px;border:1px solid #303034;border-radius:13px;background:#0d0d0f;color:#fff;font-family:inherit;font-size:15px;outline:none;box-shadow:0 1px 0 rgba(255,255,255,.025) inset;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}
+.search-modal-box .add-album-search input::placeholder{color:#66666c}
+.search-modal-box .add-album-search input:focus{border-color:rgba(232,83,1,.82);background:#101012;box-shadow:0 0 0 3px rgba(232,83,1,.13)}
+#albumSearchResults,#userSearchResults{min-height:0;max-height:min(50vh,470px);overflow-y:auto;padding-right:4px;scrollbar-gutter:stable;overscroll-behavior:contain}
+#albumSearchResults:empty,#userSearchResults:empty{display:none}
+#albumSearchResults>p,#userSearchResults>p{margin:12px 4px;color:#8f8f95;font-size:13px;text-align:center}
+.search-modal-box .mb-result{min-height:72px;margin:0 0 8px;padding:10px;border:1px solid #29292d;border-radius:13px;background:rgba(255,255,255,.035);gap:13px;transition:background .15s ease,border-color .15s ease,transform .15s ease;filter:none}
+.search-modal-box .mb-result:last-child{margin-bottom:0}
+.search-modal-box .mb-result:hover{background:#212124;border-color:#3a3a3f;filter:none;transform:translateY(-1px)}
+.search-modal-box .mb-result:active{transform:scale(.995);filter:none}
+.search-modal-box .mb-cover{width:52px;height:52px;border-radius:8px;border:1px solid rgba(255,255,255,.08);box-shadow:0 5px 14px rgba(0,0,0,.32)}
+.search-modal-box .mb-title{font-size:14px;font-weight:650;color:#fff}
+.search-modal-box .mb-artist{color:#aaa;font-size:12px}
+.search-modal-box .mb-year{color:#68686e;font-size:11px}
+.search-modal-box .mb-add-button{min-width:62px;padding:9px 14px;border-radius:9px;background:#E85301;box-shadow:0 5px 14px rgba(232,83,1,.18);transition:background .15s ease,transform .15s ease,box-shadow .15s ease}
+.search-modal-box .mb-add-button:hover{background:#f06418;box-shadow:0 7px 18px rgba(232,83,1,.28)}
+.search-modal-box .mb-add-button:active{transform:scale(.96)}
+.search-modal-box .mb-add-button.mb-added{background:#29292d;color:#9a9aa0;box-shadow:none}
+.search-modal-box .user-search-result{min-height:66px;margin-bottom:7px;padding:10px 12px;border:1px solid #29292d;border-radius:13px;background:rgba(255,255,255,.035);gap:13px;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.search-modal-box .user-search-result:last-child{margin-bottom:0}
+.search-modal-box .user-search-result:hover{background:#212124;border-color:#3a3a3f;transform:translateY(-1px)}
+.search-modal-box .user-search-result:active{transform:scale(.995)}
+.search-modal-box .user-search-avatar{width:46px;height:46px;border:1px solid rgba(255,255,255,.12);box-shadow:0 5px 14px rgba(0,0,0,.28)}
+.search-modal-box .user-search-username{font-size:14px;font-weight:650}
+.search-modal-box .user-search-count{margin-top:2px;color:#77777d;font-size:11px}
+@keyframes modal-backdrop-in{from{opacity:0}to{opacity:1}}
+@keyframes modal-panel-in{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+@media screen and (max-width:600px){
+.add-album-modal{align-items:flex-end;padding:0;background:rgba(3,3,4,.76)}
+.search-modal-box{width:100%;max-width:none;max-height:calc(100dvh - 12px);padding:24px 16px calc(18px + env(safe-area-inset-bottom));border-width:1px 0 0;border-radius:22px 22px 0 0;animation:modal-sheet-in .26s cubic-bezier(.2,.8,.2,1)}
+.search-modal-heading{margin-bottom:18px;padding-right:44px}
+.search-modal-box .search-modal-heading h2{font-size:25px}
+.search-modal-heading p{max-width:290px;font-size:12px}
+.search-modal-box .close-add-album{top:15px;right:15px;width:36px;height:36px;font-size:24px;line-height:32px}
+.search-modal-box .add-album-search{margin-bottom:12px}
+.search-modal-box .add-album-search input{height:50px;border-radius:12px;font-size:16px}
+#albumSearchResults,#userSearchResults{max-height:none;flex:1;padding-right:2px}
+.search-modal-box .mb-result{min-height:68px;padding:8px;gap:10px}
+.search-modal-box .mb-cover{width:50px;height:50px}
+.search-modal-box .mb-add-button{min-width:56px;padding:8px 11px}
+.search-modal-box .user-search-result{min-height:62px;padding:8px 10px}
+.search-modal-box .user-search-avatar{width:44px;height:44px}
+@keyframes modal-sheet-in{from{opacity:.6;transform:translateY(45px)}to{opacity:1;transform:translateY(0)}}
+}
+
+@media (prefers-reduced-motion:reduce){
+.add-album-modal,.search-modal-box{animation:none}
+}
 #cancelRemoveAlbum{background:#333;color:#fff}
 #confirmRemoveAlbum{background:#c62828;color:#fff}
 #confirmRemoveAlbum:hover{background:#e53935}

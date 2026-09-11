@@ -338,6 +338,7 @@ supabaseClient.auth.onAuthStateChange(function(){
 
 window.records = [];
 window.viewedUserId=null;
+window.hasAuthenticatedUser=false;
 window.loginRequiredForViewedCollection=false;
 window.profileNotFound=false;
 window.collectionLoadVersion=0;
@@ -356,6 +357,7 @@ window.loadCollection=async function(){
   document.getElementById('viewedUserHeader').style.display='none';
     
   var {data:{session}}=await supabaseClient.auth.getSession();
+  window.hasAuthenticatedUser=!!(session&&session.user);
 
   if(!session||!session.user){
     records=[];
@@ -1477,6 +1479,7 @@ function enableGridSorting(){
       if(pointerId!==null)return;
       if(event.button!==undefined&&event.button!==0)return;
       if(event.pointerType==='touch')return;
+      if(event.target.closest&&event.target.closest('.delete-cover-button'))return;
 
       pointerId=event.pointerId;
       pointerCard=this;
@@ -1524,6 +1527,7 @@ function enableGridSorting(){
 
     cards[i].addEventListener('touchstart',function(event){
       if(touchId!==null||!event.changedTouches.length)return;
+      if(event.target.closest&&event.target.closest('.delete-cover-button'))return;
 
       var touch=event.changedTouches[0];
       touchId=touch.identifier;
@@ -1669,8 +1673,10 @@ window.buildGrid=function(){
   var profileNotFound=document.getElementById('profileNotFound');
   var hasBlockingState=window.loginRequiredForViewedCollection||window.profileNotFound;
   var isViewingProfile=viewedUserId!==null;
+  var isOwnCollection=!isViewingProfile&&!hasBlockingState;
+  var canShowAddAlbumCard=isOwnCollection&&window.hasAuthenticatedUser&&records.length>0;
 
-  emptyCollection.style.display='none';
+  emptyCollection.style.display=(isOwnCollection&&records.length===0)?'flex':'none';
   loginToViewCollection.style.display=window.loginRequiredForViewedCollection?'flex':'none';
   profileNotFound.style.display=window.profileNotFound?'flex':'none';
   emptyViewedCollection.style.display=(isViewingProfile&&records.length===0&&!hasBlockingState)?'flex':'none';
@@ -1687,7 +1693,7 @@ window.buildGrid=function(){
     }
   }
 
-  if(!isViewingProfile&&!hasBlockingState){
+  if(canShowAddAlbumCard){
     html+='<button class="add-album-card" type="button" aria-label="Add album">'+
       '<span class="add-album-card-icon" aria-hidden="true">+</span>'+
       '<span class="add-album-card-title">Add Album</span>'+
@@ -2573,7 +2579,8 @@ async function searchDiscogs(query){
         
                 const appleImage=await searchAppleAlbumArtwork(
                     artist,
-                    albumTitle
+                    albumTitle,
+                    master.year
                 );
         
                 return appleImage;
@@ -2708,7 +2715,70 @@ function appleArtworkUrl(album){
         :'';
 }
 
-async function searchAppleAlbumArtwork(artist,albumTitle){
+function normalizeAppleFullTitle(value){
+    var text=String(value||'').toLowerCase();
+
+    if(text.normalize){
+        text=text.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    }
+
+    return text
+        .replace(/[^a-z0-9]+/g,' ')
+        .trim()
+        .replace(/\s+/g,' ');
+}
+
+function appleEditionPenalty(candidate,albumTitle){
+    var candidateText=normalizeAppleFullTitle(candidate);
+    var albumText=normalizeAppleFullTitle(albumTitle);
+    var editionTerms=[
+        'super deluxe','deluxe','remaster','remastered','anniversary',
+        'expanded','special edition','collector edition','bonus track',
+        'reissue','live'
+    ];
+    var penalty=0;
+
+    editionTerms.forEach(function(term){
+        if(candidateText.indexOf(term)!==-1&&albumText.indexOf(term)===-1){
+            penalty+=term==='super deluxe'?40:20;
+        }
+    });
+
+    return penalty;
+}
+
+function pickBestAppleAlbum(results,artist,albumTitle,originalYear){
+    var wantedTitle=normalizeAppleFullTitle(albumTitle);
+    var wantedYear=parseInt(originalYear,10)||0;
+
+    return (results||[])
+        .filter(function(item){
+            return appleArtistMatches(item.artistName,artist)&&
+                appleAlbumMatches(item.collectionName,albumTitle)&&
+                item.artworkUrl100;
+        })
+        .map(function(item,index){
+            var candidateTitle=normalizeAppleFullTitle(item.collectionName);
+            var score=candidateTitle===wantedTitle?100:70;
+            var releaseYear=parseInt(String(item.releaseDate||'').slice(0,4),10)||0;
+
+            score-=appleEditionPenalty(item.collectionName,albumTitle);
+
+            if(wantedYear&&releaseYear){
+                score-=Math.min(Math.abs(releaseYear-wantedYear),20);
+            }
+
+            return {item:item,score:score,index:index};
+        })
+        .sort(function(a,b){
+            return b.score-a.score||a.index-b.index;
+        })
+        .map(function(result){
+            return result.item;
+        })[0];
+}
+
+async function searchAppleAlbumArtwork(artist,albumTitle,originalYear){
     try{
         var directTerm=encodeURIComponent(artist+' '+albumTitle);
         var directResponse=await fetch(
@@ -2720,11 +2790,12 @@ async function searchAppleAlbumArtwork(artist,albumTitle){
         }
 
         var directData=await directResponse.json();
-        var directResult=(directData.results||[]).find(function(item){
-            return appleArtistMatches(item.artistName,artist)&&
-                appleAlbumMatches(item.collectionName,albumTitle)&&
-                item.artworkUrl100;
-        });
+        var directResult=pickBestAppleAlbum(
+            directData.results,
+            artist,
+            albumTitle,
+            originalYear
+        );
 
         if(directResult){
             return appleArtworkUrl(directResult);
@@ -2759,11 +2830,12 @@ async function searchAppleAlbumArtwork(artist,albumTitle){
         }
 
         var lookupData=await lookupResponse.json();
-        var albumResult=(lookupData.results||[]).find(function(item){
-            return appleArtistMatches(item.artistName,artist)&&
-                appleAlbumMatches(item.collectionName,albumTitle)&&
-                item.artworkUrl100;
-        });
+        var albumResult=pickBestAppleAlbum(
+            lookupData.results,
+            artist,
+            albumTitle,
+            originalYear
+        );
 
         return appleArtworkUrl(albumResult);
 
@@ -2861,7 +2933,8 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
 
         let coverUrl=await searchAppleAlbumArtwork(
             discogsArtist,
-            discogsTitle
+            discogsTitle,
+            discogsYear
         );
         
         if(!coverUrl){
@@ -3075,6 +3148,7 @@ async function loadUserFromUrl(){
 
     const {data:{session}}=await supabaseClient.auth.getSession();
     const sessionUser=session&&session.user;
+    window.hasAuthenticatedUser=!!sessionUser;
     const unresolvedState=GroovyRouteState.resolveProfileView(sessionUser,null);
 
     if(unresolvedState==='login-required'){

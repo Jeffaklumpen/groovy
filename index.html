@@ -19,7 +19,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>Groovy – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=20">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=21">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
 </head>
 
@@ -132,30 +132,38 @@
   </div>
 </div>
 
-<div id="addAlbumModal" class="add-album-modal">
+<div id="addAlbumModal" class="add-album-modal" role="dialog" aria-modal="true" aria-labelledby="addAlbumTitle">
 
-    <div class="add-album-box">
+    <div class="add-album-box search-modal-box">
 
         <button id="closeAddAlbum" class="close-add-album">
             ×
         </button>
 
-        <h2>Add Album</h2>
+        <div class="search-modal-heading">
+            <span class="search-modal-kicker">Your collection</span>
+            <h2 id="addAlbumTitle">Add Album</h2>
+            <p>Find the next record for your collection.</p>
+        </div>
 
         <div class="add-album-search">
-            <input type="text" id="albumSearchInput" placeholder="Search artist or album..." autocomplete="off">
+            <input type="text" id="albumSearchInput" aria-label="Search artist or album" placeholder="Search artist or album..." autocomplete="off">
         </div>
         <div id="albumSearchResults"></div>
 
     </div>
 </div>
 
-  <div id="searchUserModal" class="add-album-modal">
-    <div class="add-album-box">
+  <div id="searchUserModal" class="add-album-modal" role="dialog" aria-modal="true" aria-labelledby="searchUserTitle">
+    <div class="add-album-box search-modal-box">
       <button id="closeSearchUser" class="close-add-album">×</button>
-      <h2>Search User</h2>
+      <div class="search-modal-heading">
+        <span class="search-modal-kicker">The community</span>
+        <h2 id="searchUserTitle">Search User</h2>
+        <p>Discover collectors and explore their shelves.</p>
+      </div>
       <div class="add-album-search">
-        <input type="text" id="userSearchInput" placeholder="search username..." autocomplete="off">
+        <input type="text" id="userSearchInput" aria-label="Search username" placeholder="Search username..." autocomplete="off">
       </div>
       <div id="userSearchResults"></div>
     </div>
@@ -246,6 +254,6 @@
 </div>
 
 <script src="/groovy/js/route-state.js?v=11"></script>
-<script src="/groovy/js/app.js?v=19"></script>
+<script src="/groovy/js/app.js?v=22"></script>
 </body>
 </html>
