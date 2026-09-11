@@ -1345,6 +1345,7 @@ function enableGridSorting(){
     removeDragPreview();
     touchDragging=false;
     resetPointerState();
+    resetTouchState();
   });
 
   collection.ondragstart=null;
@@ -1358,8 +1359,10 @@ function enableGridSorting(){
   var pointerCard=null;
   var pointerStartX=0;
   var pointerStartY=0;
-  var lastPointerY=0;
-  var touchScrolling=false;
+  var touchId=null;
+  var touchCard=null;
+  var touchStartX=0;
+  var touchStartY=0;
 
   function resetPointerState(){
     clearTimeout(touchTimer);
@@ -1371,7 +1374,20 @@ function enableGridSorting(){
 
     pointerId=null;
     pointerCard=null;
-    touchScrolling=false;
+  }
+
+  function resetTouchState(){
+    clearTimeout(touchTimer);
+    touchId=null;
+    touchCard=null;
+  }
+
+  function findTouch(touchList,id){
+    for(var i=0;i<touchList.length;i++){
+      if(touchList[i].identifier===id)return touchList[i];
+    }
+
+    return null;
   }
 
   function startPointerDrag(card,event){
@@ -1416,6 +1432,7 @@ function enableGridSorting(){
     if(!touchDragging||!dragged){
       removeDragPreview();
       resetPointerState();
+      resetTouchState();
       touchDragging=false;
       dragged=null;
       suppressAlbumClick=false;
@@ -1429,6 +1446,7 @@ function enableGridSorting(){
     dragged=null;
     touchDragging=false;
     resetPointerState();
+    resetTouchState();
 
     suppressAlbumClick=true;
     await finishDrag();
@@ -1451,12 +1469,14 @@ function enableGridSorting(){
     touchDragging=false;
     suppressAlbumClick=false;
     resetPointerState();
+    resetTouchState();
   }
 
   for(var i=0;i<cards.length;i++){
     cards[i].onpointerdown=function(event){
       if(pointerId!==null)return;
       if(event.button!==undefined&&event.button!==0)return;
+      if(event.pointerType==='touch')return;
 
       pointerId=event.pointerId;
       pointerCard=this;
@@ -1464,8 +1484,6 @@ function enableGridSorting(){
       pointerStartY=event.clientY;
       touchX=event.clientX;
       touchY=event.clientY;
-      lastPointerY=event.clientY;
-      touchScrolling=false;
 
       clearTimeout(touchTimer);
 
@@ -1474,13 +1492,6 @@ function enableGridSorting(){
         try{this.setPointerCapture(event.pointerId);}catch(error){}
       }
 
-      if(event.pointerType!=='mouse'&&event.pointerType!=='pen'){
-        touchTimer=setTimeout(function(){
-          if(pointerId!==null&&!touchDragging){
-            startPointerDrag(pointerCard,event);
-          }
-        },350);
-      }
     };
 
     cards[i].onpointermove=function(event){
@@ -1490,26 +1501,9 @@ function enableGridSorting(){
         var movedX=Math.abs(event.clientX-pointerStartX);
         var movedY=Math.abs(event.clientY-pointerStartY);
 
-        if(event.pointerType==='mouse'||event.pointerType==='pen'){
-          if(movedX>6||movedY>6){
-            startPointerDrag(this,event);
-            updatePointerDrag(event);
-          }
-
-          return;
-        }
-
-        if(!touchScrolling&&(movedX>8||movedY>8)){
-          clearTimeout(touchTimer);
-          touchScrolling=true;
-          suppressAlbumClick=true;
-        }
-
-        // touch-action:none keeps the browser from stealing the gesture. Before
-        // long-press activation, reproduce normal page scrolling ourselves.
-        if(touchScrolling){
-          window.scrollBy(0,lastPointerY-event.clientY);
-          lastPointerY=event.clientY;
+        if(movedX>6||movedY>6){
+          startPointerDrag(this,event);
+          updatePointerDrag(event);
         }
 
         return;
@@ -1527,6 +1521,82 @@ function enableGridSorting(){
       if(pointerId===null||event.pointerId!==pointerId)return;
       cancelPointerDrag();
     };
+
+    cards[i].addEventListener('touchstart',function(event){
+      if(touchId!==null||!event.changedTouches.length)return;
+
+      var touch=event.changedTouches[0];
+      touchId=touch.identifier;
+      touchCard=this;
+      touchStartX=touch.clientX;
+      touchStartY=touch.clientY;
+      touchX=touch.clientX;
+      touchY=touch.clientY;
+
+      clearTimeout(touchTimer);
+      touchTimer=setTimeout(function(){
+        if(touchId===null||touchDragging||!touchCard)return;
+
+        startPointerDrag(touchCard,{
+          clientX:touchX,
+          clientY:touchY
+        });
+      },350);
+    },{passive:true});
+
+    cards[i].addEventListener('touchmove',function(event){
+      if(touchId===null)return;
+
+      var touch=findTouch(event.touches,touchId);
+
+      if(!touch)return;
+
+      touchX=touch.clientX;
+      touchY=touch.clientY;
+
+      if(!touchDragging){
+        var movedX=Math.abs(touchX-touchStartX);
+        var movedY=Math.abs(touchY-touchStartY);
+
+        if(movedX>8||movedY>8){
+          clearTimeout(touchTimer);
+        }
+
+        return;
+      }
+
+      event.preventDefault();
+      updateDragPreview(touchX,touchY);
+
+      var target=document.elementFromPoint(touchX,touchY);
+      var card=target&&target.closest
+        ?target.closest('.record')
+        :null;
+
+      if(card&&card!==dragged){
+        moveDragged(card,touchX,touchY);
+      }
+    },{passive:false});
+
+    cards[i].addEventListener('touchend',function(event){
+      if(touchId===null)return;
+
+      var touch=findTouch(event.changedTouches,touchId);
+
+      if(!touch)return;
+
+      if(touchDragging){
+        event.preventDefault();
+        finishPointerDrag();
+      }else{
+        resetTouchState();
+      }
+    },{passive:false});
+
+    cards[i].addEventListener('touchcancel',function(){
+      if(touchId===null)return;
+      cancelPointerDrag();
+    },{passive:true});
   }
 }
 
@@ -1600,7 +1670,7 @@ window.buildGrid=function(){
   var hasBlockingState=window.loginRequiredForViewedCollection||window.profileNotFound;
   var isViewingProfile=viewedUserId!==null;
 
-  emptyCollection.style.display=(viewedUserId===null&&records.length===0&&!hasBlockingState)?'flex':'none';
+  emptyCollection.style.display='none';
   loginToViewCollection.style.display=window.loginRequiredForViewedCollection?'flex':'none';
   profileNotFound.style.display=window.profileNotFound?'flex':'none';
   emptyViewedCollection.style.display=(isViewingProfile&&records.length===0&&!hasBlockingState)?'flex':'none';
@@ -1617,7 +1687,24 @@ window.buildGrid=function(){
     }
   }
 
+  if(!isViewingProfile&&!hasBlockingState){
+    html+='<button class="add-album-card" type="button" aria-label="Add album">'+
+      '<span class="add-album-card-icon" aria-hidden="true">+</span>'+
+      '<span class="add-album-card-title">Add Album</span>'+
+      '<span class="add-album-card-text">The collection must grow</span>'+
+    '</button>';
+  }
+
   collection.innerHTML=html;
+
+  var addAlbumCard=collection.querySelector('.add-album-card');
+
+  if(addAlbumCard){
+    addAlbumCard.addEventListener('click',function(){
+      document.getElementById('addAlbumButton').click();
+    });
+  }
+
   addCoverTilt();
   attachAlbumClicks();
   enableGridSorting();
@@ -3046,3 +3133,4 @@ async function renderCurrentRoute(){
 }
 
 renderCurrentRoute();
+

@@ -39,6 +39,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .grid:after{content:"";display:table;clear:both}
 .grid .record{float:left;width:24%;margin-right:1.3333%;margin-bottom:38px;min-width:0}
 .grid .record:nth-child(4n){margin-right:0}
+.grid .add-album-card{float:left;width:24%;margin:0 1.3333% 38px 0;aspect-ratio:1/1;min-width:0;border:1px solid #29292c;background:#111113;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;font-family:inherit;text-align:center;cursor:pointer;box-shadow:0 8px 12px rgba(0,0,0,.18),0 18px 35px rgba(0,0,0,.28);transition:transform .18s ease,border-color .18s ease,background .18s ease;-webkit-tap-highlight-color:transparent}
+.grid .add-album-card:nth-child(4n){margin-right:0}
+.add-album-card-icon{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#E85301;color:#fff;font-size:38px;font-weight:300;line-height:1;margin-bottom:14px;box-shadow:0 7px 18px rgba(232,83,1,.28)}
+.add-album-card-title{font-size:17px;font-weight:600;line-height:1.2}
+.add-album-card-text{margin-top:5px;color:#999;font-size:12px;line-height:1.3}
+.add-album-card:active{transform:scale(.985);background:#171719}
 
 .cover-wrapper{position:relative;width:100%;height:0;padding-bottom:100%;overflow:hidden;background:#161618;border:1px solid #29292c;box-shadow:0 8px 12px rgba(0,0,0,.28),0 18px 35px rgba(0,0,0,.48),0 2px 3px rgba(0,0,0,.55)}
 .cover{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block}
@@ -131,6 +137,7 @@ body{padding:20px}
 .title{font-size:28px;padding-right:0}
 .header-controls{position:relative;left:auto;top:auto;right:auto;margin-top:14px;padding-top:2px;justify-content:flex-end;flex-wrap:wrap;row-gap:8px}
 .grid .record{width:24%;margin-right:1.3333%;margin-bottom:30px}
+.grid .add-album-card{width:24%;margin-right:1.3333%;margin-bottom:30px}
 .grid .artist{font-size:15px}
 .grid .album{font-size:13px}
 .grid .year{font-size:12px}
@@ -150,15 +157,22 @@ body{padding:20px}
 }
 
 @media screen and (max-width:600px){
+html{scroll-behavior:auto}
 body{padding:15px}
 .header{padding-bottom:16px;margin-bottom:20px}
 .title{font-size:23px;padding-right:0;letter-spacing:2px}
 .subtitle{font-size:12px}
-.header-controls{position:relative;top:auto;right:auto;margin-top:12px;display:flex;flex-wrap:wrap;justify-content:flex-start;gap:6px}
+.header-controls{position:relative;left:auto;top:auto;right:auto;margin-top:12px;display:flex;flex-wrap:wrap;justify-content:flex-start;gap:6px}
 .add-album-button{padding:7px 11px;font-size:12px}
 .grid .record{width:48%;margin-right:4%;margin-bottom:28px}
 .grid .record:nth-child(4n){margin-right:4%}
 .grid .record:nth-child(2n){margin-right:0}
+.grid .add-album-card{width:48%;margin-right:4%;margin-bottom:28px;padding:12px}
+.grid .add-album-card:nth-child(4n){margin-right:4%}
+.grid .add-album-card:nth-child(2n){margin-right:0}
+.add-album-card-icon{width:52px;height:52px;font-size:34px;margin-bottom:12px}
+.add-album-card-title{font-size:15px}
+.add-album-card-text{font-size:11px}
 .carousel-card{width:260px;margin-left:9px;margin-right:9px}
 .carousel-card.active{transform:scale(1.07);-webkit-transform:scale(1.07);transition:transform .4s ease;-webkit-transition:-webkit-transform .4s ease}
 .album-overlay{padding:10px}
@@ -215,7 +229,7 @@ body{padding:15px}
 .header{padding-bottom:14px;margin-bottom:18px}
 .title{font-size:23px;padding-right:0;letter-spacing:2px}
 .subtitle{font-size:12px}
-.header-controls{position:relative;top:auto;right:auto;width:100%;margin-top:11px;display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:5px}
+.header-controls{position:relative;left:auto;top:auto;right:auto;width:100%;margin-top:11px;display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:5px}
 #filterButton{order:4}
 #viewButton{order:5}
 #deleteModeButton{order:6}
@@ -279,7 +293,7 @@ body{padding:15px}
 }
 
 .grid .record{cursor:grab;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease}
-.grid-sort-enabled .record{touch-action:none}
+.grid-sort-enabled .record{touch-action:pan-y;-webkit-user-select:none;user-select:none}
 .grid .record:active{cursor:grabbing}
 .grid .record.dragging{opacity:.22;transform:scale(.97);-webkit-transform:scale(.97);filter:brightness(1.08);box-shadow:0 16px 35px rgba(0,0,0,.25);z-index:20;cursor:grabbing;touch-action:none}
 .drag-preview{position:fixed!important;z-index:9999!important;pointer-events:none!important;margin:0!important;opacity:1;transform:rotate(2deg) scale(1.045)!important;-webkit-transform:rotate(2deg) scale(1.045)!important;transform-origin:center center;filter:brightness(1.08);box-shadow:0 24px 45px rgba(0,0,0,.48),0 5px 12px rgba(0,0,0,.36);transition:transform .14s ease-out;will-change:left,top,transform}
@@ -291,6 +305,7 @@ body{padding:15px}
 
 @media screen and (min-width:601px){
 .grid .record:hover{transform:scale(1.015);z-index:2}
+.grid .add-album-card:hover{transform:scale(1.015);border-color:#E85301;background:#171719}
 .cover-wrapper{transition:transform .18s ease;transform-style:preserve-3d;will-change:transform}
 }
 
@@ -325,3 +340,4 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 
 #profileMenu #searchUserButton,#profileMenu #myCollectionButton{display:block;width:100%;padding:8px;background:none;border:0;border-radius:6px;color:#fff;text-align:left;font-family:inherit;font-size:12px;cursor:pointer}
 #profileMenu #searchUserButton:hover,#profileMenu #myCollectionButton:hover{background:#242426}
+
