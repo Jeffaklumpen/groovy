@@ -13,6 +13,9 @@ const logoutButton=document.getElementById('logoutButton');
 const loginClose=document.getElementById('loginClose');
 
 const authTitle=document.getElementById('authTitle');
+const authKicker=document.getElementById('authKicker');
+const authDescription=document.getElementById('authDescription');
+const authSwitchPrompt=document.getElementById('authSwitchPrompt');
 const registerFields=document.getElementById('registerFields');
 const registerUsername=document.getElementById('registerUsername');
 const registerButton=document.getElementById('registerButton');
@@ -60,19 +63,25 @@ authSwitchButton.addEventListener('click',function(){
     registerMode=!registerMode;
 
     if(registerMode){
-        authTitle.textContent='Skapa konto';
+        authKicker.textContent='Join the groove';
+        authTitle.textContent='Create your account';
+        authDescription.textContent='Start building and sharing your vinyl collection.';
         registerFields.style.display='block';
         loginButton.style.display='none';
         registerButton.style.display='block';
-        authSwitchButton.textContent='Har redan konto';
+        authSwitchPrompt.textContent='Already have an account?';
+        authSwitchButton.textContent='Log in';
         loginPassword.setAttribute('autocomplete','new-password');
         registerUsername.focus();
     }else{
-        authTitle.textContent='Logga in';
+        authKicker.textContent='Your collection awaits';
+        authTitle.textContent='Welcome back';
+        authDescription.textContent='Sign in and pick up exactly where you left off.';
         registerFields.style.display='none';
         loginButton.style.display='block';
         registerButton.style.display='none';
-        authSwitchButton.textContent='Skapa konto';
+        authSwitchPrompt.textContent='New to Groovy?';
+        authSwitchButton.textContent='Create account';
         loginPassword.setAttribute('autocomplete','current-password');
         loginEmail.focus();
     }
@@ -232,7 +241,7 @@ loginButton.addEventListener('click',async function(){
     }
 
     loginButton.disabled=true;
-    loginButton.textContent='Loggar in...';
+    loginButton.textContent='Logging in...';
 
     const {data,error}=await supabaseClient.auth.signInWithPassword({
         email:email,
@@ -243,12 +252,12 @@ loginButton.addEventListener('click',async function(){
         console.error('Login error:',error);
         alert(error.message);
         loginButton.disabled=false;
-        loginButton.textContent='Logga in';
+        loginButton.textContent='Log in';
         return;
     }
 
     loginButton.disabled=false;
-    loginButton.textContent='Logga in';
+    loginButton.textContent='Log in';
 
     await updateAuthUI();
 });
@@ -274,7 +283,7 @@ registerButton.addEventListener('click',async function(){
     }
 
     registerButton.disabled=true;
-    registerButton.textContent='Skapar konto...';
+    registerButton.textContent='Creating account...';
 
     const {data,error}=await supabaseClient.auth.signUp({
         email:email,
@@ -290,7 +299,7 @@ registerButton.addEventListener('click',async function(){
         console.error('Registration error:',error);
         alert(error.message);
         registerButton.disabled=false;
-        registerButton.textContent='Skapa konto';
+        registerButton.textContent='Create account';
         return;
     }
 
@@ -308,7 +317,7 @@ registerButton.addEventListener('click',async function(){
     }
 
     registerButton.disabled=false;
-    registerButton.textContent='Skapa konto';
+    registerButton.textContent='Create account';
 });
 
 logoutButton.addEventListener('click',async function(){
@@ -342,6 +351,83 @@ window.hasAuthenticatedUser=false;
 window.loginRequiredForViewedCollection=false;
 window.profileNotFound=false;
 window.collectionLoadVersion=0;
+window.libraryView=GroovyRouteState.libraryViewFromSearch(window.location.search);
+
+window.albumIdentityKey=GroovyRouteState.albumIdentityKey;
+
+function wishlistRecord(item,index){
+  var album=item.albums;
+  var sides={A:[],B:[],C:[],D:[]};
+
+  if(Array.isArray(album.tracks)){
+    album.tracks
+      .sort(function(a,b){
+        var sideCompare=String(a.disc_side||'').localeCompare(String(b.disc_side||''));
+        return sideCompare||((a.track_number||0)-(b.track_number||0))||((a.id||0)-(b.id||0));
+      })
+      .forEach(function(track){
+        if(!sides[track.disc_side])return;
+        sides[track.disc_side].push({
+          id:track.id,
+          title:track.title||'Okänd låt',
+          rating:0
+        });
+      });
+  }
+
+  return [
+    index+1,
+    album.artists&&album.artists.name?album.artists.name:'Okänd artist',
+    album.title||'Okänd titel',
+    album.release_year||'',
+    album.genre||'',
+    0,
+    item.cover_url||album.cover_url||'',
+    sides,
+    album.id,
+    item.id,
+    album.discogs_master_id||''
+  ];
+}
+
+window.loadWishlist=async function(userId){
+  var loadVersion=++window.collectionLoadVersion;
+  var {data,error}=await supabaseClient
+    .from('wishlists')
+    .select(`
+      id,
+      added_at,
+      sort_order,
+      cover_url,
+      albums(
+        id,
+        title,
+        release_year,
+        genre,
+        cover_url,
+        discogs_master_id,
+        artists(id,name),
+        tracks(id,disc_side,track_number,title)
+      )
+    `)
+    .eq('user_id',userId)
+    .order('sort_order',{ascending:true,nullsFirst:false})
+    .order('added_at',{ascending:true});
+
+  if(error){
+    console.error('Kunde inte hämta önskelistan:',error);
+    return;
+  }
+
+  if(loadVersion!==window.collectionLoadVersion)return;
+
+  records=(data||[])
+    .filter(function(item){return item.albums;})
+    .map(wishlistRecord);
+
+  document.getElementById('collectionCount').textContent=records.length+' RECORDS ON WISHLIST';
+  buildGrid();
+}
 
 window.loadCollection=async function(){
   var loadVersion=++window.collectionLoadVersion;
@@ -355,6 +441,7 @@ window.loadCollection=async function(){
   window.loginRequiredForViewedCollection=false;
   window.profileNotFound=false;
   document.getElementById('viewedUserHeader').style.display='none';
+  document.getElementById('backToMyCollectionMobileButton').classList.remove('active');
     
   var {data:{session}}=await supabaseClient.auth.getSession();
   window.hasAuthenticatedUser=!!(session&&session.user);
@@ -367,12 +454,18 @@ window.loadCollection=async function(){
 
   var user=session.user;
 
+  if(window.libraryView==='wishlist'){
+    await window.loadWishlist(user.id);
+    return;
+  }
+
   var {data:collectionData,error:collectionError}=await supabaseClient
     .from('collections')
     .select(`
       id,
       collection_number,
       sort_order,
+      cover_url,
       albums(
         id,
         title,
@@ -495,7 +588,7 @@ window.loadCollection=async function(){
           album.release_year||'',
           album.genre||'',
           ratings[album.id]||0,
-          album.cover_url||'',
+          item.cover_url||album.cover_url||'',
           sides,
           album.id,
           item.id,
@@ -543,25 +636,35 @@ function esc(value){
 
 function recordHTML(record, className){
   var smallSrc=record[6];
+  var isWishlist=window.libraryView==='wishlist';
 
-  var html='<article class="record '+(className||'')+'" draggable="false" data-index="'+(parseInt(record[0],10)-1)+'">'+
+  var html='<article class="record '+(isWishlist?'wishlist-record ':'')+(className||'')+'" draggable="false" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
       '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
       '<div class="number">'+record[0]+'</div>'+
       '<div class="cover-rating">';
 
-  for(var r=1;r<=5;r++){
-    html+=r<=record[5]?'★':'<span class="empty">★</span>';
+  if(isWishlist){
+    html+='<span class="wishlist-cover-label"><span class="wishlist-icon" aria-hidden="true"></span>Wishlisted</span>';
+  }else{
+    for(var r=1;r<=5;r++){
+      html+=r<=record[5]?'★':'<span class="empty">★</span>';
+    }
   }
 
   html+='</div>'+
-    (viewedUserId===null?'<button class="delete-cover-button" type="button" aria-label="Ta bort album">🗑</button>':'')+
+    (viewedUserId===null&&isWishlist
+      ?'<button class="wishlist-remove-button" type="button" aria-label="Remove from wishlist">×</button>'
+      :(viewedUserId===null?'<button class="delete-cover-button" type="button" aria-label="Ta bort album">×</button>':''))+
     '</div>'+
     '<div class="info">'+
       '<div class="artist">'+esc(record[1])+'</div>'+
       '<div class="album">'+esc(record[2])+'</div>'+
       '<div class="year">'+esc(record[3])+'</div>'+
     '</div>'+
+    (isWishlist&&viewedUserId===null
+      ?'<button class="move-to-collection-button" type="button"><span class="record-icon" aria-hidden="true"></span>Add to collection</button>'
+      :'')+
   '</article>';
 
   return html;
@@ -592,7 +695,8 @@ function openAlbum(index){
   var record=records[index];
   if(!record)return;
 
-  detailNumber.innerHTML=esc(record[0]);
+  var isWishlist=window.libraryView==='wishlist';
+  detailNumber.innerHTML=isWishlist?'Wishlisted':esc(record[0]);
   detailArtist.innerHTML=esc(record[1]);
   detailAlbum.innerHTML=esc(record[2]);
   detailYear.innerHTML=esc(record[3]);
@@ -607,11 +711,27 @@ function openAlbum(index){
 
   var stars='';
 
-  for(var i=1;i<=5;i++){
-    stars+='<button class="album-rating-star '+(i<=rating?'filled':'empty')+'" type="button" data-rating="'+i+'">★</button>';
+  if(isWishlist){
+    detailRating.innerHTML=viewedUserId===null
+      ?'<button class="detail-move-to-collection" type="button"><span class="record-icon" aria-hidden="true"></span>Add to collection</button>'
+      :'';
+  }else{
+    for(var i=1;i<=5;i++){
+      stars+='<button class="album-rating-star '+(i<=rating?'filled':'empty')+'" type="button" data-rating="'+i+'">★</button>';
+    }
+
+    detailRating.innerHTML=stars;
   }
 
-  detailRating.innerHTML=stars;
+  var detailMoveButton=detailRating.querySelector('.detail-move-to-collection');
+  if(detailMoveButton){
+    detailMoveButton.addEventListener('click',async function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      var moved=await moveWishlistAlbumToCollection(index,detailMoveButton);
+      if(moved)closeAlbum();
+    });
+  }
 
   var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
 
@@ -689,8 +809,10 @@ function openAlbum(index){
 
       var trackStars='';
 
-      for(var s=1;s<=5;s++){
-        trackStars+='<button class="track-rating-star '+(s<=trackRating?'filled':'empty')+'" type="button" data-track-id="'+track.id+'" data-rating="'+s+'">★</button>';
+      if(!isWishlist){
+        for(var s=1;s<=5;s++){
+          trackStars+='<button class="track-rating-star '+(s<=trackRating?'filled':'empty')+'" type="button" data-track-id="'+track.id+'" data-rating="'+s+'">★</button>';
+        }
       }
 
       html+='<li data-track-id="'+track.id+'">'+
@@ -956,12 +1078,142 @@ async function deleteCollectionAlbum(index){
   await window.loadCollection();
 }
 
+async function deleteWishlistAlbum(index){
+  if(viewedUserId!==null||window.libraryView!=='wishlist')return;
+  var record=records[index];
+  if(!record)return;
+
+  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+  if(userError||!user){
+    alert('Du måste vara inloggad.');
+    return;
+  }
+
+  var {error}=await supabaseClient
+    .from('wishlists')
+    .delete()
+    .eq('id',record[9])
+    .eq('user_id',user.id);
+
+  if(error){
+    console.error('Kunde inte ta bort albumet från önskelistan:',error);
+    alert('Kunde inte ta bort albumet från önskelistan.');
+    return;
+  }
+
+  await window.loadCollection();
+}
+
+async function moveWishlistAlbumToCollection(index,button){
+  if(viewedUserId!==null||window.libraryView!=='wishlist')return false;
+  var record=records[index];
+  if(!record)return false;
+
+  var originalText=button.textContent;
+  button.textContent='Moving...';
+  button.disabled=true;
+
+  try{
+    var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+    if(userError||!user)throw new Error('Du måste vara inloggad.');
+
+    var {data:existingCollection,error:existingError}=await supabaseClient
+      .from('collections')
+      .select('id,album_id,albums(title,artists(name))')
+      .eq('user_id',user.id)
+      .limit(500);
+    if(existingError)throw existingError;
+
+    var wantedKey=window.albumIdentityKey(record[1],record[2]);
+    var alreadyCollected=(existingCollection||[]).some(function(item){
+      var album=item.albums;
+      return item.album_id===record[8]||(
+        album&&window.albumIdentityKey(album.artists&&album.artists.name,album.title)===wantedKey
+      );
+    });
+
+    if(!alreadyCollected){
+      var {data:lastCollection,error:lastError}=await supabaseClient
+        .from('collections')
+        .select('sort_order')
+        .eq('user_id',user.id)
+        .order('sort_order',{ascending:false})
+        .limit(1);
+      if(lastError)throw lastError;
+
+      var nextSortOrder=lastCollection&&lastCollection.length
+        ?lastCollection[0].sort_order+1
+        :1;
+      var {error:insertError}=await supabaseClient
+        .from('collections')
+        .insert({
+          user_id:user.id,
+          album_id:record[8],
+          cover_url:record[6]||null,
+          sort_order:nextSortOrder
+        });
+      if(insertError)throw insertError;
+    }
+
+    var {error:deleteError}=await supabaseClient
+      .from('wishlists')
+      .delete()
+      .eq('id',record[9])
+      .eq('user_id',user.id);
+    if(deleteError)throw deleteError;
+
+    await window.loadCollection();
+    return true;
+  }catch(error){
+    console.error('Kunde inte flytta albumet till samlingen:',error);
+    button.textContent=originalText;
+    button.disabled=false;
+    alert('Kunde inte flytta albumet till samlingen.\n\n'+(error.message||error));
+    return false;
+  }
+}
+
 function attachAlbumClicks(){
   if(collection._albumClickAttached)return;
   collection._albumClickAttached=true;
 
   collection.addEventListener('click',async function(event){
     var target=event.target||event.srcElement;
+
+    var wishlistRemoveButton=target.closest
+      ?target.closest('.wishlist-remove-button')
+      :null;
+
+    if(wishlistRemoveButton){
+      if(viewedUserId!==null)return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      var wishlistRecordElement=wishlistRemoveButton.closest('.record');
+      if(!wishlistRecordElement)return;
+      var wishlistIndex=parseInt(wishlistRecordElement.getAttribute('data-index'),10);
+      if(isNaN(wishlistIndex)||!records[wishlistIndex])return;
+
+      removeAlbumIndex=wishlistIndex;
+      document.getElementById('removeAlbumMessage').textContent='Remove "'+records[wishlistIndex][2]+'" from your wishlist?';
+      document.getElementById('removeAlbumModal').style.display='flex';
+      return;
+    }
+
+    var moveButton=target.closest
+      ?target.closest('.move-to-collection-button')
+      :null;
+
+    if(moveButton){
+      event.preventDefault();
+      event.stopPropagation();
+      var moveRecordElement=moveButton.closest('.record');
+      if(!moveRecordElement)return;
+      var moveIndex=parseInt(moveRecordElement.getAttribute('data-index'),10);
+      if(isNaN(moveIndex))return;
+      await moveWishlistAlbumToCollection(moveIndex,moveButton);
+      return;
+    }
 
     var deleteButton=target.closest
       ?target.closest('.delete-cover-button')
@@ -1042,7 +1294,11 @@ confirmRemoveAlbum.addEventListener('click',async function(){
     removeAlbumModal.style.display='none';
     removeAlbumIndex=null;
 
-    await deleteCollectionAlbum(index);
+    if(window.libraryView==='wishlist'){
+      await deleteWishlistAlbum(index);
+    }else{
+      await deleteCollectionAlbum(index);
+    }
 });
 
 function enableGridSorting(){
@@ -1604,6 +1860,39 @@ function enableGridSorting(){
   }
 }
 
+function attachWishlistRemoveControls(){
+  var buttons=collection.querySelectorAll('.wishlist-remove-button');
+
+  function stopCardInteraction(event){
+    event.stopPropagation();
+  }
+
+  for(var i=0;i<buttons.length;i++){
+    var button=buttons[i];
+
+    button.addEventListener('pointerdown',stopCardInteraction);
+    button.addEventListener('mousedown',stopCardInteraction);
+    button.addEventListener('touchstart',stopCardInteraction,{passive:true});
+    button.addEventListener('click',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      if(viewedUserId!==null)return;
+
+      var recordElement=this.closest('.record');
+      if(!recordElement)return;
+
+      var index=parseInt(recordElement.getAttribute('data-index'),10);
+      if(isNaN(index)||!records[index])return;
+
+      removeAlbumIndex=index;
+      document.getElementById('removeAlbumMessage').textContent='Remove "'+records[index][2]+'" from your wishlist?';
+      document.getElementById('removeAlbumModal').style.display='flex';
+    });
+  }
+}
+
 async function saveGridOrder(){
   var {data:{user},error:userError}=await supabaseClient.auth.getUser();
 
@@ -1621,8 +1910,9 @@ async function saveGridOrder(){
       return false;
     }
 
+    var tableName=window.libraryView==='wishlist'?'wishlists':'collections';
     var {data,error}=await supabaseClient
-      .from('collections')
+      .from(tableName)
       .update({
         sort_order:i+1
       })
@@ -1637,8 +1927,8 @@ async function saveGridOrder(){
     }
 
     if(!data||!data.length){
-      console.error('Ingen collection uppdaterades:',record[9]);
-      alert('Supabase uppdaterade ingen rad. Kontrollera RLS-policyn för collections.');
+      console.error('Ingen rad uppdaterades:',record[9]);
+      alert('Supabase uppdaterade ingen rad. Kontrollera RLS-policyn för '+tableName+'.');
       return false;
     }
   }
@@ -1674,21 +1964,34 @@ window.buildGrid=function(){
   var hasBlockingState=window.loginRequiredForViewedCollection||window.profileNotFound;
   var isViewingProfile=viewedUserId!==null;
   var isOwnCollection=!isViewingProfile&&!hasBlockingState;
+  var isWishlist=window.libraryView==='wishlist';
   var canShowAddAlbumCard=isOwnCollection&&window.hasAuthenticatedUser&&records.length>0;
+  var emptyWishlist=document.getElementById('emptyWishlist');
+  var libraryTabs=document.getElementById('libraryTabs');
 
-  emptyCollection.style.display=(isOwnCollection&&records.length===0)?'flex':'none';
+  emptyCollection.style.display=(isOwnCollection&&!isWishlist&&records.length===0)?'flex':'none';
   loginToViewCollection.style.display=window.loginRequiredForViewedCollection?'flex':'none';
   profileNotFound.style.display=window.profileNotFound?'flex':'none';
-  emptyViewedCollection.style.display=(isViewingProfile&&records.length===0&&!hasBlockingState)?'flex':'none';
+  emptyViewedCollection.style.display=(isViewingProfile&&!isWishlist&&records.length===0&&!hasBlockingState)?'flex':'none';
+  emptyWishlist.style.display=(isWishlist&&records.length===0&&!hasBlockingState)?'flex':'none';
+  document.getElementById('emptyWishlistTitle').textContent=isViewingProfile?'Wishlist is empty':'Your wishlist is empty';
+  document.getElementById('emptyWishlistText').textContent=isViewingProfile
+    ?"This user hasn't added any records yet."
+    :'Save records you want to add next.';
+  document.getElementById('emptyWishlistAddButton').style.display=isViewingProfile?'none':'';
+  libraryTabs.style.display=(window.hasAuthenticatedUser&&!hasBlockingState)?'flex':'none';
+  document.getElementById('collectionTabButton').classList.toggle('active',!isWishlist);
+  document.getElementById('wishlistTabButton').classList.toggle('active',isWishlist);
   document.getElementById('addAlbumButton').style.display=isViewingProfile?'none':'';
-  document.getElementById('deleteModeButton').style.display=isViewingProfile?'none':'';
+  document.getElementById('deleteModeButton').style.display=(isViewingProfile||isWishlist)?'none':'';
+  document.getElementById('filterButton').parentElement.style.display=isWishlist?'none':'';
 
   var html='';
 
   for(var i=0;i<records.length;i++){
     var rating=parseInt(records[i][5],10);
 
-    if(selectedRating==='all'||rating===parseInt(selectedRating,10)){
+    if(isWishlist||selectedRating==='all'||rating===parseInt(selectedRating,10)){
       html+=recordHTML(records[i],'');
     }
   }
@@ -1697,7 +2000,7 @@ window.buildGrid=function(){
     html+='<button class="add-album-card" type="button" aria-label="Add album">'+
       '<span class="add-album-card-icon" aria-hidden="true">+</span>'+
       '<span class="add-album-card-title">Add Album</span>'+
-      '<span class="add-album-card-text">The collection must grow</span>'+
+      '<span class="add-album-card-text">'+(isWishlist?'The wishlist must grow':'The collection must grow')+'</span>'+
     '</button>';
   }
 
@@ -1712,6 +2015,7 @@ window.buildGrid=function(){
   }
 
   addCoverTilt();
+  attachWishlistRemoveControls();
   attachAlbumClicks();
   enableGridSorting();
   loadVisibleImages();
@@ -1819,6 +2123,7 @@ function buildCarousel(){
   var viewport=document.getElementById('carouselViewport');
   var cards=document.getElementsByClassName('carousel-card');
 
+  attachWishlistRemoveControls();
   attachAlbumClicks();
 
   function scheduleSettle(){
@@ -2228,6 +2533,11 @@ searchUserModal.addEventListener('click',function(event){
 });
 
 const myCollectionButton=document.getElementById('myCollectionButton');
+const backToMyCollectionButton=document.getElementById('backToMyCollectionButton');
+const backToMyCollectionMobileButton=document.getElementById('backToMyCollectionMobileButton');
+const collectionTabButton=document.getElementById('collectionTabButton');
+const wishlistTabButton=document.getElementById('wishlistTabButton');
+const emptyWishlistAddButton=document.getElementById('emptyWishlistAddButton');
 
 const logo=document.querySelector('.logo');
 
@@ -2249,6 +2559,33 @@ myCollectionButton.addEventListener('click',async function(){
 
     document.getElementById('viewedUserHeader').style.display='none';
     await window.loadCollection();
+});
+
+backToMyCollectionButton.addEventListener('click',function(){
+    myCollectionButton.click();
+});
+
+backToMyCollectionMobileButton.addEventListener('click',function(){
+    myCollectionButton.click();
+});
+
+function navigateLibrary(nextView){
+    var url=window.location.pathname;
+    if(nextView==='wishlist')url+='?view=wishlist';
+    history.pushState({},'',url);
+    renderCurrentRoute();
+}
+
+collectionTabButton.addEventListener('click',function(){
+    if(window.libraryView!=='collection')navigateLibrary('collection');
+});
+
+wishlistTabButton.addEventListener('click',function(){
+    if(window.libraryView!=='wishlist')navigateLibrary('wishlist');
+});
+
+emptyWishlistAddButton.addEventListener('click',function(){
+    addAlbumButton.click();
 });
 
 const deleteModeButton=document.getElementById('deleteModeButton');
@@ -2374,6 +2711,7 @@ async function loadOtherUserCollection(userId){
     const viewedUserName=document.getElementById('viewedUserName');
 
     viewedUserHeader.style.display='flex';
+    backToMyCollectionMobileButton.classList.add('active');
 
     viewedUserAvatar.style.backgroundImage='url("'+
         (profile&&profile.avatar_url
@@ -2386,7 +2724,12 @@ async function loadOtherUserCollection(userId){
 
     viewedUserName.textContent=(profile&&profile.username
         ?profile.username
-        :'Unknown user')+"'s collection";
+        :'Unknown user')+(window.libraryView==='wishlist'?"'s wishlist":"'s collection");
+
+    if(window.libraryView==='wishlist'){
+        await window.loadWishlist(userId);
+        return;
+    }
 
     const {data,error}=await supabaseClient
         .from('collections')
@@ -2394,6 +2737,7 @@ async function loadOtherUserCollection(userId){
             id,
             collection_number,
             sort_order,
+            cover_url,
             albums(
                 id,
                 title,
@@ -2518,7 +2862,7 @@ async function loadOtherUserCollection(userId){
                 album.release_year||'',
                 album.genre||'',
                 albumRatings[album.id]||0,
-                album.cover_url||'',
+                item.cover_url||album.cover_url||'',
                 sides,
                 album.id,
                 item.id
@@ -2530,6 +2874,29 @@ async function loadOtherUserCollection(userId){
     buildGrid();
 }
 
+function setSearchResultStatus(button,status){
+    var actions=button&&button.closest?button.closest('.mb-actions'):null;
+    if(!actions)return;
+    var addButton=actions.querySelector('.mb-add-button');
+    var wishlistButton=actions.querySelector('.mb-wishlist-button');
+
+    if(status==='collection'){
+        addButton.textContent='✓ In collection';
+        addButton.classList.add('mb-added');
+        addButton.disabled=true;
+        wishlistButton.textContent='In collection';
+        wishlistButton.classList.add('mb-wishlisted');
+        wishlistButton.disabled=true;
+    }else if(status==='wishlist'){
+        addButton.textContent='On wishlist';
+        addButton.classList.add('mb-added');
+        addButton.disabled=true;
+        wishlistButton.textContent='✓ Wishlisted';
+        wishlistButton.classList.add('mb-wishlisted');
+        wishlistButton.disabled=true;
+    }
+}
+
 
 async function searchDiscogs(query){
     const searchNumber=++musicBrainzSearchNumber;
@@ -2537,6 +2904,42 @@ async function searchDiscogs(query){
     albumSearchResults.innerHTML='<p>Söker...</p>';
 
     try{
+        const {data:{user}}=await supabaseClient.auth.getUser();
+        if(!user)throw new Error('Du måste vara inloggad.');
+
+        const [collectionState,wishlistState]=await Promise.all([
+            supabaseClient
+                .from('collections')
+                .select('albums(discogs_master_id,title,artists(name))')
+                .eq('user_id',user.id),
+            supabaseClient
+                .from('wishlists')
+                .select('albums(discogs_master_id,title,artists(name))')
+                .eq('user_id',user.id)
+        ]);
+
+        if(collectionState.error)throw collectionState.error;
+        if(wishlistState.error)throw wishlistState.error;
+
+        const existingMasterIds=(collectionState.data||[])
+            .map(function(item){return item.albums&&String(item.albums.discogs_master_id||'');})
+            .filter(Boolean);
+        const wishlistedMasterIds=(wishlistState.data||[])
+            .map(function(item){return item.albums&&String(item.albums.discogs_master_id||'');})
+            .filter(Boolean);
+        const existingAlbumKeys=(collectionState.data||[])
+            .map(function(item){
+                var album=item.albums;
+                return album&&window.albumIdentityKey(album.artists&&album.artists.name,album.title);
+            })
+            .filter(Boolean);
+        const wishlistedAlbumKeys=(wishlistState.data||[])
+            .map(function(item){
+                var album=item.albums;
+                return album&&window.albumIdentityKey(album.artists&&album.artists.name,album.title);
+            })
+            .filter(Boolean);
+
         const {data,error}=await supabaseClient.functions.invoke('discogs-search',{
             body:{query:query}
         });
@@ -2549,12 +2952,6 @@ async function searchDiscogs(query){
         if(searchNumber!==musicBrainzSearchNumber)return;
 
         albumSearchResults.innerHTML='';
-
-        const existingMasterIds=records
-            .map(function(record){
-                return String(record[10]||'');
-            })
-            .filter(Boolean);
 
         const results=data&&data.results?data.results:[];
 
@@ -2589,8 +2986,6 @@ async function searchDiscogs(query){
         
         searchResults.forEach(function(master,index){
         
-            const isAdded=existingMasterIds.includes(String(master.id));
-        
             const title=master.title||'Okänd titel';
             const parts=title.split(' - ');
         
@@ -2601,13 +2996,15 @@ async function searchDiscogs(query){
             const albumTitle=parts.length>1
                 ?parts.slice(1).join(' - ')
                 :title;
+            const resultAlbumKey=window.albumIdentityKey(artist,albumTitle);
+            const isAdded=existingMasterIds.includes(String(master.id))||existingAlbumKeys.includes(resultAlbumKey);
+            const isWishlisted=wishlistedMasterIds.includes(String(master.id))||wishlistedAlbumKeys.includes(resultAlbumKey);
         
             const year=master.year||'';
         
-            const imageUrl=
-                appleArtworkResults[index]||
-                master.thumb||
-                '';
+            const appleImageUrl=appleArtworkResults[index]||'';
+            const imageUrl=appleImageUrl||master.thumb||'';
+            const imageSource=appleImageUrl?'apple':(master.thumb?'discogs':'');
         
             const masterId=master.id||'';
         
@@ -2637,13 +3034,22 @@ async function searchDiscogs(query){
                     '</div>'+
         
                 '</div>'+
-        
-                (isAdded
-                    ?'<button class="mb-add-button mb-added" disabled>✓ Added</button>'
-                    :'<button class="mb-add-button">Add</button>');
+                '<div class="mb-actions">'+
+                  (isAdded
+                      ?'<button class="mb-add-button mb-added" disabled>✓ In collection</button>'
+                      :(isWishlisted
+                          ?'<button class="mb-add-button mb-added" disabled>On wishlist</button>'
+                          :'<button class="mb-add-button">Add</button>'))+
+                  (isAdded
+                      ?'<button class="mb-wishlist-button mb-wishlisted" disabled>In collection</button>'
+                      :(isWishlisted
+                          ?'<button class="mb-wishlist-button mb-wishlisted" disabled>✓ Wishlisted</button>'
+                          :'<button class="mb-wishlist-button"><span class="wishlist-icon" aria-hidden="true"></span>Wishlist</button>'))+
+                '</div>';
         
             const addButton=
                 div.querySelector('.mb-add-button');
+            const wishlistButton=div.querySelector('.mb-wishlist-button');
         
             addButton.addEventListener(
                 'click',
@@ -2656,10 +3062,25 @@ async function searchDiscogs(query){
                         artist,
                         albumTitle,
                         year,
+                        imageUrl,
+                        imageSource,
                         addButton
                     );
                 }
             );
+
+            wishlistButton.addEventListener('click',function(event){
+                event.stopPropagation();
+                addAlbumToWishlistFromDiscogs(
+                    master,
+                    artist,
+                    albumTitle,
+                    year,
+                    imageUrl,
+                    imageSource,
+                    wishlistButton
+                );
+            });
         
             albumSearchResults.appendChild(div);
         });
@@ -2704,9 +3125,9 @@ function appleAlbumMatches(candidate,albumTitle){
     var candidateText=normalizeAppleSearchText(candidate);
     var albumText=normalizeAppleSearchText(albumTitle);
 
-    return candidateText===albumText||
-        candidateText.indexOf(albumText+' ')===0||
-        candidateText.indexOf(' '+albumText+' ')!==-1;
+    // Only accept the requested album title itself. Loose substring matching
+    // accidentally selected compilations such as “The Best Of …” or bundles.
+    return candidateText===albumText;
 }
 
 function appleArtworkUrl(album){
@@ -2747,6 +3168,30 @@ function appleEditionPenalty(candidate,albumTitle){
     return penalty;
 }
 
+function appleReleaseIsExcluded(candidate){
+    var text=normalizeAppleFullTitle(candidate);
+    var excludedPatterns=[
+        /\bsuper deluxe\b/,
+        /\bdeluxe\b/,
+        /\bremaster(?:ed)?\b/,
+        /\banniversary\b/,
+        /\bexpanded\b/,
+        /\bspecial edition\b/,
+        /\bcollectors? edition\b/,
+        /\bbonus tracks?\b/,
+        /\breissue\b/,
+        /\bremix(?:ed)?\b/,
+        /\b\d{4} mix\b/,
+        /\bsingle\b/,
+        /\bep\b/,
+        /\blive\b/
+    ];
+
+    return excludedPatterns.some(function(pattern){
+        return pattern.test(text);
+    });
+}
+
 function pickBestAppleAlbum(results,artist,albumTitle,originalYear){
     var wantedTitle=normalizeAppleFullTitle(albumTitle);
     var wantedYear=parseInt(originalYear,10)||0;
@@ -2755,6 +3200,7 @@ function pickBestAppleAlbum(results,artist,albumTitle,originalYear){
         .filter(function(item){
             return appleArtistMatches(item.artistName,artist)&&
                 appleAlbumMatches(item.collectionName,albumTitle)&&
+                !appleReleaseIsExcluded(item.collectionName)&&
                 item.artworkUrl100;
         })
         .map(function(item,index){
@@ -2801,6 +3247,27 @@ async function searchAppleAlbumArtwork(artist,albumTitle,originalYear){
             return appleArtworkUrl(directResult);
         }
 
+        // Vissa album finns i Apple-katalogen men returneras inte av
+        // albumsökningen. Låtsökningen innehåller då fortfarande albumets
+        // collectionName och samma omslag, vilket ger en säker andra chans.
+        var songResponse=await fetch(
+            'https://itunes.apple.com/search?term='+directTerm+'&entity=song&limit=100&country=SE'
+        );
+
+        if(songResponse.ok){
+            var songData=await songResponse.json();
+            var songResult=pickBestAppleAlbum(
+                songData.results,
+                artist,
+                albumTitle,
+                originalYear
+            );
+
+            if(songResult){
+                return appleArtworkUrl(songResult);
+            }
+        }
+
         // Behåll artist-lookup som andra chans för album som Apple inte
         // returnerar från den kombinerade sökningen.
         var artistQuery=encodeURIComponent(artist);
@@ -2845,8 +3312,9 @@ async function searchAppleAlbumArtwork(artist,albumTitle,originalYear){
     }
 }
 
-async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
-    if(button.classList.contains('mb-added'))return;
+async function saveAlbumFromDiscogs(master,artist,albumTitle,year,previewCoverUrl,previewCoverSource,button,destination){
+    var isWishlistDestination=destination==='wishlist';
+    if(button.classList.contains(isWishlistDestination?'mb-wishlisted':'mb-added'))return;
 
     button.textContent='Sparar...';
     button.disabled=true;
@@ -2931,22 +3399,37 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             }
         }
 
-        let coverUrl=await searchAppleAlbumArtwork(
-            discogsArtist,
-            discogsTitle,
-            discogsYear
-        );
-        
+        // Preserve exactly the cover shown in the search result. The cover is
+        // also stored on the user's collection/wishlist row below, so a shared
+        // album record cannot silently replace it with an older image.
+        let coverUrl=previewCoverUrl||'';
+
         if(!coverUrl){
-            if(
-                data.images &&
-                data.images.length &&
-                data.images[0].uri
-            ){
-                coverUrl=data.images[0].uri;
-            }
+            coverUrl=await searchAppleAlbumArtwork(
+                discogsArtist,
+                discogsTitle,
+                discogsYear
+            );
         }
 
+        if(!coverUrl&&data.images&&data.images.length&&data.images[0].uri){
+            coverUrl=data.images[0].uri;
+        }
+
+        let albumId=null;
+        const {data:existingAlbums,error:existingAlbumError}=await supabaseClient
+            .from('albums')
+            .select('id')
+            .eq('discogs_master_id',String(masterId))
+            .limit(1);
+
+        if(existingAlbumError)throw existingAlbumError;
+        if(existingAlbums&&existingAlbums.length){
+            albumId=existingAlbums[0].id;
+
+        }
+
+        if(!albumId){
         let artistId=null;
 
         const {
@@ -3003,7 +3486,7 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             throw albumError;
         }
 
-        const albumId=newAlbum.id;
+        albumId=newAlbum.id;
 
         if(finalTracklist.length){
         const rawTracks=[];
@@ -3077,6 +3560,7 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
                 }
             }
         }
+        }
 
         const {
             data:{
@@ -3088,6 +3572,57 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             throw new Error(
                 'Du måste vara inloggad för att lägga till album.'
             );
+        }
+
+        if(isWishlistDestination){
+            const {data:collectionRows,error:collectionMatchError}=await supabaseClient
+                .from('collections')
+                .select('id,album_id,albums(title,artists(name))')
+                .eq('user_id',user.id)
+                .limit(500);
+
+            if(collectionMatchError)throw collectionMatchError;
+
+            const destinationKey=window.albumIdentityKey(discogsArtist,discogsTitle);
+            const collectionMatch=(collectionRows||[]).some(function(item){
+                var album=item.albums;
+                return item.album_id===albumId||(
+                    album&&window.albumIdentityKey(album.artists&&album.artists.name,album.title)===destinationKey
+                );
+            });
+
+            if(collectionMatch){
+                setSearchResultStatus(button,'collection');
+                return;
+            }
+
+            const {data:lastWishlist,error:lastWishlistError}=await supabaseClient
+                .from('wishlists')
+                .select('sort_order')
+                .eq('user_id',user.id)
+                .order('sort_order',{ascending:false,nullsFirst:false})
+                .limit(1);
+
+            if(lastWishlistError)throw lastWishlistError;
+
+            const nextWishlistSortOrder=lastWishlist&&lastWishlist.length&&lastWishlist[0].sort_order
+                ?lastWishlist[0].sort_order+1
+                :1;
+
+            const {error:wishlistError}=await supabaseClient
+                .from('wishlists')
+                .insert({
+                    user_id:user.id,
+                    album_id:albumId,
+                    cover_url:coverUrl,
+                    sort_order:nextWishlistSortOrder
+                });
+
+            if(wishlistError&&wishlistError.code!=='23505')throw wishlistError;
+
+            setSearchResultStatus(button,'wishlist');
+            if(window.libraryView==='wishlist')await window.loadCollection();
+            return;
         }
 
         const {data:lastCollection,error:lastCollectionError}=await supabaseClient
@@ -3113,6 +3648,7 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             .insert({
                 user_id:user.id,
                 album_id:albumId,
+                cover_url:coverUrl,
                 sort_order:nextSortOrder
             });
         
@@ -3120,8 +3656,7 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             throw collectionError;
         }
 
-        button.textContent='✓ Added';
-        button.classList.add('mb-added');
+        setSearchResultStatus(button,'collection');
         
         await window.loadCollection();
 
@@ -3131,7 +3666,9 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             error
         );
 
-        button.textContent='Add';
+        button.innerHTML=isWishlistDestination
+            ?'<span class="wishlist-icon" aria-hidden="true"></span>Wishlist'
+            :'Add';
         button.disabled=false;
 
         alert(
@@ -3139,6 +3676,14 @@ async function addAlbumFromDiscogs(master,artist,albumTitle,year,button){
             (error.message||error)
         );
     }
+}
+
+function addAlbumFromDiscogs(master,artist,albumTitle,year,previewCoverUrl,previewCoverSource,button){
+    return saveAlbumFromDiscogs(master,artist,albumTitle,year,previewCoverUrl,previewCoverSource,button,'collection');
+}
+
+function addAlbumToWishlistFromDiscogs(master,artist,albumTitle,year,previewCoverUrl,previewCoverSource,button){
+    return saveAlbumFromDiscogs(master,artist,albumTitle,year,previewCoverUrl,previewCoverSource,button,'wishlist');
 }
 
 async function loadUserFromUrl(){
@@ -3157,6 +3702,7 @@ async function loadUserFromUrl(){
         window.loginRequiredForViewedCollection=true;
         window.profileNotFound=false;
         document.getElementById('viewedUserHeader').style.display='none';
+        backToMyCollectionMobileButton.classList.remove('active');
         document.getElementById('collectionCount').textContent='0 RECORDS';
         buildGrid();
         return;
@@ -3179,6 +3725,7 @@ async function loadUserFromUrl(){
         window.loginRequiredForViewedCollection=false;
         window.profileNotFound=true;
         document.getElementById('viewedUserHeader').style.display='none';
+        backToMyCollectionMobileButton.classList.remove('active');
         document.getElementById('collectionCount').textContent='0 RECORDS';
         buildGrid();
         return;
@@ -3187,7 +3734,7 @@ async function loadUserFromUrl(){
     const resolvedState=GroovyRouteState.resolveProfileView(sessionUser,user);
 
     if(resolvedState==='own'){
-        history.replaceState({},'','/groovy/');
+        history.replaceState({},'','/groovy/'+(window.libraryView==='wishlist'?'?view=wishlist':''));
         await window.loadCollection();
         return;
     }
@@ -3202,6 +3749,7 @@ window.addEventListener('popstate',function(){
 });
 
 async function renderCurrentRoute(){
+    window.libraryView=GroovyRouteState.libraryViewFromSearch(window.location.search);
     await updateAuthUI();
     await loadUserFromUrl();
 }

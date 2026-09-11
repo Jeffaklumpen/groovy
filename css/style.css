@@ -18,9 +18,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 
 .logo{display:block;width:260px;height:auto;cursor:pointer}
 
-.viewed-user-header{display:none;align-items:center;gap:10px;margin-top:4px}
+.viewed-user-header{display:none;align-items:center;gap:10px;margin-top:6px;min-width:0}
 .viewed-user-avatar{width:30px;height:30px;border-radius:50%;background-size:cover;background-position:center;flex-shrink:0}
-.viewed-user-name{font-size:14px;font-weight:500;line-height:30px}
+.viewed-user-name{min-width:0;font-size:14px;font-weight:500;line-height:30px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.back-to-my-collection{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:30px;margin-left:3px;padding:6px 10px;border:1px solid #343438;border-radius:8px;background:#171719;color:#b8b8bd;font-family:inherit;font-size:11px;font-weight:650;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
+.back-to-my-collection span{color:#E85301;font-size:16px;line-height:10px;transition:transform .15s ease}
+.back-to-my-collection:hover{border-color:#55555a;background:#222225;color:#fff}
+.back-to-my-collection:hover span{transform:translateX(-2px)}
+.back-to-my-collection:active{transform:scale(.97)}
+.back-to-my-collection-mobile{display:none}
 
 .header-controls{position:absolute;left:300px;right:62px;top:0;display:flex;align-items:center;justify-content:flex-end;gap:7px;z-index:20;flex-wrap:wrap;row-gap:8px}
 .add-album-button{border:0;background:#E85301;color:#fff;padding:8px 12px;border-radius:7px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
@@ -36,6 +42,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .menu-panel button.active{background:#303033;color:#fff}
 
 .collection{max-width:1400px;margin:0 auto}
+.library-tabs{max-width:1400px;margin:-16px auto 24px;display:flex;gap:4px;padding:4px;width:max-content;border:1px solid #29292d;border-radius:12px;background:#121214;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.library-tab{display:flex;align-items:center;gap:7px;padding:9px 15px;border:0;border-radius:8px;background:transparent;color:#85858b;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .16s ease,color .16s ease,transform .16s ease}
+.library-tab:hover{color:#fff;background:#1e1e21}
+.library-tab:active{transform:scale(.97)}
+.library-tab.active{color:#fff;background:#29292d;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.wishlist-icon{display:inline-block;width:11px;height:15px;border:1.5px solid currentColor;border-radius:2px 2px 1px 1px;clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%)}
+.record-icon{position:relative;display:inline-block;width:15px;height:15px;flex:0 0 15px;border:1.5px solid currentColor;border-radius:50%}
+.record-icon:before{content:"";position:absolute;inset:3px;border:1px solid currentColor;border-radius:50%;opacity:.7}
+.record-icon:after{content:"";position:absolute;left:50%;top:50%;width:3px;height:3px;border-radius:50%;background:currentColor;transform:translate(-50%,-50%)}
+.library-tab.active .record-icon,.library-tab.active .wishlist-icon{color:#E85301}
 .grid:after{content:"";display:table;clear:both}
 .grid .record{float:left;width:24%;margin-right:1.3333%;margin-bottom:38px;min-width:0}
 .grid .record:nth-child(4n){margin-right:0}
@@ -54,6 +70,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .number{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:13px;font-weight:bold;letter-spacing:1px}
 .cover-rating{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:15px;letter-spacing:2px;color:#E85301;line-height:1}
 .cover-rating .empty{color:#555}
+.wishlist-cover-label{display:flex;align-items:center;gap:6px;color:#fff;font-size:11px;font-weight:600;letter-spacing:.2px}
+.wishlist-cover-label .wishlist-icon{width:9px;height:12px;color:#E85301}
+.wishlist-remove-button{position:absolute;right:8px;top:8px;z-index:10;width:34px;height:34px;border:1px solid rgba(255,255,255,.12);border-radius:50%;background:rgba(0,0,0,.82);color:#fff;font-size:20px;line-height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:.72;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:opacity .15s ease,background .15s ease,transform .15s ease}
+.wishlist-remove-button:hover{background:#c62828}
+.wishlist-remove-button:active{transform:scale(.92)}
+.move-to-collection-button{width:100%;margin-top:12px;padding:9px 12px;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(232,83,1,.45);border-radius:9px;background:rgba(232,83,1,.1);color:#f16a22;font-family:inherit;font-size:12px;font-weight:650;cursor:pointer;transition:background .16s ease,color .16s ease,border-color .16s ease,transform .16s ease}
+.move-to-collection-button:hover{background:#E85301;border-color:#E85301;color:#fff;transform:translateY(-1px)}
+.move-to-collection-button:active{transform:scale(.98)}
+.move-to-collection-button:disabled,.detail-move-to-collection:disabled{opacity:.65;cursor:wait}
+.detail-move-to-collection{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:0;border-radius:8px;background:#E85301;color:#fff;font-family:inherit;font-size:12px;font-weight:650;cursor:pointer;box-shadow:0 5px 16px rgba(232,83,1,.25);transition:background .15s ease,transform .15s ease}
+.detail-move-to-collection:hover{background:#F06A24;transform:translateY(-1px)}
+.detail-move-to-collection:active{transform:scale(.97)}
 
 .info{padding-top:12px;min-width:0}
 .artist,.album{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -160,6 +188,10 @@ body{padding:20px}
 html{scroll-behavior:auto}
 body{padding:15px}
 .header{padding-bottom:16px;margin-bottom:20px}
+.viewed-user-header{width:100%;gap:8px}
+.viewed-user-name{flex:1;font-size:13px}
+.viewed-user-header .back-to-my-collection{display:none}
+.back-to-my-collection-mobile.active{display:inline-flex;margin-left:auto;padding:6px 9px;font-size:10px}
 .title{font-size:23px;padding-right:0;letter-spacing:2px}
 .subtitle{font-size:12px}
 .header-controls{position:relative;left:auto;top:auto;right:auto;margin-top:12px;display:flex;flex-wrap:wrap;justify-content:flex-start;gap:6px}
@@ -221,7 +253,7 @@ body{padding:15px}
 
 .delete-mode-button{display:none;width:34px;height:34px;border:0;border-radius:50%;background:#242426;color:#fff;font-size:16px;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0}
 .delete-mode-button.active{background:#c62828;color:#fff}
-.delete-cover-button{position:absolute;right:8px;top:8px;z-index:10;width:34px;height:34px;border:0;border-radius:50%;background:rgba(0,0,0,.78);color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .15s ease,background .15s ease;-webkit-tap-highlight-color:transparent}
+.delete-cover-button{position:absolute;right:8px;top:8px;z-index:10;width:34px;height:34px;border:0;border-radius:50%;background:rgba(0,0,0,.78);color:#fff;font-size:24px;font-weight:300;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .15s ease,background .15s ease;-webkit-tap-highlight-color:transparent}
 .delete-cover-button:hover{background:#c62828}
 @media screen and (min-width:601px){.cover-wrapper:hover .delete-cover-button{opacity:1;pointer-events:auto}}
 @media screen and (max-width:600px){
@@ -266,22 +298,42 @@ body{padding:15px}
 .profile-divider{height:1px;background:#303033;margin:6px 0}
 #logoutButton{width:100%;background:none;color:#fff;border:0;border-radius:6px;padding:8px;text-align:left;font-family:inherit;font-size:12px;cursor:pointer}
 #logoutButton:hover{background:#242426}
-#loginPanel{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.65);align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
+#loginPanel{display:none;position:fixed;inset:0;z-index:1000;background:rgba(3,3,4,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;box-sizing:border-box;animation:modal-backdrop-in .18s ease-out}
 #loginPanel.open{display:flex}
-.login-modal{position:relative;width:100%;max-width:340px;padding:28px;background:#18181a;border:1px solid #303033;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.65);box-sizing:border-box}
-.login-title{margin-bottom:18px;color:#fff;font-size:20px;font-weight:600;text-align:center}
-#loginClose{position:absolute;top:10px;right:12px;width:30px;height:30px;padding:0;background:none;border:0;color:#888;font-size:25px;line-height:30px;cursor:pointer}
-#loginClose:hover{color:#fff}
-#loginPanel input{width:100%;margin-bottom:10px;background:#101012;color:#fff;border:1px solid #3a3a3d;border-radius:8px;padding:11px 12px;font-family:inherit;font-size:13px;outline:none;box-sizing:border-box}
-#loginPanel input:focus{border-color:#666}
-#loginPanel #loginButton{width:100%;background:#22c55e;color:#fff;border:0;border-radius:8px;padding:11px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
-#loginPanel #loginButton:hover{background:#16a34a}
-#authSwitchButton,#registerButton{width:100%;margin-top:10px;background:#242426;color:#fff;border:1px solid #3a3a3d;border-radius:8px;padding:11px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;box-sizing:border-box}
-#authSwitchButton:hover,#registerButton:hover{background:#303033;border-color:#555}
+.login-modal{position:relative;width:100%;max-width:430px;max-height:calc(100dvh - 40px);overflow:auto;padding:34px;background:linear-gradient(155deg,#1d1d20 0%,#151517 58%,#121214 100%);border:1px solid rgba(255,255,255,.11);border-radius:20px;box-shadow:0 28px 80px rgba(0,0,0,.72),inset 0 1px rgba(255,255,255,.035);box-sizing:border-box;animation:modal-panel-in .22s cubic-bezier(.2,.8,.2,1)}
+.auth-modal-heading{margin-bottom:24px;padding-right:42px}
+.auth-mark{display:flex;align-items:center;justify-content:center;width:44px;height:44px;margin-bottom:17px;border:1px solid rgba(232,83,1,.35);border-radius:13px;background:rgba(232,83,1,.12);color:#ff6a1a;box-shadow:0 8px 22px rgba(232,83,1,.1)}
+.auth-mark .record-icon{width:22px;height:22px;flex-basis:22px}
+.auth-kicker{display:block;margin-bottom:7px;color:#f36a22;font-size:10px;font-weight:750;letter-spacing:.14em;text-transform:uppercase}
+.login-title{margin:0 0 7px;color:#fff;font-size:30px;font-weight:720;line-height:1.08;letter-spacing:-.035em;text-align:left}
+.auth-modal-heading p{max-width:330px;margin:0;color:#8f8f95;font-size:13px;line-height:1.55}
+#loginClose{position:absolute;top:17px;right:17px;z-index:2;width:36px;height:36px;padding:0;border:1px solid rgba(255,255,255,.09);border-radius:50%;background:rgba(255,255,255,.045);color:#99999f;font-size:24px;line-height:32px;cursor:pointer;transition:color .15s ease,background .15s ease,transform .15s ease}
+#loginClose:hover{background:rgba(255,255,255,.09);color:#fff}
+#loginClose:active{transform:scale(.93)}
+.auth-field{display:block;margin-bottom:14px;color:#aaaab0;font-size:11px;font-weight:650;letter-spacing:.02em}
+.auth-field>span{display:block;margin:0 0 7px 2px}
+#loginPanel input{width:100%;height:50px;margin:0;background:#101012;color:#fff;border:1px solid #333337;border-radius:12px;padding:0 14px;font-family:inherit;font-size:14px;outline:none;box-sizing:border-box;transition:border-color .15s ease,box-shadow .15s ease,background .15s ease}
+#loginPanel input::placeholder{color:#626268}
+#loginPanel input:hover{border-color:#45454a}
+#loginPanel input:focus{border-color:#e85301;background:#121214;box-shadow:0 0 0 3px rgba(232,83,1,.14)}
+#loginPanel .auth-primary-button{width:100%;height:50px;margin-top:4px;border:0;border-radius:12px;background:#e85301;color:#fff;font-family:inherit;font-size:14px;font-weight:750;cursor:pointer;box-shadow:0 10px 24px rgba(232,83,1,.2);transition:background .15s ease,transform .15s ease,box-shadow .15s ease}
+#loginPanel .auth-primary-button:hover{background:#f06a24;box-shadow:0 12px 28px rgba(232,83,1,.27)}
+#loginPanel .auth-primary-button:active{transform:scale(.985)}
+#loginPanel .auth-primary-button:disabled{opacity:.6;cursor:wait;transform:none}
+.auth-switch-row{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:19px;color:#7f7f85;font-size:12px}
+#authSwitchButton{width:auto;margin:0;padding:5px;border:0;background:none;color:#f36a22;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+#authSwitchButton:hover{color:#ff8240;text-decoration:underline;text-underline-offset:3px}
 @media screen and (max-width:600px){
 #authBox{top:8px;right:8px}
 #profileButton{width:34px;height:34px}
 #profileMenu{width:205px}
+#loginPanel{align-items:flex-end;padding:0;background:rgba(3,3,4,.76)}
+.login-modal{max-width:none;max-height:calc(100dvh - 12px);padding:28px 18px calc(22px + env(safe-area-inset-bottom));border-width:1px 0 0;border-radius:22px 22px 0 0;animation:modal-sheet-in .26s cubic-bezier(.2,.8,.2,1)}
+.auth-modal-heading{margin-bottom:21px;padding-right:44px}
+.auth-mark{width:40px;height:40px;margin-bottom:14px}
+.login-title{font-size:27px}
+#loginClose{top:15px;right:15px}
+#loginPanel input{height:50px;font-size:16px}
 }
 @media screen and (max-width:900px) and (orientation:landscape){
 .album-overlay{padding:10px}
@@ -368,6 +420,11 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 .search-modal-box .mb-add-button:hover{background:#f06418;box-shadow:0 7px 18px rgba(232,83,1,.28)}
 .search-modal-box .mb-add-button:active{transform:scale(.96)}
 .search-modal-box .mb-add-button.mb-added{background:#29292d;color:#9a9aa0;box-shadow:none}
+.mb-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.search-modal-box .mb-wishlist-button{display:flex;align-items:center;gap:6px;min-width:92px;justify-content:center;padding:8px 11px;border:1px solid #4a4a50;border-radius:9px;background:#19191c;color:#ddd;font-family:inherit;font-size:12px;font-weight:650;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.search-modal-box .mb-wishlist-button:hover{background:#252529;border-color:#666;color:#fff}
+.search-modal-box .mb-wishlist-button:active{transform:scale(.96)}
+.search-modal-box .mb-wishlist-button.mb-wishlisted{background:#29292d;border-color:#29292d;color:#9a9aa0;cursor:default}
 .search-modal-box .user-search-result{min-height:66px;margin-bottom:7px;padding:10px 12px;border:1px solid #29292d;border-radius:13px;background:rgba(255,255,255,.035);gap:13px;transition:background .15s ease,border-color .15s ease,transform .15s ease}
 .search-modal-box .user-search-result:last-child{margin-bottom:0}
 .search-modal-box .user-search-result:hover{background:#212124;border-color:#3a3a3f;transform:translateY(-1px)}
@@ -379,6 +436,11 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 @keyframes modal-panel-in{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 
 @media screen and (max-width:600px){
+.library-tabs{margin:-7px auto 20px}
+.library-tab{padding:8px 13px;font-size:12px}
+.wishlist-remove-button{opacity:1;pointer-events:auto}
+.move-to-collection-button{margin-top:10px;padding:8px 7px;font-size:11px}
+.move-to-collection-button .record-icon{width:13px;height:13px;flex-basis:13px}
 .add-album-modal{align-items:flex-end;padding:0;background:rgba(3,3,4,.76)}
 .search-modal-box{width:100%;max-width:none;max-height:calc(100dvh - 12px);padding:24px 16px calc(18px + env(safe-area-inset-bottom));border-width:1px 0 0;border-radius:22px 22px 0 0;animation:modal-sheet-in .26s cubic-bezier(.2,.8,.2,1)}
 .search-modal-heading{margin-bottom:18px;padding-right:44px}
@@ -391,13 +453,17 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 .search-modal-box .mb-result{min-height:68px;padding:8px;gap:10px}
 .search-modal-box .mb-cover{width:50px;height:50px}
 .search-modal-box .mb-add-button{min-width:56px;padding:8px 11px}
+.mb-actions{flex-direction:column;align-items:stretch;gap:5px}
+.search-modal-box .mb-wishlist-button{min-width:88px;padding:7px 9px;font-size:11px}
 .search-modal-box .user-search-result{min-height:62px;padding:8px 10px}
 .search-modal-box .user-search-avatar{width:44px;height:44px}
 @keyframes modal-sheet-in{from{opacity:.6;transform:translateY(45px)}to{opacity:1;transform:translateY(0)}}
 }
 
+@media screen and (min-width:601px){.cover-wrapper:hover .wishlist-remove-button{opacity:1}}
+
 @media (prefers-reduced-motion:reduce){
-.add-album-modal,.search-modal-box{animation:none}
+.add-album-modal,.search-modal-box,#loginPanel,.login-modal{animation:none}
 }
 #cancelRemoveAlbum{background:#333;color:#fff}
 #confirmRemoveAlbum{background:#c62828;color:#fff}

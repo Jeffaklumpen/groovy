@@ -21,13 +21,17 @@ node --test tests/route-state.test.js
 | Inloggad | Annan profil utan album | Meddelande om tom samling |
 | Inloggad | Profil som inte finns | Meddelande om att användaren inte finns |
 
+## Önskelista
+
+Inloggade användare kan spara album i en separat önskelista och visa andra användares önskelistor skrivskyddat. Databastabellen och dess RLS-policyer finns i `supabase/migrations/20260911000000_create_wishlists.sql`.
+
 ## Säkert arbetssätt
 
 Gör ändringar på en separat gren och skapa en pull request mot `databas`. Kontrollera sidan lokalt innan grenen slås ihop. GitHub Pages-sidan påverkas först när ändringen har slagits ihop i den gren som publiceras.
 
 ## Kända förbättringsområden
 
-- Databasschemat och Supabase RLS-policyerna finns inte i repot och behöver dokumenteras innan databasflöden ändras.
+- Äldre delar av databasschemat och deras Supabase RLS-policyer behöver fortfarande dokumenteras i repot.
 - När ett album läggs till görs flera separata databasoperationer. En Supabase-funktion/transaktion skulle göra flödet säkrare mot halvfärdiga poster.
 - Sorteringsordningen sparas en post i taget. En samlad databasoperation skulle ge bättre prestanda för stora samlingar.
 - Användarsökningen gör en extra antalsfråga per användare. En vy eller RPC i Supabase kan ersätta detta.

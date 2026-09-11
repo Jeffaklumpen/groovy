@@ -28,8 +28,30 @@
     return 'other';
   }
 
+  function libraryViewFromSearch(search){
+    try{
+      return new URLSearchParams(String(search||'')).get('view')==='wishlist'
+        ?'wishlist'
+        :'collection';
+    }catch(error){
+      return 'collection';
+    }
+  }
+
+  function albumIdentityKey(artist,title){
+    function normalize(value){
+      var text=String(value||'').toLowerCase();
+      if(text.normalize)text=text.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      return text.replace(/\([^)]*\)/g,' ').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
+    }
+
+    return normalize(artist)+'|'+normalize(title);
+  }
+
   return {
     profileUsernameFromPath:profileUsernameFromPath,
-    resolveProfileView:resolveProfileView
+    resolveProfileView:resolveProfileView,
+    libraryViewFromSearch:libraryViewFromSearch,
+    albumIdentityKey:albumIdentityKey
   };
 });

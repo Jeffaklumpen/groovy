@@ -19,7 +19,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>Groovy – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=21">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=27">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
 </head>
 
@@ -30,6 +30,7 @@
   <div class="viewed-user-header" id="viewedUserHeader">
     <div class="viewed-user-avatar" id="viewedUserAvatar"></div>
     <div class="viewed-user-name" id="viewedUserName"></div>
+    <button class="back-to-my-collection" id="backToMyCollectionButton" type="button"><span aria-hidden="true">←</span> My collection</button>
   </div>
   <div class="subtitle" id="collectionCount">0 RECORDS</div>
 
@@ -56,6 +57,7 @@
       <button type="button" data-view="carousel">Carousel</button>
     </div>
   </div>
+  <button class="back-to-my-collection back-to-my-collection-mobile" id="backToMyCollectionMobileButton" type="button"><span aria-hidden="true">←</span> My collection</button>
 </div>
 
 <div id="authBox">
@@ -69,14 +71,30 @@
   </div>
   <div id="loginPanel">
     <div class="login-modal">
-      <button id="loginClose" type="button" aria-label="Stäng">×</button><div class="login-title" id="authTitle">Login</div>
-      <div id="registerFields" style="display:none;"><input id="registerUsername" type="text" placeholder="Användarnamn" autocomplete="username"></div>
-      <input id="loginEmail" type="email" placeholder="E-post" autocomplete="email"><input id="loginPassword" type="password" placeholder="Lösenord" autocomplete="current-password">
-      <button id="loginButton" type="button">Login</button><button id="registerButton" type="button" style="display:none;">Create account</button><button id="authSwitchButton" type="button">Create account</button>
+      <button id="loginClose" type="button" aria-label="Close">×</button>
+      <div class="auth-modal-heading">
+        <div class="auth-mark" aria-hidden="true"><span class="record-icon"></span></div>
+        <span class="auth-kicker" id="authKicker">Your collection awaits</span>
+        <div class="login-title" id="authTitle">Welcome back</div>
+        <p id="authDescription">Sign in and pick up exactly where you left off.</p>
+      </div>
+      <div id="registerFields" style="display:none;">
+        <label class="auth-field"><span>Username</span><input id="registerUsername" type="text" placeholder="Choose a username" autocomplete="username"></label>
+      </div>
+      <label class="auth-field"><span>Email</span><input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email"></label>
+      <label class="auth-field"><span>Password</span><input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password"></label>
+      <button id="loginButton" class="auth-primary-button" type="button">Log in</button>
+      <button id="registerButton" class="auth-primary-button" type="button" style="display:none;">Create account</button>
+      <div class="auth-switch-row"><span id="authSwitchPrompt">New to Groovy?</span><button id="authSwitchButton" type="button">Create account</button></div>
     </div>
   </div>
 </div>
 </header>
+
+<nav id="libraryTabs" class="library-tabs" aria-label="Library view" style="display:none;">
+  <button id="collectionTabButton" class="library-tab active" type="button"><span class="record-icon" aria-hidden="true"></span>Collection</button>
+  <button id="wishlistTabButton" class="library-tab" type="button"><span class="wishlist-icon" aria-hidden="true"></span>Wishlist</button>
+</nav>
 
 <main id="collection" class="collection"></main>
 
@@ -95,6 +113,12 @@
 <div id="emptyViewedCollection" class="empty-collection" style="display:none;">
   <div class="empty-collection-title">Uh oh, empty</div>
   <div class="empty-collection-text">This user hasn't added any records to their collection yet.</div>
+</div>
+
+<div id="emptyWishlist" class="empty-collection" style="display:none;">
+  <div class="empty-collection-title" id="emptyWishlistTitle">Your wishlist is empty</div>
+  <div class="empty-collection-text" id="emptyWishlistText">Save records you want to add next.</div>
+  <button id="emptyWishlistAddButton" type="button">Find albums</button>
 </div>
 
 <div id="profileNotFound" class="empty-collection" style="display:none;">
@@ -141,9 +165,9 @@
         </button>
 
         <div class="search-modal-heading">
-            <span class="search-modal-kicker">Your collection</span>
-            <h2 id="addAlbumTitle">Add Album</h2>
-            <p>Find the next record for your collection.</p>
+            <span class="search-modal-kicker">Build your library</span>
+            <h2 id="addAlbumTitle">Find Albums</h2>
+            <p>Add a record to your collection or save it for later.</p>
         </div>
 
         <div class="add-album-search">
@@ -253,7 +277,7 @@
     </div>
 </div>
 
-<script src="/groovy/js/route-state.js?v=11"></script>
-<script src="/groovy/js/app.js?v=22"></script>
+<script src="/groovy/js/route-state.js?v=13"></script>
+<script src="/groovy/js/app.js?v=31"></script>
 </body>
 </html>
