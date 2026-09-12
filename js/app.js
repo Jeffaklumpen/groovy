@@ -4188,7 +4188,10 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,previewCoverUr
         
             if(Array.isArray(track.sub_tracks)){
                 track.sub_tracks.forEach(function(subTrack){
-                    if(subTrack.type_==='track'){
+                    // Discogs sometimes omits type_ on index/sub-track rows.
+                    // A titled sub-track is still a real song and should be
+                    // shown alongside the album's regular tracks.
+                    if(subTrack && (subTrack.type_==='track'||(!subTrack.type_&&subTrack.title))){
                         rawTracks.push(subTrack);
                     }
                 });
