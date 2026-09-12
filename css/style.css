@@ -442,8 +442,8 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 .wishlist-remove-button{opacity:1;pointer-events:auto}
 .move-to-collection-button{margin-top:10px;padding:8px 7px;font-size:11px}
 .move-to-collection-button .record-icon{width:13px;height:13px;flex-basis:13px}
-.add-album-modal{align-items:flex-end;padding:0;background:rgba(3,3,4,.76)}
-.search-modal-box{width:100%;max-width:none;max-height:calc(100dvh - 12px);padding:24px 16px calc(18px + env(safe-area-inset-bottom));border-width:1px 0 0;border-radius:22px 22px 0 0;animation:modal-sheet-in .26s cubic-bezier(.2,.8,.2,1)}
+.add-album-modal{top:var(--groovy-visual-top,0);bottom:auto;height:var(--groovy-visual-height,100dvh);align-items:flex-end;padding:0;background:rgba(3,3,4,.76)}
+.search-modal-box{width:100%;max-width:none;max-height:calc(var(--groovy-visual-height,100dvh) - max(8px,env(safe-area-inset-top)));padding:24px 16px calc(18px + env(safe-area-inset-bottom));border-width:1px 0 0;border-radius:22px 22px 0 0;animation:modal-sheet-in .26s cubic-bezier(.2,.8,.2,1)}
 .search-modal-heading{margin-bottom:18px;padding-right:44px}
 .search-modal-box .search-modal-heading h2{font-size:25px}
 .search-modal-heading p{max-width:290px;font-size:12px}
@@ -451,6 +451,9 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 .search-modal-box .add-album-search{margin-bottom:12px}
 .search-modal-box .add-album-search input{height:50px;border-radius:12px;font-size:16px}
 #albumSearchResults,#userSearchResults{max-height:none;flex:1;padding-right:2px}
+#addAlbumModal:has(.search-modal-box:focus-within),#searchUserModal:has(.search-modal-box:focus-within){top:0;height:100vh;height:100lvh;max-height:none;align-items:flex-start;overflow-y:auto;padding-top:8px}
+#addAlbumModal .search-modal-box:focus-within,#searchUserModal .search-modal-box:focus-within{max-height:none;overflow:visible}
+#addAlbumModal .search-modal-box:focus-within #albumSearchResults,#searchUserModal .search-modal-box:focus-within #userSearchResults{flex:0 0 auto;max-height:none;overflow:visible}
 .search-modal-box .mb-result{min-height:68px;padding:8px;gap:10px}
 .search-modal-box .mb-cover{width:50px;height:50px}
 .search-modal-box .mb-add-button{min-width:56px;padding:8px 11px}

@@ -5,6 +5,23 @@ const profileAvatarButton=document.getElementById('profileAvatarButton');
 const profileImageInput=document.getElementById('profileImageInput');
 const profileImageMenu=document.getElementById('profileImageMenu');
 const profileImage=document.getElementById('profileImage');
+
+function syncVisualViewport(){
+    const viewport=window.visualViewport;
+    const height=viewport?viewport.height:window.innerHeight;
+    const offsetTop=viewport?viewport.offsetTop:0;
+
+    document.documentElement.style.setProperty('--groovy-visual-height',Math.round(height)+'px');
+    document.documentElement.style.setProperty('--groovy-visual-top',Math.round(offsetTop)+'px');
+}
+
+syncVisualViewport();
+window.addEventListener('resize',syncVisualViewport,{passive:true});
+
+if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',syncVisualViewport,{passive:true});
+    window.visualViewport.addEventListener('scroll',syncVisualViewport,{passive:true});
+}
 const loginPanel=document.getElementById('loginPanel');
 const loginEmail=document.getElementById('loginEmail');
 const loginPassword=document.getElementById('loginPassword');
