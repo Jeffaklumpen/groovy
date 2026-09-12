@@ -68,6 +68,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .grid .record:active{-webkit-transform:scale(.985);transform:scale(.985)}
 
 .number{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:13px;font-weight:bold;letter-spacing:1px}
+.record-condition-badge{position:absolute;left:10px;bottom:10px;z-index:6;min-width:38px;padding:6px 9px;border:1px solid rgba(255,255,255,.2);border-radius:7px;color:#fff;font-size:11px;font-weight:800;line-height:1;letter-spacing:.6px;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.55);box-shadow:0 4px 13px rgba(0,0,0,.38);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.record-condition-badge.condition-mint{border-color:#efd779;background:linear-gradient(135deg,rgba(191,143,26,.96),rgba(105,72,5,.96));color:#fff5c7;box-shadow:0 4px 15px rgba(203,153,35,.3)}
+.record-condition-badge.condition-near-mint{border-color:#91c777;background:rgba(47,115,62,.94)}
+.record-condition-badge.condition-very-good-plus{border-color:#87be9d;background:rgba(42,104,79,.94)}
+.record-condition-badge.condition-very-good{border-color:#9aa99f;background:rgba(67,83,74,.95)}
+.record-condition-badge.condition-good-plus{border-color:#e1b765;background:rgba(151,94,21,.95)}
+.record-condition-badge.condition-good{border-color:#e78a55;background:rgba(171,66,24,.95)}
+.record-condition-badge.condition-fair{border-color:#ef685f;background:rgba(177,35,31,.95)}
+.record-condition-badge.condition-poor{border-color:#f05454;background:rgba(119,17,20,.97)}
 .cover-rating{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.78);padding:5px 8px;font-size:15px;letter-spacing:2px;color:#E85301;line-height:1}
 .cover-rating .empty{color:#555}
 .wishlist-cover-label{display:flex;align-items:center;gap:6px;color:#fff;font-size:11px;font-weight:600;letter-spacing:.2px}
@@ -103,8 +112,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .carousel-card .album{font-size:15px}
 .carousel-card .year{font-size:13px}
 
-.album-overlay{position:fixed;z-index:1000;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0);display:block;padding:28px;overflow:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;visibility:hidden;opacity:0;-webkit-transition:opacity .28s ease,visibility 0s linear .32s;transition:opacity .28s ease,visibility 0s linear .32s}
-.album-overlay.visible{visibility:visible;opacity:1;background:rgba(0,0,0,.90);-webkit-transition:opacity .28s ease,visibility 0s linear 0s;transition:opacity .28s ease,visibility 0s linear 0s}
+.album-overlay{position:fixed;z-index:1000;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0);display:block;padding:28px;overflow:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;visibility:hidden;opacity:0;pointer-events:none;-webkit-transition:opacity .28s ease,visibility 0s linear .32s;transition:opacity .28s ease,visibility 0s linear .32s}
+.album-overlay.visible{visibility:visible;opacity:1;pointer-events:auto;background:rgba(0,0,0,.90);-webkit-transition:opacity .28s ease,visibility 0s linear 0s;transition:opacity .28s ease,visibility 0s linear 0s}
 
 .album-detail{position:relative;width:100%;max-width:1180px;min-height:620px;margin:0 auto;background:#111113;box-shadow:0 25px 70px rgba(0,0,0,.8);overflow:hidden;-webkit-transform:scale(.88);transform:scale(.88);opacity:0;-webkit-transition:-webkit-transform .32s cubic-bezier(.2,.8,.2,1),opacity .22s ease;transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .22s ease}
 .album-overlay.visible .album-detail{-webkit-transform:scale(1);transform:scale(1);opacity:1}
@@ -527,6 +536,13 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 .pressing-progress span.active{background:#e85301}
 .pressing-field{margin-bottom:13px}
 .pressing-field select{height:48px;border-radius:12px;background:#0e0e10;font-size:14px}
+.pressing-field input{box-sizing:border-box;width:100%;height:48px;padding:0 13px;border:1px solid #343439;border-radius:12px;background:#0e0e10;color:#fff;font:inherit;font-size:14px;outline:none;transition:border-color .15s ease,box-shadow .15s ease}
+.pressing-field input:focus{border-color:#e85301;box-shadow:0 0 0 3px rgba(232,83,1,.13)}
+.pressing-matrix-search{margin-top:4px;padding:13px;border:1px solid #2f2f34;border-radius:14px;background:#151517}
+.pressing-matrix-search[hidden]{display:none}
+.pressing-matrix-search .pressing-field{margin-bottom:9px}
+.pressing-matrix-search .copy-action-button{width:100%}
+.pressing-match-matrix{display:block;margin-top:6px;color:#ff762e;font-size:11px;font-weight:650;line-height:1.35;overflow-wrap:anywhere}
 .pressing-matches{display:grid;gap:8px;margin-top:17px}
 .pressing-match{width:100%;padding:13px 14px;border:1px solid #343439;border-radius:12px;background:#171719;color:#fff;text-align:left;font-family:inherit;cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .15s ease}
 .pressing-match:hover{border-color:#e85301;background:#1d1d20;transform:translateY(-1px)}

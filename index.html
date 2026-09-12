@@ -19,7 +19,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>Groovy – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=36">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=39">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
 </head>
 
@@ -50,13 +50,6 @@
     </div>
   </div>
 
-  <div class="menu-dropdown">
-    <button id="viewButton" class="menu-button" type="button" aria-expanded="false">Grid ▾</button>
-    <div id="viewMenu" class="menu-panel">
-      <button type="button" data-view="grid" class="active">Grid</button>
-      <button type="button" data-view="carousel">Carousel</button>
-    </div>
-  </div>
   <button class="back-to-my-collection back-to-my-collection-mobile" id="backToMyCollectionMobileButton" type="button"><span aria-hidden="true">←</span> My collection</button>
 </div>
 
@@ -65,8 +58,8 @@
   <div id="profileMenu">
     <div class="profile-header"><button id="profileAvatarButton" class="profile-avatar" type="button" aria-label="Byt profilbild"><span id="profileImageMenu"></span></button><span id="profileUsername"></span></div>
     <input id="profileImageInput" type="file" accept="image/*" style="display:none;">
-    <button id="searchUserButton" class="menu-button" type="button">Search User</button>
     <button id="myCollectionButton" class="menu-button" type="button">My Collection</button>
+    <button id="searchUserButton" class="menu-button" type="button">Search User</button>
     <div class="profile-divider"></div><button id="logoutButton" type="button">Logout</button>
   </div>
   <div id="loginPanel">
@@ -182,6 +175,11 @@
       <label class="pressing-field"><span>Release year</span><select id="pressingYear" disabled><option value="">Choose year</option></select></label>
       <label class="pressing-field"><span>Record label</span><select id="pressingLabel" disabled><option value="">Choose label</option></select></label>
       <label class="pressing-field"><span>Catalog number</span><select id="pressingCatalogNumber" disabled><option value="">Choose catalog number</option></select></label>
+      <div id="pressingMatrixSearch" class="pressing-matrix-search" hidden>
+        <label class="pressing-field"><span>Matrix / runout</span><input id="pressingMatrixQuery" type="text" placeholder="For example SMAS-11163-A-2" autocomplete="off"></label>
+        <button id="pressingMatrixSearchButton" class="copy-action-button primary" type="button">Find matrix</button>
+        <p class="pressing-help">Enter one side exactly as it appears in the runout groove.</p>
+      </div>
       <div id="pressingMatches" class="pressing-matches"></div>
       <p class="pressing-help">Matrix details become available after you choose a pressing.</p>
     </div>
@@ -251,8 +249,8 @@
     
         <input id="profileImageInput" type="file" accept="image/*" style="display:none;">
 
-        <button id="searchUserButton" class="menu-button" type="button">Search User</button>
         <button id="myCollectionButton" class="menu-button" type="button">My Collection</button>
+        <button id="searchUserButton" class="menu-button" type="button">Search User</button>
       
         <div class="profile-divider"></div>
     
@@ -311,6 +309,6 @@
 </div>
 
 <script src="/groovy/js/route-state.js?v=13"></script>
-<script src="/groovy/js/app.js?v=47"></script>
+<script src="/groovy/js/app.js?v=52"></script>
 </body>
 </html>
