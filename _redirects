@@ -1,2 +1,4 @@
-/groovy/*  /:splat  200
-/*         /index.html  200
+/groovy/css/*  /css/:splat  200
+/groovy/js/*   /js/:splat  200
+/groovy/*      /:splat  200
+/*             /index.html  200
