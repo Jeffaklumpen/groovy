@@ -19,7 +19,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>Groovy – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=27">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=32">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
 </head>
 
@@ -149,10 +149,43 @@
 </div>
 
 <div class="album-tracks">
+  <section id="copyDetails" class="copy-details" aria-labelledby="copyDetailsTitle">
+    <div class="copy-details-heading">
+      <button id="copyDetailsToggle" class="copy-details-toggle" type="button" aria-expanded="false" aria-controls="copyDetailsContent">
+        <span id="copyDetailsTitle" class="copy-details-title">My pressing</span>
+        <span id="copyDetailsSummary" class="copy-details-compact-summary"></span>
+        <span class="copy-details-chevron" aria-hidden="true"></span>
+      </button>
+      <span id="copyDetailsSaved" class="copy-details-saved" aria-live="polite"></span>
+    </div>
+    <div id="copyDetailsContent" class="copy-details-content"></div>
+  </section>
   <div class="tracks-title">TRACKLIST</div>
   <div id="detailTracks"></div>
 </div>
 
+  </div>
+</div>
+
+<div id="pressingModal" class="add-album-modal pressing-modal" role="dialog" aria-modal="true" aria-labelledby="pressingModalTitle">
+  <div class="add-album-box pressing-modal-box">
+    <button id="closePressingModal" class="close-add-album" type="button" aria-label="Close">×</button>
+    <div class="search-modal-heading">
+      <span class="search-modal-kicker">Identify your copy</span>
+      <h2 id="pressingModalTitle">Find your pressing</h2>
+      <p>Choose what is printed on your record.</p>
+    </div>
+    <div id="pressingLoading" class="pressing-loading" aria-live="polite">Finding vinyl pressings…</div>
+    <div id="pressingForm" class="pressing-form" hidden>
+      <div class="pressing-progress" aria-hidden="true"><span class="active"></span><span></span><span></span><span></span></div>
+      <label class="pressing-field"><span>Country</span><select id="pressingCountry"><option value="">Choose country</option></select></label>
+      <label class="pressing-field"><span>Release year</span><select id="pressingYear" disabled><option value="">Choose year</option></select></label>
+      <label class="pressing-field"><span>Record label</span><select id="pressingLabel" disabled><option value="">Choose label</option></select></label>
+      <label class="pressing-field"><span>Catalog number</span><select id="pressingCatalogNumber" disabled><option value="">Choose catalog number</option></select></label>
+      <div id="pressingMatches" class="pressing-matches"></div>
+      <p class="pressing-help">Matrix details become available after you choose a pressing.</p>
+    </div>
+    <div id="pressingError" class="pressing-error" hidden></div>
   </div>
 </div>
 
@@ -278,6 +311,6 @@
 </div>
 
 <script src="/groovy/js/route-state.js?v=13"></script>
-<script src="/groovy/js/app.js?v=38"></script>
+<script src="/groovy/js/app.js?v=45"></script>
 </body>
 </html>

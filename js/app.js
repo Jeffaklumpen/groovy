@@ -343,6 +343,21 @@ supabaseClient.auth.onAuthStateChange(function(){
     },0);
 });
 
+function copyDetailsFromRow(item){
+  return {
+    discogsReleaseId:item.discogs_release_id||null,
+    mediaCondition:item.media_condition||'',
+    sleeveCondition:item.sleeve_condition||'',
+    country:item.pressing_country||'',
+    year:item.pressing_year||'',
+    label:item.pressing_label||'',
+    catalogNumber:item.catalog_number||'',
+    matrixA:item.matrix_runout_a||'',
+    matrixB:item.matrix_runout_b||'',
+    matchStatus:item.pressing_match_status||''
+  };
+}
+
 (function(){
 
 window.records = [];
@@ -468,6 +483,16 @@ window.loadCollection=async function(){
       collection_number,
       sort_order,
       cover_url,
+      discogs_release_id,
+      media_condition,
+      sleeve_condition,
+      pressing_country,
+      pressing_year,
+      pressing_label,
+      catalog_number,
+      matrix_runout_a,
+      matrix_runout_b,
+      pressing_match_status,
       albums(
         id,
         title,
@@ -594,7 +619,8 @@ window.loadCollection=async function(){
           sides,
           album.id,
           item.id,
-          album.discogs_master_id||''
+          album.discogs_master_id||'',
+          copyDetailsFromRow(item)
         ];
     });
 
@@ -617,6 +643,21 @@ var detailYear=document.getElementById('detailYear');
 var detailGenre=document.getElementById('detailGenre');
 var detailRating=document.getElementById('detailRating');
 var detailTracks=document.getElementById('detailTracks');
+var copyDetails=document.getElementById('copyDetails');
+var copyDetailsContent=document.getElementById('copyDetailsContent');
+var copyDetailsToggle=document.getElementById('copyDetailsToggle');
+var copyDetailsSummary=document.getElementById('copyDetailsSummary');
+var copyDetailsSaved=document.getElementById('copyDetailsSaved');
+var pressingModal=document.getElementById('pressingModal');
+var closePressingModalButton=document.getElementById('closePressingModal');
+var pressingLoading=document.getElementById('pressingLoading');
+var pressingForm=document.getElementById('pressingForm');
+var pressingError=document.getElementById('pressingError');
+var pressingCountry=document.getElementById('pressingCountry');
+var pressingYear=document.getElementById('pressingYear');
+var pressingLabel=document.getElementById('pressingLabel');
+var pressingCatalogNumber=document.getElementById('pressingCatalogNumber');
+var pressingMatches=document.getElementById('pressingMatches');
 
 var view='grid';
 var activeIndex=0;
@@ -627,6 +668,11 @@ var startY=0;
 var startScroll=0;
 var scrollTimer=null;
 var suppressAlbumClick=false;
+var pressingAlbumIndex=-1;
+var pressingVersions=[];
+var pressingPages=1;
+var copyDetailsExpanded=false;
+var copyDetailsRecordKey='';
 
 function esc(value){
   return String(value)
@@ -636,9 +682,474 @@ function esc(value){
     .replace(/"/g,'&quot;');
 }
 
+function hasCopyDetails(details){
+  return !!(details&&(details.mediaCondition||details.sleeveCondition||
+    details.discogsReleaseId||details.country||details.year||details.label||
+    details.catalogNumber||details.matrixA||details.matrixB));
+}
+
+function conditionOptions(selected,includeNoCover){
+  var options=[
+    ['', 'Not set'],
+    ['M', 'Mint (M)'],
+    ['NM', 'Near Mint (NM)'],
+    ['VG+', 'Very Good Plus (VG+)'],
+    ['VG', 'Very Good (VG)'],
+    ['G+', 'Good Plus (G+)'],
+    ['G', 'Good (G)'],
+    ['F', 'Fair (F)'],
+    ['P', 'Poor (P)']
+  ];
+
+  if(includeNoCover)options.push(['NO_COVER','No cover']);
+
+  return options.map(function(option){
+    return '<option value="'+esc(option[0])+'"'+(option[0]===selected?' selected':'')+'>'+esc(option[1])+'</option>';
+  }).join('');
+}
+
+function copyDetailItem(label,value){
+  if(!value)return '';
+  return '<div class="copy-detail-item"><span class="copy-detail-label">'+esc(label)+'</span><span class="copy-detail-value">'+esc(value)+'</span></div>';
+}
+
+function copySummaryText(details){
+  var values=[details.country,details.year];
+  if(details.mediaCondition)values.push('Record '+details.mediaCondition);
+  else if(details.sleeveCondition)values.push('Sleeve '+details.sleeveCondition);
+  return values.filter(Boolean).join(' · ')||'Add details';
+}
+
+function setCopyDetailsExpanded(expanded){
+  copyDetailsExpanded=!!expanded;
+  copyDetails.classList.toggle('expanded',copyDetailsExpanded);
+  copyDetailsToggle.setAttribute('aria-expanded',copyDetailsExpanded?'true':'false');
+  copyDetailsContent.setAttribute('aria-hidden',copyDetailsExpanded?'false':'true');
+  copyDetailsContent.inert=!copyDetailsExpanded;
+}
+
+copyDetailsToggle.addEventListener('click',function(){
+  setCopyDetailsExpanded(!copyDetailsExpanded);
+});
+
+function renderCopyDetails(index){
+  var record=records[index];
+  var isWishlist=window.libraryView==='wishlist';
+
+  if(!record||isWishlist){
+    copyDetails.hidden=true;
+    copyDetailsContent.innerHTML='';
+    return;
+  }
+
+  var details=record[11]||{};
+  var isOwner=viewedUserId===null;
+
+  if(!isOwner&&!hasCopyDetails(details)){
+    copyDetails.hidden=true;
+    copyDetailsContent.innerHTML='';
+    return;
+  }
+
+  copyDetails.hidden=false;
+  copyDetailsSaved.textContent='';
+  var recordKey=String(record[9]||('record-'+index));
+  if(recordKey!==copyDetailsRecordKey){
+    copyDetailsRecordKey=recordKey;
+    copyDetailsExpanded=!hasCopyDetails(details);
+  }
+  copyDetailsSummary.textContent=copySummaryText(details);
+  var chips='';
+
+  if(details.mediaCondition)chips+='<span class="copy-summary-chip accent">Record '+esc(details.mediaCondition)+'</span>';
+  if(details.sleeveCondition)chips+='<span class="copy-summary-chip">Sleeve '+esc(details.sleeveCondition)+'</span>';
+
+  var info=copyDetailItem('Country',details.country)+
+    copyDetailItem('Release year',details.year)+
+    copyDetailItem('Record label',details.label)+
+    copyDetailItem('Catalog number',details.catalogNumber);
+
+  var matrix='';
+  if(details.matrixA||details.matrixB){
+    matrix='<section class="advanced-pressing"><div class="advanced-pressing-title">Advanced pressing</div><div class="matrix-list">'+
+      (details.matrixA?'<div><span class="copy-detail-label">Matrix / Runout A</span><div class="matrix-value">'+esc(details.matrixA)+'</div></div>':'')+
+      (details.matrixB?'<div><span class="copy-detail-label">Matrix / Runout B</span><div class="matrix-value">'+esc(details.matrixB)+'</div></div>':'')+
+    '</div></section>';
+  }
+
+  var summary=chips
+    ?'<div class="copy-summary">'+chips+'</div>'
+    :(!info&&!matrix?'<p class="copy-summary-empty">Add details about the physical record you own.</p>':'');
+
+  if(isOwner){
+    copyDetailsContent.innerHTML=summary+
+      (info?'<div class="copy-details-readonly">'+info+'</div>':'')+
+      matrix+
+      '<div class="copy-details-actions">'+
+        '<button id="editConditionButton" class="copy-action-button" type="button">'+(details.mediaCondition||details.sleeveCondition?'Edit condition':'Add condition')+'</button>'+
+        '<button id="identifyPressingButton" class="copy-action-button primary" type="button">'+(details.discogsReleaseId?'Change pressing':'Identify pressing')+'</button>'+
+      '</div>'+
+      '<div id="conditionEditor" class="condition-editor" hidden>'+
+        '<label class="condition-field"><span>Record condition</span><select id="mediaConditionSelect">'+conditionOptions(details.mediaCondition||'',false)+'</select></label>'+
+        '<label class="condition-field"><span>Sleeve condition</span><select id="sleeveConditionSelect">'+conditionOptions(details.sleeveCondition||'',true)+'</select></label>'+
+      '</div>'+
+      (details.discogsReleaseId?'<p class="copy-credit">Pressing data from <a href="https://www.discogs.com/release/'+encodeURIComponent(details.discogsReleaseId)+'" target="_blank" rel="noopener noreferrer">Discogs</a></p>':'');
+
+    document.getElementById('editConditionButton').addEventListener('click',function(){
+      var editor=document.getElementById('conditionEditor');
+      editor.hidden=!editor.hidden;
+    });
+
+    document.getElementById('identifyPressingButton').addEventListener('click',function(){
+      openPressingPicker(index);
+    });
+
+    ['mediaConditionSelect','sleeveConditionSelect'].forEach(function(id){
+      document.getElementById(id).addEventListener('change',function(){
+        saveConditionDetails(index);
+      });
+    });
+  }else{
+    copyDetailsContent.innerHTML=(chips?'<div class="copy-summary">'+chips+'</div>':'')+
+      (info?'<div class="copy-details-readonly">'+info+'</div>':'')+matrix+
+      (details.discogsReleaseId?'<p class="copy-credit">Pressing data from <a href="https://www.discogs.com/release/'+encodeURIComponent(details.discogsReleaseId)+'" target="_blank" rel="noopener noreferrer">Discogs</a></p>':'');
+  }
+
+  setCopyDetailsExpanded(copyDetailsExpanded);
+}
+
+async function saveConditionDetails(index){
+  var record=records[index];
+  if(!record||viewedUserId!==null)return;
+
+  var mediaSelect=document.getElementById('mediaConditionSelect');
+  var sleeveSelect=document.getElementById('sleeveConditionSelect');
+  if(!mediaSelect||!sleeveSelect)return;
+
+  var media=mediaSelect.value||null;
+  var sleeve=sleeveSelect.value||null;
+  mediaSelect.disabled=true;
+  sleeveSelect.disabled=true;
+  copyDetailsSaved.textContent='Saving…';
+
+  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+  var result=(userError||!user)?{error:userError||new Error('Du måste vara inloggad.')}:await supabaseClient
+    .from('collections')
+    .update({media_condition:media,sleeve_condition:sleeve})
+    .eq('id',record[9])
+    .eq('user_id',user.id)
+    .select('id');
+
+  if(result.error||!result.data||!result.data.length){
+    console.error('Kunde inte spara skicket:',result.error);
+    copyDetailsSaved.textContent='Could not save';
+    mediaSelect.disabled=false;
+    sleeveSelect.disabled=false;
+    return;
+  }
+
+  record[11]=record[11]||{};
+  record[11].mediaCondition=media||'';
+  record[11].sleeveCondition=sleeve||'';
+  copyDetailsSummary.textContent=copySummaryText(record[11]);
+  copyDetailsSaved.textContent='Saved';
+  mediaSelect.disabled=false;
+  sleeveSelect.disabled=false;
+  document.getElementById('editConditionButton').textContent='Edit condition';
+}
+
+function cleanVersionValue(value,fallback){
+  var text=String(value||'').normalize('NFKC').replace(/\s+/g,' ').trim();
+  return text||fallback||'';
+}
+
+function normalizeVersion(version){
+  var rawYear=cleanVersionValue(version.released||version.year||'','');
+  var year=rawYear.slice(0,4);
+  if(!/^\d{4}$/.test(year)||year==='0000')year='';
+  var label=Array.isArray(version.label)?version.label.join(', '):version.label;
+  var format=Array.isArray(version.format)?version.format.join(', '):version.format;
+  return {
+    id:version.id||version.release_id,
+    title:cleanVersionValue(version.title,''),
+    country:cleanVersionValue(version.country,'Unknown'),
+    year:year,
+    label:cleanVersionValue(label,'Unknown'),
+    catalogNumber:cleanVersionValue(version.catno||version.catalog_number,'Unknown'),
+    format:cleanVersionValue(format,'Vinyl')
+  };
+}
+
+function uniqueVersionValues(list,key){
+  var seen={};
+  return list.map(function(item){return cleanVersionValue(item[key],'');})
+    .filter(function(value){
+      if(!value)return false;
+      var normalized=value.toLocaleLowerCase().replace(/\s*([,;:/-])\s*/g,'$1');
+      if(seen[normalized])return false;
+      seen[normalized]=true;
+      return true;
+    })
+    .sort(function(a,b){return String(a).localeCompare(String(b),undefined,{numeric:true,sensitivity:'base'});});
+}
+
+function setPressingOptions(select,values,placeholder,current){
+  select.innerHTML='<option value="">'+esc(placeholder)+'</option>'+values.map(function(value){
+    return '<option value="'+esc(value)+'"'+(value===current?' selected':'')+'>'+esc(value)+'</option>';
+  }).join('');
+  select.disabled=!values.length;
+}
+
+function updatePressingProgress(){
+  var completed=[pressingCountry.value,pressingYear.value,pressingLabel.value,pressingCatalogNumber.value].filter(Boolean).length;
+  var bars=pressingForm.querySelectorAll('.pressing-progress span');
+  for(var i=0;i<bars.length;i++)bars[i].classList.toggle('active',i<=completed);
+}
+
+function renderPressingMatches(){
+  var matches=pressingVersions.filter(function(version){
+    return (!pressingCountry.value||version.country===pressingCountry.value)&&
+      (!pressingYear.value||version.year===pressingYear.value)&&
+      (!pressingLabel.value||version.label===pressingLabel.value)&&
+      (!pressingCatalogNumber.value||version.catalogNumber===pressingCatalogNumber.value);
+  });
+
+  if(!pressingCatalogNumber.value){
+    pressingMatches.innerHTML='';
+    return;
+  }
+
+  pressingMatches.innerHTML=matches.map(function(version){
+    return '<button class="pressing-match" type="button" data-release-id="'+esc(version.id)+'">'+
+      '<span class="pressing-match-title">'+esc(version.label+' · '+version.catalogNumber)+'</span>'+
+      '<span class="pressing-match-meta">'+esc([version.country,version.year,version.format].filter(Boolean).join(' · '))+'</span>'+
+    '</button>';
+  }).join('')||'<div class="pressing-error">No exact pressing matches these choices.</div>';
+
+  pressingMatches.querySelectorAll('.pressing-match').forEach(function(button){
+    button.addEventListener('click',function(){
+      preparePressingConfirmation(this.getAttribute('data-release-id'));
+    });
+  });
+}
+
+function refreshPressingFields(changedField){
+  var country=pressingCountry.value;
+  var year=changedField==='country'?'':pressingYear.value;
+  var label=(changedField==='country'||changedField==='year')?'':pressingLabel.value;
+  var catalog=(changedField!=='catalog')?'':pressingCatalogNumber.value;
+
+  if(changedField==='country'){
+    setPressingOptions(pressingYear,uniqueVersionValues(pressingVersions.filter(function(v){return v.country===country;}),'year'),'Choose year',year);
+    setPressingOptions(pressingLabel,[],'Choose label','');
+    setPressingOptions(pressingCatalogNumber,[],'Choose catalog number','');
+  }else if(changedField==='year'){
+    setPressingOptions(pressingLabel,uniqueVersionValues(pressingVersions.filter(function(v){return v.country===country&&v.year===year;}),'label'),'Choose label',label);
+    setPressingOptions(pressingCatalogNumber,[],'Choose catalog number','');
+  }else if(changedField==='label'){
+    setPressingOptions(pressingCatalogNumber,uniqueVersionValues(pressingVersions.filter(function(v){return v.country===country&&v.year===year&&v.label===label;}),'catalogNumber'),'Choose catalog number',catalog);
+  }
+
+  renderPressingMatches();
+  updatePressingProgress();
+}
+
+async function loadPressingPage(page){
+  var record=records[pressingAlbumIndex];
+  var {data,error}=await supabaseClient.functions.invoke('discogs-search',{
+    body:{action:'versions',masterId:record&&record[10],page:page}
+  });
+  if(error)throw error;
+
+  var newVersions=(data&&Array.isArray(data.versions)?data.versions:[]).map(normalizeVersion).filter(function(version){return version.id;});
+  newVersions.forEach(function(version){
+    if(!pressingVersions.some(function(existing){return String(existing.id)===String(version.id);}))pressingVersions.push(version);
+  });
+  pressingPages=data&&data.pagination&&data.pagination.pages?data.pagination.pages:page;
+}
+
+async function loadAllPressingPages(){
+  await loadPressingPage(1);
+  var totalPages=Math.min(pressingPages,100);
+  if(totalPages<=1)return;
+
+  var nextPage=2;
+  var loadedPages=1;
+  var workerCount=Math.min(3,totalPages-1);
+
+  async function loadNext(){
+    while(nextPage<=totalPages){
+      var page=nextPage++;
+      await loadPressingPage(page);
+      loadedPages++;
+      pressingLoading.textContent='Finding vinyl pressings… '+loadedPages+' of '+totalPages;
+    }
+  }
+
+  var workers=[];
+  for(var i=0;i<workerCount;i++)workers.push(loadNext());
+  await Promise.all(workers);
+}
+
+async function openPressingPicker(index){
+  var record=records[index];
+  if(!record||!record[10]){
+    copyDetailsSaved.textContent='No Discogs master found';
+    return;
+  }
+
+  pressingAlbumIndex=index;
+  pressingVersions=[];
+  pressingPages=1;
+  pressingModal.style.display='flex';
+  pressingLoading.hidden=false;
+  pressingForm.hidden=true;
+  pressingError.hidden=true;
+  pressingMatches.innerHTML='';
+  document.body.style.overflow='hidden';
+
+  try{
+    pressingLoading.textContent='Finding vinyl pressings…';
+    await loadAllPressingPages();
+    setPressingOptions(pressingCountry,uniqueVersionValues(pressingVersions,'country'),'Choose country','');
+    setPressingOptions(pressingYear,[],'Choose year','');
+    setPressingOptions(pressingLabel,[],'Choose label','');
+    setPressingOptions(pressingCatalogNumber,[],'Choose catalog number','');
+    pressingLoading.hidden=true;
+    pressingForm.hidden=false;
+    updatePressingProgress();
+  }catch(error){
+    console.error('Kunde inte hämta pressningar:',error);
+    pressingLoading.hidden=true;
+    pressingError.hidden=false;
+    pressingError.textContent='Could not load Discogs pressings. Please try again in a moment.';
+  }
+}
+
+function matrixChoices(release){
+  var identifiers=Array.isArray(release.identifiers)?release.identifiers.filter(function(item){
+    return /matrix|runout/i.test(String(item.type||''));
+  }):[];
+  var sideA=[];
+  var sideB=[];
+
+  identifiers.forEach(function(item,index){
+    var value=String(item.value||'').trim();
+    if(!value)return;
+    var description=String(item.description||'');
+    if(/side\s*a|a[- ]?side/i.test(description))sideA.push(value);
+    else if(/side\s*b|b[- ]?side/i.test(description))sideB.push(value);
+    else if(index%2===0)sideA.push(value);
+    else sideB.push(value);
+  });
+
+  return {a:uniqueVersionValues(sideA.map(function(value){return {value:value};}),'value'),b:uniqueVersionValues(sideB.map(function(value){return {value:value};}),'value')};
+}
+
+function simpleOptions(values){
+  return '<option value="">Not set</option>'+values.map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
+}
+
+async function preparePressingConfirmation(releaseId){
+  pressingMatches.innerHTML='<div class="pressing-loading">Loading pressing details…</div>';
+  try{
+    var {data,error}=await supabaseClient.functions.invoke('discogs-search',{body:{action:'release',releaseId:releaseId}});
+    if(error)throw error;
+    var version=pressingVersions.find(function(item){return String(item.id)===String(releaseId);})||{};
+    var label=data&&Array.isArray(data.labels)&&data.labels.length?data.labels[0]:{};
+    var selected={
+      id:releaseId,
+      country:data.country||version.country||'',
+      year:String(data.released||data.year||version.year||'').slice(0,4),
+      label:label.name||version.label||'',
+      catalogNumber:label.catno||version.catalogNumber||'',
+      format:version.format||'Vinyl'
+    };
+    var matrices=matrixChoices(data||{});
+
+    pressingMatches.innerHTML='<div class="pressing-match selected">'+
+      '<span class="pressing-match-title">Likely match</span>'+
+      '<span class="pressing-match-meta">'+esc([selected.country,selected.year,selected.label,selected.catalogNumber].filter(Boolean).join(' · '))+'</span>'+
+    '</div>'+
+    '<section class="advanced-pressing pressing-advanced"><div class="advanced-pressing-title">Advanced pressing</div>'+
+      (matrices.a.length||matrices.b.length?'<div class="matrix-list">'+
+        '<label class="pressing-field"><span>Matrix / Runout A</span><select id="pressingMatrixA">'+simpleOptions(matrices.a)+'</select></label>'+
+        '<label class="pressing-field"><span>Matrix / Runout B</span><select id="pressingMatrixB">'+simpleOptions(matrices.b)+'</select></label>'+
+      '</div>':'<p class="pressing-help">Discogs has no matrix information for this pressing.</p>')+
+    '</section>'+
+    '<button id="savePressingButton" class="copy-action-button primary" type="button">Save this pressing</button>';
+
+    document.getElementById('savePressingButton').addEventListener('click',function(){
+      saveSelectedPressing(selected,this);
+    });
+  }catch(error){
+    console.error('Kunde inte hämta pressningsdetaljer:',error);
+    pressingMatches.innerHTML='<div class="pressing-error">Could not load this pressing. Choose another match or try again.</div>';
+  }
+}
+
+async function saveSelectedPressing(selected,button){
+  var record=records[pressingAlbumIndex];
+  if(!record)return;
+  var matrixA=document.getElementById('pressingMatrixA');
+  var matrixB=document.getElementById('pressingMatrixB');
+  button.disabled=true;
+  button.textContent='Saving…';
+
+  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+  var payload={
+    discogs_release_id:parseInt(selected.id,10),
+    pressing_country:selected.country||null,
+    pressing_year:parseInt(selected.year,10)||null,
+    pressing_label:selected.label||null,
+    catalog_number:selected.catalogNumber||null,
+    matrix_runout_a:matrixA&&matrixA.value?matrixA.value:null,
+    matrix_runout_b:matrixB&&matrixB.value?matrixB.value:null,
+    pressing_match_status:'discogs'
+  };
+  var result=(userError||!user)?{error:userError||new Error('Du måste vara inloggad.')}:await supabaseClient.from('collections').update(payload)
+    .eq('id',record[9]).eq('user_id',user.id).select('id');
+
+  if(result.error||!result.data||!result.data.length){
+    console.error('Kunde inte spara pressningen:',result.error);
+    button.disabled=false;
+    button.textContent='Try saving again';
+    return;
+  }
+
+  record[11]=record[11]||{};
+  record[11].discogsReleaseId=payload.discogs_release_id;
+  record[11].country=payload.pressing_country||'';
+  record[11].year=payload.pressing_year||'';
+  record[11].label=payload.pressing_label||'';
+  record[11].catalogNumber=payload.catalog_number||'';
+  record[11].matrixA=payload.matrix_runout_a||'';
+  record[11].matrixB=payload.matrix_runout_b||'';
+  record[11].matchStatus='discogs';
+  closePressingPicker();
+  renderCopyDetails(pressingAlbumIndex);
+  copyDetailsSaved.textContent='Saved';
+}
+
+function closePressingPicker(){
+  pressingModal.style.display='none';
+  if(albumOverlay.className.indexOf('visible')===-1)document.body.style.overflow='';
+}
+
+pressingCountry.addEventListener('change',function(){refreshPressingFields('country');});
+pressingYear.addEventListener('change',function(){refreshPressingFields('year');});
+pressingLabel.addEventListener('change',function(){refreshPressingFields('label');});
+pressingCatalogNumber.addEventListener('change',function(){refreshPressingFields('catalog');});
+closePressingModalButton.addEventListener('click',closePressingPicker);
+pressingModal.addEventListener('click',function(event){if(event.target===pressingModal)closePressingPicker();});
+
 function recordHTML(record, className){
   var smallSrc=record[6];
   var isWishlist=window.libraryView==='wishlist';
+  var copy=record[11]||{};
+  var copyLine=!isWishlist
+    ?[copy.mediaCondition,[copy.country,copy.year].filter(Boolean).join(' ')].filter(Boolean).join(' · ')
+    :'';
 
   var html='<article class="record '+(isWishlist?'wishlist-record ':'')+(className||'')+'" draggable="false" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
@@ -663,6 +1174,7 @@ function recordHTML(record, className){
       '<div class="artist">'+esc(record[1])+'</div>'+
       '<div class="album">'+esc(record[2])+'</div>'+
       '<div class="year">'+esc(record[3])+'</div>'+
+      (copyLine?'<div class="copy-line">'+esc(copyLine)+'</div>':'')+
     '</div>'+
     (isWishlist&&viewedUserId===null
       ?'<button class="move-to-collection-button" type="button"><span class="record-icon" aria-hidden="true"></span>Add to collection</button>'
@@ -697,12 +1209,14 @@ function openAlbum(index){
   var record=records[index];
   if(!record)return;
 
+  copyDetailsRecordKey='';
   var isWishlist=window.libraryView==='wishlist';
   detailNumber.innerHTML=isWishlist?'Wishlisted':esc(record[0]);
   detailArtist.innerHTML=esc(record[1]);
   detailAlbum.innerHTML=esc(record[2]);
   detailYear.innerHTML=esc(record[3]);
   detailGenre.innerHTML=esc(record[4]||'Genre saknas');
+  renderCopyDetails(index);
 
   detailCover.src=record[6];
   detailCover.alt=record[1]+' - '+record[2];
@@ -2692,7 +3206,9 @@ const appleAlbumSearchCache=new Map();
 const theAudioDBAlbumSearchCache=new Map();
 const THEAUDIODB_FREE_KEY='123';
 const THEAUDIODB_RATE_LIMIT_COOLDOWN=65000;
+const APPLE_RATE_LIMIT_COOLDOWN=65000;
 let theAudioDBBlockedUntil=0;
+let appleSearchBlockedUntil=0;
 
 async function loadOtherUserCollection(userId){
     var loadVersion=++window.collectionLoadVersion;
@@ -2745,12 +3261,23 @@ async function loadOtherUserCollection(userId){
             collection_number,
             sort_order,
             cover_url,
+            discogs_release_id,
+            media_condition,
+            sleeve_condition,
+            pressing_country,
+            pressing_year,
+            pressing_label,
+            catalog_number,
+            matrix_runout_a,
+            matrix_runout_b,
+            pressing_match_status,
             albums(
                 id,
                 title,
                 release_year,
                 genre,
                 cover_url,
+                discogs_master_id,
                 artists(
                     id,
                     name
@@ -2872,7 +3399,9 @@ async function loadOtherUserCollection(userId){
                 item.cover_url||album.cover_url||'',
                 sides,
                 album.id,
-                item.id
+                item.id,
+                album.discogs_master_id||'',
+                copyDetailsFromRow(item)
             ];
         });
 
@@ -2968,48 +3497,15 @@ async function searchDiscogs(query){
         }
         const searchResults=results.slice(0,10);
         
-        // Prefer TheAudioDB for a stable, canonical album cover. Queries run
-        // sequentially so one search cannot create a burst of ten requests.
-        const theAudioDBArtworkResults=[];
-
-        for(let resultIndex=0;resultIndex<searchResults.length;resultIndex+=1){
-            if(searchNumber!==musicBrainzSearchNumber)return;
-
-            const resultTitle=searchResults[resultIndex].title||'Okänd titel';
-            const resultParts=resultTitle.split(' - ');
-            const resultArtist=resultParts.length>1
-                ?resultParts[0].replace(/\s*\(\d+\)$/,'')
-                :'Okänd artist';
-            const resultAlbumTitle=resultParts.length>1
-                ?resultParts.slice(1).join(' - ')
-                :resultTitle;
-            const theAudioDBResult=await searchTheAudioDBAlbumArtwork(
-                resultArtist,
-                resultAlbumTitle
-            );
-
-            theAudioDBArtworkResults.push(theAudioDBResult.url);
-
-            if(theAudioDBResult.rateLimited){
-                while(theAudioDBArtworkResults.length<searchResults.length){
-                    theAudioDBArtworkResults.push('');
-                }
-                break;
-            }
-        }
-
-        // Apple is a temporary fallback when TheAudioDB has no match, is
-        // unavailable or has returned 429. A short circuit breaker prevents
-        // repeated calls to TheAudioDB throughout its cooldown minute.
+        // Ask Apple once for the whole user search. If Apple returns 403/429,
+        // skip further Apple requests for a minute and continue with
+        // TheAudioDB instead.
         let appleSearchResults=[];
         const appleQueryKey=normalizeAppleFullTitle(query);
-        const needsAppleFallback=theAudioDBArtworkResults.some(function(url){
-            return !url;
-        });
 
-        if(needsAppleFallback&&appleAlbumSearchCache.has(appleQueryKey)){
+        if(appleAlbumSearchCache.has(appleQueryKey)){
             appleSearchResults=appleAlbumSearchCache.get(appleQueryKey);
-        }else if(needsAppleFallback){
+        }else if(Date.now()>=appleSearchBlockedUntil){
             try{
                 const appleResponse=await fetch(
                     'https://itunes.apple.com/search?term='+
@@ -3022,6 +3518,9 @@ async function searchDiscogs(query){
                     appleSearchResults=appleData.results||[];
                     appleAlbumSearchCache.set(appleQueryKey,appleSearchResults);
                 }else{
+                    if(appleResponse.status===403||appleResponse.status===429){
+                        appleSearchBlockedUntil=Date.now()+APPLE_RATE_LIMIT_COOLDOWN;
+                    }
                     console.warn('Apple album search status:',appleResponse.status);
                 }
             }catch(appleError){
@@ -3045,6 +3544,41 @@ async function searchDiscogs(query){
 
             return appleArtworkUrl(appleAlbum);
         });
+
+        // Only results that Apple could not match use TheAudioDB. Queries run
+        // sequentially to avoid a burst that could consume the free limit.
+        const theAudioDBArtworkResults=[];
+
+        for(let resultIndex=0;resultIndex<searchResults.length;resultIndex+=1){
+            if(searchNumber!==musicBrainzSearchNumber)return;
+
+            if(appleArtworkResults[resultIndex]){
+                theAudioDBArtworkResults.push('');
+                continue;
+            }
+
+            const resultTitle=searchResults[resultIndex].title||'Okänd titel';
+            const resultParts=resultTitle.split(' - ');
+            const resultArtist=resultParts.length>1
+                ?resultParts[0].replace(/\s*\(\d+\)$/,'')
+                :'Okänd artist';
+            const resultAlbumTitle=resultParts.length>1
+                ?resultParts.slice(1).join(' - ')
+                :resultTitle;
+            const theAudioDBResult=await searchTheAudioDBAlbumArtwork(
+                resultArtist,
+                resultAlbumTitle
+            );
+
+            theAudioDBArtworkResults.push(theAudioDBResult.url);
+
+            if(theAudioDBResult.rateLimited){
+                while(theAudioDBArtworkResults.length<searchResults.length){
+                    theAudioDBArtworkResults.push('');
+                }
+                break;
+            }
+        }
         
         searchResults.forEach(function(master,index){
         
@@ -3067,10 +3601,10 @@ async function searchDiscogs(query){
             const theAudioDBImageUrl=theAudioDBArtworkResults[index]||'';
             const appleImageUrl=appleArtworkResults[index]||'';
             const discogsImageUrl=master.cover_image||master.thumb||'';
-            const imageUrl=theAudioDBImageUrl||appleImageUrl||discogsImageUrl;
-            const imageSource=theAudioDBImageUrl
-                ?'theaudiodb'
-                :(appleImageUrl?'apple':(discogsImageUrl?'discogs':''));
+            const imageUrl=appleImageUrl||theAudioDBImageUrl||discogsImageUrl;
+            const imageSource=appleImageUrl
+                ?'apple'
+                :(theAudioDBImageUrl?'theaudiodb':(discogsImageUrl?'discogs':''));
         
             const masterId=master.id||'';
         
