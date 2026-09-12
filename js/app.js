@@ -665,6 +665,13 @@ var detailYear=document.getElementById('detailYear');
 var detailGenre=document.getElementById('detailGenre');
 var detailRating=document.getElementById('detailRating');
 var detailTracks=document.getElementById('detailTracks');
+var traderaButton=document.getElementById('traderaButton');
+var traderaButtonLabel=document.getElementById('traderaButtonLabel');
+var traderaModal=document.getElementById('traderaModal');
+var closeTraderaModalButton=document.getElementById('closeTraderaModal');
+var traderaModalSubtitle=document.getElementById('traderaModalSubtitle');
+var traderaListingsStatus=document.getElementById('traderaListingsStatus');
+var traderaListingsGrid=document.getElementById('traderaListingsGrid');
 var copyDetails=document.getElementById('copyDetails');
 var copyDetailsContent=document.getElementById('copyDetailsContent');
 var copyDetailsToggle=document.getElementById('copyDetailsToggle');
@@ -700,6 +707,10 @@ var pressingReleaseCache=new Map();
 var pressingMatrixMatches=null;
 var copyDetailsExpanded=false;
 var copyDetailsRecordKey='';
+var traderaAlbumIndex=-1;
+var traderaRequestVersion=0;
+var traderaListings=[];
+var traderaListingCache=new Map();
 
 function esc(value){
   return String(value)
@@ -707,6 +718,167 @@ function esc(value){
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;');
+}
+
+function safeExternalUrl(value){
+  try{
+    var url=new URL(String(value||''));
+    return url.protocol==='https:'||url.protocol==='http:'?url.href:'';
+  }catch(error){
+    return '';
+  }
+}
+
+function traderaCacheKey(record){
+  return String(record&&record[1]||'').trim().toLowerCase()+'|'+
+    String(record&&record[2]||'').trim().toLowerCase();
+}
+
+function setTraderaButtonState(state,count){
+  traderaButton.classList.remove('loading','empty','unavailable');
+  traderaButton.disabled=false;
+
+  if(state==='loading'){
+    traderaButton.classList.add('loading');
+    traderaButtonLabel.textContent='Tradera · Checking…';
+  }else if(state==='ready'){
+    traderaButtonLabel.textContent='Tradera · '+count+' '+(count===1?'listing':'listings');
+  }else if(state==='empty'){
+    traderaButton.classList.add('empty');
+    traderaButtonLabel.textContent='Tradera · No listings';
+  }else{
+    traderaButton.classList.add('unavailable');
+    traderaButtonLabel.textContent='Tradera · Unavailable';
+  }
+}
+
+function traderaPrice(listing){
+  var amount=Number(listing.buyNowPrice||listing.nextBid||listing.currentBid||listing.openingBid||0);
+  if(!isFinite(amount)||amount<=0)return '';
+
+  try{
+    return new Intl.NumberFormat('sv-SE',{
+      style:'currency',
+      currency:String(listing.currency||'SEK'),
+      maximumFractionDigits:0
+    }).format(amount);
+  }catch(error){
+    return Math.round(amount)+' kr';
+  }
+}
+
+function traderaEndsText(value){
+  var date=new Date(value);
+  if(!value||isNaN(date.getTime()))return '';
+
+  return 'Ends '+date.toLocaleDateString('sv-SE',{
+    day:'numeric',
+    month:'short'
+  })+' · '+date.toLocaleTimeString('sv-SE',{
+    hour:'2-digit',
+    minute:'2-digit'
+  });
+}
+
+function renderTraderaListings(){
+  if(!traderaListings.length){
+    traderaListingsGrid.innerHTML='';
+    return;
+  }
+
+  traderaListingsGrid.innerHTML=traderaListings.map(function(listing){
+    var href=safeExternalUrl(listing.url);
+    var imageUrl=safeExternalUrl(listing.imageUrl);
+    var price=traderaPrice(listing);
+    var ends=traderaEndsText(listing.endDate);
+    var bids=Number(listing.bidCount||0);
+
+    return '<article class="tradera-listing-card">'+
+      '<a class="tradera-listing-image" href="'+esc(href||'#')+'" target="_blank" rel="noopener noreferrer" aria-label="View listing on Tradera">'+
+        (imageUrl?'<img src="'+esc(imageUrl)+'" alt="" loading="lazy">':'<span class="record-icon" aria-hidden="true"></span>')+
+      '</a>'+
+      '<div class="tradera-listing-body">'+
+        '<h3>'+esc(listing.title||'Vinyl record')+'</h3>'+
+        '<div class="tradera-listing-price-row">'+
+          '<strong>'+esc(price||'See price')+'</strong>'+
+          (bids?'<span>'+bids+' '+(bids===1?'bid':'bids')+'</span>':'')+
+        '</div>'+
+        (ends?'<div class="tradera-listing-end">'+esc(ends)+'</div>':'')+
+        (href?'<a class="tradera-listing-link" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">View on Tradera <span aria-hidden="true">↗</span></a>':'')+
+      '</div>'+
+    '</article>';
+  }).join('');
+}
+
+function openTraderaModal(){
+  var record=records[traderaAlbumIndex];
+  if(!record)return;
+
+  traderaModalSubtitle.textContent=record[1]+' · '+record[2];
+  renderTraderaListings();
+
+  if(traderaButton.classList.contains('loading')){
+    traderaListingsStatus.className='tradera-listings-status loading';
+    traderaListingsStatus.textContent='Finding active listings…';
+  }else if(traderaListings.length){
+    traderaListingsStatus.className='tradera-listings-status';
+    traderaListingsStatus.textContent=traderaListings.length+' active '+(traderaListings.length===1?'listing':'listings');
+  }else if(traderaButton.classList.contains('unavailable')){
+    traderaListingsStatus.className='tradera-listings-status error';
+    traderaListingsStatus.textContent='Tradera is temporarily unavailable. Please try again shortly.';
+  }else{
+    traderaListingsStatus.className='tradera-listings-status empty';
+    traderaListingsStatus.textContent='No active listings found for this album right now.';
+  }
+
+  traderaModal.classList.add('visible');
+  traderaModal.setAttribute('aria-hidden','false');
+  closeTraderaModalButton.focus();
+}
+
+function closeTraderaModal(){
+  traderaModal.classList.remove('visible');
+  traderaModal.setAttribute('aria-hidden','true');
+}
+
+async function loadTraderaListings(record,index){
+  traderaAlbumIndex=index;
+  traderaListings=[];
+  var requestVersion=++traderaRequestVersion;
+  var key=traderaCacheKey(record);
+  var cached=traderaListingCache.get(key);
+
+  if(cached&&Date.now()-cached.savedAt<5*60*1000){
+    traderaListings=cached.listings;
+    setTraderaButtonState(traderaListings.length?'ready':'empty',traderaListings.length);
+    return;
+  }
+
+  setTraderaButtonState('loading',0);
+
+  try{
+    var response=await supabaseClient.functions.invoke('tradera-search',{
+      body:{artist:record[1],album:record[2]}
+    });
+
+    if(requestVersion!==traderaRequestVersion)return;
+    if(response.error)throw response.error;
+
+    traderaListings=response.data&&Array.isArray(response.data.listings)
+      ?response.data.listings
+      :[];
+    traderaListingCache.set(key,{savedAt:Date.now(),listings:traderaListings});
+    setTraderaButtonState(traderaListings.length?'ready':'empty',traderaListings.length);
+  }catch(error){
+    if(requestVersion!==traderaRequestVersion)return;
+    console.error('Could not load Tradera listings:',error);
+    traderaListings=[];
+    setTraderaButtonState('unavailable',0);
+  }
+
+  if(traderaModal.classList.contains('visible')&&traderaAlbumIndex===index){
+    openTraderaModal();
+  }
 }
 
 function hasCopyDetails(details){
@@ -1397,6 +1569,8 @@ function openAlbum(index){
   var record=records[index];
   if(!record)return;
 
+  closeTraderaModal();
+  loadTraderaListings(record,index);
   copyDetailsRecordKey='';
   var isWishlist=window.libraryView==='wishlist';
   detailNumber.innerHTML=isWishlist?'Wishlisted':esc(record[0]);
@@ -1742,6 +1916,8 @@ async function saveTrackRating(trackId,rating){
 }
     
 function closeAlbum(){
+  closeTraderaModal();
+  traderaRequestVersion++;
   albumOverlay.className='album-overlay';
   document.body.style.overflow='';
   setCopyDetailsExpanded(false);
@@ -2893,6 +3069,20 @@ albumClose.onclick=function(){
   closeAlbum();
 };
 
+traderaButton.addEventListener('click',function(event){
+  event.preventDefault();
+  event.stopPropagation();
+  openTraderaModal();
+});
+
+closeTraderaModalButton.addEventListener('click',function(){
+  closeTraderaModal();
+});
+
+traderaModal.addEventListener('click',function(event){
+  if(event.target===traderaModal)closeTraderaModal();
+});
+
 albumOverlay.onclick=function(event){
   if((event||window.event).target===albumOverlay){
     closeAlbum();
@@ -2903,6 +3093,10 @@ document.onkeydown=function(event){
   event=event||window.event;
 
   if(event.keyCode===27){
+    if(traderaModal.classList.contains('visible')){
+      closeTraderaModal();
+      return;
+    }
     if(albumOverlay.className.indexOf('visible')!==-1){
       closeAlbum();
     }

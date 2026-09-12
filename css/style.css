@@ -565,6 +565,68 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 }
 
 @media (prefers-reduced-motion:reduce){.pressing-loading:before{animation-duration:1.5s}.pressing-match,.copy-details,.copy-details-heading,.copy-details-content{transition:none}}
+
+/* TRADERA MARKETPLACE */
+.tradera-trigger{display:flex;align-items:center;gap:9px;width:max-content;max-width:100%;min-height:42px;margin-top:17px;padding:7px 10px 7px 8px;border:1px solid rgba(232,83,1,.4);border-radius:12px;background:rgba(12,12,14,.74);color:#f1f1f3;font-family:inherit;font-size:12px;font-weight:700;letter-spacing:0;cursor:pointer;text-shadow:none;box-shadow:0 8px 22px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.035);transition:border-color .16s ease,background .16s ease,transform .16s ease,box-shadow .16s ease}
+.tradera-trigger:hover{border-color:#e85301;background:#19191c;box-shadow:0 10px 25px rgba(0,0,0,.32),0 0 0 3px rgba(232,83,1,.08);transform:translateY(-1px)}
+.tradera-trigger:active{transform:scale(.98)}
+.tradera-trigger-mark{display:flex;align-items:center;justify-content:center;width:27px;height:27px;flex:0 0 27px;border-radius:8px;background:#e85301;color:#fff;font-size:13px;font-weight:800;box-shadow:0 5px 13px rgba(232,83,1,.27)}
+.tradera-trigger-arrow{margin-left:2px;color:#77777e;font-size:14px;transition:color .16s ease,transform .16s ease}
+.tradera-trigger:hover .tradera-trigger-arrow{color:#ff762e;transform:translate(1px,-1px)}
+.tradera-trigger.loading .tradera-trigger-mark{color:transparent;position:relative}
+.tradera-trigger.loading .tradera-trigger-mark:after{content:"";position:absolute;width:10px;height:10px;border:1.5px solid rgba(255,255,255,.42);border-top-color:#fff;border-radius:50%;animation:pressing-spin .75s linear infinite}
+.tradera-trigger.empty,.tradera-trigger.unavailable{border-color:rgba(255,255,255,.13);color:#aaaab0}
+.tradera-trigger.empty .tradera-trigger-mark,.tradera-trigger.unavailable .tradera-trigger-mark{background:#343438;color:#aaaab0;box-shadow:none}
+
+.tradera-modal{position:fixed;z-index:10050;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(3,3,4,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);visibility:hidden;opacity:0;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .22s}
+.tradera-modal.visible{visibility:visible;opacity:1;pointer-events:auto;transition:opacity .2s ease,visibility 0s}
+.tradera-modal-panel{position:relative;width:min(1040px,100%);max-height:calc(100dvh - 48px);overflow-y:auto;padding:32px;border:1px solid rgba(255,255,255,.11);border-radius:22px;background:radial-gradient(circle at 0 0,rgba(232,83,1,.075),transparent 32%),linear-gradient(145deg,#1b1b1e,#101012 72%);box-shadow:0 32px 100px rgba(0,0,0,.75),inset 0 1px rgba(255,255,255,.04);transform:translateY(12px) scale(.985);transition:transform .24s cubic-bezier(.2,.8,.2,1)}
+.tradera-modal.visible .tradera-modal-panel{transform:translateY(0) scale(1)}
+.tradera-modal-close{position:absolute;z-index:2;right:20px;top:20px;width:39px;height:39px;padding:0;border:1px solid #343438;border-radius:50%;background:#202023;color:#aaa;font-family:inherit;font-size:27px;line-height:35px;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
+.tradera-modal-close:hover{border-color:#4a4a50;background:#2a2a2e;color:#fff;transform:rotate(4deg)}
+.tradera-modal-heading{padding-right:55px}
+.tradera-modal-heading h2{margin:0;color:#fff;font-size:29px;font-weight:680;letter-spacing:-.7px;line-height:1.12}
+.tradera-modal-heading p{margin:8px 0 0;color:#929298;font-size:13px}
+.tradera-listings-status{display:flex;align-items:center;min-height:22px;margin:23px 0 16px;color:#a7a7ac;font-size:12px;font-weight:650}
+.tradera-listings-status.loading:before{content:"";width:15px;height:15px;margin-right:9px;border:1.5px solid #404045;border-top-color:#e85301;border-radius:50%;animation:pressing-spin .75s linear infinite}
+.tradera-listings-status.empty,.tradera-listings-status.error{min-height:130px;justify-content:center;padding:24px;border:1px dashed #343438;border-radius:15px;background:rgba(255,255,255,.018);color:#85858b;text-align:center}
+.tradera-listings-status.error{border-color:rgba(232,83,1,.24)}
+.tradera-listings-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.tradera-listing-card{min-width:0;overflow:hidden;border:1px solid #2f2f33;border-radius:16px;background:#171719;box-shadow:0 9px 25px rgba(0,0,0,.22);transition:border-color .16s ease,transform .16s ease,box-shadow .16s ease}
+.tradera-listing-card:hover{border-color:#45454b;transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.31)}
+.tradera-listing-image{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:4/3;overflow:hidden;background:#0c0c0e;color:#444;text-decoration:none}
+.tradera-listing-image img{width:100%;height:100%;display:block;object-fit:cover;transition:transform .25s ease}
+.tradera-listing-card:hover .tradera-listing-image img{transform:scale(1.025)}
+.tradera-listing-image .record-icon{width:46px;height:46px;opacity:.55}
+.tradera-listing-body{padding:14px}
+.tradera-listing-body h3{display:-webkit-box;min-height:38px;margin:0 0 12px;overflow:hidden;color:#ededf0;font-size:13px;font-weight:680;line-height:1.45;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.tradera-listing-price-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.tradera-listing-price-row strong{color:#ff762e;font-size:16px}
+.tradera-listing-price-row span{color:#77777d;font-size:10px}
+.tradera-listing-end{margin-top:4px;color:#77777d;font-size:10px}
+.tradera-listing-link{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:38px;margin-top:13px;padding:8px 10px;border:1px solid #343438;border-radius:9px;background:#202023;color:#d2d2d6;font-size:11px;font-weight:700;text-decoration:none;transition:border-color .15s ease,background .15s ease,color .15s ease}
+.tradera-listing-link:hover{border-color:rgba(232,83,1,.55);background:rgba(232,83,1,.1);color:#ff762e}
+
+@media screen and (max-width:800px){.tradera-listings-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media screen and (max-width:600px){
+.tradera-trigger{min-height:40px;margin-top:14px}
+.tradera-modal{align-items:flex-end;padding:0}
+.tradera-modal-panel{width:100%;max-height:calc(100dvh - max(8px,env(safe-area-inset-top)));padding:25px 15px calc(20px + env(safe-area-inset-bottom));border-width:1px 0 0;border-radius:22px 22px 0 0;transform:translateY(42px)}
+.tradera-modal-close{right:15px;top:15px;width:37px;height:37px;font-size:25px;line-height:33px}
+.tradera-modal-heading{padding-right:47px}
+.tradera-modal-heading h2{font-size:24px}
+.tradera-modal-heading p{font-size:12px;line-height:1.4}
+.tradera-listings-status{margin:19px 0 13px}
+.tradera-listings-grid{grid-template-columns:1fr;gap:11px}
+.tradera-listing-card{display:grid;grid-template-columns:112px minmax(0,1fr);border-radius:14px}
+.tradera-listing-image{height:100%;min-height:148px;aspect-ratio:auto}
+.tradera-listing-body{padding:12px}
+.tradera-listing-body h3{min-height:36px;margin-bottom:9px;font-size:12px}
+.tradera-listing-price-row strong{font-size:15px}
+.tradera-listing-link{margin-top:10px}
+}
+
+@media (prefers-reduced-motion:reduce){.tradera-trigger,.tradera-modal,.tradera-modal-panel,.tradera-listing-card,.tradera-listing-image img{transition:none}}
 #cancelRemoveAlbum{background:#333;color:#fff}
 #confirmRemoveAlbum{background:#c62828;color:#fff}
 #confirmRemoveAlbum:hover{background:#e53935}

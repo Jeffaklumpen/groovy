@@ -19,7 +19,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>Groovy – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=43">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=44">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
 </head>
 
@@ -145,6 +145,11 @@
   </div>
 
   <div class="detail-rating" id="detailRating"></div>
+  <button id="traderaButton" class="tradera-trigger" type="button" aria-haspopup="dialog">
+    <span class="tradera-trigger-mark" aria-hidden="true">T</span>
+    <span id="traderaButtonLabel">Tradera</span>
+    <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
+  </button>
 </div>
 
 <div class="album-tracks">
@@ -163,6 +168,19 @@
   <div id="detailTracks"></div>
 </div>
 
+  </div>
+</div>
+
+<div id="traderaModal" class="tradera-modal" role="dialog" aria-modal="true" aria-labelledby="traderaModalTitle" aria-hidden="true">
+  <div class="tradera-modal-panel">
+    <button id="closeTraderaModal" class="tradera-modal-close" type="button" aria-label="Close">×</button>
+    <div class="tradera-modal-heading">
+      <span class="search-modal-kicker">Available now</span>
+      <h2 id="traderaModalTitle">Listings on Tradera</h2>
+      <p id="traderaModalSubtitle"></p>
+    </div>
+    <div id="traderaListingsStatus" class="tradera-listings-status" aria-live="polite"></div>
+    <div id="traderaListingsGrid" class="tradera-listings-grid"></div>
   </div>
 </div>
 
@@ -319,6 +337,6 @@
 </button>
 
 <script src="/groovy/js/route-state.js?v=13"></script>
-<script src="/groovy/js/app.js?v=53"></script>
+<script src="/groovy/js/app.js?v=54"></script>
 </body>
 </html>
