@@ -610,7 +610,8 @@ window.loadCollection=async function(){
       if(Array.isArray(album.tracks)){
         album.tracks
           .sort(function(a,b){
-            return (a.id||0)-(b.id||0);
+            var sideCompare=String(a.disc_side||'').localeCompare(String(b.disc_side||''));
+            return sideCompare||((a.track_number||0)-(b.track_number||0))||((a.id||0)-(b.id||0));
           })
           .forEach(function(track){
             var side=track.disc_side;
@@ -3391,7 +3392,8 @@ async function loadOtherUserCollection(userId){
             if(Array.isArray(album.tracks)){
                 album.tracks
                     .sort(function(a,b){
-                        return (a.id||0)-(b.id||0);
+                        var sideCompare=String(a.disc_side||'').localeCompare(String(b.disc_side||''));
+                        return sideCompare||((a.track_number||0)-(b.track_number||0))||((a.id||0)-(b.id||0));
                     })
                     .forEach(function(track){
                         var side=track.disc_side;
@@ -3995,6 +3997,49 @@ async function searchAppleAlbumArtwork(artist,albumTitle,originalYear){
     }
 }
 
+function discogsTrackRows(albumId,tracklist){
+    const rawTracks=[];
+
+    (Array.isArray(tracklist)?tracklist:[]).forEach(function(track){
+        if(track&&track.type_==='track')rawTracks.push(track);
+
+        if(track&&Array.isArray(track.sub_tracks)){
+            track.sub_tracks.forEach(function(subTrack){
+                if(subTrack&&(
+                    subTrack.type_==='track'||
+                    (!subTrack.type_&&subTrack.title)
+                ))rawTracks.push(subTrack);
+            });
+        }
+    });
+
+    const hasDiscSides=rawTracks.some(function(track){
+        return /^[A-D]\s*\d/.test(String(track.position||'').toUpperCase());
+    });
+
+    return rawTracks.map(function(track,index){
+        const position=String(track.position||'').toUpperCase();
+        let discSide='';
+        let trackNumber=null;
+
+        if(hasDiscSides){
+            discSide=position.charAt(0);
+            trackNumber=parseInt(position.substring(1),10);
+        }else{
+            const middle=Math.ceil(rawTracks.length/2);
+            discSide=index<middle?'A':'B';
+            trackNumber=index<middle?index+1:index-middle+1;
+        }
+
+        return {
+            album_id:albumId,
+            disc_side:discSide,
+            track_number:Number.isNaN(trackNumber)?null:trackNumber,
+            title:track.title||'Okänd låt'
+        };
+    });
+}
+
 async function saveAlbumFromDiscogs(master,artist,albumTitle,year,previewCoverUrl,previewCoverSource,button,destination){
     var isWishlistDestination=destination==='wishlist';
     if(button.classList.contains(isWishlistDestination?'mb-wishlisted':'mb-added'))return;
@@ -4179,67 +4224,7 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,previewCoverUr
         albumId=newAlbum.id;
 
         if(finalTracklist.length){
-        const rawTracks=[];
-        
-        finalTracklist.forEach(function(track){
-            if(track.type_==='track'){
-                rawTracks.push(track);
-            }
-        
-            if(Array.isArray(track.sub_tracks)){
-                track.sub_tracks.forEach(function(subTrack){
-                    // Discogs sometimes omits type_ on index/sub-track rows.
-                    // A titled sub-track is still a real song and should be
-                    // shown alongside the album's regular tracks.
-                    if(subTrack && (subTrack.type_==='track'||(!subTrack.type_&&subTrack.title))){
-                        rawTracks.push(subTrack);
-                    }
-                });
-            }
-        });
-            
-            const hasDiscSides=rawTracks.some(function(track){
-                const position=String(track.position||'').toUpperCase();
-                return /^[A-D]\d/.test(position);
-            });
-            
-            const tracks=rawTracks.map(function(track,index){
-                const position=String(track.position||'').toUpperCase();
-            
-                let discSide='';
-                let trackNumber=null;
-            
-                if(hasDiscSides){
-                    if(position.startsWith('A')){
-                        discSide='A';
-                    }else if(position.startsWith('B')){
-                        discSide='B';
-                    }else if(position.startsWith('C')){
-                        discSide='C';
-                    }else if(position.startsWith('D')){
-                        discSide='D';
-                    }
-            
-                    trackNumber=parseInt(position.substring(1),10);
-                }else{
-                    const middle=Math.ceil(rawTracks.length/2);
-            
-                    if(index<middle){
-                        discSide='A';
-                        trackNumber=index+1;
-                    }else{
-                        discSide='B';
-                        trackNumber=index-middle+1;
-                    }
-                }
-            
-                return {
-                    album_id:albumId,
-                    disc_side:discSide,
-                    track_number:Number.isNaN(trackNumber)?null:trackNumber,
-                    title:track.title||'Okänd låt'
-                };
-            });
+            const tracks=discogsTrackRows(albumId,finalTracklist);
 
             if(tracks.length){
                 const {
@@ -4253,6 +4238,51 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,previewCoverUr
                 }
             }
         }
+        }
+
+        // Album records are shared and remain in the database when a user
+        // removes an album from their collection. Complete an older album
+        // record with any tracks that were previously omitted, including
+        // Discogs sub-tracks, instead of assuming its tracklist is complete.
+        if(albumId&&finalTracklist.length&&existingAlbums&&existingAlbums.length){
+            const incomingTracks=discogsTrackRows(albumId,finalTracklist);
+            const {data:storedTracks,error:storedTracksError}=await supabaseClient
+                .from('tracks')
+                .select('disc_side,track_number,title')
+                .eq('album_id',albumId);
+
+            if(storedTracksError)throw storedTracksError;
+
+            const storedTrackCounts=new Map();
+            (storedTracks||[]).forEach(function(track){
+                const key=[
+                    String(track.disc_side||''),
+                    String(track.track_number==null?'':track.track_number),
+                    String(track.title||'').trim().toLocaleLowerCase()
+                ].join('|');
+                storedTrackCounts.set(key,(storedTrackCounts.get(key)||0)+1);
+            });
+
+            const missingTracks=incomingTracks.filter(function(track){
+                const key=[
+                    String(track.disc_side||''),
+                    String(track.track_number==null?'':track.track_number),
+                    String(track.title||'').trim().toLocaleLowerCase()
+                ].join('|');
+                const count=storedTrackCounts.get(key)||0;
+                if(count){
+                    storedTrackCounts.set(key,count-1);
+                    return false;
+                }
+                return true;
+            });
+
+            if(missingTracks.length){
+                const {error:missingTracksError}=await supabaseClient
+                    .from('tracks')
+                    .insert(missingTracks);
+                if(missingTracksError)throw missingTracksError;
+            }
         }
 
         const {
