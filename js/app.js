@@ -4624,6 +4624,26 @@ window.addEventListener('popstate',function(){
     renderCurrentRoute();
 });
 
+const scrollTopButton=document.getElementById('scrollTopButton');
+let scrollTopUpdatePending=false;
+
+function updateScrollTopButton(){
+    scrollTopUpdatePending=false;
+    const scrollPosition=window.scrollY||document.documentElement.scrollTop||0;
+    scrollTopButton.classList.toggle('visible',scrollPosition>420);
+}
+
+window.addEventListener('scroll',function(){
+    if(scrollTopUpdatePending)return;
+    scrollTopUpdatePending=true;
+    window.requestAnimationFrame(updateScrollTopButton);
+},{passive:true});
+
+scrollTopButton.addEventListener('click',function(){
+    const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({top:0,left:0,behavior:reduceMotion?'auto':'smooth'});
+});
+
 async function renderCurrentRoute(){
     window.libraryView=GroovyRouteState.libraryViewFromSearch(window.location.search);
     await updateAuthUI();
@@ -4631,3 +4651,4 @@ async function renderCurrentRoute(){
 }
 
 renderCurrentRoute();
+updateScrollTopButton();

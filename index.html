@@ -19,69 +19,75 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>Groovy – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=39">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=43">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
 </head>
 
 <body>
 
 <header class="header">
-  <img class="logo" src="/groovy/logo.png" alt="Groovy">
-  <div class="viewed-user-header" id="viewedUserHeader">
-    <div class="viewed-user-avatar" id="viewedUserAvatar"></div>
-    <div class="viewed-user-name" id="viewedUserName"></div>
-    <button class="back-to-my-collection" id="backToMyCollectionButton" type="button"><span aria-hidden="true">←</span> My collection</button>
-  </div>
-  <div class="subtitle" id="collectionCount">0 RECORDS</div>
+  <div class="header-main">
+    <div class="header-brand">
+      <img class="logo" src="/groovy/logo.png" alt="Groovy">
+      <div class="viewed-user-header" id="viewedUserHeader">
+        <div class="viewed-user-avatar" id="viewedUserAvatar"></div>
+        <div class="viewed-user-name" id="viewedUserName"></div>
+        <button class="back-to-my-collection" id="backToMyCollectionButton" type="button"><span aria-hidden="true">←</span> My collection</button>
+      </div>
+      <div class="subtitle" id="collectionCount">0 RECORDS</div>
+    </div>
 
-<div class="header-controls">
-  <button id="addAlbumButton" class="add-album-button" type="button">Add Album</button>
-  <button id="deleteModeButton" class="delete-mode-button" type="button" aria-label="Ta bort album">🗑</button>
+    <div class="header-tools">
+      <div class="header-controls">
+        <button id="addAlbumButton" class="add-album-button" type="button">Add Album</button>
+        <button id="deleteModeButton" class="delete-mode-button" type="button" aria-label="Ta bort album">🗑</button>
 
-  <div class="menu-dropdown">
-    <button id="filterButton" class="menu-button" type="button" aria-expanded="false">Filter ▾</button>
-    <div id="filterMenu" class="menu-panel">
-      <button type="button" data-rating="all" class="active">All</button>
-      <button type="button" data-rating="1">★ 1</button>
-      <button type="button" data-rating="2">★ 2</button>
-      <button type="button" data-rating="3">★ 3</button>
-      <button type="button" data-rating="4">★ 4</button>
-      <button type="button" data-rating="5">★ 5</button>
+        <div class="menu-dropdown">
+          <button id="filterButton" class="menu-button" type="button" aria-expanded="false">Filter ▾</button>
+          <div id="filterMenu" class="menu-panel">
+            <button type="button" data-rating="all" class="active">All</button>
+            <button type="button" data-rating="1">★ 1</button>
+            <button type="button" data-rating="2">★ 2</button>
+            <button type="button" data-rating="3">★ 3</button>
+            <button type="button" data-rating="4">★ 4</button>
+            <button type="button" data-rating="5">★ 5</button>
+          </div>
+        </div>
+
+        <button class="back-to-my-collection back-to-my-collection-mobile" id="backToMyCollectionMobileButton" type="button"><span aria-hidden="true">←</span> My collection</button>
+      </div>
+
+      <div id="authBox">
+        <button id="profileButton" type="button" aria-label="Profil"><span id="profileImage"></span></button>
+        <div id="profileMenu">
+          <div class="profile-header"><button id="profileAvatarButton" class="profile-avatar" type="button" aria-label="Byt profilbild"><span id="profileImageMenu"></span></button><span id="profileUsername"></span></div>
+          <input id="profileImageInput" type="file" accept="image/*" style="display:none;">
+          <button id="myCollectionButton" class="menu-button" type="button">My Collection</button>
+          <button id="searchUserButton" class="menu-button" type="button">Search User</button>
+          <div class="profile-divider"></div><button id="logoutButton" type="button">Logout</button>
+        </div>
+        <div id="loginPanel">
+          <div class="login-modal">
+            <button id="loginClose" type="button" aria-label="Close">×</button>
+            <div class="auth-modal-heading">
+              <div class="auth-mark" aria-hidden="true"><span class="record-icon"></span></div>
+              <span class="auth-kicker" id="authKicker">Your collection awaits</span>
+              <div class="login-title" id="authTitle">Welcome back</div>
+              <p id="authDescription">Sign in and pick up exactly where you left off.</p>
+            </div>
+            <div id="registerFields" style="display:none;">
+              <label class="auth-field"><span>Username</span><input id="registerUsername" type="text" placeholder="Choose a username" autocomplete="username"></label>
+            </div>
+            <label class="auth-field"><span>Email</span><input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email"></label>
+            <label class="auth-field"><span>Password</span><input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password"></label>
+            <button id="loginButton" class="auth-primary-button" type="button">Log in</button>
+            <button id="registerButton" class="auth-primary-button" type="button" style="display:none;">Create account</button>
+            <div class="auth-switch-row"><span id="authSwitchPrompt">New to Groovy?</span><button id="authSwitchButton" type="button">Create account</button></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-
-  <button class="back-to-my-collection back-to-my-collection-mobile" id="backToMyCollectionMobileButton" type="button"><span aria-hidden="true">←</span> My collection</button>
-</div>
-
-<div id="authBox">
-  <button id="profileButton" type="button" aria-label="Profil"><span id="profileImage"></span></button>
-  <div id="profileMenu">
-    <div class="profile-header"><button id="profileAvatarButton" class="profile-avatar" type="button" aria-label="Byt profilbild"><span id="profileImageMenu"></span></button><span id="profileUsername"></span></div>
-    <input id="profileImageInput" type="file" accept="image/*" style="display:none;">
-    <button id="myCollectionButton" class="menu-button" type="button">My Collection</button>
-    <button id="searchUserButton" class="menu-button" type="button">Search User</button>
-    <div class="profile-divider"></div><button id="logoutButton" type="button">Logout</button>
-  </div>
-  <div id="loginPanel">
-    <div class="login-modal">
-      <button id="loginClose" type="button" aria-label="Close">×</button>
-      <div class="auth-modal-heading">
-        <div class="auth-mark" aria-hidden="true"><span class="record-icon"></span></div>
-        <span class="auth-kicker" id="authKicker">Your collection awaits</span>
-        <div class="login-title" id="authTitle">Welcome back</div>
-        <p id="authDescription">Sign in and pick up exactly where you left off.</p>
-      </div>
-      <div id="registerFields" style="display:none;">
-        <label class="auth-field"><span>Username</span><input id="registerUsername" type="text" placeholder="Choose a username" autocomplete="username"></label>
-      </div>
-      <label class="auth-field"><span>Email</span><input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email"></label>
-      <label class="auth-field"><span>Password</span><input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password"></label>
-      <button id="loginButton" class="auth-primary-button" type="button">Log in</button>
-      <button id="registerButton" class="auth-primary-button" type="button" style="display:none;">Create account</button>
-      <div class="auth-switch-row"><span id="authSwitchPrompt">New to Groovy?</span><button id="authSwitchButton" type="button">Create account</button></div>
-    </div>
-  </div>
-</div>
 </header>
 
 <nav id="libraryTabs" class="library-tabs" aria-label="Library view" style="display:none;">
@@ -308,7 +314,11 @@
     </div>
 </div>
 
+<button id="scrollTopButton" class="scroll-top-button" type="button" aria-label="Back to top" title="Back to top">
+  <span aria-hidden="true"></span>
+</button>
+
 <script src="/groovy/js/route-state.js?v=13"></script>
-<script src="/groovy/js/app.js?v=52"></script>
+<script src="/groovy/js/app.js?v=53"></script>
 </body>
 </html>
