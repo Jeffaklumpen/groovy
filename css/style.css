@@ -1047,9 +1047,9 @@ body{padding:0 32px 56px;background:radial-gradient(circle at 50% -15%,#18100c 0
 .wishlist-cover-label{font-size:9px}
 .record-card-footer{display:flex;align-items:center;min-height:31px;margin-top:4px;padding:6px 3px 0;border-top:1px solid rgba(255,255,255,.08)}
 .number{position:static;display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:22px;padding:0 6px;border-radius:5px;background:#1e1e21;color:#fff;font-size:10px;letter-spacing:0}
-.mobile-footer-number{display:none}
 .copy-line{display:none}
-.spotify-placeholder{display:inline-flex;min-width:0;align-items:center;gap:7px;color:#d5d5d8;font-size:10px;font-weight:600;white-space:nowrap;pointer-events:none}
+.spotify-placeholder{display:inline-flex;min-width:0;align-items:center;gap:7px;color:#d5d5d8;font-size:10px;font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;transition:color .16s ease,opacity .16s ease}
+.spotify-placeholder:hover{color:#fff}
 .spotify-mark{width:21px;height:21px;flex:0 0 21px;overflow:visible}
 .spotify-mark circle{fill:#1ed760}
 .spotify-mark path{fill:none;stroke:#09090a;stroke-width:1.55;stroke-linecap:round}
@@ -1153,7 +1153,6 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .grid .record{padding:7px;border-radius:9px}
 .cover-wrapper,.cover{border-radius:4px}
 .info{min-height:0;padding:8px 2px 0}
-.record-heading-row .desktop-record-number{display:none}
 .info .album{font-size:13px}
 .info .artist{padding-left:0;font-size:11px}
 .cover-rating{font-size:12px;letter-spacing:0}
@@ -1161,9 +1160,7 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .record-condition-badge{padding:3px 6px;font-size:8px}
 .pressing-prompt-badge{min-height:17px;padding:2px 4px;font-size:7px;letter-spacing:-.05px}
 .record-card-footer{margin-top:3px;padding-top:5px}
-.mobile-footer-number{display:inline-flex;margin-left:auto}
 .delete-cover-button,.wishlist-remove-button{display:none;margin-left:auto;opacity:0}
-.delete-mode .mobile-footer-number,.delete-mode-active .mobile-footer-number{display:none}
 .delete-mode .delete-cover-button,.delete-mode .wishlist-remove-button,.delete-mode-active .delete-cover-button,.delete-mode-active .wishlist-remove-button{display:flex;align-items:center;justify-content:center;opacity:1;pointer-events:auto}
 .album-overlay{padding:0;background:#09090a}
 .album-overlay.visible{background:#09090a}
@@ -1200,4 +1197,79 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .detail-album{font-size:21px}
 .detail-artist{font-size:15px}
 .tradera-trigger{min-height:36px;padding:7px 9px;font-size:10px}
+}
+
+/* Library polish: compact card controls, consistent menus and Spotify links */
+.wishlist-icon{position:relative;width:18px;height:18px;border:0;border-radius:0;clip-path:none;color:currentColor;transform:none}
+.wishlist-icon:before{content:"♡";position:absolute;inset:-3px 0 0;display:flex;align-items:center;justify-content:center;color:currentColor;font-size:22px;font-weight:400;line-height:1}
+.library-sort-field{position:relative;display:block;height:auto;padding:0;border:0;background:transparent}
+.library-sort-field>.menu-button{height:42px;padding:0 14px;border:1px solid var(--groovy-line);border-radius:8px;background:#121214;color:#c5c5ca;font-size:12px;font-weight:650}
+.library-sort-field>.menu-panel{left:auto;right:0;min-width:190px}
+.library-sort-field>.menu-panel.open{display:flex;flex-direction:column}
+.library-rating-filter .menu-button,.library-search input,.add-album-button{border-radius:8px!important}
+
+.record-card-topbar{position:relative;display:flex;min-height:14px;align-items:center;margin:0 2px 3px}
+.record-card-topbar .number{min-width:0;height:auto;padding:0;border-radius:0;background:none;color:#77777d;font-size:8px;font-weight:650;line-height:1;letter-spacing:.04em}
+.record-card-topbar .delete-cover-button,.record-card-topbar .wishlist-remove-button{position:absolute;right:-3px;top:50%;width:24px;height:24px;margin:0;border-radius:4px;font-size:16px;transform:translateY(-50%)}
+.record-card-topbar .delete-cover-button:hover,.record-card-topbar .wishlist-remove-button:hover{transform:translateY(-50%)}
+.info .artist,.record-meta-row{padding-left:0}
+.spotify-placeholder{flex:1}
+.spotify-placeholder .external-link-icon{margin-left:auto}
+.external-link-icon{position:relative;display:inline-block;width:12px;height:12px;flex:0 0 12px;border:1.4px solid #77777d;border-radius:1px}
+.external-link-icon:before{content:"";position:absolute;right:-2px;top:-3px;width:7px;height:7px;border-top:1.5px solid currentColor;border-right:1.5px solid currentColor}
+.external-link-icon:after{content:"";position:absolute;right:0;top:1px;width:7px;height:1.5px;background:currentColor;transform:rotate(-45deg);transform-origin:right center}
+.grid .record,.grid .add-album-card{border-radius:8px}
+.viewed-user-header{border-radius:9px}
+.copy-details,.marketplace-panel,.tracks-title,#detailTracks{border-radius:8px}
+.tracks-title{border-radius:8px 8px 0 0}
+#detailTracks{border-radius:0 0 8px 8px}
+.search-modal-box,.login-modal,.pressing-modal-box,.tradera-modal-panel,.remove-album-box,.install-help-panel{border-radius:12px}
+.stats-hero,.stats-metric,.stats-panel,.stats-release,.stats-feature{border-radius:10px}
+
+.detail-spotify-link{display:flex;align-items:center;gap:12px;margin-top:22px;padding:18px 0 0;border-top:1px solid var(--groovy-line);color:#fff;text-decoration:none}
+.detail-spotify-mark{width:38px;height:38px;flex:0 0 38px}
+.detail-spotify-mark circle{fill:#1ed760}
+.detail-spotify-mark path{fill:none;stroke:#09090a;stroke-width:1.55;stroke-linecap:round}
+.detail-spotify-link>span:nth-child(2){display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}
+.detail-spotify-link strong{font-size:13px}
+.detail-spotify-link small{color:#85858b;font-size:10px}
+.detail-spotify-link:hover strong{color:#1ed760}
+.album-tracks .marketplace-panel{display:block;grid-column:auto;grid-row:auto;margin-top:16px;border-radius:8px}
+.copy-details[hidden]{display:none!important}
+
+.empty-collection{position:relative;inset:auto;min-height:330px;width:100%;padding:35px 16px;box-sizing:border-box}
+#loginPanel{top:var(--groovy-visual-top,0);bottom:auto;height:var(--groovy-visual-height,100dvh);align-items:center;justify-content:center}
+
+.stats-release{grid-template-columns:92px minmax(0,1fr);border-radius:9px}
+.stats-release-copy{display:flex;min-width:0;flex-direction:column}
+.stats-spotify-link{display:inline-flex;align-items:center;gap:6px;width:max-content;margin-top:9px;color:#d7d7da;font-size:10px;font-weight:650;text-decoration:none}
+.stats-spotify-link:hover{color:#1ed760}
+.stats-spotify-link .spotify-mark{width:18px;height:18px;flex-basis:18px}
+
+@media screen and (min-width:1121px){
+.album-tracks{padding-right:3px}
+}
+
+@media screen and (max-width:760px){
+.library-sort-field{flex:1}
+.library-sort-field>.menu-button{width:100%;height:43px;text-align:left}
+.library-sort-field>.menu-panel{left:0;right:auto;width:100%;min-width:0}
+.record-card-topbar{margin-bottom:3px}
+.record-card-topbar .number{display:inline-flex}
+.delete-cover-button,.wishlist-remove-button{display:none}
+.delete-mode-active .record-card-topbar .delete-cover-button,.delete-mode-active .record-card-topbar .wishlist-remove-button{display:flex}
+.album-detail-main{align-self:end!important;padding:12px!important;border:1px solid var(--groovy-line);border-radius:8px;background:#121214}
+.detail-artist{margin-bottom:5px}
+.detail-meta{margin-top:10px}
+.detail-rating{margin-top:10px}
+.detail-spotify-link{gap:8px;margin-top:12px;padding-top:12px}
+.detail-spotify-mark{width:28px;height:28px;flex-basis:28px}
+.detail-spotify-link small{display:none}
+.album-tracks .marketplace-panel{margin-top:14px}
+.empty-collection{min-height:270px;padding-top:28px}
+#emptyWishlist{z-index:1}
+.stats-release{grid-template-columns:78px minmax(0,1fr)}
+#loginPanel{top:0;height:100vh;height:100lvh;padding:12px}
+.login-modal{width:min(430px,calc(100vw - 24px));max-width:430px;max-height:calc(100lvh - 24px);padding:26px 18px;border:1px solid rgba(255,255,255,.11);border-radius:12px}
+.wishlist-cover-label .wishlist-icon{width:14px;height:14px}
 }

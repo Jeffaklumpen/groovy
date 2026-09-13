@@ -23,7 +23,7 @@
   <meta name="application-name" content="Groovy">
   <meta name="theme-color" content="#121214">
   <title>Groovy – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=64">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=68">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/groovy/icons/apple-touch-icon.png">
   <link rel="manifest" href="/groovy/manifest.webmanifest">
@@ -35,7 +35,7 @@
   <div class="header-main">
     <div class="header-brand">
       <img class="logo" src="/groovy/logo.png" alt="Groovy">
-      <span class="header-tagline">START COLLECTING</span>
+      <span class="header-tagline">TRACK YOUR COLLECTION</span>
     </div>
 
     <nav id="libraryTabs" class="library-tabs" aria-label="Library view" style="display:none;">
@@ -111,7 +111,18 @@
     <button id="mobileAddRecordButton" class="mobile-add-record" type="button" aria-label="Add record">+</button>
   </div>
   <div class="library-toolbar">
-    <label class="library-sort-field"><span>Sort</span><select id="librarySortSelect" aria-label="Sort records"><option value="added">Date added</option><option value="album-asc">Album A–Z</option><option value="album-desc">Album Z–A</option><option value="artist-asc">Artist A–Z</option><option value="artist-desc">Artist Z–A</option><option value="year-desc">Year newest</option><option value="year-asc">Year oldest</option></select></label>
+    <div class="menu-dropdown library-sort-field">
+      <button id="librarySortButton" class="menu-button" type="button" aria-expanded="false" aria-controls="librarySortMenu" aria-haspopup="true">Sort: Date added ▾</button>
+      <div id="librarySortMenu" class="menu-panel">
+        <button type="button" data-sort="added" class="active">Date added</button>
+        <button type="button" data-sort="album-asc">Album A–Z</button>
+        <button type="button" data-sort="album-desc">Album Z–A</button>
+        <button type="button" data-sort="artist-asc">Artist A–Z</button>
+        <button type="button" data-sort="artist-desc">Artist Z–A</button>
+        <button type="button" data-sort="year-desc">Year newest</button>
+        <button type="button" data-sort="year-asc">Year oldest</button>
+      </div>
+    </div>
     <div class="menu-dropdown library-rating-filter">
       <button id="filterButton" class="menu-button" type="button" aria-expanded="false">All ratings ▾</button>
       <div id="filterMenu" class="menu-panel">
@@ -131,7 +142,7 @@
 <nav id="libraryPaginationBottom" class="library-pagination library-pagination-bottom" aria-label="Collection pages"></nav>
 
 <div id="emptyCollection" class="empty-collection">
-  <div class="empty-collection-title">Start your collection</div>
+  <div class="empty-collection-title">Track your collection</div>
   <div class="empty-collection-text">Add your first record and build your collection.</div>
   <button id="emptyCollectionAddButton" type="button">Add record</button>
 </div>
@@ -178,6 +189,11 @@
   </div>
 
   <div class="detail-rating" id="detailRating"></div>
+  <a id="detailSpotifyLink" class="detail-spotify-link" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer">
+    <svg class="detail-spotify-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12"></circle><path d="M5.8 9.1c4.3-1.2 8.7-.8 12.4 1.2M6.7 12.5c3.6-.9 7.2-.5 10.3.9M7.6 15.6c2.8-.6 5.5-.3 7.9.7"></path></svg>
+    <span><strong>Listen on Spotify</strong><small>Open this album on Spotify</small></span>
+    <span class="external-link-icon" aria-hidden="true"></span>
+  </a>
 </div>
 
 <div class="album-tracks">
@@ -194,26 +210,25 @@
   </section>
   <div class="tracks-title">TRACKLIST</div>
   <div id="detailTracks"></div>
+  <section class="marketplace-panel" aria-labelledby="marketplaceTitle">
+    <div class="marketplace-heading">
+      <span class="marketplace-icon" aria-hidden="true"></span>
+      <div><strong id="marketplaceTitle">Marketplace</strong><small>Find this record on trusted marketplaces.</small></div>
+    </div>
+    <div class="marketplace-triggers">
+      <button id="traderaButton" class="tradera-trigger" type="button" aria-haspopup="dialog">
+        <span class="tradera-trigger-mark" aria-hidden="true">T</span>
+        <span id="traderaButtonLabel">Tradera</span>
+        <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
+      </button>
+      <button id="ebayButton" class="tradera-trigger ebay-trigger" type="button" aria-haspopup="dialog" data-enabled="false" hidden>
+        <span class="tradera-trigger-mark ebay-trigger-mark" aria-hidden="true">e</span>
+        <span id="ebayButtonLabel">eBay</span>
+        <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
+      </button>
+    </div>
+  </section>
 </div>
-
-<section class="marketplace-panel" aria-labelledby="marketplaceTitle">
-  <div class="marketplace-heading">
-    <span class="marketplace-icon" aria-hidden="true"></span>
-    <div><strong id="marketplaceTitle">Marketplace</strong><small>Find this record on trusted marketplaces.</small></div>
-  </div>
-  <div class="marketplace-triggers">
-    <button id="traderaButton" class="tradera-trigger" type="button" aria-haspopup="dialog">
-      <span class="tradera-trigger-mark" aria-hidden="true">T</span>
-      <span id="traderaButtonLabel">Tradera</span>
-      <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
-    </button>
-    <button id="ebayButton" class="tradera-trigger ebay-trigger" type="button" aria-haspopup="dialog" data-enabled="false" hidden>
-      <span class="tradera-trigger-mark ebay-trigger-mark" aria-hidden="true">e</span>
-      <span id="ebayButtonLabel">eBay</span>
-      <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
-    </button>
-  </div>
-</section>
 
   </div>
 </div>
@@ -319,71 +334,6 @@
   const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 </script>
 
-<div id="legacyAuthBox" aria-hidden="true">
-
-    <button id="profileButton" type="button" aria-label="Profil">
-        <span id="profileImage"></span>
-    </button>
-
-    <div id="profileMenu">
-    
-        <div class="profile-header">
-            <button id="profileAvatarButton" class="profile-avatar" type="button" aria-label="Byt profilbild">
-                <span id="profileImageMenu"></span>
-            </button>
-    
-            <span id="profileUsername"></span>
-        </div>
-    
-        <input id="profileImageInput" type="file" accept="image/*" style="display:none;">
-
-        <button id="myCollectionButton" class="menu-button" type="button">My Collection</button>
-        <button id="searchUserButton" class="menu-button" type="button">Search User</button>
-      
-        <div class="profile-divider"></div>
-    
-        <button id="logoutButton" type="button">
-            Logout
-        </button>
-    
-    </div>
-
-    <div id="loginPanel">
-    
-        <div class="login-modal">
-    
-            <button id="loginClose" type="button" aria-label="Stäng">×</button>
-    
-            <div class="login-title" id="authTitle">Login</div>
-    
-            <div id="registerFields" style="display:none;">
-    
-                <input id="registerUsername" type="text" placeholder="Användarnamn" autocomplete="username">
-    
-            </div>
-    
-            <input id="loginEmail" type="email" placeholder="E-post" autocomplete="email">
-    
-            <input id="loginPassword" type="password" placeholder="Lösenord" autocomplete="current-password">
-    
-            <button id="loginButton" type="button">
-                Login
-            </button>
-    
-            <button id="registerButton" type="button" style="display:none;">
-                Create account
-            </button>
-    
-            <button id="authSwitchButton" type="button">
-                Create account
-            </button>
-    
-        </div>
-    
-    </div>
-
-</div>
-
 <div id="removeAlbumModal" class="add-album-modal">
     <div class="add-album-box remove-album-box">
         <h2>Remove album?</h2>
@@ -430,9 +380,9 @@
 </div>
 
 <script src="/groovy/js/route-state.js?v=14"></script>
-<script src="/groovy/js/app.js?v=71"></script>
+<script src="/groovy/js/app.js?v=74"></script>
 <script src="/groovy/js/statistics-core.js?v=3"></script>
-<script src="/groovy/js/statistics.js?v=4"></script>
+<script src="/groovy/js/statistics.js?v=6"></script>
 <script src="/groovy/js/pwa.js?v=3"></script>
 </body>
 </html>

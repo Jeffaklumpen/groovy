@@ -38,6 +38,11 @@ const registerUsername=document.getElementById('registerUsername');
 const registerButton=document.getElementById('registerButton');
 const authSwitchButton=document.getElementById('authSwitchButton');
 
+// A blurred header becomes a containing block for fixed descendants in mobile
+// browsers. Put the dialog at body level after capturing its controls, so it
+// remains centered without activating the hidden legacy markup below.
+document.body.appendChild(loginPanel);
+
 let registerMode=false;
 
 loginClose.addEventListener('click',function(){
@@ -374,8 +379,31 @@ function copyDetailsFromRow(item){
     matrixB:item.matrix_runout_b||'',
     matrixC:item.matrix_runout_c||'',
     matrixD:item.matrix_runout_d||'',
+    matrixE:item.matrix_runout_e||'',
+    matrixF:item.matrix_runout_f||'',
+    matrixG:item.matrix_runout_g||'',
+    matrixH:item.matrix_runout_h||'',
     matchStatus:item.pressing_match_status||''
   };
+}
+
+async function hydrateExtendedMatrices(rows,userId){
+  if(!rows||!rows.length)return;
+  try{
+    var response=await supabaseClient.from('collections')
+      .select('id,matrix_runout_e,matrix_runout_f,matrix_runout_g,matrix_runout_h')
+      .eq('user_id',userId);
+    if(response.error)return;
+    var byId={};
+    (response.data||[]).forEach(function(row){byId[String(row.id)]=row;});
+    rows.forEach(function(row){
+      var extra=byId[String(row.id)];
+      if(extra)Object.assign(row,extra);
+    });
+  }catch(error){
+    // The optional columns are introduced by a migration; older databases keep
+    // working with A-D until that migration is applied.
+  }
 }
 
 (function(){
@@ -390,9 +418,13 @@ window.libraryView=GroovyRouteState.libraryViewFromSearch(window.location.search
 
 window.albumIdentityKey=GroovyRouteState.albumIdentityKey;
 
+function emptyRecordSides(){
+  return {A:[],B:[],C:[],D:[],E:[],F:[],G:[],H:[]};
+}
+
 function wishlistRecord(item,index){
   var album=item.albums;
-  var sides={A:[],B:[],C:[],D:[]};
+  var sides=emptyRecordSides();
 
   if(Array.isArray(album.tracks)){
     album.tracks
@@ -544,6 +576,8 @@ window.loadCollection=async function(){
         console.error('Kunde inte hämta samlingen:',collectionError);
         return;
     }
+
+  await hydrateExtendedMatrices(collectionData,user.id);
     
   var albumIds=collectionData.map(function(item){
     return item.albums&&item.albums.id;
@@ -608,12 +642,7 @@ window.loadCollection=async function(){
           ?album.artists.name.replace(/\s*\(\d+\)$/,'')
           :'Okänd artist';
 
-      var sides={
-        A:[],
-        B:[],
-        C:[],
-        D:[]
-      };
+      var sides=emptyRecordSides();
 
       if(Array.isArray(album.tracks)){
         album.tracks
@@ -731,7 +760,8 @@ var RECORDS_PER_PAGE=52;
 var libraryPaginationTop=document.getElementById('libraryPaginationTop');
 var libraryPaginationBottom=document.getElementById('libraryPaginationBottom');
 var librarySearchInput=document.getElementById('librarySearchInput');
-var librarySortSelect=document.getElementById('librarySortSelect');
+var librarySortButton=document.getElementById('librarySortButton');
+var librarySortMenu=document.getElementById('librarySortMenu');
 var mobileAddRecordButton=document.getElementById('mobileAddRecordButton');
 var librarySearchQuery='';
 var librarySort='added';
@@ -1138,7 +1168,8 @@ async function loadEbayListings(record,index){
 function hasCopyDetails(details){
   return !!(details&&(details.mediaCondition||details.sleeveCondition||
     details.discogsReleaseId||details.country||details.year||details.label||
-    details.catalogNumber||details.matrixA||details.matrixB||details.matrixC||details.matrixD));
+    details.catalogNumber||details.matrixA||details.matrixB||details.matrixC||details.matrixD||
+    details.matrixE||details.matrixF||details.matrixG||details.matrixH));
 }
 
 function conditionOptions(selected,includeNoCover){
@@ -1244,12 +1275,16 @@ function renderCopyDetails(index){
     copyDetailItem('Catalog number',details.catalogNumber);
 
   var matrix='';
-  if(details.matrixA||details.matrixB||details.matrixC||details.matrixD){
+  if(details.matrixA||details.matrixB||details.matrixC||details.matrixD||details.matrixE||details.matrixF||details.matrixG||details.matrixH){
     matrix='<section class="advanced-pressing"><div class="advanced-pressing-title">Advanced pressing</div><div class="matrix-list">'+
       (details.matrixA?'<div><span class="copy-detail-label">Matrix / Runout A</span><div class="matrix-value">'+esc(details.matrixA)+'</div></div>':'')+
       (details.matrixB?'<div><span class="copy-detail-label">Matrix / Runout B</span><div class="matrix-value">'+esc(details.matrixB)+'</div></div>':'')+
       (details.matrixC?'<div><span class="copy-detail-label">Matrix / Runout C</span><div class="matrix-value">'+esc(details.matrixC)+'</div></div>':'')+
       (details.matrixD?'<div><span class="copy-detail-label">Matrix / Runout D</span><div class="matrix-value">'+esc(details.matrixD)+'</div></div>':'')+
+      (details.matrixE?'<div><span class="copy-detail-label">Matrix / Runout E</span><div class="matrix-value">'+esc(details.matrixE)+'</div></div>':'')+
+      (details.matrixF?'<div><span class="copy-detail-label">Matrix / Runout F</span><div class="matrix-value">'+esc(details.matrixF)+'</div></div>':'')+
+      (details.matrixG?'<div><span class="copy-detail-label">Matrix / Runout G</span><div class="matrix-value">'+esc(details.matrixG)+'</div></div>':'')+
+      (details.matrixH?'<div><span class="copy-detail-label">Matrix / Runout H</span><div class="matrix-value">'+esc(details.matrixH)+'</div></div>':'')+
     '</div></section>';
   }
 
@@ -1610,12 +1645,12 @@ function matrixChoices(release){
   var identifiers=Array.isArray(release.identifiers)?release.identifiers.filter(function(item){
     return /matrix|runout/i.test(String(item.type||''));
   }):[];
-  var sides={a:[],b:[],c:[],d:[]};
+  var sides={a:[],b:[],c:[],d:[],e:[],f:[],g:[],h:[]};
 
   function detectedSide(description,value){
-    var descriptionMatch=String(description||'').match(/side\s*([a-d])|([a-d])[- ]?side/i);
+    var descriptionMatch=String(description||'').match(/side\s*([a-h])|([a-h])[- ]?side/i);
     if(descriptionMatch)return (descriptionMatch[1]||descriptionMatch[2]).toLowerCase();
-    var valueMatch=String(value||'').match(/(?:^|[\s-])([a-d])(?:\s*[-:]\s*\d|\s*$)/i);
+    var valueMatch=String(value||'').match(/(?:^|[\s-])([a-h])(?:\s*[-:]\s*\d|\s*$)/i);
     return valueMatch?valueMatch[1].toLowerCase():'';
   }
 
@@ -1669,19 +1704,20 @@ async function preparePressingConfirmation(releaseId){
       format:version.format||'Vinyl'
     };
     var matrices=matrixChoices(data||{});
-    var isDoubleLP=vinylDiscCount(data||{})>=2;
+    var matrixSideCount=Math.min(8,Math.max(2,vinylDiscCount(data||{})*2));
+    var matrixSideNames=['a','b','c','d','e','f','g','h'].slice(0,matrixSideCount);
+    var hasMatrixChoices=matrixSideNames.some(function(side){return matrices[side].length;});
+    var matrixFields=matrixSideNames.map(function(side){
+      var upper=side.toUpperCase();
+      return '<label class="pressing-field"><span>Matrix / Runout '+upper+'</span><select id="pressingMatrix'+upper+'">'+simpleOptions(matrices[side])+'</select></label>';
+    }).join('');
 
     pressingMatches.innerHTML='<div class="pressing-match selected">'+
       '<span class="pressing-match-title">Likely match</span>'+
       '<span class="pressing-match-meta">'+esc([selected.country,selected.year,selected.label,selected.catalogNumber].filter(Boolean).join(' · '))+'</span>'+
     '</div>'+
     '<section class="advanced-pressing pressing-advanced"><div class="advanced-pressing-title">Advanced pressing</div>'+
-      (matrices.a.length||matrices.b.length||(isDoubleLP&&(matrices.c.length||matrices.d.length))?'<div class="matrix-list">'+
-        '<label class="pressing-field"><span>Matrix / Runout A</span><select id="pressingMatrixA">'+simpleOptions(matrices.a)+'</select></label>'+
-        '<label class="pressing-field"><span>Matrix / Runout B</span><select id="pressingMatrixB">'+simpleOptions(matrices.b)+'</select></label>'+
-        (isDoubleLP?'<label class="pressing-field"><span>Matrix / Runout C</span><select id="pressingMatrixC">'+simpleOptions(matrices.c)+'</select></label>':'')+
-        (isDoubleLP?'<label class="pressing-field"><span>Matrix / Runout D</span><select id="pressingMatrixD">'+simpleOptions(matrices.d)+'</select></label>':'')+
-      '</div>':'<p class="pressing-help">Discogs has no matrix information for this pressing.</p>')+
+      (hasMatrixChoices?'<div class="matrix-list">'+matrixFields+'</div>':'<p class="pressing-help">Discogs has no matrix information for this pressing.</p>')+
     '</section>'+
     '<button id="savePressingButton" class="copy-action-button primary" type="button">Save this pressing</button>';
 
@@ -1701,6 +1737,10 @@ async function saveSelectedPressing(selected,button){
   var matrixB=document.getElementById('pressingMatrixB');
   var matrixC=document.getElementById('pressingMatrixC');
   var matrixD=document.getElementById('pressingMatrixD');
+  var matrixE=document.getElementById('pressingMatrixE');
+  var matrixF=document.getElementById('pressingMatrixF');
+  var matrixG=document.getElementById('pressingMatrixG');
+  var matrixH=document.getElementById('pressingMatrixH');
   button.disabled=true;
   button.textContent='Saving…';
 
@@ -1727,6 +1767,22 @@ async function saveSelectedPressing(selected,button){
     return;
   }
 
+  var extendedPayload={
+    matrix_runout_e:matrixE&&matrixE.value?matrixE.value:null,
+    matrix_runout_f:matrixF&&matrixF.value?matrixF.value:null,
+    matrix_runout_g:matrixG&&matrixG.value?matrixG.value:null,
+    matrix_runout_h:matrixH&&matrixH.value?matrixH.value:null
+  };
+  var extendedMatricesSaved=true;
+  if(matrixE||matrixF||matrixG||matrixH){
+    var extendedResult=await supabaseClient.from('collections').update(extendedPayload)
+      .eq('id',record[9]).eq('user_id',user.id).select('id');
+    if(extendedResult.error){
+      extendedMatricesSaved=false;
+      console.warn('Extended matrix fields are not available yet:',extendedResult.error);
+    }
+  }
+
   record[11]=record[11]||{};
   record[11].discogsReleaseId=payload.discogs_release_id;
   record[11].country=payload.pressing_country||'';
@@ -1737,11 +1793,15 @@ async function saveSelectedPressing(selected,button){
   record[11].matrixB=payload.matrix_runout_b||'';
   record[11].matrixC=payload.matrix_runout_c||'';
   record[11].matrixD=payload.matrix_runout_d||'';
+  record[11].matrixE=extendedMatricesSaved?(extendedPayload.matrix_runout_e||''):'';
+  record[11].matrixF=extendedMatricesSaved?(extendedPayload.matrix_runout_f||''):'';
+  record[11].matrixG=extendedMatricesSaved?(extendedPayload.matrix_runout_g||''):'';
+  record[11].matrixH=extendedMatricesSaved?(extendedPayload.matrix_runout_h||''):'';
   record[11].matchStatus='discogs';
   closePressingPicker();
   buildGrid();
   renderCopyDetails(pressingAlbumIndex);
-  copyDetailsSaved.textContent='Saved';
+  copyDetailsSaved.textContent=extendedMatricesSaved?'Saved':'Saved A–D · database update needed for E–H';
 }
 
 function closePressingPicker(){
@@ -1763,19 +1823,35 @@ pressingMatrixQuery.addEventListener('keydown',function(event){
 closePressingModalButton.addEventListener('click',closePressingPicker);
 pressingModal.addEventListener('click',function(event){if(event.target===pressingModal)closePressingPicker();});
 
+function spotifyAlbumLink(record){
+  var savedUrl=record&&record[12];
+  if(/^https:\/\/open\.spotify\.com\/album\/[A-Za-z0-9]+(?:[/?#].*)?$/.test(String(savedUrl||''))){
+    return savedUrl;
+  }
+
+  var query=[record&&record[1],record&&record[2]].filter(Boolean).join(' ');
+  return 'https://open.spotify.com/search/'+encodeURIComponent(query);
+}
+
 function recordHTML(record, className){
   var smallSrc=record[6];
   var isWishlist=window.libraryView==='wishlist';
   var copy=record[11]||{};
   var condition=!isWishlist?recordConditionMeta(copy.mediaCondition):null;
   var showPressingPrompt=!isWishlist&&viewedUserId===null&&!condition&&!hasCopyDetails(copy);
+  var removeButton=viewedUserId===null
+    ?(isWishlist
+      ?'<button class="wishlist-remove-button" type="button" aria-label="Remove from wishlist">×</button>'
+      :'<button class="delete-cover-button" type="button" aria-label="Remove record">×</button>')
+    :'';
 
   var html='<article class="record '+(isWishlist?'wishlist-record ':'')+(className||'')+'" draggable="false" data-index="'+(parseInt(record[0],10)-1)+'">'+
+    '<div class="record-card-topbar"><span class="number">'+record[0]+'</span>'+removeButton+'</div>'+
     '<div class="cover-wrapper">'+
       '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
     '</div>'+
     '<div class="info">'+
-      '<div class="record-heading-row"><span class="number desktop-record-number">'+record[0]+'</span><div class="album">'+esc(record[2])+'</div></div>'+
+      '<div class="record-heading-row"><div class="album">'+esc(record[2])+'</div></div>'+
       '<div class="artist">'+esc(record[1])+'</div>'+
       '<div class="record-meta-row"><span class="year">'+esc(record[3])+'</span>'+
       (condition?'<span class="record-condition-badge condition-'+condition.className+'" title="Record condition: '+esc(condition.label)+'">'+esc(copy.mediaCondition)+'</span>':'')+
@@ -1795,11 +1871,7 @@ function recordHTML(record, className){
       ?'<button class="move-to-collection-button" type="button"><span class="record-icon" aria-hidden="true"></span>Add to collection</button>'
       :'')+
     '<div class="record-card-footer">'+
-      '<span class="spotify-placeholder" aria-disabled="true"><svg class="spotify-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12"></circle><path d="M5.8 9.1c4.3-1.2 8.7-.8 12.4 1.2M6.7 12.5c3.6-.9 7.2-.5 10.3.9M7.6 15.6c2.8-.6 5.5-.3 7.9.7"></path></svg><span>Listen on Spotify</span></span>'+
-      '<span class="number mobile-footer-number" aria-hidden="true">'+record[0]+'</span>'+
-      (viewedUserId===null&&isWishlist
-        ?'<button class="wishlist-remove-button" type="button" aria-label="Remove from wishlist">×</button>'
-        :(viewedUserId===null?'<button class="delete-cover-button" type="button" aria-label="Remove record">×</button>':''))+
+      '<a class="spotify-placeholder spotify-link" href="'+esc(spotifyAlbumLink(record))+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+esc(record[2])+' by '+esc(record[1])+' on Spotify"><svg class="spotify-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12"></circle><path d="M5.8 9.1c4.3-1.2 8.7-.8 12.4 1.2M6.7 12.5c3.6-.9 7.2-.5 10.3.9M7.6 15.6c2.8-.6 5.5-.3 7.9.7"></path></svg><span>Listen on Spotify</span><span class="external-link-icon" aria-hidden="true"></span></a>'+
     '</div>'+
   '</article>';
 
@@ -1849,6 +1921,9 @@ function openAlbum(index){
 
   detailCover.src=record[6];
   detailCover.alt=record[1]+' - '+record[2];
+  var detailSpotifyLink=document.getElementById('detailSpotifyLink');
+  detailSpotifyLink.href=spotifyAlbumLink(record);
+  detailSpotifyLink.setAttribute('aria-label','Find '+record[2]+' by '+record[1]+' on Spotify');
 
   var rating=parseInt(record[5],10);
   if(isNaN(rating))rating=0;
@@ -1930,7 +2005,7 @@ function openAlbum(index){
   }
 
   var sides=record[7]||{};
-  var sideNames=['A','B','C','D'];
+  var sideNames=['A','B','C','D','E','F','G','H'];
   var html='';
 
   for(i=0;i<sideNames.length;i++){
@@ -2334,6 +2409,15 @@ function attachAlbumClicks(){
 
   collection.addEventListener('click',async function(event){
     var target=event.target||event.srcElement;
+
+    var spotifyLink=target.closest
+      ?target.closest('.spotify-link')
+      :null;
+
+    if(spotifyLink){
+      event.stopPropagation();
+      return;
+    }
 
     var wishlistRemoveButton=target.closest
       ?target.closest('.wishlist-remove-button')
@@ -2892,7 +2976,7 @@ function enableGridSorting(){
       if(pointerId!==null)return;
       if(event.button!==undefined&&event.button!==0)return;
       if(event.pointerType==='touch')return;
-      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button'))return;
+      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button,.spotify-link'))return;
 
       pointerId=event.pointerId;
       pointerCard=this;
@@ -2940,7 +3024,7 @@ function enableGridSorting(){
 
     cards[i].addEventListener('touchstart',function(event){
       if(touchId!==null||!event.changedTouches.length)return;
-      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button'))return;
+      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button,.spotify-link'))return;
 
       var touch=event.changedTouches[0];
       touchId=touch.identifier;
@@ -3464,6 +3548,8 @@ filterButton.onclick=function(event){
   event.stopPropagation();
   filterMenu.classList.toggle('open');
   filterButton.setAttribute('aria-expanded',filterMenu.classList.contains('open')?'true':'false');
+  librarySortMenu.classList.remove('open');
+  librarySortButton.setAttribute('aria-expanded','false');
 };
 
 librarySearchInput.addEventListener('input',function(){
@@ -3472,10 +3558,28 @@ librarySearchInput.addEventListener('input',function(){
   buildGrid();
 });
 
-librarySortSelect.addEventListener('change',function(){
-  librarySort=this.value||'added';
-  libraryPage=1;
-  buildGrid();
+librarySortButton.addEventListener('click',function(event){
+  event.stopPropagation();
+  var open=!librarySortMenu.classList.contains('open');
+  librarySortMenu.classList.toggle('open',open);
+  librarySortButton.setAttribute('aria-expanded',open?'true':'false');
+  filterMenu.classList.remove('open');
+  filterButton.setAttribute('aria-expanded','false');
+});
+
+librarySortMenu.querySelectorAll('button[data-sort]').forEach(function(button){
+  button.addEventListener('click',function(event){
+    event.stopPropagation();
+    librarySort=button.getAttribute('data-sort')||'added';
+    libraryPage=1;
+    librarySortMenu.querySelectorAll('button[data-sort]').forEach(function(item){
+      item.classList.toggle('active',item===button);
+    });
+    librarySortButton.textContent='Sort: '+button.textContent+' ▾';
+    librarySortMenu.classList.remove('open');
+    librarySortButton.setAttribute('aria-expanded','false');
+    buildGrid();
+  });
 });
 
 mobileAddRecordButton.addEventListener('click',function(){
@@ -3510,6 +3614,8 @@ for(var f=0;f<filterButtons.length;f++){
 document.addEventListener('click',function(){
   filterMenu.classList.remove('open');
   filterButton.setAttribute('aria-expanded','false');
+  librarySortMenu.classList.remove('open');
+  librarySortButton.setAttribute('aria-expanded','false');
 });
 
 var imageLoadScheduled=false;
@@ -3897,6 +4003,18 @@ document.addEventListener('click',function(event){
 
 let searchTimer=null;
 
+function openAddAlbumSearch(){
+    addAlbumModal.style.display='flex';
+    addAlbumModal.scrollTop=0;
+    window.requestAnimationFrame(function(){
+        try{
+            albumSearchInput.focus({preventScroll:true});
+        }catch(error){
+            albumSearchInput.focus();
+        }
+    });
+}
+
 addAlbumButton.addEventListener('click',async function(event){
     if(viewedUserId!==null)return;
     event.preventDefault();
@@ -3910,8 +4028,7 @@ addAlbumButton.addEventListener('click',async function(event){
         return;
     }
 
-    addAlbumModal.style.display='flex';
-    albumSearchInput.focus();
+    openAddAlbumSearch();
 });
 
 const emptyCollectionAddButton=document.getElementById('emptyCollectionAddButton');
@@ -3931,7 +4048,7 @@ emptyCollectionAddButton.addEventListener('click',async function(event){
         return;
     }
 
-    addAlbumModal.style.display='flex';
+    openAddAlbumSearch();
 });
 
 loginToViewCollectionButton.addEventListener('click',function(event){
@@ -4084,6 +4201,8 @@ async function loadOtherUserCollection(userId){
         return;
     }
 
+    await hydrateExtendedMatrices(data,userId);
+
     var albumIds=data
         .map(function(item){
             return item.albums&&item.albums.id;
@@ -4150,12 +4269,7 @@ async function loadOtherUserCollection(userId){
                     ?album.artists.name.replace(/\s*\(\d+\)$/,'')
                     :'Okänd artist';
 
-            var sides={
-                A:[],
-                B:[],
-                C:[],
-                D:[]
-            };
+            var sides=emptyRecordSides();
 
             if(Array.isArray(album.tracks)){
                 album.tracks
@@ -4843,7 +4957,7 @@ function discogsTrackRows(albumId,tracklist){
     });
 
     const hasDiscSides=rawTracks.some(function(track){
-        return /^[A-D]\s*\d/.test(String(track.position||'').toUpperCase());
+        return /^[A-H]\s*\d/.test(String(track.position||'').toUpperCase());
     });
 
     return rawTracks.map(function(track,index){
@@ -4920,7 +5034,7 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,previewCoverUr
         
         const hasDiscSides=tracklist.some(function(track){
             const position=String(track.position||'').toUpperCase();
-            return /^[A-D]\d/.test(position);
+            return /^[A-H]\d/.test(position);
         });
         
         if(!hasDiscSides){

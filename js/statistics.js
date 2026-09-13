@@ -17,6 +17,14 @@
     return value||'/groovy/avatar_placeholder.png';
   }
 
+  function spotifySearchUrl(release){
+    return 'https://open.spotify.com/search/'+encodeURIComponent([release.artist,release.title].filter(Boolean).join(' '));
+  }
+
+  function spotifyMark(){
+    return '<svg class="spotify-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12"></circle><path d="M5.8 9.1c4.3-1.2 8.7-.8 12.4 1.2M6.7 12.5c3.6-.9 7.2-.5 10.3.9M7.6 15.6c2.8-.6 5.5-.3 7.9.7"></path></svg>';
+  }
+
   function hideStatistics(){
     requestVersion++;
     page.classList.remove('visible');
@@ -59,7 +67,7 @@
 
   function releaseCard(label,release){
     if(!release)return '<article class="stats-release stats-release-empty"><span>'+label+'</span><strong>No dated records yet</strong></article>';
-    return '<article class="stats-release"><img src="'+escapeHtml(coverUrl(release.cover))+'" alt="" onerror="this.src=\'/groovy/avatar_placeholder.png\'"><div><span>'+label+'</span><strong>'+escapeHtml(release.title)+'</strong><small>'+escapeHtml(release.artist)+' · '+release.year+'</small></div></article>';
+    return '<article class="stats-release"><img src="'+escapeHtml(coverUrl(release.cover))+'" alt="" onerror="this.src=\'/groovy/avatar_placeholder.png\'"><div class="stats-release-copy"><span>'+label+'</span><strong>'+escapeHtml(release.title)+'</strong><small>'+escapeHtml(release.artist)+' · '+release.year+'</small><a class="stats-spotify-link" href="'+escapeHtml(spotifySearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(release.title)+' by '+escapeHtml(release.artist)+' on Spotify">'+spotifyMark()+'<span>Listen on Spotify</span></a></div></article>';
   }
 
   function render(profile,stats){

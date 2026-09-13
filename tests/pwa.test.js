@@ -36,3 +36,31 @@ test('long press enters delete mode before movement starts sorting',function(){
   assert.match(app,/touchLongPressActive&&\(movedX>8\|\|movedY>8\)[\s\S]*startPointerDrag/);
   assert.match(app,/\.delete-cover-button,\.wishlist-remove-button,#removeAlbumModal/);
 });
+
+test('library controls and Spotify links remain separate card actions',function(){
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const statistics=fs.readFileSync(path.join(root,'js','statistics.js'),'utf8');
+  assert.match(html,/id="librarySortMenu"/);
+  assert.match(html,/id="detailSpotifyLink"/);
+  assert.match(app,/target\.closest\('\.spotify-link'\)/);
+  assert.match(statistics,/class="stats-spotify-link"/);
+});
+
+test('record rendering supports four LP track sides',function(){
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const migration=fs.readFileSync(path.join(root,'supabase','migrations','20260913010000_add_four_lp_matrices.sql'),'utf8');
+  assert.match(app,/return \{A:\[\],B:\[\],C:\[\],D:\[\],E:\[\],F:\[\],G:\[\],H:\[\]\}/);
+  assert.match(app,/var sideNames=\['A','B','C','D','E','F','G','H'\]/);
+  assert.match(app,/\^\[A-H\]/);
+  assert.match(app,/matrixE:item\.matrix_runout_e/);
+  assert.match(migration,/matrix_runout_h text/);
+});
+
+test('login and empty collection actions use the shared viewport-safe flow',function(){
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  assert.match(html,/Track your collection/);
+  assert.match(app,/document\.body\.appendChild\(loginPanel\)/);
+  assert.equal((app.match(/openAddAlbumSearch\(\);/g)||[]).length,2);
+});
