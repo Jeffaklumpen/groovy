@@ -19,7 +19,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>Groovy – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=44">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=47">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
 </head>
 
@@ -39,7 +39,7 @@
 
     <div class="header-tools">
       <div class="header-controls">
-        <button id="addAlbumButton" class="add-album-button" type="button">Add Album</button>
+        <button id="addAlbumButton" class="add-album-button" type="button">Add Record</button>
         <button id="deleteModeButton" class="delete-mode-button" type="button" aria-label="Ta bort album">🗑</button>
 
         <div class="menu-dropdown">
@@ -95,12 +95,14 @@
   <button id="wishlistTabButton" class="library-tab" type="button"><span class="wishlist-icon" aria-hidden="true"></span>Wishlist</button>
 </nav>
 
+<nav id="libraryPaginationTop" class="library-pagination library-pagination-top" aria-label="Collection pages"></nav>
 <main id="collection" class="collection"></main>
+<nav id="libraryPaginationBottom" class="library-pagination library-pagination-bottom" aria-label="Collection pages"></nav>
 
 <div id="emptyCollection" class="empty-collection">
   <div class="empty-collection-title">Start your collection</div>
   <div class="empty-collection-text">Add your first record and build your collection.</div>
-  <button id="emptyCollectionAddButton" type="button">Add album</button>
+  <button id="emptyCollectionAddButton" type="button">Add record</button>
 </div>
 
 <div id="loginToViewCollection" class="empty-collection" style="display:none;">
@@ -135,7 +137,7 @@
 </div>
 
 <div class="album-detail-main">
-  <div class="detail-number" id="detailNumber"></div>
+  <div class="detail-number" id="detailNumber" hidden></div>
   <div class="detail-artist" id="detailArtist"></div>
   <div class="detail-album" id="detailAlbum"></div>
 
@@ -173,14 +175,16 @@
 
 <div id="traderaModal" class="tradera-modal" role="dialog" aria-modal="true" aria-labelledby="traderaModalTitle" aria-hidden="true">
   <div class="tradera-modal-panel">
-    <button id="closeTraderaModal" class="tradera-modal-close" type="button" aria-label="Close">×</button>
-    <div class="tradera-modal-heading">
-      <span class="search-modal-kicker">Available now</span>
-      <h2 id="traderaModalTitle">Listings on Tradera</h2>
-      <p id="traderaModalSubtitle"></p>
+    <div class="tradera-modal-scroll">
+      <button id="closeTraderaModal" class="tradera-modal-close" type="button" aria-label="Close">×</button>
+      <div class="tradera-modal-heading">
+        <span class="search-modal-kicker">Available now</span>
+        <h2 id="traderaModalTitle">Listings on Tradera</h2>
+        <p id="traderaModalSubtitle"></p>
+      </div>
+      <div id="traderaListingsStatus" class="tradera-listings-status" aria-live="polite"></div>
+      <div id="traderaListingsGrid" class="tradera-listings-grid"></div>
     </div>
-    <div id="traderaListingsStatus" class="tradera-listings-status" aria-live="polite"></div>
-    <div id="traderaListingsGrid" class="tradera-listings-grid"></div>
   </div>
 </div>
 
@@ -337,6 +341,6 @@
 </button>
 
 <script src="/groovy/js/route-state.js?v=13"></script>
-<script src="/groovy/js/app.js?v=54"></script>
+<script src="/groovy/js/app.js?v=58"></script>
 </body>
 </html>

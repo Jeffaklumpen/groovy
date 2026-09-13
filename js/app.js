@@ -107,6 +107,7 @@ authSwitchButton.addEventListener('click',function(){
 async function updateAuthUI(){
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
+    syncUserPresence(user);
 
     if(user){
         profileButton.style.display='flex';
@@ -464,6 +465,7 @@ window.loadWishlist=async function(userId){
 
   document.getElementById('collectionCount').textContent=records.length+' RECORDS ON WISHLIST';
   buildGrid();
+  refreshLibraryStyles(data,loadVersion);
 }
 
 window.loadCollection=async function(){
@@ -650,6 +652,7 @@ window.loadCollection=async function(){
 
   document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';
   buildGrid();
+  refreshLibraryStyles(collectionData,loadVersion);
 }
 
 var collection=document.getElementById('collection');
@@ -711,6 +714,11 @@ var traderaAlbumIndex=-1;
 var traderaRequestVersion=0;
 var traderaListings=[];
 var traderaListingCache=new Map();
+var libraryPage=1;
+var RECORDS_PER_PAGE=52;
+var libraryPaginationTop=document.getElementById('libraryPaginationTop');
+var libraryPaginationBottom=document.getElementById('libraryPaginationBottom');
+var refreshedStyleMasters=new Set();
 
 function esc(value){
   return String(value)
@@ -718,6 +726,90 @@ function esc(value){
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;');
+}
+
+function discogsStyleLabel(data){
+  var values=data&&Array.isArray(data.styles)&&data.styles.length
+    ?data.styles
+    :(data&&Array.isArray(data.genres)?data.genres:[]);
+  var seen={};
+  return values.map(function(value){return String(value||'').trim();})
+    .filter(function(value){
+      var key=value.toLocaleLowerCase();
+      if(!value||seen[key])return false;
+      seen[key]=true;
+      return true;
+    })
+    .slice(0,2)
+    .join(' · ');
+}
+window.discogsStyleLabel=discogsStyleLabel;
+
+async function refreshLibraryStyles(rows,loadVersion){
+  var styleTableAtLoad=window.libraryView==='wishlist'?'wishlists':'collections';
+  var canPersistStyles=viewedUserId===null;
+  var candidates=(rows||[]).filter(function(item){
+    var album=item&&item.albums;
+    var masterId=album&&String(album.discogs_master_id||'');
+    var refreshKey=styleTableAtLoad+':'+String(item&&item.id||'');
+    if(!album||!masterId||!item.id||refreshedStyleMasters.has(refreshKey))return false;
+
+    var storageKey='groovy-style-v2-refresh-'+refreshKey;
+    try{
+      var refreshedAt=parseInt(localStorage.getItem(storageKey),10)||0;
+      if(Date.now()-refreshedAt<30*24*60*60*1000){
+        refreshedStyleMasters.add(refreshKey);
+        return false;
+      }
+    }catch(error){}
+
+    refreshedStyleMasters.add(refreshKey);
+    return true;
+  });
+
+  if(!candidates.length)return;
+  var changed=false;
+  var nextIndex=0;
+
+  async function refreshNext(){
+    while(nextIndex<candidates.length){
+      var item=candidates[nextIndex++];
+      var album=item.albums;
+      var masterId=String(album.discogs_master_id||'');
+      var refreshKey=styleTableAtLoad+':'+String(item.id);
+      var shouldCache=true;
+      try{
+        var response=await supabaseClient.functions.invoke('discogs-search',{body:{action:'master',masterId:masterId}});
+        if(response.error)throw response.error;
+        var style=window.discogsStyleLabel(response.data||{});
+        if(style){
+          if(style!==item.discogs_style&&canPersistStyles){
+            var updateResult=await supabaseClient.from(styleTableAtLoad)
+              .update({discogs_style:style})
+              .eq('id',item.id);
+            if(updateResult.error){
+              shouldCache=false;
+              console.warn('Could not refresh Discogs styles:',updateResult.error);
+            }
+            else item.discogs_style=style;
+          }
+          if(loadVersion===window.collectionLoadVersion){
+            records.forEach(function(record){
+              if(record[8]===album.id&&record[4]!==style){record[4]=style;changed=true;}
+            });
+          }
+        }
+        if(shouldCache){
+          try{localStorage.setItem('groovy-style-v2-refresh-'+refreshKey,String(Date.now()));}catch(error){}
+        }
+      }catch(error){
+        console.warn('Could not load updated Discogs styles for '+masterId+':',error);
+      }
+    }
+  }
+
+  await Promise.all([refreshNext(),refreshNext(),refreshNext()]);
+  if(changed&&loadVersion===window.collectionLoadVersion)buildGrid();
 }
 
 function safeExternalUrl(value){
@@ -732,6 +824,29 @@ function safeExternalUrl(value){
 function traderaCacheKey(record){
   return String(record&&record[1]||'').trim().toLowerCase()+'|'+
     String(record&&record[2]||'').trim().toLowerCase();
+}
+
+function normalizeTraderaIdentity(value){
+  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim();
+}
+
+function isRelevantTraderaListing(listing,record){
+  var artist=normalizeTraderaIdentity(record&&record[1]);
+  var album=normalizeTraderaIdentity(record&&record[2]);
+  if(!artist||artist!==album)return true;
+
+  var title=normalizeTraderaIdentity(listing&&listing.title);
+  var escaped=artist.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+');
+  var remainder=title
+    .replace(new RegExp('\\b'+escaped+'\\b'),' ')
+    .replace(new RegExp('\\b'+escaped+'\\b'),' ')
+    .replace(/\b(?:self titled|debut|album|vinyl|skiva|gatefold|lp|\d+x?lp|(?:180|200)g)\b/g,' ')
+    .replace(/\b(?:19|20)\d{2}\b/g,' ')
+    .replace(/\b(?:sweden|swedish|sverige|germany|german|canada|canadian|uk|us|usa|eu|press|pressing|first|1st|original|mono|stereo|sealed|new|ny)\b/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+  return !remainder;
 }
 
 function setTraderaButtonState(state,count){
@@ -865,7 +980,7 @@ async function loadTraderaListings(record,index){
     if(response.error)throw response.error;
 
     traderaListings=response.data&&Array.isArray(response.data.listings)
-      ?response.data.listings
+      ?response.data.listings.filter(function(listing){return isRelevantTraderaListing(listing,record);})
       :[];
     traderaListingCache.set(key,{savedAt:Date.now(),listings:traderaListings});
     setTraderaButtonState(traderaListings.length?'ready':'empty',traderaListings.length);
@@ -928,9 +1043,15 @@ function copyDetailItem(label,value){
 
 function copySummaryText(details){
   var values=[details.country,details.year];
-  if(details.mediaCondition)values.push('Record '+details.mediaCondition);
-  else if(details.sleeveCondition)values.push('Sleeve '+details.sleeveCondition);
-  return values.filter(Boolean).join(' · ')||'Add details';
+  var summary=values.filter(Boolean).join(' · ');
+  return summary||(details.mediaCondition?'':'Add details');
+}
+
+function conditionChipHTML(value){
+  var condition=recordConditionMeta(value);
+  return condition
+    ?'<span class="copy-condition-chip condition-'+condition.className+'" title="Record condition: '+esc(condition.label)+'">'+esc(value)+'</span>'
+    :'';
 }
 
 function setCopyDetailsExpanded(expanded){
@@ -971,10 +1092,11 @@ function renderCopyDetails(index){
     copyDetailsRecordKey=recordKey;
     copyDetailsExpanded=!hasCopyDetails(details);
   }
-  copyDetailsSummary.textContent=copySummaryText(details);
+  var compactText=copySummaryText(details);
+  copyDetailsSummary.innerHTML=(compactText?'<span class="copy-summary-text">'+esc(compactText)+'</span>':'')+conditionChipHTML(details.mediaCondition);
   var chips='';
 
-  if(details.mediaCondition)chips+='<span class="copy-summary-chip accent">Record '+esc(details.mediaCondition)+'</span>';
+  if(details.mediaCondition)chips+=conditionChipHTML(details.mediaCondition);
   if(details.sleeveCondition)chips+='<span class="copy-summary-chip">Sleeve '+esc(details.sleeveCondition)+'</span>';
 
   var info=copyDetailItem('Country',details.country)+
@@ -1478,6 +1600,7 @@ async function saveSelectedPressing(selected,button){
   record[11].matrixD=payload.matrix_runout_d||'';
   record[11].matchStatus='discogs';
   closePressingPicker();
+  buildGrid();
   renderCopyDetails(pressingAlbumIndex);
   copyDetailsSaved.textContent='Saved';
 }
@@ -1573,7 +1696,8 @@ function openAlbum(index){
   loadTraderaListings(record,index);
   copyDetailsRecordKey='';
   var isWishlist=window.libraryView==='wishlist';
-  detailNumber.innerHTML=isWishlist?'Wishlisted':esc(record[0]);
+  detailNumber.hidden=!isWishlist;
+  detailNumber.textContent=isWishlist?'Wishlisted':'';
   detailArtist.innerHTML=esc(record[1]);
   detailAlbum.innerHTML=esc(record[2]);
   detailYear.innerHTML=esc(record[3]);
@@ -1673,7 +1797,7 @@ function openAlbum(index){
     if(!tracks||!tracks.length)continue;
 
     html+='<section class="track-side">'+
-      '<div class="side-title"><span>SIDA</span>'+side+'</div>'+
+      '<div class="side-title"><span>SIDE</span>'+side+'</div>'+
       '<ol class="tracks-list">';
 
     for(var j=0;j<tracks.length;j++){
@@ -1946,15 +2070,14 @@ async function deleteCollectionAlbum(index){
     return;
   }
 
-  var albumId=record[8];
-
-  var {error}=await supabaseClient
+  var {data:deletedRows,error}=await supabaseClient
     .from('collections')
     .delete()
     .eq('user_id',user.id)
-    .eq('album_id',albumId);
+    .eq('id',record[9])
+    .select('id');
 
-  if(error){
+  if(error||!deletedRows||!deletedRows.length){
     console.error('Kunde inte ta bort albumet:',error);
     alert('Kunde inte ta bort albumet.');
     return;
@@ -1974,13 +2097,14 @@ async function deleteWishlistAlbum(index){
     return;
   }
 
-  var {error}=await supabaseClient
+  var {data:deletedRows,error}=await supabaseClient
     .from('wishlists')
     .delete()
     .eq('id',record[9])
-    .eq('user_id',user.id);
+    .eq('user_id',user.id)
+    .select('id');
 
-  if(error){
+  if(error||!deletedRows||!deletedRows.length){
     console.error('Kunde inte ta bort albumet från önskelistan:',error);
     alert('Kunde inte ta bort albumet från önskelistan.');
     return;
@@ -2379,26 +2503,26 @@ function enableGridSorting(){
 
   function finishDrag(){
     var orderedCards=collection.querySelectorAll('.record');
-    var newRecords=[];
+    var reorderedPage=[];
 
     for(var i=0;i<orderedCards.length;i++){
       var index=parseInt(orderedCards[i].getAttribute('data-index'),10);
       var record=records[index];
 
       if(!record)continue;
-
-      record[0]=i+1;
-
-      var numberElement=orderedCards[i].querySelector('.number');
-
-      if(numberElement){
-        numberElement.textContent=i+1;
-      }
-
-      newRecords.push(record);
+      reorderedPage.push(record);
     }
 
-    records=newRecords;
+    var isWishlist=window.libraryView==='wishlist';
+    var visibleIndexes=[];
+    records.forEach(function(record,index){
+      var rating=parseInt(record[5],10);
+      if(isWishlist||selectedRating==='all'||rating===parseInt(selectedRating,10))visibleIndexes.push(index);
+    });
+    var pageStart=(libraryPage-1)*RECORDS_PER_PAGE;
+    var pageIndexes=visibleIndexes.slice(pageStart,pageStart+reorderedPage.length);
+    pageIndexes.forEach(function(recordIndex,index){records[recordIndex]=reorderedPage[index];});
+    records.forEach(function(record,index){record[0]=index+1;});
 
     return saveGridOrder();
   }
@@ -2621,7 +2745,7 @@ function enableGridSorting(){
       if(pointerId!==null)return;
       if(event.button!==undefined&&event.button!==0)return;
       if(event.pointerType==='touch')return;
-      if(event.target.closest&&event.target.closest('.delete-cover-button'))return;
+      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button'))return;
 
       pointerId=event.pointerId;
       pointerCard=this;
@@ -2669,7 +2793,7 @@ function enableGridSorting(){
 
     cards[i].addEventListener('touchstart',function(event){
       if(touchId!==null||!event.changedTouches.length)return;
-      if(event.target.closest&&event.target.closest('.delete-cover-button'))return;
+      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button'))return;
 
       var touch=event.changedTouches[0];
       touchId=touch.identifier;
@@ -2826,17 +2950,59 @@ async function saveGridOrder(){
 function addCoverTilt(){
   if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches)return;
 
-  document.querySelectorAll('.record').forEach(function(cover){
+  document.querySelectorAll('.record .cover-wrapper').forEach(function(cover){
     cover.addEventListener('mousemove',function(event){
+      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button'))return;
       var rect=cover.getBoundingClientRect();
       var x=(event.clientX-rect.left)/rect.width-.5;
       var y=(event.clientY-rect.top)/rect.height-.5;
 
-      cover.querySelector('.cover-wrapper').style.transform='perspective(800px) rotateX('+(-y*10)+'deg) rotateY('+(x*10)+'deg)';
+      cover.style.transform='perspective(800px) rotateX('+(-y*10)+'deg) rotateY('+(x*10)+'deg) scale(1.015)';
     });
 
     cover.addEventListener('mouseleave',function(){
-      cover.querySelector('.cover-wrapper').style.transform='';
+      cover.style.transform='';
+    });
+  });
+}
+
+function paginationItems(current,total){
+  if(total<=7)return Array.from({length:total},function(_,index){return index+1;});
+  var values=[1,total,current-1,current,current+1]
+    .filter(function(page){return page>=1&&page<=total;})
+    .sort(function(a,b){return a-b;});
+  var unique=values.filter(function(page,index){return !index||page!==values[index-1];});
+  var items=[];
+  unique.forEach(function(page,index){
+    if(index&&page-unique[index-1]>1)items.push('…');
+    items.push(page);
+  });
+  return items;
+}
+
+function renderLibraryPagination(totalItems){
+  var totalPages=Math.max(1,Math.ceil(totalItems/RECORDS_PER_PAGE));
+  libraryPage=Math.max(1,Math.min(libraryPage,totalPages));
+  var targets=[libraryPaginationTop,libraryPaginationBottom];
+
+  targets.forEach(function(target){
+    if(totalPages<=1){target.innerHTML='';target.hidden=true;return;}
+    target.hidden=false;
+    target.innerHTML='<button type="button" data-page="'+(libraryPage-1)+'" aria-label="Previous page"'+(libraryPage===1?' disabled':'')+'>‹</button>'+
+      paginationItems(libraryPage,totalPages).map(function(item){
+        if(item==='…')return '<span class="pagination-ellipsis" aria-hidden="true">…</span>';
+        return '<button type="button" data-page="'+item+'"'+(item===libraryPage?' class="active" aria-current="page"':'')+'>'+item+'</button>';
+      }).join('')+
+      '<button type="button" data-page="'+(libraryPage+1)+'" aria-label="Next page"'+(libraryPage===totalPages?' disabled':'')+'>›</button>';
+
+    target.querySelectorAll('button[data-page]').forEach(function(button){
+      button.addEventListener('click',function(){
+        var page=parseInt(button.getAttribute('data-page'),10);
+        if(isNaN(page)||page<1||page>totalPages||page===libraryPage)return;
+        libraryPage=page;
+        buildGrid();
+        window.scrollTo({top:0,behavior:'smooth'});
+      });
     });
   });
 }
@@ -2869,23 +3035,23 @@ window.buildGrid=function(){
   document.getElementById('collectionTabButton').classList.toggle('active',!isWishlist);
   document.getElementById('wishlistTabButton').classList.toggle('active',isWishlist);
   document.getElementById('addAlbumButton').style.display=isViewingProfile?'none':'';
-  document.getElementById('deleteModeButton').style.display=(isViewingProfile||isWishlist)?'none':'';
+  document.getElementById('deleteModeButton').style.display=isViewingProfile?'none':'';
   document.getElementById('filterButton').parentElement.style.display=isWishlist?'none':'';
 
-  var html='';
+  var visibleRecords=records.filter(function(record){
+    var rating=parseInt(record[5],10);
+    return isWishlist||selectedRating==='all'||rating===parseInt(selectedRating,10);
+  });
+  renderLibraryPagination(visibleRecords.length);
+  var totalPages=Math.max(1,Math.ceil(visibleRecords.length/RECORDS_PER_PAGE));
+  var pageStart=(libraryPage-1)*RECORDS_PER_PAGE;
+  var pageRecords=visibleRecords.slice(pageStart,pageStart+RECORDS_PER_PAGE);
+  var html=pageRecords.map(function(record){return recordHTML(record,'');}).join('');
 
-  for(var i=0;i<records.length;i++){
-    var rating=parseInt(records[i][5],10);
-
-    if(isWishlist||selectedRating==='all'||rating===parseInt(selectedRating,10)){
-      html+=recordHTML(records[i],'');
-    }
-  }
-
-  if(canShowAddAlbumCard){
-    html+='<button class="add-album-card" type="button" aria-label="Add album">'+
+  if(canShowAddAlbumCard&&libraryPage===totalPages){
+    html+='<button class="add-album-card" type="button" aria-label="Add record">'+
       '<span class="add-album-card-icon" aria-hidden="true">+</span>'+
-      '<span class="add-album-card-title">Add Album</span>'+
+      '<span class="add-album-card-title">Add Record</span>'+
       '<span class="add-album-card-text">'+(isWishlist?'The wishlist must grow':'The collection must grow')+'</span>'+
     '</button>';
   }
@@ -3137,6 +3303,7 @@ for(var f=0;f<filterButtons.length;f++){
     filterButton.setAttribute('aria-expanded','false');
 
     activeIndex=0;
+    libraryPage=1;
 
     buildGrid();
   };
@@ -3177,6 +3344,65 @@ const userSearchInput=document.getElementById('userSearchInput');
 const userSearchResults=document.getElementById('userSearchResults');
 
 let userSearchTimer=null;
+var userPresenceChannel=null;
+var presenceUserId='';
+var onlineUserIds=new Set();
+
+function refreshUserPresenceDots(){
+    document.querySelectorAll('.user-presence-dot[data-user-id]').forEach(function(dot){
+        const isOnline=onlineUserIds.has(dot.dataset.userId);
+        dot.classList.toggle('online',isOnline);
+        dot.setAttribute('aria-label',isOnline?'Online':'Offline');
+        dot.title=isOnline?'Online now':'';
+    });
+}
+
+function addUserPresenceDot(avatar,userId){
+    const dot=document.createElement('span');
+    dot.className='user-presence-dot';
+    dot.dataset.userId=String(userId||'');
+    avatar.appendChild(dot);
+    refreshUserPresenceDots();
+}
+
+async function syncUserPresence(user){
+    const nextUserId=user&&user.id?String(user.id):'';
+    if(nextUserId===presenceUserId&&userPresenceChannel)return;
+
+    const previousChannel=userPresenceChannel;
+    userPresenceChannel=null;
+    presenceUserId=nextUserId;
+    onlineUserIds=new Set();
+    refreshUserPresenceDots();
+
+    if(previousChannel){
+        try{await previousChannel.untrack();}catch(error){}
+        try{await supabaseClient.removeChannel(previousChannel);}catch(error){}
+    }
+
+    if(!nextUserId)return;
+
+    const channel=supabaseClient.channel('groovy-online-users',{
+        config:{presence:{key:nextUserId}}
+    });
+    userPresenceChannel=channel;
+
+    channel.on('presence',{event:'sync'},function(){
+        if(channel!==userPresenceChannel)return;
+        const presenceState=channel.presenceState();
+        onlineUserIds=new Set(Object.keys(presenceState||{}));
+        refreshUserPresenceDots();
+    });
+
+    channel.subscribe(async function(status){
+        if(status!=='SUBSCRIBED'||channel!==userPresenceChannel)return;
+        try{
+            await channel.track({user_id:nextUserId,online_at:new Date().toISOString()});
+        }catch(error){
+            console.warn('Could not update online status:',error);
+        }
+    });
+}
 
 userSearchInput.addEventListener('input',function(){
     const query=userSearchInput.value.trim();
@@ -3255,6 +3481,7 @@ async function loadTopUsers(){
 
         avatar.style.backgroundSize='cover';
         avatar.style.backgroundPosition='center';
+        addUserPresenceDot(avatar,user.id);
 
         const userInfo=document.createElement('div');
         userInfo.className='user-search-info';
@@ -3339,6 +3566,7 @@ async function searchUsers(query){
     
         avatar.style.backgroundSize='cover';
         avatar.style.backgroundPosition='center';
+        addUserPresenceDot(avatar,user.id);
     
         const userInfo=document.createElement('div');
         userInfo.className='user-search-info';
@@ -3412,6 +3640,7 @@ myCollectionButton.addEventListener('click',async function(){
     if(!user)return;
 
     history.pushState({},'','/groovy/');
+    libraryPage=1;
 
     deleteMode=false;
     deleteModeButton.classList.remove('active');
@@ -3430,6 +3659,10 @@ backToMyCollectionMobileButton.addEventListener('click',function(){
 });
 
 function navigateLibrary(nextView){
+    libraryPage=1;
+    deleteMode=false;
+    deleteModeButton.classList.remove('active');
+    document.body.classList.remove('delete-mode-active');
     var url=window.location.pathname;
     if(nextView==='wishlist')url+='?view=wishlist';
     history.pushState({},'',url);
@@ -3557,6 +3790,7 @@ let appleSearchBlockedUntil=0;
 async function loadOtherUserCollection(userId){
     var loadVersion=++window.collectionLoadVersion;
     viewedUserId=userId;
+    libraryPage=1;
 
     deleteMode=false;
     deleteModeButton.classList.remove('active');
@@ -3756,6 +3990,7 @@ async function loadOtherUserCollection(userId){
     document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';
 
     buildGrid();
+    refreshLibraryStyles(data,loadVersion);
 }
 
 function setSearchResultStatus(button,status){
@@ -3835,10 +4070,17 @@ async function searchDiscogs(query){
 
         if(searchNumber!==musicBrainzSearchNumber)return;
 
-        albumSearchResults.innerHTML='';
-
+        const seenResults={};
         const results=(data&&data.results?data.results:[]).filter(function(master){
-            return !/\banniversary\b/i.test(String(master&&master.title||''));
+            if(/\banniversary\b/i.test(String(master&&master.title||'')))return false;
+            var title=String(master&&master.title||'');
+            var parts=title.split(' - ');
+            var artist=parts.length>1?parts[0].replace(/\s*\(\d+\)$/,''):'';
+            var albumTitle=parts.length>1?parts.slice(1).join(' - '):title;
+            var key=window.albumIdentityKey(artist,albumTitle)+'|'+String(master&&master.year||'');
+            if(seenResults[key])return false;
+            seenResults[key]=true;
+            return true;
         });
 
         if(!results.length){
@@ -3895,6 +4137,23 @@ async function searchDiscogs(query){
             return appleArtworkUrl(appleAlbum);
         });
 
+        // A partial user query can be too vague for Apple even when Discogs
+        // has already resolved it to an exact artist and album. Retry only
+        // unresolved covers with that complete identity.
+        for(let appleIndex=0;appleIndex<searchResults.length;appleIndex+=1){
+            if(appleArtworkResults[appleIndex]||searchNumber!==musicBrainzSearchNumber)continue;
+            const resolvedTitle=searchResults[appleIndex].title||'';
+            const resolvedParts=resolvedTitle.split(' - ');
+            if(resolvedParts.length<2)continue;
+            const resolvedArtist=resolvedParts[0].replace(/\s*\(\d+\)$/,'');
+            const resolvedAlbum=resolvedParts.slice(1).join(' - ');
+            appleArtworkResults[appleIndex]=await searchApplePreviewArtwork(
+                resolvedArtist,
+                resolvedAlbum,
+                searchResults[appleIndex].year
+            );
+        }
+
         // Only results that Apple could not match use TheAudioDB. Queries run
         // sequentially to avoid a burst that could consume the free limit.
         const theAudioDBArtworkResults=[];
@@ -3930,6 +4189,8 @@ async function searchDiscogs(query){
             }
         }
         
+        albumSearchResults.innerHTML='';
+
         searchResults.forEach(function(master,index){
         
             const title=master.title||'Okänd titel';
@@ -3989,7 +4250,7 @@ async function searchDiscogs(query){
                       ?'<button class="mb-add-button mb-added" disabled>✓ In collection</button>'
                       :(isWishlisted
                           ?'<button class="mb-add-button mb-added" disabled>On wishlist</button>'
-                          :'<button class="mb-add-button">Add</button>'))+
+                          :'<button class="mb-add-button">Add Record</button>'))+
                   (isAdded
                       ?'<button class="mb-wishlist-button mb-wishlisted" disabled>In collection</button>'
                       :(isWishlisted
@@ -4060,6 +4321,34 @@ function normalizeAppleSearchText(value){
         .replace(/[^a-z0-9]+/g,' ')
         .trim()
         .replace(/\s+/g,' ');
+}
+
+async function searchApplePreviewArtwork(artist,albumTitle,originalYear){
+    var cacheKey='resolved|'+normalizeAppleFullTitle(artist)+'|'+normalizeAppleFullTitle(albumTitle);
+    if(appleAlbumSearchCache.has(cacheKey)){
+        return appleAlbumSearchCache.get(cacheKey);
+    }
+    if(Date.now()<appleSearchBlockedUntil)return '';
+
+    try{
+        var response=await fetch(
+            'https://itunes.apple.com/search?term='+encodeURIComponent(artist+' '+albumTitle)+
+            '&entity=album&limit=50&country=SE'
+        );
+        if(!response.ok){
+            if(response.status===403||response.status===429){
+                appleSearchBlockedUntil=Date.now()+APPLE_RATE_LIMIT_COOLDOWN;
+            }
+            return '';
+        }
+        var data=await response.json();
+        var image=appleArtworkUrl(pickBestAppleAlbum(data.results,artist,albumTitle,originalYear));
+        appleAlbumSearchCache.set(cacheKey,image);
+        return image;
+    }catch(error){
+        console.warn('Apple resolved album search unavailable:',error);
+        return '';
+    }
 }
 
 async function searchTheAudioDBAlbumArtwork(artist,albumTitle){
@@ -4407,10 +4696,7 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,previewCoverUr
         const discogsTitle=data.title||albumTitle;
         const discogsYear=parseInt(data.year||year,10)||null;
 
-        const discogsGenre=
-            data.styles&&data.styles.length
-                ?data.styles[0]
-                :(data.genres&&data.genres.length?data.genres[0]:'');
+        const discogsGenre=window.discogsStyleLabel(data);
 
         const discogsArtist=
             data.artists &&
@@ -4738,7 +5024,7 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,previewCoverUr
 
         button.innerHTML=isWishlistDestination
             ?'<span class="wishlist-icon" aria-hidden="true"></span>Wishlist'
-            :'Add';
+            :'Add Record';
         button.disabled=false;
 
         alert(

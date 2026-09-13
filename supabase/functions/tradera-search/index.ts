@@ -133,6 +133,23 @@ function isVinylListing(title: string): boolean {
 
 function isAlbumListing(title: string, artist: string, album: string): boolean {
   const normalized = normalizeSearchText(title)
+  const normalizedArtist = normalizeSearchText(artist)
+  const normalizedAlbum = normalizeSearchText(album)
+
+  // A self-titled album cannot be validated by counting shared words: an
+  // artist-only search would otherwise accept every LP by that artist.
+  if (normalizedArtist && normalizedArtist === normalizedAlbum) {
+    let remainder = normalized
+      .replace(new RegExp('\\b' + normalizedArtist.replace(/\s+/g, '\\s+') + '\\b'), ' ')
+      .replace(new RegExp('\\b' + normalizedAlbum.replace(/\s+/g, '\\s+') + '\\b'), ' ')
+      .replace(/\b(?:self titled|debut|album|vinyl|skiva|gatefold|lp|\d+x?lp|(?:180|200)g)\b/g, ' ')
+      .replace(/\b(?:19|20)\d{2}\b/g, ' ')
+      .replace(/\b(?:sweden|swedish|sverige|germany|german|canada|canadian|uk|us|usa|eu|press|pressing|first|1st|original|mono|stereo|sealed|new|ny)\b/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    return !remainder
+  }
+
   const albumFormat = /\b(?:\d+x?)?lp\b|\bvinyl\b|\balbum\b|\bskiva\b|\bgatefold\b|\b(?:180|200)g\b/
   if (albumFormat.test(normalized)) return true
 
