@@ -501,12 +501,13 @@ window.loadWishlist=async function(userId){
 }
 
 window.loadCollection=async function(){
-  var loadVersion=++window.collectionLoadVersion;
   var path=window.location.pathname;
 
   if(/^\/groovy\/user\/[^\/]+\/?$/.test(path)){
     return;
   }
+
+  var loadVersion=++window.collectionLoadVersion;
 
   viewedUserId=null;
   window.loginRequiredForViewedCollection=false;
