@@ -730,6 +730,11 @@ var libraryPage=1;
 var RECORDS_PER_PAGE=52;
 var libraryPaginationTop=document.getElementById('libraryPaginationTop');
 var libraryPaginationBottom=document.getElementById('libraryPaginationBottom');
+var librarySearchInput=document.getElementById('librarySearchInput');
+var librarySortSelect=document.getElementById('librarySortSelect');
+var mobileAddRecordButton=document.getElementById('mobileAddRecordButton');
+var librarySearchQuery='';
+var librarySort='added';
 var refreshedStyleMasters=new Set();
 
 if(ebayButton)ebayButton.hidden=!ebayEnabled;
@@ -825,6 +830,7 @@ async function refreshLibraryStyles(rows,loadVersion){
   await Promise.all([refreshNext(),refreshNext(),refreshNext()]);
   if(changed&&loadVersion===window.collectionLoadVersion)buildGrid();
 }
+window.refreshLibraryStyles=refreshLibraryStyles;
 
 function safeExternalUrl(value){
   try{
@@ -1762,16 +1768,19 @@ function recordHTML(record, className){
   var isWishlist=window.libraryView==='wishlist';
   var copy=record[11]||{};
   var condition=!isWishlist?recordConditionMeta(copy.mediaCondition):null;
-  var copyLine=!isWishlist
-    ?[copy.country,copy.year].filter(Boolean).join(' ')
-    :'';
+  var showPressingPrompt=!isWishlist&&viewedUserId===null&&!condition&&!hasCopyDetails(copy);
 
   var html='<article class="record '+(isWishlist?'wishlist-record ':'')+(className||'')+'" draggable="false" data-index="'+(parseInt(record[0],10)-1)+'">'+
     '<div class="cover-wrapper">'+
       '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
-      '<div class="number">'+record[0]+'</div>'+
-      (condition?'<div class="record-condition-badge condition-'+condition.className+'" title="Record condition: '+esc(condition.label)+'">'+esc(copy.mediaCondition)+'</div>':'')+
-      '<div class="cover-rating">';
+    '</div>'+
+    '<div class="info">'+
+      '<div class="record-heading-row"><span class="number desktop-record-number">'+record[0]+'</span><div class="album">'+esc(record[2])+'</div></div>'+
+      '<div class="artist">'+esc(record[1])+'</div>'+
+      '<div class="record-meta-row"><span class="year">'+esc(record[3])+'</span>'+
+      (condition?'<span class="record-condition-badge condition-'+condition.className+'" title="Record condition: '+esc(condition.label)+'">'+esc(copy.mediaCondition)+'</span>':'')+
+      (showPressingPrompt?'<span class="pressing-prompt-badge" title="Add pressing details">Add pressing</span>':'')+
+      '<span class="cover-rating">';
 
   if(isWishlist){
     html+='<span class="wishlist-cover-label"><span class="wishlist-icon" aria-hidden="true"></span>Wishlisted</span>';
@@ -1781,20 +1790,17 @@ function recordHTML(record, className){
     }
   }
 
-  html+='</div>'+
-    (viewedUserId===null&&isWishlist
-      ?'<button class="wishlist-remove-button" type="button" aria-label="Remove from wishlist">×</button>'
-      :(viewedUserId===null?'<button class="delete-cover-button" type="button" aria-label="Ta bort album">×</button>':''))+
-    '</div>'+
-    '<div class="info">'+
-      '<div class="artist">'+esc(record[1])+'</div>'+
-      '<div class="album">'+esc(record[2])+'</div>'+
-      '<div class="year">'+esc(record[3])+'</div>'+
-      (copyLine?'<div class="copy-line">'+esc(copyLine)+'</div>':'')+
-    '</div>'+
+  html+='</span></div></div>'+
     (isWishlist&&viewedUserId===null
       ?'<button class="move-to-collection-button" type="button"><span class="record-icon" aria-hidden="true"></span>Add to collection</button>'
       :'')+
+    '<div class="record-card-footer">'+
+      '<span class="spotify-placeholder" aria-disabled="true"><svg class="spotify-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12"></circle><path d="M5.8 9.1c4.3-1.2 8.7-.8 12.4 1.2M6.7 12.5c3.6-.9 7.2-.5 10.3.9M7.6 15.6c2.8-.6 5.5-.3 7.9.7"></path></svg><span>Listen on Spotify</span></span>'+
+      '<span class="number mobile-footer-number" aria-hidden="true">'+record[0]+'</span>'+
+      (viewedUserId===null&&isWishlist
+        ?'<button class="wishlist-remove-button" type="button" aria-label="Remove from wishlist">×</button>'
+        :(viewedUserId===null?'<button class="delete-cover-button" type="button" aria-label="Remove record">×</button>':''))+
+    '</div>'+
   '</article>';
 
   return html;
@@ -1836,7 +1842,9 @@ function openAlbum(index){
   detailArtist.innerHTML=esc(record[1]);
   detailAlbum.innerHTML=esc(record[2]);
   detailYear.innerHTML=esc(record[3]);
-  detailGenre.innerHTML=esc(record[4]||'Genre saknas');
+  var genreLabel=record[4]||'Genre saknas';
+  detailGenre.textContent=genreLabel;
+  detailGenre.setAttribute('data-mobile-genre',genreLabel.split(' · ')[0]||genreLabel);
   renderCopyDetails(index);
 
   detailCover.src=record[6];
@@ -2449,7 +2457,7 @@ confirmRemoveAlbum.addEventListener('click',async function(){
 });
 
 function enableGridSorting(){
-    if(view!=='grid'||selectedRating!=='all'){
+    if(view!=='grid'||selectedRating!=='all'||librarySearchQuery||librarySort!=='added'){
       collection.classList.remove('grid-sort-enabled');
       return;
     }
@@ -3100,25 +3108,6 @@ async function saveGridOrder(){
   return true;
 }
 
-function addCoverTilt(){
-  if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches)return;
-
-  document.querySelectorAll('.record .cover-wrapper').forEach(function(cover){
-    cover.addEventListener('mousemove',function(event){
-      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button'))return;
-      var rect=cover.getBoundingClientRect();
-      var x=(event.clientX-rect.left)/rect.width-.5;
-      var y=(event.clientY-rect.top)/rect.height-.5;
-
-      cover.style.transform='perspective(800px) rotateX('+(-y*10)+'deg) rotateY('+(x*10)+'deg) scale(1.015)';
-    });
-
-    cover.addEventListener('mouseleave',function(){
-      cover.style.transform='';
-    });
-  });
-}
-
 function paginationItems(current,total){
   if(total<=7)return Array.from({length:total},function(_,index){return index+1;});
   var values=[1,total,current-1,current,current+1]
@@ -3173,6 +3162,14 @@ window.buildGrid=function(){
   var canShowAddAlbumCard=isOwnCollection&&window.hasAuthenticatedUser&&records.length>0;
   var emptyWishlist=document.getElementById('emptyWishlist');
   var libraryTabs=document.getElementById('libraryTabs');
+  var libraryTitle=document.getElementById('libraryTitle');
+  var viewedUsername=window.groovyViewedStatisticsProfile&&window.groovyViewedStatisticsProfile.username;
+
+  libraryTitle.textContent=isViewingProfile
+    ?((viewedUsername||'User')+(isWishlist?"'s Wishlist":"'s Collection"))
+    :(isWishlist?'My Wishlist':'My Collection');
+  librarySearchInput.placeholder=isWishlist?'Search this wishlist...':'Search this collection...';
+  mobileAddRecordButton.style.display=isViewingProfile?'none':'';
 
   emptyCollection.style.display=(isOwnCollection&&!isWishlist&&records.length===0)?'flex':'none';
   loginToViewCollection.style.display=window.loginRequiredForViewedCollection?'flex':'none';
@@ -3190,15 +3187,31 @@ window.buildGrid=function(){
   document.getElementById('addAlbumButton').style.display=isViewingProfile?'none':'';
   document.getElementById('filterButton').parentElement.style.display=isWishlist?'none':'';
 
+  var query=librarySearchQuery.toLocaleLowerCase();
   var visibleRecords=records.filter(function(record){
     var rating=parseInt(record[5],10);
-    return isWishlist||selectedRating==='all'||rating===parseInt(selectedRating,10);
+    var matchesRating=isWishlist||selectedRating==='all'||rating===parseInt(selectedRating,10);
+    var matchesSearch=!query||[record[1],record[2],record[3],record[4]].join(' ').toLocaleLowerCase().indexOf(query)!==-1;
+    return matchesRating&&matchesSearch;
+  });
+  visibleRecords=visibleRecords.slice().sort(function(a,b){
+    if(librarySort==='album-asc')return String(a[2]||'').localeCompare(String(b[2]||''),undefined,{sensitivity:'base'});
+    if(librarySort==='album-desc')return String(b[2]||'').localeCompare(String(a[2]||''),undefined,{sensitivity:'base'});
+    if(librarySort==='artist-asc')return String(a[1]||'').localeCompare(String(b[1]||''),undefined,{sensitivity:'base'});
+    if(librarySort==='artist-desc')return String(b[1]||'').localeCompare(String(a[1]||''),undefined,{sensitivity:'base'});
+    if(librarySort==='year-desc')return (parseInt(b[3],10)||0)-(parseInt(a[3],10)||0);
+    if(librarySort==='year-asc')return (parseInt(a[3],10)||9999)-(parseInt(b[3],10)||9999);
+    return (parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);
   });
   renderLibraryPagination(visibleRecords.length);
   var totalPages=Math.max(1,Math.ceil(visibleRecords.length/RECORDS_PER_PAGE));
   var pageStart=(libraryPage-1)*RECORDS_PER_PAGE;
   var pageRecords=visibleRecords.slice(pageStart,pageStart+RECORDS_PER_PAGE);
   var html=pageRecords.map(function(record){return recordHTML(record,'');}).join('');
+
+  if(!pageRecords.length&&records.length){
+    html='<div class="library-no-results"><strong>No records found</strong><span>Try another search or filter.</span></div>';
+  }
 
   if(canShowAddAlbumCard&&libraryPage===totalPages){
     html+='<button class="add-album-card" type="button" aria-label="Add record">'+
@@ -3218,7 +3231,6 @@ window.buildGrid=function(){
     });
   }
 
-  addCoverTilt();
   attachWishlistRemoveControls();
   attachAlbumClicks();
   enableGridSorting();
@@ -3453,6 +3465,22 @@ filterButton.onclick=function(event){
   filterMenu.classList.toggle('open');
   filterButton.setAttribute('aria-expanded',filterMenu.classList.contains('open')?'true':'false');
 };
+
+librarySearchInput.addEventListener('input',function(){
+  librarySearchQuery=this.value.trim();
+  libraryPage=1;
+  buildGrid();
+});
+
+librarySortSelect.addEventListener('change',function(){
+  librarySort=this.value||'added';
+  libraryPage=1;
+  buildGrid();
+});
+
+mobileAddRecordButton.addEventListener('click',function(){
+  document.getElementById('addAlbumButton').click();
+});
 
 var filterButtons=filterMenu.querySelectorAll('button');
 
@@ -3993,9 +4021,16 @@ async function loadOtherUserCollection(userId){
     viewedUserAvatar.style.backgroundSize='cover';
     viewedUserAvatar.style.backgroundPosition='center';
 
-    viewedUserName.textContent=(profile&&profile.username
+    viewedUserName.textContent=profile&&profile.username
         ?profile.username
-        :'Unknown user')+(window.libraryView==='wishlist'?"'s wishlist":"'s collection");
+        :'Unknown user';
+    document.getElementById('viewedUserContext').textContent=window.libraryView==='wishlist'?'Wishlist':'Collection';
+
+    window.groovyViewedStatisticsProfile={
+        id:userId,
+        username:profile&&profile.username?profile.username:'Unknown user',
+        avatar_url:profile&&profile.avatar_url?profile.avatar_url:''
+    };
 
     if(window.libraryView==='wishlist'){
         await window.loadWishlist(userId);
@@ -4160,7 +4195,7 @@ async function loadOtherUserCollection(userId){
     document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';
 
     buildGrid();
-    refreshLibraryStyles(data,loadVersion);
+    window.refreshLibraryStyles(data,loadVersion);
 }
 
 function setSearchResultStatus(button,status){

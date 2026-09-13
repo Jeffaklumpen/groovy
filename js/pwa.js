@@ -36,7 +36,13 @@
   function openHelp(){
     var steps=isIos
       ?['Tap the Share button in your browser.','Choose “Add to Home Screen”.','Tap “Add” to install Groovy.']
-      :['Open your browser menu.','Choose “Install app” or “Add to Home screen”.','Confirm to install Groovy.'];
+      :(isAndroid
+        ?['Open your browser menu.','Choose “Install app” or “Add to Home screen”.','Confirm to install Groovy.']
+        :['Open Groovy on your phone.','Open the menu in Safari or Chrome.','Choose “Add to Home Screen” to use it like an app.']);
+    helpModal.classList.toggle('desktop-install-help',!isIos&&!isAndroid);
+    document.getElementById('installHelpTitle').textContent=isIos||isAndroid
+      ?'Add Groovy to your home screen'
+      :'Add it to your phone’s home screen';
     helpSteps.innerHTML=steps.map(function(step,index){
       return '<div class="install-help-step"><span>'+(index+1)+'</span><div>'+step+'</div></div>';
     }).join('');
@@ -52,6 +58,10 @@
 
   async function startInstall(){
     profileMenuElement.classList.remove('open');
+    if(!isIos&&!isAndroid){
+      openHelp();
+      return;
+    }
     if(!deferredInstallPrompt){
       openHelp();
       return;

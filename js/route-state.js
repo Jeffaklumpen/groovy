@@ -38,6 +38,14 @@
     }
   }
 
+  function statisticsFromSearch(search){
+    try{
+      return new URLSearchParams(String(search||'')).get('stats')==='1';
+    }catch(error){
+      return false;
+    }
+  }
+
   function albumIdentityKey(artist,title){
     function normalize(value){
       var text=String(value||'').toLowerCase();
@@ -52,6 +60,7 @@
     profileUsernameFromPath:profileUsernameFromPath,
     resolveProfileView:resolveProfileView,
     libraryViewFromSearch:libraryViewFromSearch,
+    statisticsFromSearch:statisticsFromSearch,
     albumIdentityKey:albumIdentityKey
   };
 });

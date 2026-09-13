@@ -4,6 +4,7 @@ const {
   profileUsernameFromPath,
   resolveProfileView,
   libraryViewFromSearch,
+  statisticsFromSearch,
   albumIdentityKey
 }=require('../js/route-state.js');
 
@@ -19,6 +20,12 @@ test('reads the library view from the URL',function(){
   assert.equal(libraryViewFromSearch('?view=wishlist'),'wishlist');
   assert.equal(libraryViewFromSearch('?view=collection'),'collection');
   assert.equal(libraryViewFromSearch(''),'collection');
+});
+
+test('recognises a directly linked statistics view',function(){
+  assert.equal(statisticsFromSearch('?stats=1'),true);
+  assert.equal(statisticsFromSearch('?view=wishlist&stats=1'),true);
+  assert.equal(statisticsFromSearch('?view=wishlist'),false);
 });
 
 test('matches the same album across formatting and edition suffixes',function(){
