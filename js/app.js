@@ -418,13 +418,13 @@ window.libraryView=GroovyRouteState.libraryViewFromSearch(window.location.search
 
 window.albumIdentityKey=GroovyRouteState.albumIdentityKey;
 
-function emptyRecordSides(){
+window.emptyRecordSides=function(){
   return {A:[],B:[],C:[],D:[],E:[],F:[],G:[],H:[]};
-}
+};
 
 function wishlistRecord(item,index){
   var album=item.albums;
-  var sides=emptyRecordSides();
+  var sides=window.emptyRecordSides();
 
   if(Array.isArray(album.tracks)){
     album.tracks
@@ -501,13 +501,12 @@ window.loadWishlist=async function(userId){
 }
 
 window.loadCollection=async function(){
+  var loadVersion=++window.collectionLoadVersion;
   var path=window.location.pathname;
 
   if(/^\/groovy\/user\/[^\/]+\/?$/.test(path)){
     return;
   }
-
-  var loadVersion=++window.collectionLoadVersion;
 
   viewedUserId=null;
   window.loginRequiredForViewedCollection=false;
@@ -643,7 +642,7 @@ window.loadCollection=async function(){
           ?album.artists.name.replace(/\s*\(\d+\)$/,'')
           :'Okänd artist';
 
-      var sides=emptyRecordSides();
+      var sides=window.emptyRecordSides();
 
       if(Array.isArray(album.tracks)){
         album.tracks
@@ -4270,7 +4269,7 @@ async function loadOtherUserCollection(userId){
                     ?album.artists.name.replace(/\s*\(\d+\)$/,'')
                     :'Okänd artist';
 
-            var sides=emptyRecordSides();
+            var sides=window.emptyRecordSides();
 
             if(Array.isArray(album.tracks)){
                 album.tracks
