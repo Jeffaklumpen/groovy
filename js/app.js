@@ -3251,7 +3251,7 @@ window.buildGrid=function(){
 
   libraryTitle.textContent=isViewingProfile
     ?((viewedUsername||'User')+(isWishlist?"'s Wishlist":"'s Collection"))
-    :(isWishlist?'My Wishlist':'My Record Shelf');
+    :(isWishlist?'My Wishlist':'My Collection');
   librarySearchInput.placeholder=isWishlist?'Search this wishlist...':'Search this collection...';
   mobileAddRecordButton.style.display=isViewingProfile?'none':'';
 
