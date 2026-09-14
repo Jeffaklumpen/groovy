@@ -1053,9 +1053,10 @@ body{padding:0 32px 56px;background:radial-gradient(circle at 50% -15%,#18100c 0
 .spotify-mark{width:21px;height:21px;flex:0 0 21px;overflow:visible}
 .spotify-mark circle{fill:#1ed760}
 .spotify-mark path{fill:none;stroke:#09090a;stroke-width:1.55;stroke-linecap:round}
-.apple-music-link{display:flex;align-items:center;width:100%;min-height:26px;text-decoration:none;}
+.apple-music-link{display:flex;align-items:center;width:100%;min-height:26px;text-decoration:none;color:#77777d;}
+.apple-music-link:hover{color:#fff;}
 .apple-music-lockup{display:block;height:22px;width:auto;}
-.apple-music-link .external-link-icon{margin-left:auto;}
+.apple-music-link .external-link-icon{margin-left:auto;border-color:currentColor;}
 .delete-cover-button,.wishlist-remove-button{position:static;width:25px;height:25px;margin-left:auto;border:0;background:none;color:#77777d;font-size:18px;line-height:1;opacity:0;pointer-events:none;transform:none}
 .delete-mode-active .delete-cover-button,.delete-mode-active .wishlist-remove-button{opacity:1;pointer-events:auto}
 .delete-cover-button:hover,.wishlist-remove-button:hover{background:rgba(207,50,50,.16);color:#ff6d67;transform:none}
