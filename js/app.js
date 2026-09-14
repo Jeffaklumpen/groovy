@@ -4098,7 +4098,6 @@ function escapeHTML(text){
 let musicBrainzSearchNumber=0;
 
 const coverArtArchiveCache=new Map();
-const fanartCoverCache=new Map();
 
 async function loadOtherUserCollection(userId){
     var loadVersion=++window.collectionLoadVersion;
@@ -4396,58 +4395,6 @@ function imageExists(url){
     });
 }
 
-async function getFanartAlbumCover(mbid){
-    const cleanMbid=String(mbid||'').trim();
-
-    if(!cleanMbid){
-        return '';
-    }
-
-    if(fanartCoverCache.has(cleanMbid)){
-        return fanartCoverCache.get(cleanMbid);
-    }
-
-    try{
-        const {data,error}=await supabaseClient.functions.invoke(
-            'fanart-cover',
-            {
-                body:{
-                    mbid:cleanMbid
-                }
-            }
-        );
-
-        if(error){
-            throw error;
-        }
-
-        const url=
-            data&&data.found&&data.url
-                ?String(data.url)
-                :'';
-
-        fanartCoverCache.set(
-            cleanMbid,
-            url
-        );
-
-        return url;
-
-    }catch(error){
-        console.warn(
-            'fanart.tv cover unavailable:',
-            error
-        );
-
-        fanartCoverCache.set(
-            cleanMbid,
-            ''
-        );
-
-        return '';
-    }
-}
-
 async function resolveAlbumCover(mbid,discogsFallback){
     const cleanMbid=String(mbid||'').trim();
     const fallback=String(discogsFallback||'').trim();
@@ -4459,21 +4406,8 @@ async function resolveAlbumCover(mbid,discogsFallback){
         };
     }
 
-    // 1. fanart.tv
-    const fanartUrl=
-        await getFanartAlbumCover(cleanMbid);
-
-    if(fanartUrl){
-        return {
-            url:fanartUrl,
-            source:'fanart'
-        };
-    }
-
-    // 2. Cover Art Archive
     if(coverArtArchiveCache.has(cleanMbid)){
-        const cached=
-            coverArtArchiveCache.get(cleanMbid);
+        const cached=coverArtArchiveCache.get(cleanMbid);
 
         if(cached){
             return {
@@ -4493,8 +4427,7 @@ async function resolveAlbumCover(mbid,discogsFallback){
         encodeURIComponent(cleanMbid)+
         '/front';
 
-    const exists=
-        await imageExists(coverArtUrl);
+    const exists=await imageExists(coverArtUrl);
 
     if(exists){
         coverArtArchiveCache.set(
@@ -4513,7 +4446,6 @@ async function resolveAlbumCover(mbid,discogsFallback){
         ''
     );
 
-    // 3. Discogs
     return {
         url:fallback,
         source:fallback?'discogs':''
