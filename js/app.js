@@ -1823,6 +1823,21 @@ pressingMatrixQuery.addEventListener('keydown',function(event){
 closePressingModalButton.addEventListener('click',closePressingPicker);
 pressingModal.addEventListener('click',function(event){if(event.target===pressingModal)closePressingPicker();});
 
+function spotifyAlbumLink(record){
+    var savedUrl=record&&record[12];
+
+    if(/^https:\/\/open\.spotify\.com\/album\/[A-Za-z0-9]+(?:[/?#].*)?$/.test(String(savedUrl||''))){
+        return savedUrl;
+    }
+
+    var query=[
+        record&&record[1],
+        record&&record[2]
+    ].filter(Boolean).join(' ');
+
+    return 'https://open.spotify.com/search/'+encodeURIComponent(query);
+}
+
 function appleMusicAlbumLink(record){
     var query=[
         record&&record[1],
