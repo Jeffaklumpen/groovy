@@ -4426,7 +4426,7 @@ async function resolveAlbumCover(mbid,discogsFallback){
     const coverArtUrl=
         'https://coverartarchive.org/release-group/'+
         encodeURIComponent(cleanMbid)+
-        '/front-500';
+        '/front';
 
     const exists=await imageExists(coverArtUrl);
 
