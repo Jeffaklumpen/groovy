@@ -1053,6 +1053,7 @@ body{padding:0 32px 56px;background:radial-gradient(circle at 50% -15%,#18100c 0
 .spotify-mark{width:21px;height:21px;flex:0 0 21px;overflow:visible}
 .spotify-mark circle{fill:#1ed760}
 .spotify-mark path{fill:none;stroke:#09090a;stroke-width:1.55;stroke-linecap:round}
+.apple-music-badge{display:block;height:14px;width:auto;flex-shrink:0;}
 .delete-cover-button,.wishlist-remove-button{position:static;width:25px;height:25px;margin-left:auto;border:0;background:none;color:#77777d;font-size:18px;line-height:1;opacity:0;pointer-events:none;transform:none}
 .delete-mode-active .delete-cover-button,.delete-mode-active .wishlist-remove-button{opacity:1;pointer-events:auto}
 .delete-cover-button:hover,.wishlist-remove-button:hover{background:rgba(207,50,50,.16);color:#ff6d67;transform:none}
