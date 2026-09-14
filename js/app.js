@@ -3250,9 +3250,9 @@ window.buildGrid=function(){
   var viewedUsername=window.groovyViewedStatisticsProfile&&window.groovyViewedStatisticsProfile.username;
 
   libraryTitle.textContent=isViewingProfile
-    ?((viewedUsername||'User')+(isWishlist?"'s Wishlist":"'s Collection"))
-    :(isWishlist?'My Wishlist':'My Collection');
-  librarySearchInput.placeholder=isWishlist?'Search this wishlist...':'Search this collection...';
+    ?((viewedUsername||'User')+(isWishlist?"'s Wishlist":"'s Shelf"))
+    :(isWishlist?'My Wishlist':'My Shelf');
+  librarySearchInput.placeholder=isWishlist?'Search this wishlist...':'Search this shelf...';
   mobileAddRecordButton.style.display=isViewingProfile?'none':'';
 
   emptyCollection.style.display=(isOwnCollection&&!isWishlist&&records.length===0)?'flex':'none';
