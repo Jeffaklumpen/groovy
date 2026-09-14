@@ -1823,14 +1823,13 @@ pressingMatrixQuery.addEventListener('keydown',function(event){
 closePressingModalButton.addEventListener('click',closePressingPicker);
 pressingModal.addEventListener('click',function(event){if(event.target===pressingModal)closePressingPicker();});
 
-function spotifyAlbumLink(record){
-  var savedUrl=record&&record[12];
-  if(/^https:\/\/open\.spotify\.com\/album\/[A-Za-z0-9]+(?:[/?#].*)?$/.test(String(savedUrl||''))){
-    return savedUrl;
-  }
+function appleMusicAlbumLink(record){
+    var query=[
+        record&&record[1],
+        record&&record[2]
+    ].filter(Boolean).join(' ');
 
-  var query=[record&&record[1],record&&record[2]].filter(Boolean).join(' ');
-  return 'https://open.spotify.com/search/'+encodeURIComponent(query);
+    return 'https://music.apple.com/se/search?term='+encodeURIComponent(query);
 }
 
 function recordHTML(record, className){
@@ -1871,7 +1870,10 @@ function recordHTML(record, className){
       ?'<button class="move-to-collection-button" type="button"><span class="record-icon" aria-hidden="true"></span>Add to collection</button>'
       :'')+
     '<div class="record-card-footer">'+
-      '<a class="spotify-placeholder spotify-link" href="'+esc(spotifyAlbumLink(record))+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+esc(record[2])+' by '+esc(record[1])+' on Spotify"><svg class="spotify-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12"></circle><path d="M5.8 9.1c4.3-1.2 8.7-.8 12.4 1.2M6.7 12.5c3.6-.9 7.2-.5 10.3.9M7.6 15.6c2.8-.6 5.5-.3 7.9.7"></path></svg><span>Listen on Spotify</span><span class="external-link-icon" aria-hidden="true"></span></a>'+
+        '<a class="apple-music-link spotify-link" href="'+esc(appleMusicAlbumLink(record))+'" target="_blank" rel="noopener noreferrer" aria-label="Listen to '+esc(record[2])+' by '+esc(record[1])+' on Apple Music">'+
+            '<img class="apple-music-lockup" src="/groovy/Apple_Music_Listen_on_Lockup_RGB_All-Wht_USGB-EN_CI_122225.svg" alt="Listen on Apple Music">'+
+            '<span class="external-link-icon" aria-hidden="true"></span>'+
+        '</a>'+
     '</div>'+
   '</article>';
 
