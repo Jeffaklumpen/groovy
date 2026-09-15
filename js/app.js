@@ -700,6 +700,10 @@ var collection=document.getElementById('collection');
 var filterButton=document.getElementById('filterButton');
 var filterMenu=document.getElementById('filterMenu');
 var albumOverlay=document.getElementById('albumOverlay');
+var albumDetailElement=albumOverlay?albumOverlay.querySelector('.album-detail'):null;
+var albumTracksPanel=albumOverlay?albumOverlay.querySelector('.album-tracks'):null;
+var marketplacePanelElement=albumOverlay?albumOverlay.querySelector('.marketplace-panel'):null;
+var albumDesktopRightColumn=null;
 var albumClose=document.getElementById('albumClose');
 var detailCover=document.getElementById('detailCover');
 var detailNumber=document.getElementById('detailNumber');
@@ -714,6 +718,36 @@ var detailAboutAlbumText=document.getElementById('detailAboutAlbumText');
 var detailAboutAlbumBody=document.getElementById('detailAboutAlbumBody');
 var detailAboutAlbumToggle=document.getElementById('detailAboutAlbumToggle');
 var detailAboutAlbumLink=document.getElementById('detailAboutAlbumLink');
+
+function syncAlbumDesktopColumns(){
+  if(!albumDetailElement||!albumTracksPanel||!marketplacePanelElement||!detailAboutAlbum)return;
+  var desktop=window.innerWidth>1120;
+
+  if(desktop){
+    if(!albumDesktopRightColumn){
+      albumDesktopRightColumn=document.createElement('div');
+      albumDesktopRightColumn.className='album-desktop-right';
+    }
+    if(!albumDesktopRightColumn.parentNode)albumDetailElement.appendChild(albumDesktopRightColumn);
+    if(albumTracksPanel.parentNode!==albumDesktopRightColumn)albumDesktopRightColumn.appendChild(albumTracksPanel);
+    if(marketplacePanelElement.parentNode!==albumDesktopRightColumn)albumDesktopRightColumn.appendChild(marketplacePanelElement);
+    return;
+  }
+
+  if(albumDesktopRightColumn&&albumTracksPanel.parentNode===albumDesktopRightColumn){
+    albumDetailElement.insertBefore(albumTracksPanel,detailAboutAlbum);
+  }
+  if(albumDesktopRightColumn&&marketplacePanelElement.parentNode===albumDesktopRightColumn){
+    if(detailAboutAlbum.nextSibling)albumDetailElement.insertBefore(marketplacePanelElement,detailAboutAlbum.nextSibling);
+    else albumDetailElement.appendChild(marketplacePanelElement);
+  }
+  if(albumDesktopRightColumn&&albumDesktopRightColumn.parentNode){
+    albumDesktopRightColumn.parentNode.removeChild(albumDesktopRightColumn);
+  }
+}
+
+syncAlbumDesktopColumns();
+window.addEventListener('resize',syncAlbumDesktopColumns,{passive:true});
 var wikipediaAboutRequestVersion=0;
 var wikipediaAlbumCache=new Map();
 var WIKIPEDIA_CACHE_TTL=14*24*60*60*1000;
