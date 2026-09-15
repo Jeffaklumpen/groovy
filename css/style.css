@@ -1294,12 +1294,12 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .streaming-external .external-link-icon{margin:0}
 
 @media screen and (max-width:760px){
-.record-card-footer{gap:4px;min-height:33px;margin-top:4px;padding:5px 1px 0}
-.streaming-service{height:28px}
-.apple-service{padding:0}
-.apple-music-small-badge{height:28px}
-.spotify-service{padding-left:5px;padding-right:5px;border-radius:6px}
-.spotify-service-logo{width:68px;max-width:68px}
+.record-card-footer{gap:5px;min-height:36px;margin-top:4px;padding:5px 1px 0}
+.streaming-service{height:31px}
+.apple-service{height:31px;padding:0}
+.apple-music-small-badge{height:31px}
+.spotify-service{height:31px;padding-left:3px;padding-right:3px;border-radius:6px}
+.spotify-service-logo{width:54px;max-width:54px}
 .streaming-external{display:none}
 }
 
