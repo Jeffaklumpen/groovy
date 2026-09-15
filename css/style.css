@@ -1686,15 +1686,15 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 
 /* STREAMING V4 - one shared desktop panel; mobile stays unchanged */
 @media screen and (min-width:761px){
-.detail-streaming-row{position:relative;display:flex;align-items:center;justify-content:flex-start;width:100%;max-width:none;min-height:64px;margin:22px 0 0;padding:11px 14px;border:1px solid var(--groovy-line);border-radius:9px;background:#111113;gap:0;overflow:visible}
+.detail-streaming-row{position:relative;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;width:100%;max-width:none;min-height:64px;margin:22px 0 0;padding:11px 14px;border:1px solid var(--groovy-line);border-radius:9px;background:#111113;gap:16px;overflow:visible}
 .detail-streaming-row:before{content:none!important;display:none!important}
 .detail-shelf-actions:not([hidden]) + .detail-streaming-row{margin-top:29px}
 .detail-shelf-actions:not([hidden]) + .detail-streaming-row:after{content:"";position:absolute;left:0;right:0;top:-15px;height:1px;background:rgba(255,255,255,.09);pointer-events:none}
 .detail-streaming-link{height:auto!important;min-height:40px;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;transition:none!important}
 .detail-streaming-link:hover{border-color:transparent!important;background:transparent!important;box-shadow:none!important}
-.detail-apple-service{display:flex;flex:0 0 46%;min-width:0;align-items:center;justify-content:flex-start;padding:0 18px 0 0!important;overflow:visible}
+.detail-apple-service{display:flex;flex:0 0 auto;min-width:0;align-items:center;justify-content:flex-start;padding:0!important;overflow:visible}
 .detail-apple-music-badge{display:block;width:min(100%,160px);height:auto;max-height:44px}
-.detail-spotify-service{display:flex;flex:1 1 54%;min-width:0;align-items:center;justify-content:flex-start;gap:11px;padding:0 0 0 18px!important;border-left:1px solid rgba(255,255,255,.10)!important;color:#fff;overflow:visible}
+.detail-spotify-service{display:flex;flex:1 1 auto;min-width:0;align-items:center;justify-content:flex-start;gap:11px;padding:0!important;border-left:0!important;color:#fff;overflow:visible}
 .detail-spotify-service-logo{display:block;width:36px;height:36px;max-width:none;flex:0 0 36px}
 .detail-spotify-service-copy{display:flex;min-width:0;flex-direction:column;gap:3px;overflow:hidden}
 .detail-spotify-service-copy strong{overflow:hidden;color:#f4f4f5;font-size:12px;font-weight:750;line-height:1.15;text-overflow:ellipsis;white-space:nowrap}
@@ -1702,9 +1702,9 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 }
 @media screen and (max-width:1120px) and (min-width:761px){
 .detail-streaming-row{min-height:60px;padding:10px 12px}
-.detail-apple-service{flex-basis:44%;padding-right:14px!important}
+.detail-apple-service{flex-basis:auto;padding-right:0!important}
 .detail-apple-music-badge{width:min(100%,145px)}
-.detail-spotify-service{padding-left:14px!important;gap:9px}
+.detail-spotify-service{padding-left:0!important;gap:9px}
 .detail-spotify-service-logo{width:32px;height:32px;flex-basis:32px}
 .detail-spotify-service-copy strong{font-size:11px}
 .detail-spotify-service-copy small{font-size:8px}
