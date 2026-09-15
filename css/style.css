@@ -1280,12 +1280,14 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 
 .record-card-footer{display:flex;align-items:center;gap:6px;min-width:0;min-height:36px;margin-top:5px;padding:6px 2px 0;border-top:1px solid rgba(255,255,255,.08)}
 .streaming-link{text-decoration:none;-webkit-tap-highlight-color:transparent}
-.streaming-service{display:flex;align-items:center;justify-content:center;height:30px;min-width:0;padding:0 7px;border:1px solid #343438;border-radius:7px;background:#09090a;overflow:hidden;transition:background .15s ease,border-color .15s ease,transform .15s ease}
-.streaming-service:hover{background:#151517;border-color:#55555a}
+.streaming-service{display:flex;align-items:center;justify-content:center;height:30px;min-width:0;text-decoration:none;transition:transform .15s ease}
 .streaming-service:active{transform:scale(.97)}
-.apple-service{flex:0 1 auto}
-.apple-music-small-badge{display:block;width:auto;height:18px;max-width:100%}
-.spotify-service{flex:0 0 auto}
+
+.apple-service{flex:0 0 auto;padding:0;border:0;background:none;overflow:visible}
+.apple-music-small-badge{display:block;width:auto;height:30px;max-width:100%}
+
+.spotify-service{flex:0 0 auto;padding:0 8px;border:1px solid #343438;border-radius:7px;background:#09090a;overflow:hidden;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.spotify-service:hover{background:#151517;border-color:#55555a}
 .spotify-service-logo{display:block;width:68px;height:auto;max-width:68px}
 .streaming-external{display:flex;width:30px;height:30px;flex:0 0 30px;align-items:center;justify-content:center;margin-left:auto;border:1px solid #343438;border-radius:7px;background:#09090a;color:#77777d;transition:background .15s ease,border-color .15s ease,color .15s ease}
 .streaming-external:hover{background:#151517;border-color:#55555a;color:#fff}
@@ -1293,8 +1295,10 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 
 @media screen and (max-width:760px){
 .record-card-footer{gap:4px;min-height:33px;margin-top:4px;padding:5px 1px 0}
-.streaming-service{height:28px;padding-left:4px;padding-right:4px;border-radius:6px}
-.apple-music-small-badge{height:16px}
+.streaming-service{height:28px}
+.apple-service{padding:0}
+.apple-music-small-badge{height:22px}
+.spotify-service{padding-left:5px;padding-right:5px;border-radius:6px}
 .spotify-service-logo{width:68px;max-width:68px}
 .streaming-external{display:none}
 }
