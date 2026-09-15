@@ -10,11 +10,11 @@
   var openedWithHistory=false;
 
   function escapeHtml(value){
-    return String(value===undefined||value===null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(value===undefined||value===null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;');
   }
 
   function coverUrl(value){
-    return value||'/groovy/avatar_placeholder.png';
+    return value||'/avatar_placeholder.png';
   }
 
   function spotifySearchUrl(release){
@@ -67,7 +67,7 @@
 
   function releaseCard(label,release){
     if(!release)return '<article class="stats-release stats-release-empty"><span>'+label+'</span><strong>No dated records yet</strong></article>';
-    return '<article class="stats-release"><img src="'+escapeHtml(coverUrl(release.cover))+'" alt="" onerror="this.src=\'/groovy/avatar_placeholder.png\'"><div class="stats-release-copy"><span>'+label+'</span><strong>'+escapeHtml(release.title)+'</strong><small>'+escapeHtml(release.artist)+' · '+release.year+'</small><a class="stats-spotify-link" href="'+escapeHtml(spotifySearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(release.title)+' by '+escapeHtml(release.artist)+' on Spotify">'+spotifyMark()+'<span>Listen on Spotify</span></a></div></article>';
+    return '<article class="stats-release"><img src="'+escapeHtml(coverUrl(release.cover))+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'"><div class="stats-release-copy"><span>'+label+'</span><strong>'+escapeHtml(release.title)+'</strong><small>'+escapeHtml(release.artist)+' · '+release.year+'</small><a class="stats-spotify-link" href="'+escapeHtml(spotifySearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(release.title)+' by '+escapeHtml(release.artist)+' on Spotify">'+spotifyMark()+'<span>Listen on Spotify</span></a></div></article>';
   }
 
   function render(profile,stats){
@@ -76,7 +76,7 @@
     var topDecade=stats.topDecades[0];
     var topCountry=stats.topCountries[0];
     var rating=stats.averageAlbumRating?stats.averageAlbumRating.toFixed(1):'—';
-    var avatar=profile.avatar_url||'/groovy/avatar_placeholder.png';
+    var avatar=profile.avatar_url||'/avatar_placeholder.png';
 
     content.innerHTML=
       '<section class="stats-hero"><div class="stats-hero-profile"><img src="'+escapeHtml(avatar)+'" alt=""><div><span class="stats-kicker">Collection insights</span><h1>'+escapeHtml(profile.username||'Groovy listener')+'</h1><p>A snapshot of the records, eras and sounds that shape this collection.</p></div></div><div class="stats-hero-groove" aria-hidden="true"></div></section>'+
@@ -160,7 +160,7 @@
   copyProfileButton.addEventListener('click',async function(){
     var profile=window.groovyViewedStatisticsProfile;
     if(!profile||!profile.username)return;
-    var profileUrl=window.location.origin+'/groovy/user/'+encodeURIComponent(profile.username);
+    var profileUrl=window.location.origin+'/user/'+encodeURIComponent(profile.username);
     try{
       await navigator.clipboard.writeText(profileUrl);
       var label=copyProfileButton.querySelector('.viewed-action-label');
