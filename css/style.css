@@ -1053,6 +1053,10 @@ body{padding:0 32px 56px;background:radial-gradient(circle at 50% -15%,#18100c 0
 .spotify-mark{width:21px;height:21px;flex:0 0 21px;overflow:visible}
 .spotify-mark circle{fill:#1ed760}
 .spotify-mark path{fill:none;stroke:#09090a;stroke-width:1.55;stroke-linecap:round}
+.apple-music-link{display:flex;align-items:center;width:100%;min-height:26px;text-decoration:none;color:#77777d;}
+.apple-music-link:hover{color:#fff;}
+.apple-music-lockup{display:block;height:22px;width:auto;}
+.apple-music-link .external-link-icon{margin-left:auto;border-color:currentColor;}
 .delete-cover-button,.wishlist-remove-button{position:static;width:25px;height:25px;margin-left:auto;border:0;background:none;color:#77777d;font-size:18px;line-height:1;opacity:0;pointer-events:none;transform:none}
 .delete-mode-active .delete-cover-button,.delete-mode-active .wishlist-remove-button{opacity:1;pointer-events:auto}
 .delete-cover-button:hover,.wishlist-remove-button:hover{background:rgba(207,50,50,.16);color:#ff6d67;transform:none}
@@ -1273,3 +1277,472 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .login-modal{width:min(430px,calc(100vw - 24px));max-width:430px;max-height:calc(100lvh - 24px);padding:26px 18px;border:1px solid rgba(255,255,255,.11);border-radius:12px}
 .wishlist-cover-label .wishlist-icon{width:14px;height:14px}
 }
+
+.record-card-footer{display:flex;align-items:center;gap:6px;min-width:0;min-height:36px;margin-top:5px;padding:6px 2px 0;border-top:1px solid rgba(255,255,255,.08)}
+.streaming-link{text-decoration:none;-webkit-tap-highlight-color:transparent}
+.streaming-service{display:flex;align-items:center;justify-content:center;height:30px;min-width:0;text-decoration:none;transition:transform .15s ease}
+.streaming-service:active{transform:scale(.97)}
+
+.apple-service{flex:0 0 auto;padding:0;border:0;background:none;overflow:visible}
+.apple-music-small-badge{display:block;width:auto;height:30px;max-width:100%}
+
+.spotify-service{flex:0 0 auto;padding:0 8px;border:1px solid #343438;border-radius:7px;background:#09090a;overflow:hidden;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.spotify-service:hover{background:#151517;border-color:#55555a}
+.spotify-service-logo{display:block;width:68px;height:auto;max-width:68px}
+.streaming-external{display:flex;width:30px;height:30px;flex:0 0 30px;align-items:center;justify-content:center;margin-left:auto;border:1px solid #343438;border-radius:7px;background:#09090a;color:#77777d;transition:background .15s ease,border-color .15s ease,color .15s ease}
+.streaming-external:hover{background:#151517;border-color:#55555a;color:#fff}
+.streaming-external .external-link-icon{margin:0}
+
+@media screen and (max-width:760px){
+.record-card-footer{gap:5px;min-height:36px;margin-top:4px;padding:5px 1px 0}
+.streaming-service{height:31px}
+.apple-service{height:31px;padding:0}
+.apple-music-small-badge{height:31px}
+.spotify-service{height:31px;padding-left:3px;padding-right:3px;border-radius:6px}
+.spotify-service-logo{width:54px;max-width:54px}
+.streaming-external{display:none}
+}
+
+@media screen and (max-width:380px){
+.record-card-footer{gap:3px}
+.streaming-service{padding-left:2px;padding-right:2px}
+.apple-music-small-badge{height:31px}
+}
+
+
+/* SHELVES */
+.shelf-strip{width:min(1400px,100%);margin:0 auto 24px}
+.shelf-strip[hidden]{display:none!important}
+.shelf-strip-scroll{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding:1px 1px 3px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
+.shelf-strip-scroll::-webkit-scrollbar{display:none}
+.shelf-chip{display:flex;min-width:158px;flex:0 0 auto;align-items:center;gap:10px;height:58px;padding:8px 13px;border:1px solid var(--groovy-line);border-radius:9px;background:#111113;color:#aaaab0;text-align:left;cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease,transform .15s ease;-webkit-tap-highlight-color:transparent}
+.shelf-chip:hover{border-color:rgba(255,255,255,.2);background:#151517;color:#fff}
+.shelf-chip:active{transform:scale(.98)}
+.shelf-chip.active{border-color:rgba(255,100,24,.72);background:rgba(255,100,24,.09);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,100,24,.06)}
+.shelf-chip-icon{display:flex;width:28px;height:28px;flex:0 0 28px;align-items:center;justify-content:center;border-radius:50%;background:#1a1a1d;color:#9b9ba1;font-size:17px;font-weight:700;line-height:1}
+.shelf-chip.active .shelf-chip-icon{background:rgba(255,100,24,.14);color:var(--groovy-orange)}
+.shelf-chip-copy{display:flex;min-width:0;flex-direction:column;gap:3px}
+.shelf-chip-copy strong{overflow:hidden;color:inherit;font-size:12px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.shelf-chip-copy small{color:#717177;font-size:9px;font-weight:550;white-space:nowrap}
+.shelf-new-button{min-width:142px;border-style:dashed;background:transparent}
+.shelf-new-button .shelf-chip-icon{background:transparent;border:1px solid #343438;font-size:20px;font-weight:400}
+
+.record-card-topbar{z-index:8}
+.record-menu-button{position:absolute;right:-3px;top:50%;display:flex;width:26px;height:24px;align-items:center;justify-content:center;padding:0;border:1px solid transparent;border-radius:5px;background:transparent;color:#77777d;font-size:13px;font-weight:700;letter-spacing:1px;line-height:1;cursor:pointer;transform:translateY(-50%);transition:background .15s ease,border-color .15s ease,color .15s ease;-webkit-tap-highlight-color:transparent}
+.record-menu-button:hover,.record-menu-button[aria-expanded="true"]{border-color:#343438;background:#18181a;color:#fff}
+.record-action-menu{position:absolute;z-index:80;right:-3px;top:24px;display:none;width:170px;padding:6px;border:1px solid #303034;border-radius:9px;background:#171719;box-shadow:0 14px 34px rgba(0,0,0,.55)}
+.record-action-menu.open{display:block}
+.record-action-item{display:flex;width:100%;min-height:36px;align-items:center;padding:0 10px;border:0;border-radius:6px;background:transparent;color:#dedee1;font:inherit;font-size:11px;font-weight:600;text-align:left;cursor:pointer}
+.record-action-item:hover{background:#222225;color:#fff}
+.record-action-item.danger{color:#ff746f}
+.record-action-item.danger:hover{background:rgba(198,40,40,.14);color:#ff8c87}
+
+.record-menu-backdrop{display:none;position:fixed;z-index:12000;inset:0;background:transparent;touch-action:none;-webkit-tap-highlight-color:transparent}
+
+.shelf-modal-box{max-width:470px;padding:26px}
+.shelf-name-field{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.shelf-name-field>span,.shelf-icon-field>span,.shelf-color-field>span{color:#a4a4aa;font-size:11px;font-weight:700;letter-spacing:.03em}
+.shelf-name-field input{width:100%;height:44px;padding:0 13px;border:1px solid #3a3a3e;border-radius:8px;background:#121214;color:#fff;font:inherit;font-size:13px;outline:none}
+.shelf-name-field input:focus{border-color:rgba(255,100,24,.68);box-shadow:0 0 0 3px rgba(255,100,24,.1)}
+.shelf-icon-field{margin-top:18px}
+.shelf-icon-choices{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;width:100%;margin-top:9px}
+.shelf-icon-choice{display:flex;width:100%;max-width:42px;aspect-ratio:1/1;align-items:center;justify-content:center;justify-self:center;padding:0;border:1px solid #343438;border-radius:50%;background:#121214;color:#aaaab0;cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease,transform .15s ease}
+.shelf-icon-choice:hover{border-color:#55555a;color:#fff;transform:translateY(-1px)}
+.shelf-icon-choice.selected{border-color:var(--shelf-choice-color,var(--groovy-orange));background:#19191c;color:var(--shelf-choice-color,var(--groovy-orange));box-shadow:0 0 0 2px rgba(255,255,255,.05)}
+.shelf-svg-icon{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.shelf-chip-icon .shelf-svg-icon{width:17px;height:17px}
+.shelf-picker-icon .shelf-svg-icon{width:17px;height:17px}
+.detail-shelf-status-icon .shelf-svg-icon{width:11px;height:11px}
+.record-shelf-status-icon .shelf-svg-icon{width:9px;height:9px}
+.shelf-color-field{margin-top:18px}
+.shelf-color-choices{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;width:100%;margin-top:10px}
+.shelf-color-choice{position:relative;width:100%;max-width:38px;aspect-ratio:1/1;justify-self:center;padding:5px;border:2px solid transparent;border-radius:50%;background:transparent;cursor:pointer;transition:border-color .15s ease,transform .15s ease;-webkit-tap-highlight-color:transparent}
+.shelf-color-choice:before{content:"";display:block;width:100%;height:100%;border-radius:50%;background:var(--swatch);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.shelf-color-choice:hover{transform:translateY(-1px)}
+.shelf-color-choice.selected{border-color:var(--swatch)}
+.shelf-chip-custom{border-color:rgba(var(--shelf-rgb),.38);background:rgba(var(--shelf-rgb),.075);color:#c9c9ce}
+.shelf-chip-custom:hover{border-color:rgba(var(--shelf-rgb),.62);background:rgba(var(--shelf-rgb),.11);color:#fff}
+.shelf-chip-custom.active{border-color:rgba(var(--shelf-rgb),.9);background:rgba(var(--shelf-rgb),.15);color:#fff;box-shadow:inset 0 0 0 1px rgba(var(--shelf-rgb),.08)}
+.shelf-chip-custom .shelf-chip-icon,.shelf-chip-custom.active .shelf-chip-icon{background:rgba(var(--shelf-rgb),.14);color:var(--shelf-color)}
+.shelf-picker-option.shelf-colored .shelf-picker-icon{background:rgba(var(--shelf-rgb),.13);color:var(--shelf-color)}
+.shelf-picker-option.shelf-colored.selected .shelf-picker-icon{color:var(--shelf-color)}
+.shelf-picker-option.shelf-colored.selected{border-color:rgba(var(--shelf-rgb),.7);background:rgba(var(--shelf-rgb),.08)}
+.shelf-picker-option.shelf-colored.selected .shelf-choice-check{border-color:var(--shelf-color);background:rgba(var(--shelf-rgb),.14);color:var(--shelf-color)}
+.shelf-modal-status{min-height:18px;margin-top:11px;color:#c6c6ca;font-size:11px}
+.shelf-modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:8px}
+.shelf-secondary-button,.shelf-primary-button{min-height:40px;padding:0 15px;border-radius:8px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.shelf-secondary-button{border:1px solid #3a3a3e;background:#151517;color:#d1d1d5}
+.shelf-primary-button{border:1px solid var(--groovy-orange);background:var(--groovy-orange);color:#fff}
+.shelf-primary-button:disabled{opacity:.55;cursor:wait}
+.shelf-picker-list{display:flex;max-height:340px;flex-direction:column;gap:7px;margin-top:18px;overflow-y:auto}
+.shelf-picker-option{position:relative;display:flex;min-height:52px;align-items:center;gap:11px;padding:8px 11px;border:1px solid #303034;border-radius:9px;background:#121214;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.shelf-picker-option:hover{background:#171719;border-color:#44444a}
+.shelf-picker-option.selected{border-color:rgba(255,100,24,.7);background:rgba(255,100,24,.08)}
+.shelf-picker-option input{position:absolute;opacity:0;pointer-events:none}
+.shelf-picker-icon{display:flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:50%;background:#1d1d20;color:#aaaab0;font-size:17px}
+.shelf-picker-option.selected .shelf-picker-icon{color:var(--groovy-orange)}
+.shelf-picker-name{min-width:0;flex:1;color:#e7e7e9;font-size:12px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shelf-choice-check{display:flex;width:21px;height:21px;align-items:center;justify-content:center;border:1px solid #44444a;border-radius:6px;color:transparent;font-size:12px}
+.shelf-picker-option.selected .shelf-choice-check{border-color:var(--groovy-orange);background:var(--groovy-orange);color:#fff}
+.shelf-picker-create{width:100%;margin-top:8px;padding:10px;border:1px dashed #3b3b40;border-radius:8px;background:transparent;color:#ff7a39;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.shelf-picker-create:hover{background:rgba(255,100,24,.07);border-color:rgba(255,100,24,.5)}
+
+@media screen and (max-width:760px){
+.shelf-strip{width:calc(100% + 30px);margin:0 -15px 18px}
+.shelf-strip-scroll{gap:7px;padding:0 15px 3px}
+.shelf-chip{min-width:auto;height:40px;gap:6px;padding:5px 10px;border-radius:999px}
+.shelf-chip-icon{width:22px;height:22px;flex-basis:22px;background:transparent;font-size:14px}
+.shelf-chip-copy{display:block}
+.shelf-chip-copy strong{display:block;max-width:110px;font-size:10px}
+.shelf-chip-copy small{display:none}
+.shelf-new-button{min-width:auto}
+.shelf-new-button .shelf-chip-icon{border:0;font-size:18px}
+.shelf-new-button .shelf-chip-copy strong{max-width:none}
+.record-menu-button{display:flex;right:0;width:20px;height:20px;border-radius:4px;color:#8b8b91;font-size:10px;letter-spacing:.35px}
+.record-card-topbar.record-menu-open{z-index:12001}
+.record-menu-backdrop.open{display:block}
+.record-action-menu{position:fixed;z-index:12002;left:auto;right:auto;top:auto;bottom:auto;width:156px;padding:5px;border-radius:9px;background:#19191c;box-shadow:0 12px 34px rgba(0,0,0,.72)}
+.record-action-menu.open{display:block}
+.record-action-item{min-height:37px;padding:0 10px;font-size:11px}
+.shelf-modal{align-items:flex-end;padding:0}
+.shelf-modal-box{width:100%;max-width:none;max-height:82vh;margin:0;padding:24px 18px calc(18px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0}
+.shelf-modal-box:before{content:"";display:block;width:42px;height:4px;margin:-12px auto 18px;border-radius:4px;background:#55555a}
+.shelf-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.shelf-icon-choices{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.shelf-icon-choice{width:100%;max-width:40px}
+.shelf-icon-choice .shelf-svg-icon{width:18px;height:18px}
+.shelf-color-choices{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.shelf-color-choice{width:100%;max-width:36px;padding:5px}
+.shelf-secondary-button,.shelf-primary-button{min-height:44px}
+.shelf-picker-list{max-height:44vh}
+}
+
+/* SHELVES V4 */
+.shelf-strip{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px}
+.shelf-strip-viewport{min-width:0;overflow:hidden}
+.shelf-scroll-arrow{display:none;width:34px;height:34px;align-items:center;justify-content:center;padding:0;border:1px solid #343438;border-radius:50%;background:#151517;color:#d7d7da;font:inherit;font-size:24px;line-height:1;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.35);transition:background .15s ease,border-color .15s ease,color .15s ease,opacity .15s ease,transform .15s ease}
+.shelf-strip.has-overflow .shelf-scroll-arrow{display:flex}
+.shelf-scroll-arrow:hover:not(:disabled){border-color:#55555a;background:#202023;color:#fff}
+.shelf-scroll-arrow:active:not(:disabled){transform:scale(.94)}
+.shelf-scroll-arrow:disabled{opacity:.24;cursor:default}
+.shelf-limit-button{cursor:default;opacity:.58}
+.shelf-limit-button:active{transform:none}
+.library-title-copy{min-width:0}
+.library-title-actions{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+.edit-shelf-button{display:inline-flex;min-height:38px;align-items:center;justify-content:center;gap:7px;padding:0 12px;border:1px solid #343438;border-radius:8px;background:#151517;color:#c8c8cd;font:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
+.edit-shelf-button[hidden]{display:none!important}
+.edit-shelf-button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.edit-shelf-button:hover{border-color:#55555a;background:#202023;color:#fff}
+.edit-shelf-button:active{transform:scale(.97)}
+.delete-shelf-button{display:inline-flex;min-height:38px;align-items:center;justify-content:center;gap:7px;padding:0 12px;border:1px solid rgba(255,116,111,.28);border-radius:8px;background:rgba(198,40,40,.06);color:#ff7f7a;font:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
+.delete-shelf-button[hidden]{display:none!important}
+.delete-shelf-button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.delete-shelf-button:hover{border-color:rgba(255,116,111,.5);background:rgba(198,40,40,.12);color:#ff9692}
+.delete-shelf-button:active{transform:scale(.97)}
+.shelf-danger-button{min-height:40px;padding:0 15px;border:1px solid #c93434;border-radius:8px;background:#b52626;color:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.shelf-danger-button:hover{background:#c92c2c}
+.shelf-danger-button:disabled{opacity:.55;cursor:wait}
+.shelf-picker-create:disabled{border-style:solid;border-color:#303034;color:#66666c;cursor:not-allowed;background:transparent}
+.record-action-menu.mobile-record-menu{pointer-events:auto;overflow-y:auto;overscroll-behavior:contain}
+
+@media screen and (max-width:760px){
+.shelf-strip{display:block;width:calc(100% + 30px);margin:0 -15px 18px}
+.shelf-strip-viewport{overflow:visible}
+.shelf-scroll-arrow,.shelf-strip.has-overflow .shelf-scroll-arrow{display:none!important}
+.record-menu-backdrop{touch-action:pan-y;overscroll-behavior:auto}
+.record-action-menu{pointer-events:auto}
+.edit-shelf-button{width:38px;height:38px;min-height:38px;padding:0;border-radius:50%}
+.edit-shelf-button span{display:none}
+.edit-shelf-button svg{width:17px;height:17px}
+.delete-shelf-button{width:38px;height:38px;min-height:38px;padding:0;border-radius:50%}
+.delete-shelf-button span{display:none}
+.delete-shelf-button svg{width:17px;height:17px}
+.library-title-actions{gap:8px}
+.shelf-danger-button{min-height:44px}
+}
+
+
+/* SHELVES V5 */
+@media screen and (min-width:761px){
+.library-title-row{justify-content:flex-start}
+.library-title-actions{margin-left:12px}
+}
+@media screen and (max-width:760px){
+.library-title-row{justify-content:space-between}
+.library-title-actions{margin-left:0}
+}
+
+
+/* SHELVES V6.1 */
+.shelf-picker-empty{padding:14px 12px;border:1px dashed #343438;border-radius:9px;color:#85858b;font-size:11px;line-height:1.45;text-align:center}
+.detail-shelf-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}
+.detail-shelf-actions[hidden]{display:none!important}
+.detail-shelf-button{display:inline-flex;min-height:36px;align-items:center;justify-content:center;padding:0 13px;border-radius:8px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
+.detail-shelf-button:active{transform:scale(.97)}
+.detail-shelf-button:disabled{opacity:.55;cursor:wait}
+.detail-shelf-button.primary{border:1px solid rgba(232,83,1,.62);background:rgba(232,83,1,.12);color:#ff7a39}
+.detail-shelf-button.primary:hover{border-color:#E85301;background:#E85301;color:#fff}
+.detail-shelf-button.secondary{border:1px solid #3a3a3e;background:#151517;color:#c8c8cd}
+.detail-shelf-button.secondary:hover{border-color:#55555a;background:#202023;color:#fff}
+@media screen and (min-width:761px){
+.shelf-chip{width:176px;min-width:176px;max-width:176px;flex:0 0 176px}
+.shelf-chip-copy{width:124px;overflow:hidden}
+.shelf-chip-copy strong{display:block;max-width:124px}
+.shelf-new-button{width:176px;min-width:176px;max-width:176px;flex-basis:176px}
+}
+@media screen and (max-width:760px){
+.shelf-chip{width:auto;min-width:auto;max-width:182px;flex:0 0 auto}
+.shelf-chip-copy{width:auto;max-width:136px;overflow:hidden}
+.shelf-chip-copy strong{max-width:136px}
+.shelf-new-button{width:auto;min-width:auto;max-width:160px;flex-basis:auto}
+.detail-shelf-actions{gap:7px;margin-top:12px}
+.detail-shelf-button{min-height:34px;padding:0 10px;font-size:10px}
+}
+
+/* SHELVES V6.2 - mobile album-detail layout */
+.detail-info-card{display:contents}
+@media screen and (max-width:760px){
+.album-detail-main{display:contents!important;padding:0!important;border:0!important;background:transparent!important}
+.detail-info-card{display:block;grid-column:2;grid-row:1;align-self:end;padding:12px;border:1px solid var(--groovy-line);border-radius:8px;background:#121214}
+.detail-shelf-actions{grid-column:1/-1;grid-row:2;width:100%;margin:14px 0 0;gap:8px;flex-wrap:nowrap}
+.detail-shelf-actions:not([hidden]){display:flex}
+.detail-shelf-button{min-width:0;flex:1 1 0;min-height:40px;padding:0 12px;font-size:11px}
+.detail-spotify-link{grid-column:1/-1;grid-row:3;width:100%;min-height:62px;margin:12px 0 0;padding:14px 16px;border:1px solid var(--groovy-line);border-radius:8px;background:#121214;gap:11px}
+.detail-spotify-mark{width:30px;height:30px;flex-basis:30px}
+.detail-spotify-link small{display:block}
+.detail-spotify-link .external-link-icon{margin-left:auto}
+.album-tracks{grid-row:4;margin-top:12px}
+}
+
+/* SHELVES V6.4 - equal mobile detail height, visible shelf status, safer mobile shelf modal */
+.detail-shelf-status{display:inline-flex;max-width:100%;align-items:center;gap:7px;width:max-content;margin-top:13px;padding:6px 9px;border:1px solid rgba(232,83,1,.32);border-radius:999px;background:rgba(232,83,1,.08);color:#d7d7da;font-size:10px;font-weight:700;line-height:1;white-space:nowrap}
+.detail-shelf-status[hidden]{display:none!important}
+.detail-shelf-status-icon{display:inline-flex;width:17px;height:17px;flex:0 0 17px;align-items:center;justify-content:center;border-radius:50%;background:rgba(232,83,1,.14);color:#ff7130;font-size:11px}
+.detail-shelf-status-label{color:#77777d;font-size:8px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
+.detail-shelf-status strong{display:block;min-width:0;max-width:180px;overflow:hidden;color:#f1f1f3;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+.detail-shelf-status.unshelved{border-color:#343438;background:#151517;color:#a6a6ab}
+.detail-shelf-status.unshelved .detail-shelf-status-icon{background:#202023;color:#77777d}
+
+@media screen and (max-width:760px){
+.album-detail-cover{align-self:end!important;height:auto!important;aspect-ratio:1/1}
+.detail-info-card{box-sizing:border-box;align-self:end!important;min-height:0;display:flex!important;flex-direction:column;justify-content:flex-end;overflow:hidden;padding:10px!important}
+.detail-info-card .detail-artist{flex:0 0 auto;margin-bottom:3px;font-size:14px;line-height:1.1}
+.detail-info-card .detail-album{flex:0 1 auto;font-size:clamp(16px,5vw,20px);line-height:1.08;-webkit-line-clamp:2}
+.detail-info-card .detail-meta{flex:0 0 auto;margin-top:7px;gap:4px;font-size:10px}
+.detail-info-card .detail-meta #detailGenre:after{font-size:10px}
+.detail-info-card .detail-rating{flex:0 0 auto;margin-top:7px;font-size:16px;line-height:1;letter-spacing:0}
+.detail-shelf-status{flex:0 0 auto;max-width:100%;margin-top:7px;padding:4px 7px;gap:5px;font-size:9px}
+.detail-shelf-status-icon{width:15px;height:15px;flex-basis:15px;font-size:9px}
+.detail-shelf-status-label{font-size:7px;letter-spacing:.08em}
+.detail-shelf-status strong{max-width:min(25vw,96px);font-size:9px}
+.shelf-modal{top:var(--groovy-visual-top,0)!important;bottom:auto!important;height:var(--groovy-visual-height,100dvh)!important;min-height:0;overflow:hidden}
+.shelf-modal-box{max-height:calc(var(--groovy-visual-height,100dvh) - 12px)!important;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+}
+
+@media screen and (max-width:380px){
+.detail-info-card{padding:8px!important}
+.detail-info-card .detail-artist{font-size:13px}
+.detail-info-card .detail-album{font-size:16px}
+.detail-info-card .detail-meta{margin-top:5px;font-size:9px}
+.detail-info-card .detail-meta #detailGenre:after{font-size:9px}
+.detail-shelf-status{margin-top:5px;padding:3px 6px}
+.detail-shelf-status-label{display:none}
+.detail-shelf-status strong{max-width:84px}
+.detail-info-card .detail-rating{margin-top:5px;font-size:15px}
+}
+
+
+/* SHELVES V6.5 - always-square mobile album cover */
+@media screen and (max-width:760px){
+.album-detail-cover{position:relative!important;width:100%!important;height:auto!important;aspect-ratio:1/1!important;overflow:hidden!important;align-self:end!important}
+.album-detail-cover img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center center!important;display:block!important}
+}
+/* SHELVES V6.6 - shelf badge on record thumbnails */
+.record-card-topbar{min-height:22px}
+.record-shelf-status{display:inline-flex;min-width:0;max-width:150px;align-items:center;gap:5px;margin-left:7px;padding:3px 7px;border:1px solid rgba(232,83,1,.32);border-radius:999px;background:rgba(232,83,1,.08);color:#d7d7da;font-size:8px;font-weight:700;line-height:1;white-space:nowrap;overflow:hidden}
+.record-shelf-status-icon{display:inline-flex;width:14px;height:14px;flex:0 0 14px;align-items:center;justify-content:center;border-radius:50%;background:rgba(232,83,1,.14);color:#ff7130;font-size:9px}
+.record-shelf-status-label{flex:0 0 auto;color:#77777d;font-size:6px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.record-shelf-status strong{display:block;min-width:0;overflow:hidden;color:#f1f1f3;font-size:8px;text-overflow:ellipsis;white-space:nowrap}
+.record-shelf-status.unshelved{border-color:#343438;background:#151517;color:#a6a6ab}
+.record-shelf-status.unshelved .record-shelf-status-icon{background:#202023;color:#77777d}
+@media screen and (max-width:760px){
+.record-card-topbar{min-height:21px}
+.record-shelf-status{max-width:112px;gap:4px;margin-left:5px;padding:2px 5px}
+.record-shelf-status-icon{width:13px;height:13px;flex-basis:13px;font-size:8px}
+.record-shelf-status-label{font-size:6px}
+.record-shelf-status strong{font-size:7px}
+}
+@media screen and (max-width:380px){
+.record-shelf-status{max-width:94px}
+.record-shelf-status-label{display:none}
+}
+
+
+/* SHELVES V6.8 - simpler shelf labels and better topbar vertical balance */
+.record-card-topbar{min-height:27px!important;height:27px!important;align-items:center!important;margin:0 2px 5px!important}
+.record-card-topbar .number{display:inline-flex!important;align-items:center!important;height:20px!important;line-height:20px!important}
+.record-shelf-status{height:20px!important;min-height:20px!important;align-items:center!important;margin-left:7px!important;padding:0 7px!important;line-height:20px!important}
+.record-shelf-status strong{line-height:20px!important}
+.record-shelf-status.unshelved{padding-left:8px!important;padding-right:8px!important}
+.detail-shelf-status-label,.record-shelf-status-label{display:none!important}
+.detail-shelf-status.unshelved .detail-shelf-status-icon,.record-shelf-status.unshelved .record-shelf-status-icon{display:none!important}
+@media screen and (max-width:760px){
+.record-card-topbar{min-height:24px!important;height:24px!important;margin:0 2px 4px!important}
+.record-card-topbar .number{height:18px!important;line-height:18px!important}
+.record-shelf-status{height:18px!important;min-height:18px!important;max-width:118px!important;margin-left:5px!important;padding:0 6px!important;line-height:18px!important}
+.record-shelf-status strong{line-height:18px!important}
+.record-shelf-status-icon{width:13px!important;height:13px!important;flex-basis:13px!important}
+}
+@media screen and (max-width:380px){
+.record-shelf-status{max-width:98px!important}
+}
+
+/* SHELVES V6.10 - balanced desktop thumbnail topbar */
+@media screen and (min-width:761px){
+.grid .record{padding-top:3px}
+.record-card-topbar{height:22px!important;min-height:22px!important;align-items:center!important;margin:0 2px 3px!important}
+.record-card-topbar .number{display:inline-flex!important;height:18px!important;align-items:center!important;line-height:18px!important}
+.record-shelf-status{height:18px!important;min-height:18px!important;align-items:center!important;padding-top:0!important;padding-bottom:0!important;line-height:18px!important}
+.record-shelf-status strong{line-height:18px!important}
+.record-menu-button{top:50%!important;transform:translateY(-50%)!important}
+}
+
+
+/* SHELVES V6.11 - compact mobile details, public-profile shelf placement, streaming pair */
+.detail-streaming-row{display:flex;align-items:center;justify-content:center;gap:8px;width:max-content;max-width:100%;margin:20px auto 0}
+.detail-streaming-link{display:flex;align-items:center;justify-content:center;height:31px;min-width:0;text-decoration:none;-webkit-tap-highlight-color:transparent;transition:transform .15s ease}
+.detail-streaming-link:active{transform:scale(.97)}
+.detail-apple-service{flex:0 0 auto;padding:0;border:0;background:none;overflow:visible}
+.detail-apple-music-badge{display:block;width:auto;height:31px;max-width:100%}
+.detail-spotify-service{flex:0 0 auto;padding:0 8px;border:1px solid #343438;border-radius:7px;background:#09090a;overflow:hidden;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.detail-spotify-service:hover{background:#151517;border-color:#55555a}
+.detail-spotify-service-logo{display:block;width:68px;height:auto;max-width:68px}
+
+@media screen and (max-width:760px){
+/* Keep the card-top control strip as compact as desktop. */
+.grid .record{padding-top:3px}
+.record-card-topbar{height:20px!important;min-height:20px!important;margin:0 2px 2px!important}
+.record-card-topbar .number{height:16px!important;line-height:16px!important}
+.record-shelf-status{height:16px!important;min-height:16px!important;max-width:112px!important;margin-left:5px!important;padding:0 6px!important;line-height:16px!important}
+.record-shelf-status strong{line-height:16px!important}
+.record-shelf-status-icon{width:12px!important;height:12px!important;flex-basis:12px!important;font-size:8px!important}
+.record-menu-button{top:50%!important;transform:translateY(-50%)!important}
+
+/* Give two-line album titles a little breathing room while keeping the fixed square pair. */
+.detail-info-card .detail-album{line-height:1.15!important;padding-bottom:2px}
+.detail-info-card .detail-rating{margin-top:6px!important;line-height:1}
+.detail-info-card .album-rating-star{font-size:20px!important;line-height:1!important}
+
+/* Apple + Spotify share their own centered full-width row beneath shelf actions. */
+.detail-streaming-row{grid-column:1/-1;grid-row:3;width:100%;min-height:58px;margin:12px 0 0;padding:12px 14px;border:1px solid var(--groovy-line);border-radius:8px;background:#121214;gap:7px}
+.detail-streaming-link{height:31px}
+.detail-apple-music-badge{height:31px}
+.detail-spotify-service{height:31px;padding-left:6px;padding-right:6px;border-radius:6px}
+.detail-spotify-service-logo{width:62px;max-width:62px}
+.album-tracks{grid-row:4!important;margin-top:12px}
+}
+
+@media screen and (max-width:380px){
+.detail-info-card .album-rating-star{font-size:18px!important}
+.detail-streaming-row{gap:5px;padding-left:8px;padding-right:8px}
+.detail-spotify-service{padding-left:4px;padding-right:4px}
+.detail-spotify-service-logo{width:56px;max-width:56px}
+}
+
+/* SHELVES V6.12 - detail streaming polish, portrait-only phone UX and mobile detail balance */
+@media screen and (min-width:761px){
+.detail-streaming-row{flex-direction:column;align-items:flex-start;justify-content:flex-start;width:max-content;margin:24px 0 0;gap:8px}
+.detail-streaming-row:before{content:"LISTEN";display:block;margin:0 0 1px 1px;color:#6f6f75;font-size:9px;font-weight:800;letter-spacing:.14em;line-height:1;text-transform:uppercase}
+.detail-streaming-link{height:38px}
+.detail-apple-music-badge{height:38px}
+.detail-spotify-service{height:38px;min-width:97px;padding:0 10px;border-radius:8px}
+.detail-spotify-service-logo{width:76px;max-width:76px}
+}
+
+@media screen and (max-width:760px){
+/* The info card stays exactly as tall as the square cover, but its contents sit visually centered. */
+.detail-info-card{justify-content:center!important;align-self:stretch!important}
+
+/* Streaming links sit directly on the album background rather than inside another card. */
+.detail-streaming-row{grid-column:1/-1;grid-row:3;width:100%;min-height:40px;margin:10px 0 0;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;gap:9px;justify-content:center}
+.detail-streaming-row:before{display:none!important}
+.detail-streaming-link{height:35px}
+.detail-apple-music-badge{height:35px}
+.detail-spotify-service{height:35px;padding-left:8px;padding-right:8px;border-radius:7px}
+.detail-spotify-service-logo{width:68px;max-width:68px}
+.album-tracks{grid-row:4!important;margin-top:12px}
+}
+
+@media screen and (max-width:380px){
+.detail-streaming-row{gap:7px}
+.detail-streaming-link{height:33px}
+.detail-apple-music-badge{height:33px}
+.detail-spotify-service{height:33px;padding-left:6px;padding-right:6px}
+.detail-spotify-service-logo{width:64px;max-width:64px}
+}
+
+/* Browser pages cannot universally force the physical device orientation. On phones we block the
+   landscape UI and ask the user to rotate back; installed/fullscreen browsers may also accept the
+   Screen Orientation lock requested by app.js. */
+.groovy-portrait-guard{display:none;position:fixed;z-index:2147483647;inset:0;align-items:center;justify-content:center;padding:28px;background:#09090a;color:#f5f5f5;text-align:center}
+.groovy-portrait-guard-card{display:flex;max-width:360px;flex-direction:column;align-items:center;gap:13px}
+.groovy-portrait-guard-icon{display:flex;width:58px;height:58px;align-items:center;justify-content:center;border:1px solid rgba(232,83,1,.55);border-radius:18px;background:rgba(232,83,1,.1);color:#ff6b24;font-size:30px;transform:rotate(-90deg)}
+.groovy-portrait-guard strong{font-size:20px;letter-spacing:-.02em}
+.groovy-portrait-guard span{color:#929298;font-size:13px;line-height:1.5}
+.groovy-portrait-guard.visible{display:flex}
+
+/* STREAMING V3 - desktop service cards, clean mobile links */
+.detail-streaming-row{display:flex;align-items:stretch;justify-content:space-between;width:100%;max-width:none;margin:22px 0 0;gap:10px}
+.detail-streaming-link{box-sizing:border-box;text-decoration:none;-webkit-tap-highlight-color:transparent;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.detail-streaming-link:active{transform:scale(.985)}
+.detail-apple-service{display:flex;flex:0 0 44%;min-width:0;align-items:center;justify-content:flex-start;padding:10px 12px;border:1px solid var(--groovy-line);border-radius:9px;background:#111113;overflow:hidden}
+.detail-apple-music-badge{display:block;width:min(100%,141px);height:auto;max-height:41px}
+.detail-spotify-service{display:flex;min-width:0;flex:1 1 56%;align-items:center;justify-content:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--groovy-line);border-radius:9px;background:#111113;color:#fff;overflow:hidden}
+.detail-spotify-service-logo{display:block;width:35px;height:35px;max-width:none;flex:0 0 35px}
+.detail-spotify-service-copy{display:flex;min-width:0;flex-direction:column;gap:3px;overflow:hidden}
+.detail-spotify-service-copy strong{overflow:hidden;color:#f4f4f5;font-size:12px;font-weight:750;line-height:1.15;text-overflow:ellipsis;white-space:nowrap}
+.detail-spotify-service-copy small{overflow:hidden;color:#85858b;font-size:8.5px;font-weight:500;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}
+.detail-apple-service:hover,.detail-spotify-service:hover{border-color:#505057;background:#151517}
+@media screen and (max-width:1120px) and (min-width:761px){.detail-streaming-row{gap:8px}.detail-apple-service{flex-basis:43%;padding:9px 10px}.detail-apple-music-badge{width:min(100%,132px)}.detail-spotify-service{padding:9px 10px;gap:8px}.detail-spotify-service-logo{width:31px;height:31px;flex-basis:31px}.detail-spotify-service-copy strong{font-size:11px}.detail-spotify-service-copy small{font-size:8px}}
+@media screen and (max-width:760px){.detail-streaming-row{grid-column:1/-1;grid-row:3;width:100%;min-height:38px;margin:10px 0 0;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;gap:12px;align-items:center;justify-content:center}.detail-streaming-row:before{display:none!important}.detail-streaming-link{height:auto!important;border:0!important;border-radius:0!important;background:transparent!important;padding:0!important;overflow:visible}.detail-apple-service{display:flex;flex:0 0 auto;min-width:0;justify-content:center}.detail-apple-music-badge{width:128px;height:auto;max-height:none}.detail-spotify-service{display:flex;flex:0 1 auto;min-width:0;gap:7px;align-items:center}.detail-spotify-service-logo{width:27px;height:27px;flex-basis:27px}.detail-spotify-service-copy{gap:2px}.detail-spotify-service-copy strong{font-size:10px}.detail-spotify-service-copy small{font-size:7.5px}.album-tracks{grid-row:4!important;margin-top:12px}}
+@media screen and (max-width:380px){.detail-streaming-row{gap:9px}.detail-apple-music-badge{width:116px}.detail-spotify-service-logo{width:24px;height:24px;flex-basis:24px}.detail-spotify-service-copy strong{font-size:9px}.detail-spotify-service-copy small{font-size:7px}}
+
+
+/* STREAMING V4 - one shared desktop panel; mobile stays unchanged */
+@media screen and (min-width:761px){
+.detail-streaming-row{position:relative;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;width:100%;max-width:none;min-height:64px;margin:22px 0 0;padding:11px 14px;border:1px solid var(--groovy-line);border-radius:9px;background:#111113;gap:16px;overflow:visible}
+.detail-streaming-row:before{content:none!important;display:none!important}
+.detail-shelf-actions:not([hidden]) + .detail-streaming-row{margin-top:29px}
+.detail-shelf-actions:not([hidden]) + .detail-streaming-row:after{content:"";position:absolute;left:0;right:0;top:-15px;height:1px;background:rgba(255,255,255,.09);pointer-events:none}
+.detail-streaming-link{height:auto!important;min-height:40px;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;transition:none!important}
+.detail-streaming-link:hover{border-color:transparent!important;background:transparent!important;box-shadow:none!important}
+.detail-apple-service{display:flex;flex:0 0 auto;min-width:0;align-items:center;justify-content:flex-start;padding:0!important;overflow:visible}
+.detail-apple-music-badge{display:block;width:min(100%,160px);height:auto;max-height:44px}
+.detail-spotify-service{display:flex;flex:1 1 auto;min-width:0;align-items:center;justify-content:flex-start;gap:11px;padding:0!important;border-left:0!important;color:#fff;overflow:visible}
+.detail-spotify-service-logo{display:block;width:36px;height:36px;max-width:none;flex:0 0 36px}
+.detail-spotify-service-copy{display:flex;min-width:0;flex-direction:column;gap:3px;overflow:hidden}
+.detail-spotify-service-copy strong{overflow:hidden;color:#f4f4f5;font-size:12px;font-weight:750;line-height:1.15;text-overflow:ellipsis;white-space:nowrap}
+.detail-spotify-service-copy small{overflow:hidden;color:#85858b;font-size:8.5px;font-weight:500;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}
+}
+@media screen and (max-width:1120px) and (min-width:761px){
+.detail-streaming-row{min-height:60px;padding:10px 12px}
+.detail-apple-service{flex-basis:auto;padding-right:0!important}
+.detail-apple-music-badge{width:min(100%,145px)}
+.detail-spotify-service{padding-left:0!important;gap:9px}
+.detail-spotify-service-logo{width:32px;height:32px;flex-basis:32px}
+.detail-spotify-service-copy strong{font-size:11px}
+.detail-spotify-service-copy small{font-size:8px}
+}
+
+/* PROFILE NAV V1 - own-library header tabs + viewed-user local navigation */
+.viewed-user-actions .viewed-user-nav,.viewed-user-actions .viewed-user-stats{border-color:transparent!important;background:transparent!important;color:#96969d!important;box-shadow:none!important}
+.viewed-user-actions .viewed-user-nav.active{border-color:rgba(255,100,24,.34)!important;background:rgba(255,100,24,.1)!important;color:#fff!important}
+.viewed-user-actions .viewed-user-nav.active>span:first-child{color:var(--groovy-orange)!important}
+.viewed-user-actions .viewed-user-nav:hover,.viewed-user-actions .viewed-user-stats:hover{border-color:rgba(255,255,255,.1)!important;background:rgba(255,255,255,.055)!important;color:#fff!important}
+.viewed-user-actions .viewed-user-stats:hover{border-color:rgba(255,100,24,.25)!important;background:rgba(255,100,24,.075)!important}
+.viewed-user-actions .record-icon{width:14px;height:14px;flex-basis:14px}
+.viewed-user-actions .wishlist-icon{width:16px;height:16px;flex-basis:16px}
+#copyProfileLinkButton[hidden]{display:none!important}
+@media screen and (min-width:761px){.viewed-user-header{justify-content:space-between}.viewed-user-actions{margin-left:auto;padding-left:9px}.viewed-user-actions button{min-width:82px}.viewed-user-actions .viewed-user-stats{min-width:96px}}
+@media screen and (max-width:760px){.viewed-user-header{gap:9px!important;padding:10px!important}.viewed-user-identity{width:100%;padding-right:0!important}.viewed-user-copy{flex:1}.viewed-user-name{max-width:none!important}.viewed-user-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));width:100%!important;margin:0!important;padding:8px 0 0!important;border-left:0!important;border-top:1px solid rgba(255,255,255,.07)}.viewed-user-actions button{width:100%;min-width:0!important;min-height:40px!important;padding:5px 6px!important;border-radius:8px!important;font-size:10px!important}.viewed-user-actions .viewed-action-label{display:inline!important}.viewed-user-actions .record-icon{width:13px;height:13px;flex-basis:13px}.viewed-user-actions .wishlist-icon{width:15px;height:15px;flex-basis:15px}}
+@media screen and (max-width:380px){.viewed-user-actions button{gap:4px!important;padding-left:4px!important;padding-right:4px!important;font-size:9px!important}}
