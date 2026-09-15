@@ -1527,3 +1527,9 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .detail-info-card .detail-rating{margin-top:5px;font-size:15px}
 }
 
+
+/* SHELVES V6.5 - always-square mobile album cover */
+@media screen and (max-width:760px){
+.album-detail-cover{position:relative!important;width:100%!important;height:auto!important;aspect-ratio:1/1!important;overflow:hidden!important;align-self:end!important}
+.album-detail-cover img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center center!important;display:block!important}
+}
