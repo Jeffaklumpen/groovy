@@ -1489,3 +1489,41 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .detail-spotify-link .external-link-icon{margin-left:auto}
 .album-tracks{grid-row:4;margin-top:12px}
 }
+
+/* SHELVES V6.4 - equal mobile detail height, visible shelf status, safer mobile shelf modal */
+.detail-shelf-status{display:inline-flex;max-width:100%;align-items:center;gap:7px;width:max-content;margin-top:13px;padding:6px 9px;border:1px solid rgba(232,83,1,.32);border-radius:999px;background:rgba(232,83,1,.08);color:#d7d7da;font-size:10px;font-weight:700;line-height:1;white-space:nowrap}
+.detail-shelf-status[hidden]{display:none!important}
+.detail-shelf-status-icon{display:inline-flex;width:17px;height:17px;flex:0 0 17px;align-items:center;justify-content:center;border-radius:50%;background:rgba(232,83,1,.14);color:#ff7130;font-size:11px}
+.detail-shelf-status-label{color:#77777d;font-size:8px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
+.detail-shelf-status strong{display:block;min-width:0;max-width:180px;overflow:hidden;color:#f1f1f3;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+.detail-shelf-status.unshelved{border-color:#343438;background:#151517;color:#a6a6ab}
+.detail-shelf-status.unshelved .detail-shelf-status-icon{background:#202023;color:#77777d}
+
+@media screen and (max-width:760px){
+.album-detail-cover{align-self:end!important;height:auto!important;aspect-ratio:1/1}
+.detail-info-card{box-sizing:border-box;align-self:end!important;min-height:0;display:flex!important;flex-direction:column;justify-content:flex-end;overflow:hidden;padding:10px!important}
+.detail-info-card .detail-artist{flex:0 0 auto;margin-bottom:3px;font-size:14px;line-height:1.1}
+.detail-info-card .detail-album{flex:0 1 auto;font-size:clamp(16px,5vw,20px);line-height:1.08;-webkit-line-clamp:2}
+.detail-info-card .detail-meta{flex:0 0 auto;margin-top:7px;gap:4px;font-size:10px}
+.detail-info-card .detail-meta #detailGenre:after{font-size:10px}
+.detail-info-card .detail-rating{flex:0 0 auto;margin-top:7px;font-size:16px;line-height:1;letter-spacing:0}
+.detail-shelf-status{flex:0 0 auto;max-width:100%;margin-top:7px;padding:4px 7px;gap:5px;font-size:9px}
+.detail-shelf-status-icon{width:15px;height:15px;flex-basis:15px;font-size:9px}
+.detail-shelf-status-label{font-size:7px;letter-spacing:.08em}
+.detail-shelf-status strong{max-width:min(25vw,96px);font-size:9px}
+.shelf-modal{top:var(--groovy-visual-top,0)!important;bottom:auto!important;height:var(--groovy-visual-height,100dvh)!important;min-height:0;overflow:hidden}
+.shelf-modal-box{max-height:calc(var(--groovy-visual-height,100dvh) - 12px)!important;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+}
+
+@media screen and (max-width:380px){
+.detail-info-card{padding:8px!important}
+.detail-info-card .detail-artist{font-size:13px}
+.detail-info-card .detail-album{font-size:16px}
+.detail-info-card .detail-meta{margin-top:5px;font-size:9px}
+.detail-info-card .detail-meta #detailGenre:after{font-size:9px}
+.detail-shelf-status{margin-top:5px;padding:3px 6px}
+.detail-shelf-status-label{display:none}
+.detail-shelf-status strong{max-width:84px}
+.detail-info-card .detail-rating{margin-top:5px;font-size:15px}
+}
+
