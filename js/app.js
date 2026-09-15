@@ -7043,7 +7043,14 @@ async function loadUserFromUrl(){
     await loadOtherUserCollection(user.id);
 }
 
-window.addEventListener('popstate',function(){
+window.addEventListener('popstate',function(event){
+    if(
+        window.GroovyModalNavigation&&
+        typeof window.GroovyModalNavigation.handlePopState==='function'&&
+        window.GroovyModalNavigation.handlePopState(event)
+    ){
+        return;
+    }
     renderCurrentRoute();
 });
 
@@ -7078,8 +7085,26 @@ updateScrollTopButton();
 
 /* SHELVES V6.12 - mobile edge-swipe dismiss + portrait phone behavior */
 (function(){
-  var EDGE_START=30;
-  var EDGE_CLOSE=76;
+  /*
+   * Mobile modal navigation
+   * -----------------------
+   * A normal touch handler cannot reliably take ownership of iOS Safari's
+   * system back-swipe when the gesture begins at the physical screen edge.
+   * While a Groovy window is open we therefore add a same-URL history entry.
+   * If the browser wins the edge gesture, the resulting popstate closes the
+   * top Groovy window instead of leaving the current Groovy route.
+   *
+   * The touch gesture below remains as a fast in-app fallback for browsers
+   * that do give the page control of the horizontal swipe.
+   */
+  var EDGE_START=64;
+  var EDGE_CLOSE=72;
+  var MODAL_HISTORY_FLAG='__groovyModal';
+  var modalHistoryStack=[];
+  var modalHistorySuppressNextPop=false;
+  var modalHistoryClosingFromPop=false;
+  var modalHistoryLastKind='';
+  var modalHistoryBackPending=false;
   var swipeActive=false;
   var swipeStartX=0;
   var swipeStartY=0;
@@ -7170,8 +7195,105 @@ updateScrollTopButton();
     document.body.classList.toggle('groovy-modal-open',open);
   }
 
-  var modalObserver=new MutationObserver(function(){
+  function currentStateIsModal(){
+    return !!(history.state&&history.state[MODAL_HISTORY_FLAG]);
+  }
+
+  function pushModalHistory(kind){
+    if(!kind)return;
+
+    var state=Object.assign({},history.state||{});
+    state[MODAL_HISTORY_FLAG]=true;
+    state.groovyModalKind=kind;
+    state.groovyModalDepth=modalHistoryStack.length+1;
+
+    history.pushState(state,'',window.location.href);
+    modalHistoryStack.push(kind);
+  }
+
+  function removeManualModalHistoryEntry(){
+    if(modalHistoryBackPending||!currentStateIsModal())return;
+
+    modalHistoryBackPending=true;
+    modalHistorySuppressNextPop=true;
+    history.back();
+  }
+
+  function syncModalHistory(){
     syncModalOpenClass();
+
+    var kind=topGroovyWindow();
+
+    if(modalHistoryClosingFromPop){
+      modalHistoryLastKind=kind;
+      return;
+    }
+
+    if(kind===modalHistoryLastKind)return;
+
+    /* A new top-level or nested Groovy window has appeared. */
+    if(kind&&modalHistoryStack[modalHistoryStack.length-1]!==kind){
+      pushModalHistory(kind);
+      modalHistoryLastKind=kind;
+      return;
+    }
+
+    /*
+     * A close button / overlay tap closed the current window. Remove the
+     * matching synthetic history entry so the user's next Back action still
+     * goes to the real previous page/route.
+     */
+    if(modalHistoryStack.length&&modalHistoryStack[modalHistoryStack.length-1]!==kind){
+      modalHistoryStack.pop();
+      modalHistoryLastKind=kind;
+      removeManualModalHistoryEntry();
+      return;
+    }
+
+    modalHistoryLastKind=kind;
+  }
+
+  function handleModalPopState(){
+    if(modalHistorySuppressNextPop){
+      modalHistorySuppressNextPop=false;
+      modalHistoryBackPending=false;
+      return true;
+    }
+
+    var kind=topGroovyWindow();
+    if(!kind)return false;
+
+    /*
+     * The browser (including Safari's native edge-back gesture) moved back to
+     * the entry beneath this window. Consume that navigation by closing only
+     * Groovy's topmost window; the URL is unchanged.
+     */
+    modalHistoryClosingFromPop=true;
+    modalHistoryBackPending=false;
+
+    if(modalHistoryStack.length)modalHistoryStack.pop();
+    closeTopGroovyWindow(kind);
+    modalHistoryLastKind=topGroovyWindow();
+
+    setTimeout(function(){
+      modalHistoryClosingFromPop=false;
+      syncModalHistory();
+    },0);
+
+    return true;
+  }
+
+  window.GroovyModalNavigation={
+    handlePopState:handleModalPopState,
+    closeTopWindow:function(){
+      var kind=topGroovyWindow();
+      if(!kind)return false;
+      return closeTopGroovyWindow(kind);
+    }
+  };
+
+  var modalObserver=new MutationObserver(function(){
+    syncModalHistory();
   });
 
   [
@@ -7265,5 +7387,5 @@ updateScrollTopButton();
   },{passive:true});
   document.addEventListener('pointerdown',requestPortraitLock,{passive:true,once:true});
   updatePortraitGuard();
-  syncModalOpenClass();
+  syncModalHistory();
 })();
