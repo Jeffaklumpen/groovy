@@ -23,7 +23,7 @@
   <meta name="application-name" content="Groovy">
   <meta name="theme-color" content="#121214">
   <title>GroovyShelves – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=94">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=95">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/groovy/icons/apple-touch-icon.png">
   <link rel="manifest" href="/groovy/manifest.webmanifest">
@@ -241,7 +241,8 @@
 
 <section id="detailAboutAlbum" class="album-about" aria-labelledby="detailAboutAlbumTitle" hidden>
   <h2 id="detailAboutAlbumTitle">About This Album</h2>
-  <p id="detailAboutAlbumText"></p>
+  <div id="detailAboutAlbumBody" class="album-about-body"><p id="detailAboutAlbumText"></p></div>
+  <button id="detailAboutAlbumToggle" class="album-about-toggle" type="button" aria-expanded="false" aria-controls="detailAboutAlbumBody" hidden><span>Read more</span><i aria-hidden="true"></i></button>
   <div class="album-about-source">
     <a id="detailAboutAlbumLink" href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia ↗</a>
     <span>Wikipedia contributors · <a class="album-about-license" href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a></span>
@@ -492,7 +493,7 @@
 </div>
 
 <script src="/groovy/js/route-state.js?v=14"></script>
-<script src="/groovy/js/app.js?v=96"></script>
+<script src="/groovy/js/app.js?v=97"></script>
 <script src="/groovy/js/statistics-core.js?v=3"></script>
 <script src="/groovy/js/statistics.js?v=6"></script>
 <script src="/groovy/js/pwa.js?v=3"></script>
