@@ -786,6 +786,7 @@ var loadedShelfUserId='';
 var shelfPickerRecordIndex=-1;
 var createShelfReturnRecordIndex=-1;
 var selectedShelfIcon='record';
+var editingShelfId='';
 var MAX_SHELVES=10;
 
 var shelfStrip=document.getElementById('shelfStrip');
@@ -793,6 +794,7 @@ var shelfStripViewport=document.getElementById('shelfStripViewport');
 var shelfStripScroll=document.getElementById('shelfStripScroll');
 var shelfScrollLeft=document.getElementById('shelfScrollLeft');
 var shelfScrollRight=document.getElementById('shelfScrollRight');
+var editShelfButton=document.getElementById('editShelfButton');
 var deleteShelfButton=document.getElementById('deleteShelfButton');
 var deleteShelfModal=document.getElementById('deleteShelfModal');
 var closeDeleteShelfButton=document.getElementById('closeDeleteShelf');
@@ -801,6 +803,8 @@ var confirmDeleteShelfButton=document.getElementById('confirmDeleteShelf');
 var deleteShelfMessage=document.getElementById('deleteShelfMessage');
 var deleteShelfStatus=document.getElementById('deleteShelfStatus');
 var createShelfModal=document.getElementById('createShelfModal');
+var createShelfTitle=document.getElementById('createShelfTitle');
+var createShelfDescription=document.getElementById('createShelfDescription');
 var closeCreateShelfButton=document.getElementById('closeCreateShelf');
 var cancelCreateShelfButton=document.getElementById('cancelCreateShelf');
 var confirmCreateShelfButton=document.getElementById('confirmCreateShelf');
@@ -925,6 +929,7 @@ function renderShelfStrip(){
   if(hide){
     shelfStripScroll.innerHTML='';
     shelfStrip.classList.remove('has-overflow');
+    if(editShelfButton)editShelfButton.hidden=true;
     if(deleteShelfButton)deleteShelfButton.hidden=true;
     return;
   }
@@ -962,9 +967,9 @@ function renderShelfStrip(){
   var newShelfButton=shelfStripScroll.querySelector('.shelf-new-button:not(:disabled)');
   if(newShelfButton)newShelfButton.addEventListener('click',function(){openCreateShelfModal(-1);});
 
-  if(deleteShelfButton){
-    deleteShelfButton.hidden=!(viewedUserId===null&&activeShelfId!=='all'&&shelfById(activeShelfId));
-  }
+  var canManageActiveShelf=viewedUserId===null&&activeShelfId!=='all'&&shelfById(activeShelfId);
+  if(editShelfButton)editShelfButton.hidden=!canManageActiveShelf;
+  if(deleteShelfButton)deleteShelfButton.hidden=!canManageActiveShelf;
 
   requestAnimationFrame(updateShelfScrollArrows);
 }
@@ -1002,18 +1007,27 @@ window.loadShelvesForUser=async function(userId){
   renderShelfStrip();
 };
 
-function resetShelfIconChoice(){
-  selectedShelfIcon='record';
+function setShelfIconChoice(icon){
+  selectedShelfIcon=icon||'record';
   if(!shelfIconChoices)return;
   shelfIconChoices.querySelectorAll('.shelf-icon-choice').forEach(function(button){
     button.classList.toggle('selected',button.getAttribute('data-icon')===selectedShelfIcon);
   });
 }
 
+function resetShelfIconChoice(){
+  setShelfIconChoice('record');
+}
+
 function closeCreateShelfModal(){
   createShelfModal.style.display='none';
   shelfNameInput.value='';
   createShelfStatus.textContent='';
+  createShelfReturnRecordIndex=-1;
+  editingShelfId='';
+  if(createShelfTitle)createShelfTitle.textContent='Create New Shelf';
+  if(createShelfDescription)createShelfDescription.textContent='Give your shelf a name and choose an icon.';
+  if(confirmCreateShelfButton)confirmCreateShelfButton.textContent='Create Shelf';
   resetShelfIconChoice();
 }
 
@@ -1025,12 +1039,33 @@ function openCreateShelfModal(returnRecordIndex){
     }
     return;
   }
+  editingShelfId='';
   createShelfReturnRecordIndex=typeof returnRecordIndex==='number'?returnRecordIndex:-1;
   shelfNameInput.value='';
   createShelfStatus.textContent='';
+  if(createShelfTitle)createShelfTitle.textContent='Create New Shelf';
+  if(createShelfDescription)createShelfDescription.textContent='Give your shelf a name and choose an icon.';
+  if(confirmCreateShelfButton)confirmCreateShelfButton.textContent='Create Shelf';
   resetShelfIconChoice();
   createShelfModal.style.display='flex';
   setTimeout(function(){shelfNameInput.focus();},0);
+}
+
+function openEditShelfModal(){
+  if(viewedUserId!==null||activeShelfId==='all')return;
+  var shelf=shelfById(activeShelfId);
+  if(!shelf)return;
+
+  editingShelfId=String(shelf.id);
+  createShelfReturnRecordIndex=-1;
+  shelfNameInput.value=String(shelf.name||'');
+  createShelfStatus.textContent='';
+  if(createShelfTitle)createShelfTitle.textContent='Edit Shelf';
+  if(createShelfDescription)createShelfDescription.textContent='Change the shelf name or choose a different icon.';
+  if(confirmCreateShelfButton)confirmCreateShelfButton.textContent='Save Changes';
+  setShelfIconChoice(shelf.icon||'record');
+  createShelfModal.style.display='flex';
+  setTimeout(function(){shelfNameInput.focus();shelfNameInput.select();},0);
 }
 
 function closeShelfPicker(){
@@ -1297,25 +1332,52 @@ cancelCreateShelfButton.addEventListener('click',closeCreateShelfModal);
 createShelfModal.addEventListener('click',function(event){if(event.target===createShelfModal)closeCreateShelfModal();});
 
 confirmCreateShelfButton.addEventListener('click',async function(){
-  if(shelves.length>=MAX_SHELVES){
+  var editingShelf=editingShelfId?shelfById(editingShelfId):null;
+
+  if(!editingShelf&&shelves.length>=MAX_SHELVES){
     createShelfStatus.textContent='You can create up to '+MAX_SHELVES+' shelves.';
     return;
   }
+
   var name=shelfNameInput.value.trim();
   if(!name){createShelfStatus.textContent='Enter a shelf name.';shelfNameInput.focus();return;}
-  if(name.length>40){createShelfStatus.textContent='Use 40 characters or fewer.';return;}
-  if(shelves.some(function(shelf){return String(shelf.name).toLocaleLowerCase()===name.toLocaleLowerCase();})){
+  if(name.length>30){createShelfStatus.textContent='Use 30 characters or fewer.';return;}
+  if(shelves.some(function(shelf){
+    return (!editingShelf||String(shelf.id)!==String(editingShelf.id))&&
+      String(shelf.name).toLocaleLowerCase()===name.toLocaleLowerCase();
+  })){
     createShelfStatus.textContent='You already have a shelf with that name.';
     return;
   }
 
   confirmCreateShelfButton.disabled=true;
-  createShelfStatus.textContent='Creating…';
+  createShelfStatus.textContent=editingShelf?'Saving…':'Creating…';
 
   try{
     var {data:{session}}=await supabaseClient.auth.getSession();
     var user=session&&session.user;
     if(!user)throw new Error('Du måste vara inloggad.');
+
+    if(editingShelf){
+      var {data:updatedShelf,error:updateError}=await supabaseClient
+        .from('shelves')
+        .update({name:name,icon:selectedShelfIcon})
+        .eq('id',editingShelf.id)
+        .eq('user_id',user.id)
+        .select('id,user_id,name,icon,sort_order,created_at')
+        .single();
+
+      if(updateError)throw updateError;
+
+      shelves=shelves.map(function(shelf){
+        return String(shelf.id)===String(updatedShelf.id)?updatedShelf:shelf;
+      });
+
+      closeCreateShelfModal();
+      renderShelfStrip();
+      buildGrid();
+      return;
+    }
 
     var {data,error}=await supabaseClient
       .from('shelves')
@@ -1338,8 +1400,8 @@ confirmCreateShelfButton.addEventListener('click',async function(){
       buildGrid();
     }
   }catch(error){
-    console.error('Kunde inte skapa shelf:',error);
-    createShelfStatus.textContent='Could not create shelf.';
+    console.error(editingShelf?'Kunde inte uppdatera shelf:':'Kunde inte skapa shelf:',error);
+    createShelfStatus.textContent=editingShelf?'Could not update shelf.':'Could not create shelf.';
   }finally{
     confirmCreateShelfButton.disabled=false;
   }
@@ -1399,6 +1461,7 @@ async function deleteActiveShelf(){
   }
 }
 
+if(editShelfButton)editShelfButton.addEventListener('click',openEditShelfModal);
 if(deleteShelfButton)deleteShelfButton.addEventListener('click',openDeleteShelfModal);
 if(closeDeleteShelfButton)closeDeleteShelfButton.addEventListener('click',closeDeleteShelfModal);
 if(cancelDeleteShelfButton)cancelDeleteShelfButton.addEventListener('click',closeDeleteShelfModal);
