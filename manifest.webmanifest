@@ -1,10 +1,10 @@
 {
-  "id": "/groovy/",
+  "id": "/",
   "name": "Groovy – Vinyl Collection",
   "short_name": "Groovy",
   "description": "Build, rate and share your vinyl collection.",
-  "start_url": "/groovy/",
-  "scope": "/groovy/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "display_override": ["standalone"],
   "background_color": "#09090a",
@@ -12,13 +12,13 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/groovy/icons/app-icon-192.png",
+      "src": "/icons/app-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/groovy/icons/app-icon-512.png",
+      "src": "/icons/app-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -28,12 +28,12 @@
     {
       "name": "My collection",
       "short_name": "Collection",
-      "url": "/groovy/"
+      "url": "/"
     },
     {
       "name": "My wishlist",
       "short_name": "Wishlist",
-      "url": "/groovy/?view=wishlist"
+      "url": "/?view=wishlist"
     }
   ]
 }
