@@ -1753,7 +1753,7 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .album-about h2{margin:0 0 9px;color:#f4f4f5;font-size:18px;font-weight:740;letter-spacing:-.02em}
 .album-about-body{position:relative;max-height:62.4px;overflow:hidden;transition:max-height .38s cubic-bezier(.2,.8,.2,1)}
 .album-about-body:not(.expanded):after{content:"";position:absolute;left:0;right:0;bottom:0;height:22px;background:linear-gradient(to bottom,rgba(9,9,10,0),#09090a);pointer-events:none}
-.album-about p{margin:0;color:#a8a8ae;font-size:13px;line-height:1.6;white-space:pre-line}
+.album-about-text{color:#a8a8ae;font-size:13px;line-height:1.6}.album-about-text p{margin:0 0 11px}.album-about-text p:last-child{margin-bottom:0}
 .album-about-toggle{display:inline-flex;align-items:center;gap:7px;margin:8px 0 0;padding:0;border:0;background:none;color:var(--groovy-orange);font:inherit;font-size:10px;font-weight:750;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .album-about-toggle[hidden]{display:none!important}
 .album-about-toggle i{width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .28s ease}
@@ -1764,5 +1764,5 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .album-about-source .album-about-license{color:#77777e;font-weight:600}
 .album-about-source .album-about-license:hover{color:#aaaab0}
 @media screen and (max-width:1120px) and (min-width:761px){.album-about{grid-column:1/-1;grid-row:3;width:min(100%,720px);padding:16px 2px 2px}.marketplace-panel{grid-column:1/-1;grid-row:4}}
-@media screen and (max-width:760px){.album-about{grid-column:1/-1;grid-row:5;width:100%;margin-top:14px;padding:15px 16px;border:1px solid var(--groovy-line);border-radius:8px;background:#121214}.album-about h2{margin-bottom:8px;font-size:16px}.album-about-body{max-height:51.15px}.album-about-body:not(.expanded):after{background:linear-gradient(to bottom,rgba(18,18,20,0),#121214)}.album-about p{font-size:11px;line-height:1.55}.album-about-source{justify-content:space-between;margin-top:10px;font-size:8px}.marketplace-panel{grid-column:1/-1!important;grid-row:6!important;margin-top:14px!important}}
+@media screen and (max-width:760px){.album-about{grid-column:1/-1;grid-row:5;width:100%;margin-top:14px;padding:15px 16px;border:1px solid var(--groovy-line);border-radius:8px;background:#121214}.album-about h2{margin-bottom:8px;font-size:16px}.album-about-body{max-height:51.15px}.album-about-body:not(.expanded):after{background:linear-gradient(to bottom,rgba(18,18,20,0),#121214)}.album-about-text{font-size:11px;line-height:1.55}.album-about-text p{margin-bottom:9px}.album-about-source{justify-content:space-between;margin-top:10px;font-size:8px}.marketplace-panel{grid-column:1/-1!important;grid-row:6!important;margin-top:14px!important}}
 @media (prefers-reduced-motion:reduce){.album-about-body,.album-about-toggle i{transition:none}}
