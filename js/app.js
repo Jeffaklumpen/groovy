@@ -2806,7 +2806,12 @@ function openAlbum(index){
 
   detailCover.src=record[6];
   detailCover.alt=record[1]+' - '+record[2];
+  var detailAppleMusicLink=document.getElementById('detailAppleMusicLink');
   var detailSpotifyLink=document.getElementById('detailSpotifyLink');
+  if(detailAppleMusicLink){
+    detailAppleMusicLink.href=appleMusicAlbumLink(record);
+    detailAppleMusicLink.setAttribute('aria-label','Listen to '+record[2]+' by '+record[1]+' on Apple Music');
+  }
   detailSpotifyLink.href=spotifyAlbumLink(record);
   detailSpotifyLink.setAttribute('aria-label','Find '+record[2]+' by '+record[1]+' on Spotify');
 
