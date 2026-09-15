@@ -1658,7 +1658,7 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 }
 
 /* While an in-app window is open, horizontal overscroll belongs to GroovyShelves, not browser history. */
-html.groovy-modal-open,body.groovy-modal-open{overscroll-behavior-x:none}
+html.groovy-modal-open,body.groovy-modal-open{overscroll-behavior-x:none;touch-action:pan-y}
 
 /* Browser pages cannot universally force the physical device orientation. On phones we block the
    landscape UI and ask the user to rotate back; installed/fullscreen browsers may also accept the
@@ -1669,3 +1669,160 @@ html.groovy-modal-open,body.groovy-modal-open{overscroll-behavior-x:none}
 .groovy-portrait-guard strong{font-size:20px;letter-spacing:-.02em}
 .groovy-portrait-guard span{color:#929298;font-size:13px;line-height:1.5}
 .groovy-portrait-guard.visible{display:flex}
+
+
+/* STREAMING V2 - official wide Apple Music badge + Spotify listen button */
+.detail-streaming-row{
+  align-items:center;
+}
+.detail-streaming-link{
+  box-sizing:border-box;
+}
+.detail-apple-service{
+  width:165px;
+  height:48px;
+  flex:0 0 165px;
+  padding:0;
+  border:0;
+  background:transparent;
+}
+.detail-apple-music-badge{
+  display:block;
+  width:165px;
+  height:auto;
+  max-width:none;
+}
+.detail-spotify-service{
+  display:flex;
+  width:165px;
+  height:48px;
+  min-width:165px;
+  flex:0 0 165px;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  padding:0 13px;
+  border:1px solid #343438;
+  border-radius:8px;
+  background:#09090a;
+  color:#fff;
+  overflow:hidden;
+}
+.detail-spotify-service-logo{
+  display:block;
+  width:25px;
+  height:auto;
+  max-width:none;
+  flex:0 0 25px;
+}
+.detail-spotify-service-text{
+  display:block;
+  min-width:0;
+  color:#f4f4f5;
+  font-size:10px;
+  font-weight:800;
+  line-height:1;
+  letter-spacing:.055em;
+  white-space:nowrap;
+}
+.detail-spotify-service:hover{
+  border-color:#515157;
+  background:#151517;
+}
+.detail-spotify-service:hover .detail-spotify-service-text{
+  color:#fff;
+}
+
+@media screen and (min-width:761px){
+  .detail-streaming-row{
+    width:165px;
+    gap:10px;
+  }
+  .detail-streaming-link{
+    height:48px;
+  }
+  .detail-apple-music-badge{
+    width:165px;
+    height:auto;
+  }
+  .detail-spotify-service{
+    width:165px;
+    height:48px;
+    min-width:165px;
+    padding:0 13px;
+    gap:10px;
+  }
+  .detail-spotify-service-logo{
+    width:25px;
+    height:auto;
+    flex-basis:25px;
+  }
+}
+
+@media screen and (max-width:760px){
+  .detail-streaming-row{
+    gap:8px;
+  }
+  .detail-streaming-link{
+    height:38px;
+  }
+  .detail-apple-service{
+    width:130px;
+    height:38px;
+    flex-basis:130px;
+  }
+  .detail-apple-music-badge{
+    width:130px;
+    height:auto;
+    max-width:none;
+  }
+  .detail-spotify-service{
+    width:130px;
+    height:38px;
+    min-width:130px;
+    flex-basis:130px;
+    padding:0 9px;
+    gap:7px;
+    border-radius:7px;
+  }
+  .detail-spotify-service-logo{
+    width:21px;
+    height:auto;
+    flex-basis:21px;
+  }
+  .detail-spotify-service-text{
+    font-size:8px;
+    letter-spacing:.035em;
+  }
+}
+
+@media screen and (max-width:380px){
+  .detail-streaming-row{
+    gap:6px;
+  }
+  .detail-apple-service{
+    width:123px;
+    height:36px;
+    flex-basis:123px;
+  }
+  .detail-apple-music-badge{
+    width:123px;
+  }
+  .detail-spotify-service{
+    width:123px;
+    height:36px;
+    min-width:123px;
+    flex-basis:123px;
+    padding:0 8px;
+    gap:6px;
+  }
+  .detail-spotify-service-logo{
+    width:20px;
+    height:auto;
+    flex-basis:20px;
+  }
+  .detail-spotify-service-text{
+    font-size:7.5px;
+    letter-spacing:.02em;
+  }
+}
