@@ -1582,3 +1582,45 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .record-shelf-status strong{line-height:18px!important}
 .record-menu-button{top:50%!important;transform:translateY(-50%)!important}
 }
+
+
+/* SHELVES V6.11 - compact mobile details, public-profile shelf placement, streaming pair */
+.detail-streaming-row{display:flex;align-items:center;justify-content:center;gap:8px;width:max-content;max-width:100%;margin:20px auto 0}
+.detail-streaming-link{display:flex;align-items:center;justify-content:center;height:31px;min-width:0;text-decoration:none;-webkit-tap-highlight-color:transparent;transition:transform .15s ease}
+.detail-streaming-link:active{transform:scale(.97)}
+.detail-apple-service{flex:0 0 auto;padding:0;border:0;background:none;overflow:visible}
+.detail-apple-music-badge{display:block;width:auto;height:31px;max-width:100%}
+.detail-spotify-service{flex:0 0 auto;padding:0 8px;border:1px solid #343438;border-radius:7px;background:#09090a;overflow:hidden;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.detail-spotify-service:hover{background:#151517;border-color:#55555a}
+.detail-spotify-service-logo{display:block;width:68px;height:auto;max-width:68px}
+
+@media screen and (max-width:760px){
+/* Keep the card-top control strip as compact as desktop. */
+.grid .record{padding-top:3px}
+.record-card-topbar{height:20px!important;min-height:20px!important;margin:0 2px 2px!important}
+.record-card-topbar .number{height:16px!important;line-height:16px!important}
+.record-shelf-status{height:16px!important;min-height:16px!important;max-width:112px!important;margin-left:5px!important;padding:0 6px!important;line-height:16px!important}
+.record-shelf-status strong{line-height:16px!important}
+.record-shelf-status-icon{width:12px!important;height:12px!important;flex-basis:12px!important;font-size:8px!important}
+.record-menu-button{top:50%!important;transform:translateY(-50%)!important}
+
+/* Give two-line album titles a little breathing room while keeping the fixed square pair. */
+.detail-info-card .detail-album{line-height:1.15!important;padding-bottom:2px}
+.detail-info-card .detail-rating{margin-top:6px!important;line-height:1}
+.detail-info-card .album-rating-star{font-size:20px!important;line-height:1!important}
+
+/* Apple + Spotify share their own centered full-width row beneath shelf actions. */
+.detail-streaming-row{grid-column:1/-1;grid-row:3;width:100%;min-height:58px;margin:12px 0 0;padding:12px 14px;border:1px solid var(--groovy-line);border-radius:8px;background:#121214;gap:7px}
+.detail-streaming-link{height:31px}
+.detail-apple-music-badge{height:31px}
+.detail-spotify-service{height:31px;padding-left:6px;padding-right:6px;border-radius:6px}
+.detail-spotify-service-logo{width:62px;max-width:62px}
+.album-tracks{grid-row:4!important;margin-top:12px}
+}
+
+@media screen and (max-width:380px){
+.detail-info-card .album-rating-star{font-size:18px!important}
+.detail-streaming-row{gap:5px;padding-left:8px;padding-right:8px}
+.detail-spotify-service{padding-left:4px;padding-right:4px}
+.detail-spotify-service-logo{width:56px;max-width:56px}
+}
