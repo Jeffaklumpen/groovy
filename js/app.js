@@ -821,11 +821,28 @@ var shelfPickerSubtitle=document.getElementById('shelfPickerSubtitle');
 var shelfPickerStatus=document.getElementById('shelfPickerStatus');
 var shelfPickerTitle=document.getElementById('shelfPickerTitle');
 var detailShelfActions=document.getElementById('detailShelfActions');
+var detailShelfStatus=document.getElementById('detailShelfStatus');
+var detailInfoCard=document.querySelector('.detail-info-card');
 var detailOpenRecordIndex=-1;
 
 function shelfIconGlyph(icon){
   var icons={record:'◉',heart:'♡',music:'♪',star:'★',film:'▦',sun:'☼',moon:'☾',bookmark:'◆'};
   return icons[icon]||icons.record;
+}
+
+function syncMobileDetailPairHeight(){
+  if(!detailInfoCard)return;
+  var cover=document.querySelector('.album-detail-cover');
+  var isMobile=window.matchMedia&&window.matchMedia('(max-width: 760px)').matches;
+
+  if(!isMobile||!cover){
+    detailInfoCard.style.height='';
+    return;
+  }
+
+  detailInfoCard.style.height='';
+  var height=Math.round(cover.getBoundingClientRect().height||0);
+  if(height>0)detailInfoCard.style.height=height+'px';
 }
 
 function shelfById(id){
@@ -836,6 +853,9 @@ function shelfRecordCount(id){
   if(id==='all')return records.length;
   return records.filter(function(record){return String(record[13]||'')===String(id);}).length;
 }
+
+window.addEventListener('resize',syncMobileDetailPairHeight,{passive:true});
+if(window.visualViewport)window.visualViewport.addEventListener('resize',syncMobileDetailPairHeight,{passive:true});
 
 var recordMenuBackdrop=document.createElement('div');
 recordMenuBackdrop.className='record-menu-backdrop';
@@ -1019,6 +1039,15 @@ function resetShelfIconChoice(){
   setShelfIconChoice('record');
 }
 
+function shouldAutofocusShelfModal(){
+  return !(window.matchMedia&&window.matchMedia('(max-width: 760px)').matches);
+}
+
+function resetShelfModalScroll(){
+  var box=createShelfModal&&createShelfModal.querySelector('.shelf-modal-box');
+  if(box)box.scrollTop=0;
+}
+
 function closeCreateShelfModal(){
   createShelfModal.style.display='none';
   shelfNameInput.value='';
@@ -1048,7 +1077,8 @@ function openCreateShelfModal(returnRecordIndex){
   if(confirmCreateShelfButton)confirmCreateShelfButton.textContent='Create Shelf';
   resetShelfIconChoice();
   createShelfModal.style.display='flex';
-  setTimeout(function(){shelfNameInput.focus();},0);
+  resetShelfModalScroll();
+  if(shouldAutofocusShelfModal())setTimeout(function(){shelfNameInput.focus();},0);
 }
 
 function openEditShelfModal(){
@@ -1065,7 +1095,8 @@ function openEditShelfModal(){
   if(confirmCreateShelfButton)confirmCreateShelfButton.textContent='Save Changes';
   setShelfIconChoice(shelf.icon||'record');
   createShelfModal.style.display='flex';
-  setTimeout(function(){shelfNameInput.focus();shelfNameInput.select();},0);
+  resetShelfModalScroll();
+  if(shouldAutofocusShelfModal())setTimeout(function(){shelfNameInput.focus();shelfNameInput.select();},0);
 }
 
 function closeShelfPicker(){
@@ -1121,6 +1152,29 @@ function openShelfPicker(index){
   shelfPickerStatus.textContent='';
   renderShelfPicker(index);
   shelfPickerModal.style.display='flex';
+}
+
+function renderDetailShelfStatus(index){
+  if(!detailShelfStatus)return;
+
+  var record=records[index];
+  if(!record||window.libraryView==='wishlist'){
+    detailShelfStatus.hidden=true;
+    detailShelfStatus.innerHTML='';
+    detailShelfStatus.classList.remove('unshelved');
+    return;
+  }
+
+  var shelf=shelfById(record[13]);
+  var shelfName=shelf&&shelf.name?shelf.name:'No shelf';
+  var shelfIcon=shelf?shelfIconGlyph(shelf.icon):'○';
+
+  detailShelfStatus.hidden=false;
+  detailShelfStatus.classList.toggle('unshelved',!shelf);
+  detailShelfStatus.innerHTML=
+    '<span class="detail-shelf-status-icon" aria-hidden="true">'+esc(shelfIcon)+'</span>'+
+    '<span class="detail-shelf-status-label">Shelf</span>'+
+    '<strong title="'+esc(shelfName)+'">'+esc(shelfName)+'</strong>';
 }
 
 function renderDetailShelfActions(index){
@@ -1227,6 +1281,10 @@ async function assignRecordToShelf(index,shelfId){
   libraryPage=1;
   renderShelfStrip();
   buildGrid();
+  if(detailOpenRecordIndex===index){
+    renderDetailShelfStatus(index);
+    renderDetailShelfActions(index);
+  }
 
   try{
     var {data,error}=await supabaseClient.rpc('move_collection_to_shelf',{
@@ -1250,6 +1308,10 @@ async function assignRecordToShelf(index,shelfId){
     });
     renderShelfStrip();
     buildGrid();
+    if(detailOpenRecordIndex===index){
+      renderDetailShelfStatus(index);
+      renderDetailShelfActions(index);
+    }
     throw error;
   }
 }
@@ -1393,7 +1455,7 @@ confirmCreateShelfButton.addEventListener('click',async function(){
 
     if(returnIndex>=0&&records[returnIndex]){
       await assignRecordToShelf(returnIndex,data.id);
-      if(detailOpenRecordIndex===returnIndex)renderDetailShelfActions(returnIndex);
+      if(detailOpenRecordIndex===returnIndex){renderDetailShelfStatus(returnIndex);renderDetailShelfActions(returnIndex);}
     }else{
       activeShelfId=data.id;
       renderShelfStrip();
@@ -1496,7 +1558,7 @@ confirmShelfPickerButton.addEventListener('click',async function(){
   shelfPickerStatus.textContent='Saving…';
   try{
     await assignRecordToShelf(pickerRecordIndex,selected.value);
-    if(detailOpenRecordIndex===pickerRecordIndex)renderDetailShelfActions(pickerRecordIndex);
+    if(detailOpenRecordIndex===pickerRecordIndex){renderDetailShelfStatus(pickerRecordIndex);renderDetailShelfActions(pickerRecordIndex);}
     closeShelfPicker();
   }catch(error){
     console.error('Kunde inte flytta albumet till shelf:',error);
@@ -2758,6 +2820,7 @@ function openAlbum(index){
     detailRating.innerHTML=stars;
   }
 
+  renderDetailShelfStatus(index);
   renderDetailShelfActions(index);
 
   var detailMoveButton=detailRating.querySelector('.detail-move-to-collection');
@@ -2934,6 +2997,10 @@ function openAlbum(index){
 
   albumOverlay.className='album-overlay visible';
   document.body.style.overflow='hidden';
+  requestAnimationFrame(function(){
+    syncMobileDetailPairHeight();
+    requestAnimationFrame(syncMobileDetailPairHeight);
+  });
 }
 
 async function saveAlbumRating(index,rating){
@@ -3085,6 +3152,8 @@ function closeAlbum(){
   copyDetailsRecordKey='';
   detailOpenRecordIndex=-1;
   if(detailShelfActions){detailShelfActions.hidden=true;detailShelfActions.innerHTML='';}
+  if(detailShelfStatus){detailShelfStatus.hidden=true;detailShelfStatus.innerHTML='';detailShelfStatus.classList.remove('unshelved');}
+  if(detailInfoCard)detailInfoCard.style.height='';
   albumOverlay.scrollTop=0;
   var tracksPanel=albumOverlay.querySelector('.album-tracks');
   if(tracksPanel)tracksPanel.scrollTop=0;
