@@ -7075,3 +7075,195 @@ async function renderCurrentRoute(){
 
 renderCurrentRoute();
 updateScrollTopButton();
+
+/* SHELVES V6.12 - mobile edge-swipe dismiss + portrait phone behavior */
+(function(){
+  var EDGE_START=30;
+  var EDGE_CLOSE=76;
+  var swipeActive=false;
+  var swipeStartX=0;
+  var swipeStartY=0;
+  var swipeLastX=0;
+  var swipeLastY=0;
+  var swipeCaptured=false;
+
+  function elementVisible(element){
+    if(!element)return false;
+    if(element.hidden)return false;
+    var style=window.getComputedStyle(element);
+    return style.display!=='none'&&style.visibility!=='hidden'&&style.opacity!=='0';
+  }
+
+  function topGroovyWindow(){
+    var createShelf=document.getElementById('createShelfModal');
+    var deleteShelf=document.getElementById('deleteShelfModal');
+    var shelfPicker=document.getElementById('shelfPickerModal');
+    var pressing=document.getElementById('pressingModal');
+    var removeAlbum=document.getElementById('removeAlbumModal');
+    var addAlbum=document.getElementById('addAlbumModal');
+    var userSearch=document.getElementById('searchUserModal');
+    var installHelp=document.getElementById('installHelpModal');
+    var login=document.getElementById('loginPanel');
+
+    if(deleteShelf&&elementVisible(deleteShelf))return 'deleteShelf';
+    if(createShelf&&elementVisible(createShelf))return 'createShelf';
+    if(shelfPicker&&elementVisible(shelfPicker))return 'shelfPicker';
+    if(pressing&&elementVisible(pressing))return 'pressing';
+    if(typeof ebayModal!=='undefined'&&ebayModal&&ebayModal.classList.contains('visible'))return 'ebay';
+    if(typeof traderaModal!=='undefined'&&traderaModal&&traderaModal.classList.contains('visible'))return 'tradera';
+    if(removeAlbum&&elementVisible(removeAlbum))return 'removeAlbum';
+    if(addAlbum&&elementVisible(addAlbum))return 'addAlbum';
+    if(userSearch&&elementVisible(userSearch))return 'userSearch';
+    if(installHelp&&elementVisible(installHelp)&&installHelp.getAttribute('aria-hidden')!=='true')return 'installHelp';
+    if(typeof albumOverlay!=='undefined'&&albumOverlay&&albumOverlay.classList.contains('visible'))return 'album';
+    if(login&&login.classList.contains('open'))return 'login';
+    return '';
+  }
+
+  function closeTopGroovyWindow(kind){
+    if(!kind)kind=topGroovyWindow();
+    if(!kind)return false;
+
+    if(kind==='deleteShelf'&&typeof closeDeleteShelfModal==='function')closeDeleteShelfModal();
+    else if(kind==='createShelf'&&typeof closeCreateShelfModal==='function')closeCreateShelfModal();
+    else if(kind==='shelfPicker'&&typeof closeShelfPicker==='function')closeShelfPicker();
+    else if(kind==='pressing'&&typeof closePressingPicker==='function')closePressingPicker();
+    else if(kind==='ebay'&&typeof closeEbayModal==='function')closeEbayModal();
+    else if(kind==='tradera'&&typeof closeTraderaModal==='function')closeTraderaModal();
+    else if(kind==='album'&&typeof closeAlbum==='function')closeAlbum();
+    else if(kind==='addAlbum'){
+      var addAlbum=document.getElementById('addAlbumModal');
+      if(addAlbum)addAlbum.style.display='none';
+      var searchInput=document.getElementById('albumSearchInput');
+      var searchResults=document.getElementById('albumSearchResults');
+      if(searchInput)searchInput.value='';
+      if(searchResults)searchResults.innerHTML='';
+    }else if(kind==='userSearch'){
+      var userSearch=document.getElementById('searchUserModal');
+      if(userSearch)userSearch.style.display='none';
+    }else if(kind==='removeAlbum'){
+      var removeAlbum=document.getElementById('removeAlbumModal');
+      if(removeAlbum)removeAlbum.style.display='none';
+    }else if(kind==='login'){
+      var login=document.getElementById('loginPanel');
+      if(login)login.classList.remove('open');
+    }else if(kind==='installHelp'){
+      var closeInstall=document.getElementById('closeInstallHelp');
+      if(closeInstall)closeInstall.click();
+      else{
+        var installHelp=document.getElementById('installHelpModal');
+        if(installHelp){
+          installHelp.setAttribute('aria-hidden','true');
+          installHelp.classList.remove('open','visible');
+          installHelp.style.display='none';
+        }
+      }
+    }
+
+    syncModalOpenClass();
+    return true;
+  }
+
+  function syncModalOpenClass(){
+    var open=Boolean(topGroovyWindow());
+    document.documentElement.classList.toggle('groovy-modal-open',open);
+    document.body.classList.toggle('groovy-modal-open',open);
+  }
+
+  var modalObserver=new MutationObserver(function(){
+    syncModalOpenClass();
+  });
+
+  [
+    'loginPanel','albumOverlay','traderaModal','ebayModal','pressingModal',
+    'createShelfModal','deleteShelfModal','shelfPickerModal','addAlbumModal',
+    'searchUserModal','removeAlbumModal','installHelpModal'
+  ].forEach(function(id){
+    var node=document.getElementById(id);
+    if(node)modalObserver.observe(node,{attributes:true,attributeFilter:['class','style','hidden','aria-hidden']});
+  });
+
+  document.addEventListener('touchstart',function(event){
+    if(event.touches.length!==1)return;
+    var kind=topGroovyWindow();
+    if(!kind)return;
+    var touch=event.touches[0];
+    if(touch.clientX>EDGE_START)return;
+
+    swipeActive=true;
+    swipeCaptured=false;
+    swipeStartX=swipeLastX=touch.clientX;
+    swipeStartY=swipeLastY=touch.clientY;
+  },{passive:true,capture:true});
+
+  document.addEventListener('touchmove',function(event){
+    if(!swipeActive||event.touches.length!==1)return;
+    var touch=event.touches[0];
+    swipeLastX=touch.clientX;
+    swipeLastY=touch.clientY;
+    var dx=swipeLastX-swipeStartX;
+    var dy=swipeLastY-swipeStartY;
+
+    if(!swipeCaptured&&dx>8&&Math.abs(dx)>Math.abs(dy)*1.15){
+      swipeCaptured=true;
+    }
+
+    if(swipeCaptured){
+      /* Prevent the browser from consuming this as history-back while a Groovy window is open. */
+      event.preventDefault();
+    }
+  },{passive:false,capture:true});
+
+  function finishEdgeSwipe(){
+    if(!swipeActive)return;
+    var dx=swipeLastX-swipeStartX;
+    var dy=swipeLastY-swipeStartY;
+    var shouldClose=swipeCaptured&&dx>=EDGE_CLOSE&&Math.abs(dy)<Math.max(90,dx*.75);
+    swipeActive=false;
+    swipeCaptured=false;
+    if(shouldClose)closeTopGroovyWindow();
+  }
+
+  document.addEventListener('touchend',finishEdgeSwipe,{passive:true,capture:true});
+  document.addEventListener('touchcancel',function(){swipeActive=false;swipeCaptured=false;},{passive:true,capture:true});
+
+  /* Portrait-only phone presentation. Browsers do not universally allow a normal web page to
+     physically lock orientation, so we combine a supported lock request with a landscape blocker. */
+  var portraitGuard=document.createElement('div');
+  portraitGuard.className='groovy-portrait-guard';
+  portraitGuard.setAttribute('aria-hidden','true');
+  portraitGuard.innerHTML='<div class="groovy-portrait-guard-card"><div class="groovy-portrait-guard-icon" aria-hidden="true">▯</div><strong>Rotate your phone</strong><span>GroovyShelves is designed for portrait mode.</span></div>';
+  document.body.appendChild(portraitGuard);
+
+  function isPhoneLike(){
+    var coarse=window.matchMedia&&window.matchMedia('(pointer: coarse)').matches;
+    var shortSide=Math.min(window.screen&&screen.width?screen.width:window.innerWidth,window.screen&&screen.height?screen.height:window.innerHeight);
+    return coarse&&shortSide<=600;
+  }
+
+  function updatePortraitGuard(){
+    var landscape=window.innerWidth>window.innerHeight;
+    var show=isPhoneLike()&&landscape;
+    portraitGuard.classList.toggle('visible',show);
+    portraitGuard.setAttribute('aria-hidden',show?'false':'true');
+  }
+
+  function requestPortraitLock(){
+    if(!isPhoneLike())return;
+    try{
+      if(screen.orientation&&typeof screen.orientation.lock==='function'){
+        var lockResult=screen.orientation.lock('portrait-primary');
+        if(lockResult&&typeof lockResult.catch==='function')lockResult.catch(function(){});
+      }
+    }catch(error){}
+  }
+
+  window.addEventListener('resize',updatePortraitGuard,{passive:true});
+  window.addEventListener('orientationchange',function(){
+    setTimeout(updatePortraitGuard,80);
+    requestPortraitLock();
+  },{passive:true});
+  document.addEventListener('pointerdown',requestPortraitLock,{passive:true,once:true});
+  updatePortraitGuard();
+  syncModalOpenClass();
+})();
