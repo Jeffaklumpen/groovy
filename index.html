@@ -23,7 +23,7 @@
   <meta name="application-name" content="Groovy">
   <meta name="theme-color" content="#121214">
   <title>GroovyShelves – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=95">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=96">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/groovy/icons/apple-touch-icon.png">
   <link rel="manifest" href="/groovy/manifest.webmanifest">
@@ -241,7 +241,7 @@
 
 <section id="detailAboutAlbum" class="album-about" aria-labelledby="detailAboutAlbumTitle" hidden>
   <h2 id="detailAboutAlbumTitle">About This Album</h2>
-  <div id="detailAboutAlbumBody" class="album-about-body"><p id="detailAboutAlbumText"></p></div>
+  <div id="detailAboutAlbumBody" class="album-about-body"><div id="detailAboutAlbumText" class="album-about-text"></div></div>
   <button id="detailAboutAlbumToggle" class="album-about-toggle" type="button" aria-expanded="false" aria-controls="detailAboutAlbumBody" hidden><span>Read more</span><i aria-hidden="true"></i></button>
   <div class="album-about-source">
     <a id="detailAboutAlbumLink" href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia ↗</a>
@@ -260,7 +260,7 @@
       <span id="traderaButtonLabel">Tradera</span>
       <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
     </button>
-    <button id="ebayButton" class="tradera-trigger ebay-trigger" type="button" aria-haspopup="dialog" data-enabled="false" hidden>
+    <button id="ebayButton" class="tradera-trigger ebay-trigger" type="button" aria-haspopup="dialog" data-enabled="true">
       <span class="tradera-trigger-mark ebay-trigger-mark" aria-hidden="true">e</span>
       <span id="ebayButtonLabel">eBay</span>
       <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
@@ -493,7 +493,7 @@
 </div>
 
 <script src="/groovy/js/route-state.js?v=14"></script>
-<script src="/groovy/js/app.js?v=97"></script>
+<script src="/groovy/js/app.js?v=98"></script>
 <script src="/groovy/js/statistics-core.js?v=3"></script>
 <script src="/groovy/js/statistics.js?v=6"></script>
 <script src="/groovy/js/pwa.js?v=3"></script>
