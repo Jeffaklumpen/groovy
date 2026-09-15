@@ -2691,10 +2691,10 @@ function recordHTML(record, className){
   var condition=!isWishlist?recordConditionMeta(copy.mediaCondition):null;
   var showPressingPrompt=!isWishlist&&viewedUserId===null&&!condition&&!hasCopyDetails(copy);
   var cardShelf=!isWishlist?shelfById(record[13]):null;
-  var cardShelfName=cardShelf&&cardShelf.name?cardShelf.name:'no shelf';
+  var cardShelfName=cardShelf&&cardShelf.name?cardShelf.name:'';
   var cardShelfIcon=cardShelf?shelfIconGlyph(cardShelf.icon):'';
-  var cardShelfStatus=!isWishlist
-    ?'<span class="record-shelf-status '+(cardShelf?'':'unshelved')+'" title="'+esc(cardShelfName)+'">'+
+  var cardShelfStatus=cardShelf
+    ?'<span class="record-shelf-status" title="'+esc(cardShelfName)+'">'+
        (cardShelfIcon?'<span class="record-shelf-status-icon" aria-hidden="true">'+esc(cardShelfIcon)+'</span>':'')+
        '<strong>'+esc(cardShelfName)+'</strong>'+
      '</span>'
