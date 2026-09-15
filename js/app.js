@@ -458,7 +458,8 @@ function wishlistRecord(item,index){
     album.discogs_master_id||'',
     {},
     album.apple_collection_url||'',
-    ''
+    '',
+    null
   ];
 }
 
@@ -543,6 +544,7 @@ window.loadCollection=async function(){
       collection_number,
       sort_order,
       shelf_id,
+      shelf_sort_order,
       cover_url,
       discogs_style,
       discogs_release_id,
@@ -685,7 +687,8 @@ window.loadCollection=async function(){
           album.discogs_master_id||'',
           copyDetailsFromRow(item),
           album.apple_collection_url||'',
-          item.shelf_id||''
+          item.shelf_id||'',
+          item.shelf_sort_order==null?null:item.shelf_sort_order
         ];
     });
 
@@ -1075,6 +1078,30 @@ function openShelfPicker(index){
   shelfPickerModal.style.display='flex';
 }
 
+function compactLocalShelfOrder(shelfId){
+  if(!shelfId)return;
+  records
+    .filter(function(record){return String(record[13]||'')===String(shelfId);})
+    .sort(function(a,b){
+      var aOrder=parseInt(a[14],10);
+      var bOrder=parseInt(b[14],10);
+      if(isNaN(aOrder))aOrder=2147483647;
+      if(isNaN(bOrder))bOrder=2147483647;
+      return aOrder-bOrder||(parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);
+    })
+    .forEach(function(record,index){record[14]=index+1;});
+}
+
+function nextLocalShelfOrder(shelfId,excludedRecord){
+  var highest=0;
+  records.forEach(function(record){
+    if(record===excludedRecord)return;
+    if(String(record[13]||'')!==String(shelfId||''))return;
+    highest=Math.max(highest,parseInt(record[14],10)||0);
+  });
+  return highest+1;
+}
+
 async function assignRecordToShelf(index,shelfId){
   var record=records[index];
   if(!record||viewedUserId!==null)return false;
@@ -1084,21 +1111,53 @@ async function assignRecordToShelf(index,shelfId){
   if(!user)throw new Error('Du måste vara inloggad.');
 
   var normalizedShelfId=shelfId||null;
-  var {data,error}=await supabaseClient
-    .from('collections')
-    .update({shelf_id:normalizedShelfId})
-    .eq('id',record[9])
-    .eq('user_id',user.id)
-    .select('id,shelf_id');
+  var oldShelfId=record[13]||'';
 
-  if(error)throw error;
-  if(!data||!data.length)throw new Error('Ingen collection-rad uppdaterades.');
+  if(String(oldShelfId||'')===String(normalizedShelfId||''))return true;
+
+  var snapshot=records.map(function(item){
+    return {record:item,shelfId:item[13]||'',shelfOrder:item[14]==null?null:item[14]};
+  });
+
+  var newShelfOrder=normalizedShelfId
+    ?nextLocalShelfOrder(normalizedShelfId,record)
+    :null;
 
   record[13]=normalizedShelfId||'';
+  record[14]=newShelfOrder;
+
+  if(oldShelfId&&String(oldShelfId)!==String(normalizedShelfId||'')){
+    compactLocalShelfOrder(oldShelfId);
+  }
+
   libraryPage=1;
   renderShelfStrip();
   buildGrid();
-  return true;
+
+  try{
+    var {data,error}=await supabaseClient.rpc('move_collection_to_shelf',{
+      p_collection_id:String(record[9]),
+      p_shelf_id:normalizedShelfId
+    });
+
+    if(error)throw error;
+
+    if(data&&data.shelf_sort_order!=null){
+      record[14]=parseInt(data.shelf_sort_order,10)||record[14];
+    }else if(!normalizedShelfId){
+      record[14]=null;
+    }
+
+    return true;
+  }catch(error){
+    snapshot.forEach(function(item){
+      item.record[13]=item.shelfId;
+      item.record[14]=item.shelfOrder;
+    });
+    renderShelfStrip();
+    buildGrid();
+    throw error;
+  }
 }
 
 function attachRecordActionMenus(){
@@ -1254,18 +1313,17 @@ async function deleteActiveShelf(){
     var user=session&&session.user;
     if(!user)throw new Error('Du måste vara inloggad.');
 
-    var {data,error}=await supabaseClient
-      .from('shelves')
-      .delete()
-      .eq('id',shelf.id)
-      .eq('user_id',user.id)
-      .select('id');
+    var {error}=await supabaseClient.rpc('delete_shelf_and_unshelve',{
+      p_shelf_id:shelf.id
+    });
 
     if(error)throw error;
-    if(!data||!data.length)throw new Error('Ingen shelf raderades.');
 
     records.forEach(function(record){
-      if(String(record[13]||'')===String(shelf.id))record[13]='';
+      if(String(record[13]||'')===String(shelf.id)){
+        record[13]='';
+        record[14]=null;
+      }
     });
     shelves=shelves.filter(function(item){return String(item.id)!==String(shelf.id);});
     activeShelfId='all';
@@ -2420,9 +2478,29 @@ function appleMusicAlbumLink(record){
     return 'https://music.apple.com/se/search?term='+encodeURIComponent(query);
 }
 
+function recordDisplayNumber(record){
+  if(
+    window.libraryView!=='wishlist'&&
+    activeShelfId!=='all'&&
+    String(record&&record[13]||'')===String(activeShelfId)
+  ){
+    var shelfNumber=parseInt(record&&record[14],10);
+    if(!isNaN(shelfNumber)&&shelfNumber>0)return shelfNumber;
+  }
+
+  var allRecordsNumber=parseInt(record&&record[0],10);
+  return !isNaN(allRecordsNumber)&&allRecordsNumber>0?allRecordsNumber:'';
+}
+
+function recordArrayIndex(record){
+  return records.indexOf(record);
+}
+
 function recordHTML(record, className){
   var smallSrc=record[6];
   var isWishlist=window.libraryView==='wishlist';
+  var recordIndex=recordArrayIndex(record);
+  var displayNumber=recordDisplayNumber(record);
   var copy=record[11]||{};
   var condition=!isWishlist?recordConditionMeta(copy.mediaCondition):null;
   var showPressingPrompt=!isWishlist&&viewedUserId===null&&!condition&&!hasCopyDetails(copy);
@@ -2438,8 +2516,8 @@ function recordHTML(record, className){
        '</div>')
     :'';
 
-  var html='<article class="record '+(isWishlist?'wishlist-record ':'')+(className||'')+'" draggable="false" data-index="'+(parseInt(record[0],10)-1)+'">'+
-    '<div class="record-card-topbar"><span class="number">'+record[0]+'</span>'+removeButton+'</div>'+
+  var html='<article class="record '+(isWishlist?'wishlist-record ':'')+(className||'')+'" draggable="false" data-index="'+recordIndex+'">'+
+    '<div class="record-card-topbar"><span class="number">'+displayNumber+'</span>'+removeButton+'</div>'+
     '<div class="cover-wrapper">'+
       '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
     '</div>'+
@@ -2896,32 +2974,41 @@ function closeAlbum(){
 }
 
 async function deleteCollectionAlbum(index){
-  if(viewedUserId!==null)return;  
+  if(viewedUserId!==null)return;
   var record=records[index];
 
   if(!record)return;
 
-  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+  var {data:{session}}=await supabaseClient.auth.getSession();
+  var user=session&&session.user;
 
-  if(userError||!user){
+  if(!user){
     alert('Du måste vara inloggad.');
     return;
   }
 
-  var {data:deletedRows,error}=await supabaseClient
-    .from('collections')
-    .delete()
-    .eq('user_id',user.id)
-    .eq('id',record[9])
-    .select('id');
+  var {error}=await supabaseClient.rpc('delete_collection_record',{
+    p_collection_id:String(record[9])
+  });
 
-  if(error||!deletedRows||!deletedRows.length){
+  if(error){
     console.error('Kunde inte ta bort albumet:',error);
     alert('Kunde inte ta bort albumet.');
     return;
   }
 
-  await window.loadCollection();
+  var deletedShelfId=record[13]||'';
+  records.splice(index,1);
+  records
+    .slice()
+    .sort(function(a,b){return (parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);})
+    .forEach(function(item,position){item[0]=position+1;});
+
+  if(deletedShelfId)compactLocalShelfOrder(deletedShelfId);
+
+  libraryPage=1;
+  renderShelfStrip();
+  buildGrid();
 }
 
 async function deleteWishlistAlbum(index){
@@ -3369,19 +3456,60 @@ function enableGridSorting(){
       reorderedPage.push(record);
     }
 
-    var isWishlist=window.libraryView==='wishlist';
-    var visibleIndexes=[];
-    records.forEach(function(record,index){
-      var rating=parseInt(record[5],10);
-      var matchesShelf=isWishlist||activeShelfId==='all'||String(record[13]||'')===String(activeShelfId);
-      if(matchesShelf&&(isWishlist||selectedRating==='all'||rating===parseInt(selectedRating,10)))visibleIndexes.push(index);
-    });
     var pageStart=(libraryPage-1)*RECORDS_PER_PAGE;
-    var pageIndexes=visibleIndexes.slice(pageStart,pageStart+reorderedPage.length);
-    pageIndexes.forEach(function(recordIndex,index){records[recordIndex]=reorderedPage[index];});
-    records.forEach(function(record,index){record[0]=index+1;});
 
-    return saveGridOrder();
+    if(window.libraryView==='wishlist'||activeShelfId==='all'){
+      var orderedList=records
+        .slice()
+        .sort(function(a,b){return (parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);});
+
+      orderedList.splice.apply(
+        orderedList,
+        [pageStart,reorderedPage.length].concat(reorderedPage)
+      );
+
+      records=orderedList;
+      records.forEach(function(record,index){record[0]=index+1;});
+
+      var allOrderIds=records
+        .filter(function(record){return record&&record[9];})
+        .map(function(record){return String(record[9]);});
+
+      buildGrid();
+      queueGridOrderSave({
+        kind:window.libraryView==='wishlist'?'wishlist':'collection',
+        shelfId:null,
+        ids:allOrderIds
+      });
+      return;
+    }
+
+    var shelfList=records
+      .filter(function(record){return String(record[13]||'')===String(activeShelfId);})
+      .sort(function(a,b){
+        var aOrder=parseInt(a[14],10);
+        var bOrder=parseInt(b[14],10);
+        if(isNaN(aOrder))aOrder=2147483647;
+        if(isNaN(bOrder))bOrder=2147483647;
+        return aOrder-bOrder||(parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);
+      });
+
+    shelfList.splice.apply(
+      shelfList,
+      [pageStart,reorderedPage.length].concat(reorderedPage)
+    );
+    shelfList.forEach(function(record,index){record[14]=index+1;});
+
+    var shelfOrderIds=shelfList
+      .filter(function(record){return record&&record[9];})
+      .map(function(record){return String(record[9]);});
+
+    buildGrid();
+    queueGridOrderSave({
+      kind:'collection',
+      shelfId:activeShelfId,
+      ids:shelfOrderIds
+    });
   }
 
     collection.ondragstart=function(event){
@@ -3776,48 +3904,63 @@ function attachWishlistRemoveControls(){
   }
 }
 
-async function saveGridOrder(){
-  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+var pendingGridOrderSaves=new Map();
+var gridOrderSaveRunning=false;
+var gridOrderSaveErrorShown=false;
 
-  if(userError||!user){
-    alert('Du måste vara inloggad.');
-    return false;
+function gridOrderSaveKey(job){
+  if(job.kind==='wishlist')return 'wishlist';
+  return 'collection|'+String(job.shelfId||'all');
+}
+
+function queueGridOrderSave(job){
+  pendingGridOrderSaves.set(gridOrderSaveKey(job),job);
+  if(gridOrderSaveRunning)return;
+  flushGridOrderSaveQueue();
+}
+
+async function flushGridOrderSaveQueue(){
+  if(gridOrderSaveRunning)return;
+  gridOrderSaveRunning=true;
+
+  while(pendingGridOrderSaves.size){
+    var nextEntry=pendingGridOrderSaves.entries().next().value;
+    var jobKey=nextEntry[0];
+    var job=nextEntry[1];
+    pendingGridOrderSaves.delete(jobKey);
+
+    var result;
+
+    if(job.kind==='wishlist'){
+      result=await supabaseClient.rpc('set_wishlist_display_order',{
+        p_wishlist_ids:job.ids
+      });
+    }else{
+      result=await supabaseClient.rpc('set_collection_display_order',{
+        p_shelf_id:job.shelfId||null,
+        p_collection_ids:job.ids
+      });
+    }
+
+    if(result.error){
+      console.error('Kunde inte spara sorteringen:',result.error);
+      pendingGridOrderSaves.clear();
+
+      if(!gridOrderSaveErrorShown){
+        gridOrderSaveErrorShown=true;
+        alert('Kunde inte spara den nya ordningen. Samlingen laddas om så att inget hamnar fel.');
+      }
+
+      await window.loadCollection();
+      break;
+    }
+
+    gridOrderSaveErrorShown=false;
   }
 
-  for(var i=0;i<records.length;i++){
-    var record=records[i];
+  gridOrderSaveRunning=false;
 
-    if(!record||!record[9]){
-      console.error('Saknar collection-id:',record);
-      alert('Kunde inte hitta albumets collection-id.');
-      return false;
-    }
-
-    var tableName=window.libraryView==='wishlist'?'wishlists':'collections';
-    var {data,error}=await supabaseClient
-      .from(tableName)
-      .update({
-        sort_order:i+1
-      })
-      .eq('id',record[9])
-      .eq('user_id',user.id)
-      .select('id,sort_order');
-
-    if(error){
-      console.error('Kunde inte spara sorteringen:',error);
-      alert('Kunde inte spara sorteringen.\n\n'+error.message);
-      return false;
-    }
-
-    if(!data||!data.length){
-      console.error('Ingen rad uppdaterades:',record[9]);
-      alert('Supabase uppdaterade ingen rad. Kontrollera RLS-policyn för '+tableName+'.');
-      return false;
-    }
-  }
-
-  await window.loadCollection();
-  return true;
+  if(pendingGridOrderSaves.size)flushGridOrderSaveQueue();
 }
 
 function paginationItems(current,total){
@@ -3928,6 +4071,13 @@ window.buildGrid=function(){
     if(librarySort==='artist-desc')return String(b[1]||'').localeCompare(String(a[1]||''),undefined,{sensitivity:'base'});
     if(librarySort==='year-desc')return (parseInt(b[3],10)||0)-(parseInt(a[3],10)||0);
     if(librarySort==='year-asc')return (parseInt(a[3],10)||9999)-(parseInt(b[3],10)||9999);
+    if(!isWishlist&&activeShelfId!=='all'){
+      var aShelfOrder=parseInt(a[14],10);
+      var bShelfOrder=parseInt(b[14],10);
+      if(isNaN(aShelfOrder))aShelfOrder=2147483647;
+      if(isNaN(bShelfOrder))bShelfOrder=2147483647;
+      return aShelfOrder-bShelfOrder||(parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);
+    }
     return (parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);
   });
   renderLibraryPagination(visibleRecords.length);
@@ -4916,6 +5066,7 @@ async function loadOtherUserCollection(userId){
             collection_number,
             sort_order,
             shelf_id,
+            shelf_sort_order,
             cover_url,
             discogs_style,
             discogs_release_id,
@@ -5061,7 +5212,8 @@ async function loadOtherUserCollection(userId){
                 album.discogs_master_id||'',
                 copyDetailsFromRow(item),
                 album.apple_collection_url||'',
-                item.shelf_id||''
+                item.shelf_id||'',
+                item.shelf_sort_order==null?null:item.shelf_sort_order
             ];
         });
 
