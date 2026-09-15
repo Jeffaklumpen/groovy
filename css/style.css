@@ -1306,5 +1306,5 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 @media screen and (max-width:380px){
 .record-card-footer{gap:3px}
 .streaming-service{padding-left:2px;padding-right:2px}
-.apple-music-small-badge{height:12px}
+.apple-music-small-badge{height:31px}
 }
