@@ -1428,3 +1428,14 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .library-title-actions{gap:8px}
 .shelf-danger-button{min-height:44px}
 }
+
+
+/* SHELVES V5 */
+@media screen and (min-width:761px){
+.library-title-row{justify-content:flex-start}
+.library-title-actions{margin-left:12px}
+}
+@media screen and (max-width:760px){
+.library-title-row{justify-content:space-between}
+.library-title-actions{margin-left:0}
+}
