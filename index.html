@@ -23,7 +23,7 @@
   <meta name="application-name" content="Groovy">
   <meta name="theme-color" content="#121214">
   <title>GroovyShelves – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=82">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=83">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/groovy/icons/apple-touch-icon.png">
   <link rel="manifest" href="/groovy/manifest.webmanifest">
@@ -91,14 +91,6 @@
   </div>
 </header>
 
-<section id="shelfStrip" class="shelf-strip" aria-label="Shelves" hidden>
-  <button id="shelfScrollLeft" class="shelf-scroll-arrow shelf-scroll-left" type="button" aria-label="Previous shelves">‹</button>
-  <div id="shelfStripViewport" class="shelf-strip-viewport">
-    <div id="shelfStripScroll" class="shelf-strip-scroll"></div>
-  </div>
-  <button id="shelfScrollRight" class="shelf-scroll-arrow shelf-scroll-right" type="button" aria-label="Next shelves">›</button>
-</section>
-
 <section class="library-overview" aria-labelledby="libraryTitle">
   <div class="viewed-user-header" id="viewedUserHeader">
     <div class="viewed-user-identity">
@@ -111,6 +103,15 @@
       <button class="back-to-my-collection" id="backToMyCollectionButton" type="button"><span aria-hidden="true">←</span> My collection</button>
     </div>
   </div>
+
+  <section id="shelfStrip" class="shelf-strip" aria-label="Shelves" hidden>
+    <button id="shelfScrollLeft" class="shelf-scroll-arrow shelf-scroll-left" type="button" aria-label="Previous shelves">‹</button>
+    <div id="shelfStripViewport" class="shelf-strip-viewport">
+      <div id="shelfStripScroll" class="shelf-strip-scroll"></div>
+    </div>
+    <button id="shelfScrollRight" class="shelf-scroll-arrow shelf-scroll-right" type="button" aria-label="Next shelves">›</button>
+  </section>
+
   <div class="library-title-row">
     <div class="library-title-copy">
       <h1 id="libraryTitle">All Records</h1>
@@ -211,11 +212,14 @@
     <div class="detail-rating" id="detailRating"></div>
   </div>
   <div id="detailShelfActions" class="detail-shelf-actions" hidden></div>
-  <a id="detailSpotifyLink" class="detail-spotify-link" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer">
-    <svg class="detail-spotify-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12"></circle><path d="M5.8 9.1c4.3-1.2 8.7-.8 12.4 1.2M6.7 12.5c3.6-.9 7.2-.5 10.3.9M7.6 15.6c2.8-.6 5.5-.3 7.9.7"></path></svg>
-    <span><strong>Listen on Spotify</strong><small>Open this album on Spotify</small></span>
-    <span class="external-link-icon" aria-hidden="true"></span>
-  </a>
+  <div class="detail-streaming-row" aria-label="Streaming links">
+    <a id="detailAppleMusicLink" class="detail-streaming-link detail-apple-service" href="https://music.apple.com/" target="_blank" rel="noopener noreferrer">
+      <img class="detail-apple-music-badge" src="/groovy/Apple_Music_Listen_on_Badge_Small.svg" alt="Listen on Apple Music">
+    </a>
+    <a id="detailSpotifyLink" class="detail-streaming-link detail-spotify-service" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer">
+      <img class="detail-spotify-service-logo" src="/groovy/Full_Logo_Green_RGB.svg" alt="Spotify">
+    </a>
+  </div>
 </div>
 
 <div class="album-tracks">
@@ -466,7 +470,7 @@
 </div>
 
 <script src="/groovy/js/route-state.js?v=14"></script>
-<script src="/groovy/js/app.js?v=87"></script>
+<script src="/groovy/js/app.js?v=88"></script>
 <script src="/groovy/js/statistics-core.js?v=3"></script>
 <script src="/groovy/js/statistics.js?v=6"></script>
 <script src="/groovy/js/pwa.js?v=3"></script>
