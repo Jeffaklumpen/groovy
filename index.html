@@ -23,7 +23,7 @@
   <meta name="application-name" content="Groovy">
   <meta name="theme-color" content="#121214">
   <title>GroovyShelves – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=100">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=101">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/groovy/icons/apple-touch-icon.png">
   <link rel="manifest" href="/groovy/manifest.webmanifest">
@@ -53,6 +53,11 @@
 
         <button id="installAppShortcutButton" class="install-shortcut-button" type="button" aria-label="Install Groovy" title="Install Groovy"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3"/></svg></button>
 
+      </div>
+
+      <div id="onlineUsersStatus" class="online-users-pill" role="status" aria-live="polite" aria-label="0 users online">
+        <span class="online-users-dot" aria-hidden="true"></span>
+        <span class="online-users-copy"><strong id="onlineUsersCount">0</strong><span id="onlineUsersDesktopLabel" class="online-users-desktop">users online</span><span class="online-users-mobile">online</span></span>
       </div>
 
       <div id="authBox">
@@ -498,7 +503,7 @@
 </div>
 
 <script src="/groovy/js/route-state.js?v=14"></script>
-<script src="/groovy/js/app.js?v=103"></script>
+<script src="/groovy/js/app.js?v=104"></script>
 <script src="/groovy/js/statistics-core.js?v=3"></script>
 <script src="/groovy/js/statistics.js?v=6"></script>
 <script src="/groovy/js/pwa.js?v=3"></script>
