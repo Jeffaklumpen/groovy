@@ -147,11 +147,11 @@ async function updateAuthUI(){
             profileImageMenu.style.backgroundSize='cover';
             profileImageMenu.style.backgroundPosition='center';
         }else{
-            profileImage.style.backgroundImage='url("/groovy/avatar_placeholder.png")';
+            profileImage.style.backgroundImage='url("/avatar_placeholder.png")';
             profileImage.style.backgroundSize='cover';
             profileImage.style.backgroundPosition='center';
         
-            profileImageMenu.style.backgroundImage='url("/groovy/avatar_placeholder.png")';
+            profileImageMenu.style.backgroundImage='url("/avatar_placeholder.png")';
             profileImageMenu.style.backgroundSize='cover';
             profileImageMenu.style.backgroundPosition='center';
         }
@@ -164,11 +164,11 @@ async function updateAuthUI(){
         profileMenu.classList.remove('open');
         loginPanel.classList.remove('open');
 
-        profileImage.style.backgroundImage='url("/groovy/avatar_placeholder.png")';
+        profileImage.style.backgroundImage='url("/avatar_placeholder.png")';
         profileImage.style.backgroundSize='cover';
         profileImage.style.backgroundPosition='center';
         
-        profileImageMenu.style.backgroundImage='url("/groovy/avatar_placeholder.png")';
+        profileImageMenu.style.backgroundImage='url("/avatar_placeholder.png")';
         profileImageMenu.style.backgroundSize='cover';
         profileImageMenu.style.backgroundPosition='center';
     }
@@ -509,7 +509,7 @@ window.loadCollection=async function(){
   var loadVersion=++window.collectionLoadVersion;
   var path=window.location.pathname;
 
-  if(/^\/groovy\/user\/[^\/]+\/?$/.test(path)){
+  if(/^\/user\/[^\/]+\/?$/.test(path)){
     return;
   }
 
@@ -3078,7 +3078,7 @@ function recordHTML(record, className){
             'target="_blank" rel="noopener noreferrer" '+
             'aria-label="Listen to '+esc(record[2])+' by '+esc(record[1])+' on Apple Music">'+
             '<img class="apple-music-small-badge" '+
-                'src="/groovy/Apple_Music_Listen_on_Badge_Small.svg" '+
+                'src="/Apple_Music_Listen_on_Badge_Small.svg" '+
                 'alt="Listen on Apple Music">'+
         '</a>'+
     
@@ -3087,7 +3087,7 @@ function recordHTML(record, className){
             'target="_blank" rel="noopener noreferrer" '+
             'aria-label="Listen to '+esc(record[2])+' by '+esc(record[1])+' on Spotify">'+
             '<img class="spotify-service-logo" '+
-                'src="/groovy/Full_Logo_Green_RGB.svg" '+
+                'src="/Full_Logo_Green_RGB.svg" '+
                 'alt="Spotify">'+
         '</a>'+
     
@@ -5417,7 +5417,7 @@ async function loadTopUsers(){
         avatar.className='user-search-avatar';
 
         avatar.style.backgroundImage='url("'+
-            (user.avatar_url||'/groovy/avatar_placeholder.png')+
+            (user.avatar_url||'/avatar_placeholder.png')+
             '")';
 
         avatar.style.backgroundSize='cover';
@@ -5445,7 +5445,7 @@ async function loadTopUsers(){
 
         div.addEventListener('click',function(){
             searchUserModal.style.display='none';
-            history.pushState({},'','/groovy/user/'+encodeURIComponent(user.username));
+            history.pushState({},'','/user/'+encodeURIComponent(user.username));
             renderCurrentRoute();
         });
     });
@@ -5502,7 +5502,7 @@ async function searchUsers(query){
         avatar.className='user-search-avatar';
     
         avatar.style.backgroundImage='url("'+
-            (user.avatar_url||'/groovy/avatar_placeholder.png')+
+            (user.avatar_url||'/avatar_placeholder.png')+
             '")';
     
         avatar.style.backgroundSize='cover';
@@ -5530,7 +5530,7 @@ async function searchUsers(query){
 
         div.addEventListener('click',function(){
             searchUserModal.style.display='none';
-            history.pushState({},'','/groovy/user/'+encodeURIComponent(user.username));
+            history.pushState({},'','/user/'+encodeURIComponent(user.username));
             renderCurrentRoute();
         });
     });
@@ -5580,7 +5580,7 @@ myCollectionButton.addEventListener('click',async function(){
 
     if(!user)return;
 
-    history.pushState({},'','/groovy/');
+    history.pushState({},'','/');
     libraryPage=1;
 
     setDeleteMode(false);
@@ -5592,7 +5592,7 @@ myCollectionButton.addEventListener('click',async function(){
 function navigateOwnLibrary(nextView){
     libraryPage=1;
     setDeleteMode(false);
-    var url='/groovy/';
+    var url='/';
     if(nextView==='wishlist')url+='?view=wishlist';
     if(window.location.pathname+window.location.search===url)return;
     history.pushState({},'',url);
@@ -5604,7 +5604,7 @@ function navigateViewedLibrary(nextView){
     if(!profile||!profile.username)return;
     libraryPage=1;
     setDeleteMode(false);
-    var url='/groovy/user/'+encodeURIComponent(profile.username);
+    var url='/user/'+encodeURIComponent(profile.username);
     if(nextView==='wishlist')url+='?view=wishlist';
     if(window.location.pathname+window.location.search===url)return;
     history.pushState({},'',url);
@@ -5879,7 +5879,7 @@ async function loadOtherUserCollection(userId){
     viewedUserAvatar.style.backgroundImage='url("'+
         (profile&&profile.avatar_url
             ?profile.avatar_url
-            :'/groovy/avatar_placeholder.png')+
+            :'/avatar_placeholder.png')+
         '")';
 
     viewedUserAvatar.style.backgroundSize='cover';
@@ -7676,7 +7676,7 @@ async function loadUserFromUrl(){
     const resolvedState=GroovyRouteState.resolveProfileView(sessionUser,user);
 
     if(resolvedState==='own'){
-        history.replaceState({},'','/groovy/'+(window.libraryView==='wishlist'?'?view=wishlist':''));
+        history.replaceState({},'','/'+(window.libraryView==='wishlist'?'?view=wishlist':''));
         await window.loadCollection();
         return;
     }
