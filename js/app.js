@@ -1957,6 +1957,21 @@ async function marketplaceFxRate(from,to){
   return rate;
 }
 
+function clearMarketplacePriceSummary(){
+  marketplacePriceAlbumIndex=-1;
+  marketplacePriceFinished={tradera:false,ebay:!ebayEnabled};
+  marketplacePriceRenderVersion++;
+  traderaListings=[];
+  ebayListings=[];
+  if(!marketplacePriceSummary)return;
+  marketplacePriceSummary.classList.remove('loading','empty','partial','ready');
+  if(marketplaceLowestPriceLink){marketplaceLowestPriceLink.hidden=true;marketplaceLowestPriceLink.href='#';}
+  if(marketplaceLowestPrice)marketplaceLowestPrice.textContent='';
+  if(marketplaceLowestMeta)marketplaceLowestMeta.textContent='';
+  if(marketplacePriceStatus){marketplacePriceStatus.hidden=false;marketplacePriceStatus.textContent='Checking fixed prices…';}
+  if(marketplacePriceNote)marketplacePriceNote.textContent='Excl. shipping';
+}
+
 function resetMarketplacePriceSummary(index){
   marketplacePriceAlbumIndex=index;
   marketplacePriceFinished={tradera:false,ebay:!ebayEnabled};
@@ -3752,6 +3767,7 @@ function closeAlbum(){
   closeEbayModal();
   traderaRequestVersion++;
   ebayRequestVersion++;
+  clearMarketplacePriceSummary();
   albumOverlay.className='album-overlay';
   document.body.style.overflow='';
   setCopyDetailsExpanded(false);
