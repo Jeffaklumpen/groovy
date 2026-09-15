@@ -23,7 +23,7 @@
   <meta name="application-name" content="Groovy">
   <meta name="theme-color" content="#121214">
   <title>GroovyShelves – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=89">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=90">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/groovy/icons/apple-touch-icon.png">
   <link rel="manifest" href="/groovy/manifest.webmanifest">
@@ -38,9 +38,9 @@
       <span class="header-tagline">TRACK YOUR COLLECTION</span>
     </div>
 
-    <nav id="libraryTabs" class="library-tabs" aria-label="Library view" style="display:none;">
-      <button id="collectionTabButton" class="library-tab active" type="button"><span class="record-icon" aria-hidden="true"></span>Shelf</button>
-      <button id="wishlistTabButton" class="library-tab" type="button"><span class="wishlist-icon" aria-hidden="true"></span>Wishlist</button>
+    <nav id="libraryTabs" class="library-tabs" aria-label="My library" style="display:none;">
+      <button id="collectionTabButton" class="library-tab active" type="button"><span class="record-icon" aria-hidden="true"></span>My Shelf</button>
+      <button id="wishlistTabButton" class="library-tab" type="button"><span class="wishlist-icon" aria-hidden="true"></span>My Wishlist</button>
     </nav>
 
     <div class="header-tools">
@@ -53,7 +53,6 @@
 
         <button id="installAppShortcutButton" class="install-shortcut-button" type="button" aria-label="Install Groovy" title="Install Groovy"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3"/></svg></button>
 
-        <button class="back-to-my-collection back-to-my-collection-mobile" id="backToMyCollectionMobileButton" type="button"><span aria-hidden="true">←</span> My collection</button>
       </div>
 
       <div id="authBox">
@@ -97,12 +96,13 @@
       <div class="viewed-user-avatar" id="viewedUserAvatar"></div>
       <div class="viewed-user-copy"><span id="viewedUserContext">Collection</span><strong class="viewed-user-name" id="viewedUserName"></strong></div>
     </div>
-    <div class="viewed-user-actions">
-      <button class="viewed-user-link" id="copyProfileLinkButton" type="button" aria-label="Copy profile link"><span aria-hidden="true">⎘</span><span class="viewed-action-label">Copy link</span></button>
+    <div class="viewed-user-actions" role="navigation" aria-label="Viewed user library">
+      <button class="viewed-user-nav" id="viewedUserShelfButton" type="button" aria-label="View shelf"><span class="record-icon" aria-hidden="true"></span><span class="viewed-action-label">Shelf</span></button>
+      <button class="viewed-user-nav" id="viewedUserWishlistButton" type="button" aria-label="View wishlist"><span class="wishlist-icon" aria-hidden="true"></span><span class="viewed-action-label">Wishlist</span></button>
       <button class="viewed-user-stats" id="viewedUserStatsButton" type="button" aria-label="View statistics"><span aria-hidden="true">▥</span><span class="viewed-action-label">Statistics</span></button>
-      <button class="back-to-my-collection" id="backToMyCollectionButton" type="button"><span aria-hidden="true">←</span> My collection</button>
     </div>
   </div>
+  <span id="copyProfileLinkButton" hidden aria-hidden="true"><span class="viewed-action-label"></span></span>
 
   <section id="shelfStrip" class="shelf-strip" aria-label="Shelves" hidden>
     <button id="shelfScrollLeft" class="shelf-scroll-arrow shelf-scroll-left" type="button" aria-label="Previous shelves">‹</button>
@@ -471,7 +471,7 @@
 </div>
 
 <script src="/groovy/js/route-state.js?v=14"></script>
-<script src="/groovy/js/app.js?v=91"></script>
+<script src="/groovy/js/app.js?v=92"></script>
 <script src="/groovy/js/statistics-core.js?v=3"></script>
 <script src="/groovy/js/statistics.js?v=6"></script>
 <script src="/groovy/js/pwa.js?v=3"></script>
