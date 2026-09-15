@@ -816,15 +816,64 @@ function shelfRecordCount(id){
   return records.filter(function(record){return String(record[13]||'')===String(id);}).length;
 }
 
-function closeRecordActionMenus(except){
+var recordMenuBackdrop=document.createElement('div');
+recordMenuBackdrop.className='record-menu-backdrop';
+recordMenuBackdrop.setAttribute('aria-hidden','true');
+document.body.appendChild(recordMenuBackdrop);
+
+function isMobileRecordMenu(){
+  return window.matchMedia&&window.matchMedia('(max-width: 760px)').matches;
+}
+
+function closeRecordActionMenus(){
   collection.querySelectorAll('.record-action-menu.open').forEach(function(menu){
-    if(menu!==except)menu.classList.remove('open');
+    menu.classList.remove('open');
+    menu.style.left='';
+    menu.style.right='';
+    menu.style.top='';
+    menu.style.bottom='';
+    menu.style.width='';
+    menu.style.visibility='';
   });
   collection.querySelectorAll('.record-menu-button[aria-expanded="true"]').forEach(function(button){
-    var menu=button.parentElement&&button.parentElement.querySelector('.record-action-menu');
-    if(menu!==except)button.setAttribute('aria-expanded','false');
+    button.setAttribute('aria-expanded','false');
   });
+  collection.querySelectorAll('.record-card-topbar.record-menu-open').forEach(function(topbar){
+    topbar.classList.remove('record-menu-open');
+  });
+  recordMenuBackdrop.classList.remove('open');
 }
+
+function positionMobileRecordMenu(button,menu){
+  if(!isMobileRecordMenu())return;
+
+  var viewportWidth=window.innerWidth||document.documentElement.clientWidth;
+  var viewportHeight=window.innerHeight||document.documentElement.clientHeight;
+  var menuWidth=Math.min(156,viewportWidth-16);
+  var buttonRect=button.getBoundingClientRect();
+
+  menu.style.width=menuWidth+'px';
+  menu.style.right='auto';
+  menu.style.bottom='auto';
+  menu.style.visibility='hidden';
+
+  var left=Math.max(8,Math.min(viewportWidth-menuWidth-8,buttonRect.right-menuWidth));
+  menu.style.left=Math.round(left)+'px';
+  menu.style.top=Math.round(buttonRect.bottom+5)+'px';
+
+  var menuRect=menu.getBoundingClientRect();
+  if(menuRect.bottom>viewportHeight-8){
+    menu.style.top=Math.max(8,Math.round(buttonRect.top-menuRect.height-5))+'px';
+  }
+
+  menu.style.visibility='';
+}
+
+recordMenuBackdrop.addEventListener('click',function(event){
+  event.preventDefault();
+  event.stopPropagation();
+  closeRecordActionMenus();
+});
 
 function renderShelfStrip(){
   if(!shelfStrip||!shelfStripScroll)return;
@@ -997,14 +1046,23 @@ function attachRecordActionMenus(){
       event.stopPropagation();
       var menu=button.parentElement.querySelector('.record-action-menu');
       var opening=!menu.classList.contains('open');
-      closeRecordActionMenus(menu);
-      menu.classList.toggle('open',opening);
-      button.setAttribute('aria-expanded',opening?'true':'false');
+
+      closeRecordActionMenus();
+      if(!opening)return;
+
+      menu.classList.add('open');
+      button.setAttribute('aria-expanded','true');
+      button.parentElement.classList.add('record-menu-open');
+
+      if(isMobileRecordMenu()){
+        recordMenuBackdrop.classList.add('open');
+        positionMobileRecordMenu(button,menu);
+      }
     });
   });
 
   collection.querySelectorAll('.record-action-item').forEach(function(button){
-    button.addEventListener('click',function(event){
+    button.addEventListener('click',async function(event){
       event.preventDefault();
       event.stopPropagation();
       var recordElement=button.closest('.record');
@@ -1018,6 +1076,13 @@ function attachRecordActionMenus(){
         openAlbum(index);
       }else if(action==='shelf'){
         openShelfPicker(index);
+      }else if(action==='unshelf'){
+        try{
+          await assignRecordToShelf(index,null);
+        }catch(error){
+          console.error('Kunde inte ta bort albumet från shelf:',error);
+          alert('Could not remove the record from the shelf.\n\n'+(error.message||error));
+        }
       }else if(action==='delete'){
         removeAlbumIndex=index;
         document.getElementById('removeAlbumMessage').textContent='Are you sure you want to remove "'+records[index][2]+'" from your collection?';
@@ -1119,6 +1184,8 @@ shelfNameInput.addEventListener('keydown',function(event){
 document.addEventListener('click',function(event){
   if(!event.target.closest('.record-menu-button')&&!event.target.closest('.record-action-menu'))closeRecordActionMenus();
 });
+
+window.addEventListener('resize',closeRecordActionMenus,{passive:true});
 
 if(ebayButton)ebayButton.hidden=!ebayEnabled;
 
@@ -2212,7 +2279,8 @@ function recordHTML(record, className){
       :'<button class="record-menu-button" type="button" aria-label="Record menu" aria-expanded="false">•••</button>'+
        '<div class="record-action-menu">'+
          '<button class="record-action-item" type="button" data-action="view">View Record</button>'+
-         '<button class="record-action-item" type="button" data-action="shelf">Add to Shelf</button>'+
+         '<button class="record-action-item" type="button" data-action="shelf">'+(record[13]?'Move to Shelf':'Add to Shelf')+'</button>'+
+         (record[13]?'<button class="record-action-item" type="button" data-action="unshelf">Remove from Shelf</button>':'')+
          '<button class="record-action-item danger" type="button" data-action="delete">Delete Record</button>'+
        '</div>')
     :'';
