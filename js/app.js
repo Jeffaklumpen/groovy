@@ -517,7 +517,6 @@ window.loadCollection=async function(){
   window.loginRequiredForViewedCollection=false;
   window.profileNotFound=false;
   document.getElementById('viewedUserHeader').style.display='none';
-  document.getElementById('backToMyCollectionMobileButton').classList.remove('active');
     
   var {data:{session}}=await supabaseClient.auth.getSession();
   window.hasAuthenticatedUser=!!(session&&session.user);
@@ -4244,9 +4243,11 @@ window.buildGrid=function(){
     ?"This user hasn't added any records yet."
     :'Save records you want to add next.';
   document.getElementById('emptyWishlistAddButton').style.display=isViewingProfile?'none':'';
-  libraryTabs.style.display=(window.hasAuthenticatedUser&&!hasBlockingState)?'flex':'none';
-  document.getElementById('collectionTabButton').classList.toggle('active',!isWishlist);
-  document.getElementById('wishlistTabButton').classList.toggle('active',isWishlist);
+  libraryTabs.style.display=window.hasAuthenticatedUser?'flex':'none';
+  document.getElementById('collectionTabButton').classList.toggle('active',isOwnCollection&&!isWishlist);
+  document.getElementById('wishlistTabButton').classList.toggle('active',isOwnCollection&&isWishlist);
+  document.getElementById('collectionTabButton').setAttribute('aria-current',isOwnCollection&&!isWishlist?'page':'false');
+  document.getElementById('wishlistTabButton').setAttribute('aria-current',isOwnCollection&&isWishlist?'page':'false');
   document.getElementById('addAlbumButton').style.display=isViewingProfile?'none':'';
   document.getElementById('filterButton').parentElement.style.display=isWishlist?'none':'';
 
@@ -4922,10 +4923,10 @@ searchUserModal.addEventListener('click',function(event){
 });
 
 const myCollectionButton=document.getElementById('myCollectionButton');
-const backToMyCollectionButton=document.getElementById('backToMyCollectionButton');
-const backToMyCollectionMobileButton=document.getElementById('backToMyCollectionMobileButton');
 const collectionTabButton=document.getElementById('collectionTabButton');
 const wishlistTabButton=document.getElementById('wishlistTabButton');
+const viewedUserShelfButton=document.getElementById('viewedUserShelfButton');
+const viewedUserWishlistButton=document.getElementById('viewedUserWishlistButton');
 const emptyWishlistAddButton=document.getElementById('emptyWishlistAddButton');
 
 const logo=document.querySelector('.logo');
@@ -4949,30 +4950,32 @@ myCollectionButton.addEventListener('click',async function(){
     await window.loadCollection();
 });
 
-backToMyCollectionButton.addEventListener('click',function(){
-    myCollectionButton.click();
-});
-
-backToMyCollectionMobileButton.addEventListener('click',function(){
-    myCollectionButton.click();
-});
-
-function navigateLibrary(nextView){
+function navigateOwnLibrary(nextView){
     libraryPage=1;
     setDeleteMode(false);
-    var url=window.location.pathname;
+    var url='/groovy/';
     if(nextView==='wishlist')url+='?view=wishlist';
+    if(window.location.pathname+window.location.search===url)return;
     history.pushState({},'',url);
     renderCurrentRoute();
 }
 
-collectionTabButton.addEventListener('click',function(){
-    if(window.libraryView!=='collection')navigateLibrary('collection');
-});
+function navigateViewedLibrary(nextView){
+    var profile=window.groovyViewedStatisticsProfile;
+    if(!profile||!profile.username)return;
+    libraryPage=1;
+    setDeleteMode(false);
+    var url='/groovy/user/'+encodeURIComponent(profile.username);
+    if(nextView==='wishlist')url+='?view=wishlist';
+    if(window.location.pathname+window.location.search===url)return;
+    history.pushState({},'',url);
+    renderCurrentRoute();
+}
 
-wishlistTabButton.addEventListener('click',function(){
-    if(window.libraryView!=='wishlist')navigateLibrary('wishlist');
-});
+collectionTabButton.addEventListener('click',function(){navigateOwnLibrary('collection');});
+wishlistTabButton.addEventListener('click',function(){navigateOwnLibrary('wishlist');});
+viewedUserShelfButton.addEventListener('click',function(){navigateViewedLibrary('collection');});
+viewedUserWishlistButton.addEventListener('click',function(){navigateViewedLibrary('wishlist');});
 
 emptyWishlistAddButton.addEventListener('click',function(){
     addAlbumButton.click();
@@ -5233,7 +5236,6 @@ async function loadOtherUserCollection(userId){
     const viewedUserName=document.getElementById('viewedUserName');
 
     viewedUserHeader.style.display='flex';
-    backToMyCollectionMobileButton.classList.add('active');
 
     viewedUserAvatar.style.backgroundImage='url("'+
         (profile&&profile.avatar_url
@@ -5247,7 +5249,11 @@ async function loadOtherUserCollection(userId){
     viewedUserName.textContent=profile&&profile.username
         ?profile.username
         :'Unknown user';
-    document.getElementById('viewedUserContext').textContent=window.libraryView==='wishlist'?'Wishlist':'Collection';
+    document.getElementById('viewedUserContext').textContent=window.libraryView==='wishlist'?'Wishlist':'Shelf';
+    viewedUserShelfButton.classList.toggle('active',window.libraryView!=='wishlist');
+    viewedUserWishlistButton.classList.toggle('active',window.libraryView==='wishlist');
+    viewedUserShelfButton.setAttribute('aria-current',window.libraryView!=='wishlist'?'page':'false');
+    viewedUserWishlistButton.setAttribute('aria-current',window.libraryView==='wishlist'?'page':'false');
 
     window.groovyViewedStatisticsProfile={
         id:userId,
@@ -7001,7 +7007,6 @@ async function loadUserFromUrl(){
         window.loginRequiredForViewedCollection=true;
         window.profileNotFound=false;
         document.getElementById('viewedUserHeader').style.display='none';
-        backToMyCollectionMobileButton.classList.remove('active');
         document.getElementById('collectionCount').textContent='0 RECORDS';
         buildGrid();
         return;
@@ -7024,7 +7029,6 @@ async function loadUserFromUrl(){
         window.loginRequiredForViewedCollection=false;
         window.profileNotFound=true;
         document.getElementById('viewedUserHeader').style.display='none';
-        backToMyCollectionMobileButton.classList.remove('active');
         document.getElementById('collectionCount').textContent='0 RECORDS';
         buildGrid();
         return;
