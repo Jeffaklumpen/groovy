@@ -2909,11 +2909,27 @@ function wikipediaIntroduction(extract){
   return String(extract||'').replace(/\r/g,'').replace(/\n{3,}/g,'\n\n').trim();
 }
 
+function wikipediaAboutLineHeight(){
+  if(!detailAboutAlbumText)return 20.8;
+  var sample=detailAboutAlbumText.querySelector('p')||detailAboutAlbumText;
+  var style=window.getComputedStyle(sample);
+  return parseFloat(style.lineHeight)||20.8;
+}
+
+function renderWikipediaParagraphs(text){
+  if(!detailAboutAlbumText)return;
+  detailAboutAlbumText.innerHTML='';
+  String(text||'').split(/\n{2,}/).map(function(paragraph){return paragraph.replace(/\s*\n\s*/g,' ').trim();}).filter(Boolean).forEach(function(paragraph){
+    var element=document.createElement('p');
+    element.textContent=paragraph;
+    detailAboutAlbumText.appendChild(element);
+  });
+}
+
 function setWikipediaAboutExpanded(expanded,animate){
   if(!detailAboutAlbumBody||!detailAboutAlbumToggle)return;
   var textSpan=detailAboutAlbumToggle.querySelector('span');
-  var style=window.getComputedStyle(detailAboutAlbumText);
-  var lineHeight=parseFloat(style.lineHeight)||20.8;
+  var lineHeight=wikipediaAboutLineHeight();
   var collapsedHeight=lineHeight*3;
   detailAboutAlbumToggle.setAttribute('aria-expanded',expanded?'true':'false');
   detailAboutAlbumBody.classList.toggle('expanded',expanded);
@@ -2930,8 +2946,7 @@ function syncWikipediaAboutToggle(reset){
   if(!detailAboutAlbumBody||!detailAboutAlbumText||!detailAboutAlbumToggle)return;
   if(reset)setWikipediaAboutExpanded(false,false);
   requestAnimationFrame(function(){
-    var style=window.getComputedStyle(detailAboutAlbumText);
-    var lineHeight=parseFloat(style.lineHeight)||20.8;
+    var lineHeight=wikipediaAboutLineHeight();
     var collapsedHeight=lineHeight*3;
     var needsToggle=detailAboutAlbumBody.scrollHeight>collapsedHeight+2;
     detailAboutAlbumToggle.hidden=!needsToggle;
@@ -3012,7 +3027,7 @@ function saveWikipediaCache(record,result){
 function renderWikipediaAbout(result){
   if(!detailAboutAlbum||!detailAboutAlbumText||!detailAboutAlbumLink)return;
   if(!result||!result.text){detailAboutAlbum.hidden=true;return;}
-  detailAboutAlbumText.textContent=result.text;
+  renderWikipediaParagraphs(result.text);
   detailAboutAlbumLink.href=result.url||'https://en.wikipedia.org/';
   detailAboutAlbumLink.setAttribute('aria-label','Read '+(result.title||'this album article')+' on Wikipedia');
   detailAboutAlbum.hidden=false;
@@ -3026,7 +3041,7 @@ async function loadWikipediaAlbumAbout(record){
   var cached=readWikipediaCache(record);
   if(cached){renderWikipediaAbout(cached);return;}
 
-  detailAboutAlbumText.textContent='Loading album information…';
+  renderWikipediaParagraphs('Loading album information…');
   if(detailAboutAlbumToggle)detailAboutAlbumToggle.hidden=true;
   if(detailAboutAlbumBody){detailAboutAlbumBody.classList.remove('expanded');detailAboutAlbumBody.style.maxHeight='';}
   detailAboutAlbumLink.href='https://en.wikipedia.org/';
