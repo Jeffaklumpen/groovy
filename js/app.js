@@ -5250,6 +5250,19 @@ let userSearchTimer=null;
 var userPresenceChannel=null;
 var presenceUserId='';
 var onlineUserIds=new Set();
+var anonymousPresenceKey='viewer-'+Math.random().toString(36).slice(2)+'-'+Date.now().toString(36);
+const onlineUsersStatus=document.getElementById('onlineUsersStatus');
+const onlineUsersCount=document.getElementById('onlineUsersCount');
+const onlineUsersDesktopLabel=document.getElementById('onlineUsersDesktopLabel');
+
+function refreshOnlineUserCount(){
+    const count=onlineUserIds.size;
+    if(!onlineUsersStatus||!onlineUsersCount)return;
+    onlineUsersCount.textContent=String(count);
+    if(onlineUsersDesktopLabel)onlineUsersDesktopLabel.textContent=count===1?'user online':'users online';
+    onlineUsersStatus.classList.toggle('has-users',count>0);
+    onlineUsersStatus.setAttribute('aria-label',count+' '+(count===1?'user online':'users online'));
+}
 
 function refreshUserPresenceDots(){
     document.querySelectorAll('.user-presence-dot[data-user-id]').forEach(function(dot){
@@ -5258,6 +5271,7 @@ function refreshUserPresenceDots(){
         dot.setAttribute('aria-label',isOnline?'Online':'Offline');
         dot.title=isOnline?'Online now':'';
     });
+    refreshOnlineUserCount();
 }
 
 function addUserPresenceDot(avatar,userId){
@@ -5270,11 +5284,12 @@ function addUserPresenceDot(avatar,userId){
 
 async function syncUserPresence(user){
     const nextUserId=user&&user.id?String(user.id):'';
-    if(nextUserId===presenceUserId&&userPresenceChannel)return;
+    const nextPresenceIdentity=nextUserId||'__viewer__';
+    if(nextPresenceIdentity===presenceUserId&&userPresenceChannel)return;
 
     const previousChannel=userPresenceChannel;
     userPresenceChannel=null;
-    presenceUserId=nextUserId;
+    presenceUserId=nextPresenceIdentity;
     onlineUserIds=new Set();
     refreshUserPresenceDots();
 
@@ -5283,26 +5298,33 @@ async function syncUserPresence(user){
         try{await supabaseClient.removeChannel(previousChannel);}catch(error){}
     }
 
-    if(!nextUserId)return;
-
     const channel=supabaseClient.channel('groovy-online-users',{
-        config:{presence:{key:nextUserId}}
+        config:{presence:{key:nextUserId||anonymousPresenceKey}}
     });
     userPresenceChannel=channel;
 
     channel.on('presence',{event:'sync'},function(){
         if(channel!==userPresenceChannel)return;
         const presenceState=channel.presenceState();
-        onlineUserIds=new Set(Object.keys(presenceState||{}));
+        onlineUserIds=new Set(
+            Object.keys(presenceState||{}).filter(function(key){return key.indexOf('viewer-')!==0;})
+        );
         refreshUserPresenceDots();
     });
 
     channel.subscribe(async function(status){
-        if(status!=='SUBSCRIBED'||channel!==userPresenceChannel)return;
-        try{
-            await channel.track({user_id:nextUserId,online_at:new Date().toISOString()});
-        }catch(error){
-            console.warn('Could not update online status:',error);
+        if(channel!==userPresenceChannel)return;
+        if(status==='SUBSCRIBED'&&nextUserId){
+            try{
+                await channel.track({user_id:nextUserId,online_at:new Date().toISOString()});
+            }catch(error){
+                console.warn('Could not update online status:',error);
+            }
+            return;
+        }
+        if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+            onlineUserIds=new Set();
+            refreshUserPresenceDots();
         }
     });
 }
