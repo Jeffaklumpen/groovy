@@ -1771,3 +1771,24 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .about-album-first-heading{margin:24px 0 18px;color:#f4f4f5;font-size:15px;font-weight:740;line-height:1.35;letter-spacing:-.01em}
 @media screen and (min-width:1121px){.album-desktop-right{position:absolute;right:22px;top:22px;display:flex;width:36%;min-width:390px;max-width:590px;flex-direction:column;align-items:stretch;gap:22px}.album-desktop-right .album-tracks{position:relative;right:auto;top:auto;bottom:auto;width:100%;max-height:calc(100dvh - 245px);min-height:0;align-self:flex-start;overflow-y:auto}.album-desktop-right .marketplace-panel{position:relative;grid-column:auto;grid-row:auto;width:100%;margin:0;align-self:flex-start}.album-about{align-self:start}.marketplace-panel{align-self:start}}
 @media screen and (max-width:760px){.about-album-first-heading{margin:20px 0 15px;font-size:13px;line-height:1.35}}
+
+
+/* MARKETPLACE PRICE V1 - local currency + lowest Buy Now */
+.marketplace-currency-control{display:flex;align-items:center;gap:6px;margin-left:auto;color:#6f6f75;font-size:8px;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
+.marketplace-currency-control select{height:29px;max-width:104px;padding:0 25px 0 9px;border:1px solid #343438;border-radius:7px;background:#0d0d0f;color:#d5d5d9;font:inherit;font-size:9px;font-weight:700;letter-spacing:.02em;text-transform:none;outline:none;cursor:pointer}
+.marketplace-currency-control select:hover,.marketplace-currency-control select:focus{border-color:rgba(255,100,24,.55);color:#fff}
+.marketplace-price-summary{display:flex;min-width:0;align-items:flex-end;justify-content:space-between;gap:14px;margin-top:15px;padding:13px 14px;border:1px solid rgba(255,100,24,.24);border-radius:9px;background:linear-gradient(110deg,rgba(255,100,24,.085),rgba(255,100,24,.018) 55%,rgba(255,255,255,.015));box-shadow:inset 0 1px rgba(255,255,255,.025)}
+.marketplace-price-copy{display:flex;min-width:0;flex-direction:column;gap:4px}
+.marketplace-price-kicker{color:#ff6f28;font-size:8px;font-weight:850;letter-spacing:.13em;line-height:1;text-transform:uppercase}
+.marketplace-lowest-price{display:flex;min-width:0;align-items:baseline;gap:8px;color:#fff;text-decoration:none}
+.marketplace-lowest-price strong{color:#fff;font-size:22px;font-weight:780;line-height:1;letter-spacing:-.025em}
+.marketplace-lowest-price span{overflow:hidden;color:#9b9ba1;font-size:10px;font-weight:650;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}
+.marketplace-lowest-price:hover strong{color:#ff762e}
+.marketplace-lowest-price:after{content:"↗";flex:0 0 auto;color:#ff6418;font-size:11px}
+.marketplace-price-status{overflow:hidden;color:#b5b5ba;font-size:11px;font-weight:650;line-height:1.35;text-overflow:ellipsis}
+.marketplace-price-note{flex:0 0 auto;color:#66666d;font-size:8px;font-weight:600;white-space:nowrap}
+.marketplace-price-summary.loading{border-color:#303034;background:#101012}.marketplace-price-summary.loading .marketplace-price-kicker{color:#77777e}
+.marketplace-price-summary.empty,.marketplace-price-summary.partial{border-color:#2e2e32;background:#101012}.marketplace-price-summary.empty .marketplace-price-kicker,.marketplace-price-summary.partial .marketplace-price-kicker{color:#77777e}
+.marketplace-price-summary+.marketplace-triggers{margin-top:10px}
+@media screen and (max-width:760px){.marketplace-heading{flex-wrap:wrap}.marketplace-heading>div{flex:1}.marketplace-currency-control{margin-left:auto}.marketplace-currency-control>span{display:none}.marketplace-currency-control select{height:28px;max-width:96px;padding-left:8px;font-size:8px}.marketplace-price-summary{align-items:flex-end;margin-top:13px;padding:12px}.marketplace-lowest-price{gap:6px}.marketplace-lowest-price strong{font-size:20px}.marketplace-lowest-price span{font-size:9px}.marketplace-price-status{font-size:10px}.marketplace-price-note{font-size:7.5px}.marketplace-price-summary+.marketplace-triggers{margin-top:9px}}
+@media screen and (max-width:380px){.marketplace-price-summary{gap:8px;padding:11px}.marketplace-lowest-price{flex-wrap:wrap;row-gap:3px}.marketplace-lowest-price strong{font-size:18px}.marketplace-price-note{max-width:70px;text-align:right;white-space:normal}}
