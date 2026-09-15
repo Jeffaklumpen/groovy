@@ -2902,11 +2902,25 @@ function normalizeWikipediaIdentity(value){
 }
 
 function wikipediaCacheKey(record){
-  return 'groovy-wikipedia-about-v2:'+normalizeWikipediaIdentity(record&&record[1])+'|'+normalizeWikipediaIdentity(record&&record[2]);
+  return 'groovy-wikipedia-about-v5:'+normalizeWikipediaIdentity(record&&record[1])+'|'+normalizeWikipediaIdentity(record&&record[2]);
 }
 
 function wikipediaIntroduction(extract){
-  return String(extract||'').replace(/\r/g,'').replace(/\n{3,}/g,'\n\n').trim();
+  var html=String(extract||'').trim();
+  if(!html)return '';
+
+  try{
+    var doc=new DOMParser().parseFromString(html,'text/html');
+    var paragraphs=Array.prototype.slice.call(doc.body.querySelectorAll('p')).map(function(paragraph){
+      return String(paragraph.textContent||'').replace(/\s+/g,' ').trim();
+    }).filter(Boolean);
+    if(paragraphs.length)return paragraphs.join('\n\n');
+    return String(doc.body.textContent||'').replace(/\r/g,'').replace(/\n{3,}/g,'\n\n').trim();
+  }catch(error){
+    var fallback=document.createElement('div');
+    fallback.innerHTML=html;
+    return String(fallback.textContent||'').replace(/\r/g,'').replace(/\n{3,}/g,'\n\n').trim();
+  }
 }
 
 function wikipediaAboutLineHeight(){
@@ -2916,12 +2930,25 @@ function wikipediaAboutLineHeight(){
   return parseFloat(style.lineHeight)||20.8;
 }
 
-function renderWikipediaParagraphs(text){
+function renderWikipediaParagraphs(text,heading,sectionParagraphs){
   if(!detailAboutAlbumText)return;
   detailAboutAlbumText.innerHTML='';
   String(text||'').split(/\n{2,}/).map(function(paragraph){return paragraph.replace(/\s*\n\s*/g,' ').trim();}).filter(Boolean).forEach(function(paragraph){
     var element=document.createElement('p');
     element.textContent=paragraph;
+    detailAboutAlbumText.appendChild(element);
+  });
+  if(heading){
+    var headingElement=document.createElement('h3');
+    headingElement.className='about-album-first-heading';
+    headingElement.textContent=heading;
+    detailAboutAlbumText.appendChild(headingElement);
+  }
+  (Array.isArray(sectionParagraphs)?sectionParagraphs:[]).forEach(function(paragraph){
+    var value=String(paragraph||'').replace(/\s+/g,' ').trim();
+    if(!value)return;
+    var element=document.createElement('p');
+    element.textContent=value;
     detailAboutAlbumText.appendChild(element);
   });
 }
@@ -2963,7 +2990,7 @@ function wikipediaCandidateScore(page,record){
   var album=normalizeWikipediaIdentity(record&&record[2]);
   var artist=normalizeWikipediaIdentity(record&&record[1]);
   var title=normalizeWikipediaIdentity(page&&page.title);
-  var extract=normalizeWikipediaIdentity(page&&page.extract);
+  var extract=normalizeWikipediaIdentity(wikipediaIntroduction(page&&page.extract));
   var year=String(record&&record[3]||'').trim();
   var score=0;
 
@@ -2993,7 +3020,6 @@ async function fetchWikipediaAlbumCandidates(record,query){
     gsrlimit:'5',
     prop:'extracts|info',
     exintro:'1',
-    explaintext:'1',
     inprop:'url',
     redirects:'1'
   });
@@ -3001,6 +3027,60 @@ async function fetchWikipediaAlbumCandidates(record,query){
   if(!response.ok)throw new Error('Wikipedia returned '+response.status);
   var data=await response.json();
   return data&&data.query&&Array.isArray(data.query.pages)?data.query.pages:[];
+}
+
+async function fetchWikipediaFirstSection(page){
+  if(!page)return null;
+  var params=new URLSearchParams({
+    action:'parse',
+    format:'json',
+    formatversion:'2',
+    origin:'*',
+    prop:'sections',
+    redirects:'1'
+  });
+  if(page.pageid)params.set('pageid',String(page.pageid));
+  else if(page.title)params.set('page',String(page.title));
+  else return null;
+  var response=await fetch('https://en.wikipedia.org/w/api.php?'+params.toString(),{method:'GET',credentials:'omit'});
+  if(!response.ok)return null;
+  var data=await response.json();
+  var sections=data&&data.parse&&Array.isArray(data.parse.sections)?data.parse.sections:[];
+  var section=sections.find(function(item){return String(item.level||'')==='2'||Number(item.toclevel)===1;});
+  if(!section||!section.line)return null;
+  var holder=document.createElement('div');
+  holder.innerHTML=String(section.line);
+  return {
+    heading:String(holder.textContent||'').replace(/\s+/g,' ').trim(),
+    index:section.index===undefined||section.index===null?'':String(section.index)
+  };
+}
+
+async function fetchWikipediaSectionParagraphs(page,sectionIndex){
+  if(!page||sectionIndex==='')return [];
+  var params=new URLSearchParams({
+    action:'parse',
+    format:'json',
+    formatversion:'2',
+    origin:'*',
+    prop:'text',
+    section:String(sectionIndex),
+    redirects:'1',
+    disableeditsection:'1'
+  });
+  if(page.pageid)params.set('pageid',String(page.pageid));
+  else if(page.title)params.set('page',String(page.title));
+  else return [];
+  var response=await fetch('https://en.wikipedia.org/w/api.php?'+params.toString(),{method:'GET',credentials:'omit'});
+  if(!response.ok)return [];
+  var data=await response.json();
+  var html=data&&data.parse?String(data.parse.text||''):'';
+  if(!html)return [];
+  var doc=new DOMParser().parseFromString(html,'text/html');
+  Array.prototype.slice.call(doc.body.querySelectorAll('sup.reference,.mw-editsection,style,script,table,figure,.navbox,.infobox,.thumb,.hatnote')).forEach(function(element){element.remove();});
+  return Array.prototype.slice.call(doc.body.querySelectorAll('p')).map(function(paragraph){
+    return String(paragraph.textContent||'').replace(/\s+/g,' ').trim();
+  }).filter(Boolean);
 }
 
 function readWikipediaCache(record){
@@ -3018,7 +3098,7 @@ function readWikipediaCache(record){
 
 function saveWikipediaCache(record,result){
   var key=wikipediaCacheKey(record);
-  var cached={text:result.text,url:result.url,title:result.title,savedAt:Date.now()};
+  var cached={text:result.text,heading:result.heading||'',sectionParagraphs:Array.isArray(result.sectionParagraphs)?result.sectionParagraphs:[],url:result.url,title:result.title,savedAt:Date.now()};
   wikipediaAlbumCache.set(key,cached);
   try{localStorage.setItem(key,JSON.stringify(cached));}catch(error){}
   return cached;
@@ -3027,7 +3107,7 @@ function saveWikipediaCache(record,result){
 function renderWikipediaAbout(result){
   if(!detailAboutAlbum||!detailAboutAlbumText||!detailAboutAlbumLink)return;
   if(!result||!result.text){detailAboutAlbum.hidden=true;return;}
-  renderWikipediaParagraphs(result.text);
+  renderWikipediaParagraphs(result.text,result.heading||'',result.sectionParagraphs||[]);
   detailAboutAlbumLink.href=result.url||'https://en.wikipedia.org/';
   detailAboutAlbumLink.setAttribute('aria-label','Read '+(result.title||'this album article')+' on Wikipedia');
   detailAboutAlbum.hidden=false;
@@ -3041,7 +3121,7 @@ async function loadWikipediaAlbumAbout(record){
   var cached=readWikipediaCache(record);
   if(cached){renderWikipediaAbout(cached);return;}
 
-  renderWikipediaParagraphs('Loading album information…');
+  renderWikipediaParagraphs('Loading album information…','',[]);
   if(detailAboutAlbumToggle)detailAboutAlbumToggle.hidden=true;
   if(detailAboutAlbumBody){detailAboutAlbumBody.classList.remove('expanded');detailAboutAlbumBody.style.maxHeight='';}
   detailAboutAlbumLink.href='https://en.wikipedia.org/';
@@ -3063,7 +3143,12 @@ async function loadWikipediaAlbumAbout(record){
     var introduction=best&&best.score>=18?wikipediaIntroduction(best.page.extract):'';
 
     if(!introduction){detailAboutAlbum.hidden=true;return;}
-    var result=saveWikipediaCache(record,{text:introduction,url:best.page.fullurl||'https://en.wikipedia.org/wiki/'+encodeURIComponent(best.page.title||''),title:best.page.title||''});
+    var firstSection=await fetchWikipediaFirstSection(best.page);
+    if(requestVersion!==wikipediaAboutRequestVersion)return;
+    var firstHeading=firstSection&&firstSection.heading?firstSection.heading:'';
+    var sectionParagraphs=firstSection?await fetchWikipediaSectionParagraphs(best.page,firstSection.index):[];
+    if(requestVersion!==wikipediaAboutRequestVersion)return;
+    var result=saveWikipediaCache(record,{text:introduction,heading:firstHeading,sectionParagraphs:sectionParagraphs,url:best.page.fullurl||'https://en.wikipedia.org/wiki/'+encodeURIComponent(best.page.title||''),title:best.page.title||''});
     renderWikipediaAbout(result);
   }catch(error){
     if(requestVersion!==wikipediaAboutRequestVersion)return;
