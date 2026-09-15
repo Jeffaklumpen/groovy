@@ -1345,13 +1345,18 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .shelf-name-field input{width:100%;height:44px;padding:0 13px;border:1px solid #3a3a3e;border-radius:8px;background:#121214;color:#fff;font:inherit;font-size:13px;outline:none}
 .shelf-name-field input:focus{border-color:rgba(255,100,24,.68);box-shadow:0 0 0 3px rgba(255,100,24,.1)}
 .shelf-icon-field{margin-top:18px}
-.shelf-icon-choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
-.shelf-icon-choice{display:flex;width:42px;height:42px;align-items:center;justify-content:center;border:1px solid #343438;border-radius:50%;background:#121214;color:#aaaab0;font-size:19px;cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease,transform .15s ease}
+.shelf-icon-choices{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;width:100%;margin-top:9px}
+.shelf-icon-choice{display:flex;width:100%;max-width:42px;aspect-ratio:1/1;align-items:center;justify-content:center;justify-self:center;padding:0;border:1px solid #343438;border-radius:50%;background:#121214;color:#aaaab0;cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease,transform .15s ease}
 .shelf-icon-choice:hover{border-color:#55555a;color:#fff;transform:translateY(-1px)}
 .shelf-icon-choice.selected{border-color:var(--shelf-choice-color,var(--groovy-orange));background:#19191c;color:var(--shelf-choice-color,var(--groovy-orange));box-shadow:0 0 0 2px rgba(255,255,255,.05)}
+.shelf-svg-icon{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.shelf-chip-icon .shelf-svg-icon{width:17px;height:17px}
+.shelf-picker-icon .shelf-svg-icon{width:17px;height:17px}
+.detail-shelf-status-icon .shelf-svg-icon{width:11px;height:11px}
+.record-shelf-status-icon .shelf-svg-icon{width:9px;height:9px}
 .shelf-color-field{margin-top:18px}
-.shelf-color-choices{display:grid;grid-template-columns:repeat(6,38px);gap:9px;margin-top:10px;width:max-content;max-width:100%}
-.shelf-color-choice{position:relative;width:38px;height:38px;padding:5px;border:2px solid transparent;border-radius:50%;background:transparent;cursor:pointer;transition:border-color .15s ease,transform .15s ease;-webkit-tap-highlight-color:transparent}
+.shelf-color-choices{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;width:100%;margin-top:10px}
+.shelf-color-choice{position:relative;width:100%;max-width:38px;aspect-ratio:1/1;justify-self:center;padding:5px;border:2px solid transparent;border-radius:50%;background:transparent;cursor:pointer;transition:border-color .15s ease,transform .15s ease;-webkit-tap-highlight-color:transparent}
 .shelf-color-choice:before{content:"";display:block;width:100%;height:100%;border-radius:50%;background:var(--swatch);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
 .shelf-color-choice:hover{transform:translateY(-1px)}
 .shelf-color-choice.selected{border-color:var(--swatch)}
@@ -1403,10 +1408,11 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .shelf-modal-box{width:100%;max-width:none;max-height:82vh;margin:0;padding:24px 18px calc(18px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0}
 .shelf-modal-box:before{content:"";display:block;width:42px;height:4px;margin:-12px auto 18px;border-radius:4px;background:#55555a}
 .shelf-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.shelf-icon-choices{gap:7px}
-.shelf-icon-choice{width:40px;height:40px;font-size:18px}
-.shelf-color-choices{grid-template-columns:repeat(6,36px);gap:8px}
-.shelf-color-choice{width:36px;height:36px;padding:5px}
+.shelf-icon-choices{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.shelf-icon-choice{width:100%;max-width:40px}
+.shelf-icon-choice .shelf-svg-icon{width:18px;height:18px}
+.shelf-color-choices{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.shelf-color-choice{width:100%;max-width:36px;padding:5px}
 .shelf-secondary-button,.shelf-primary-button{min-height:44px}
 .shelf-picker-list{max-height:44vh}
 }
