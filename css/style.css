@@ -1533,3 +1533,22 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .album-detail-cover{position:relative!important;width:100%!important;height:auto!important;aspect-ratio:1/1!important;overflow:hidden!important;align-self:end!important}
 .album-detail-cover img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center center!important;display:block!important}
 }
+/* SHELVES V6.6 - shelf badge on record thumbnails */
+.record-card-topbar{min-height:22px}
+.record-shelf-status{display:inline-flex;min-width:0;max-width:150px;align-items:center;gap:5px;margin-left:7px;padding:3px 7px;border:1px solid rgba(232,83,1,.32);border-radius:999px;background:rgba(232,83,1,.08);color:#d7d7da;font-size:8px;font-weight:700;line-height:1;white-space:nowrap;overflow:hidden}
+.record-shelf-status-icon{display:inline-flex;width:14px;height:14px;flex:0 0 14px;align-items:center;justify-content:center;border-radius:50%;background:rgba(232,83,1,.14);color:#ff7130;font-size:9px}
+.record-shelf-status-label{flex:0 0 auto;color:#77777d;font-size:6px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.record-shelf-status strong{display:block;min-width:0;overflow:hidden;color:#f1f1f3;font-size:8px;text-overflow:ellipsis;white-space:nowrap}
+.record-shelf-status.unshelved{border-color:#343438;background:#151517;color:#a6a6ab}
+.record-shelf-status.unshelved .record-shelf-status-icon{background:#202023;color:#77777d}
+@media screen and (max-width:760px){
+.record-card-topbar{min-height:21px}
+.record-shelf-status{max-width:112px;gap:4px;margin-left:5px;padding:2px 5px}
+.record-shelf-status-icon{width:13px;height:13px;flex-basis:13px;font-size:8px}
+.record-shelf-status-label{font-size:6px}
+.record-shelf-status strong{font-size:7px}
+}
+@media screen and (max-width:380px){
+.record-shelf-status{max-width:94px}
+.record-shelf-status-label{display:none}
+}
