@@ -1809,3 +1809,19 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 
 @media screen and (max-width:390px){.logo{width:126px}.header-tools{gap:5px}.library-search{width:36px;flex-basis:36px}.online-users-pill{height:34px;gap:5px;padding:0 7px}.online-users-copy strong{font-size:10px}.online-users-mobile{font-size:7.5px;letter-spacing:.5px}#profileButton{width:38px;height:38px}}
 @media (prefers-reduced-motion:reduce){.online-users-pill.has-users .online-users-dot:after{animation:none}}
+
+
+/* MOBILE HEADER V2 - online status stays in top row; expanded search gets its own row */
+@media screen and (max-width:760px){
+.header-main{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-rows:auto auto auto;align-items:center;column-gap:8px;row-gap:8px}
+.header-brand{grid-column:1;grid-row:1;min-width:0}
+.header-tools{display:contents}
+.online-users-pill{grid-column:2;grid-row:1;justify-self:end;align-self:center;max-width:100%;margin:0}
+.library-search{grid-column:3;grid-row:1;position:relative;left:auto;right:auto;top:auto;margin:0}
+#authBox{grid-column:4;grid-row:1;position:relative;top:auto;right:auto;margin:0}
+.header .library-tabs{grid-column:1/-1;grid-row:3;margin-top:0}
+.library-search:focus-within{position:relative;z-index:50;grid-column:1/-1;grid-row:2;left:auto;right:auto;top:auto;width:100%;height:42px;flex:0 0 auto;margin:0}
+.library-search:focus-within input{width:100%;padding:0 12px 0 42px}
+}
+@media screen and (max-width:390px){.header-main{column-gap:5px}.online-users-pill{justify-self:end}.library-search{width:36px;flex-basis:36px}}
+@media screen and (max-width:350px){.logo{width:112px}.online-users-pill{padding:0 6px}.online-users-mobile{font-size:7px}}
