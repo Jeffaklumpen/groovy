@@ -815,6 +815,9 @@ var createShelfFromPickerButton=document.getElementById('createShelfFromPicker')
 var shelfPickerList=document.getElementById('shelfPickerList');
 var shelfPickerSubtitle=document.getElementById('shelfPickerSubtitle');
 var shelfPickerStatus=document.getElementById('shelfPickerStatus');
+var shelfPickerTitle=document.getElementById('shelfPickerTitle');
+var detailShelfActions=document.getElementById('detailShelfActions');
+var detailOpenRecordIndex=-1;
 
 function shelfIconGlyph(icon){
   var icons={record:'◉',heart:'♡',music:'♪',star:'★',film:'▦',sun:'☼',moon:'☾',bookmark:'◆'};
@@ -1040,9 +1043,12 @@ function renderShelfPicker(index){
   var record=records[index];
   if(!record)return;
   var currentShelf=String(record[13]||'');
-  shelfPickerSubtitle.textContent='Choose one shelf for “'+record[2]+'”.';
+  shelfPickerTitle.textContent=currentShelf?'Move to Shelf':'Add to Shelf';
+  shelfPickerSubtitle.textContent=currentShelf
+    ?'Choose a new shelf for “'+record[2]+'”.'
+    :'Choose a shelf for “'+record[2]+'”.';
 
-  var options=[{id:'',name:'All Records only',icon:'record'}].concat(shelves);
+  var options=shelves.slice();
   shelfPickerList.innerHTML=options.map(function(shelf){
     var id=String(shelf.id||'');
     var selected=id===currentShelf;
@@ -1053,6 +1059,10 @@ function renderShelfPicker(index){
       '<span class="shelf-choice-check" aria-hidden="true">✓</span>'+ 
     '</label>';
   }).join('');
+
+  if(!options.length){
+    shelfPickerList.innerHTML='<div class="shelf-picker-empty">No shelves yet. Create your first shelf below.</div>';
+  }
 
   shelfPickerList.querySelectorAll('input[name="recordShelf"]').forEach(function(input){
     input.addEventListener('change',function(){
@@ -1076,6 +1086,55 @@ function openShelfPicker(index){
   shelfPickerStatus.textContent='';
   renderShelfPicker(index);
   shelfPickerModal.style.display='flex';
+}
+
+function renderDetailShelfActions(index){
+  if(!detailShelfActions)return;
+
+  var record=records[index];
+  var canEdit=!!record&&viewedUserId===null&&window.libraryView!=='wishlist';
+
+  if(!canEdit){
+    detailShelfActions.hidden=true;
+    detailShelfActions.innerHTML='';
+    return;
+  }
+
+  var hasShelf=!!record[13];
+  detailShelfActions.hidden=false;
+  detailShelfActions.innerHTML=
+    '<button class="detail-shelf-button primary" type="button" data-detail-shelf-action="pick">'+
+      (hasShelf?'Move to Shelf':'Add to Shelf')+
+    '</button>'+
+    (hasShelf
+      ?'<button class="detail-shelf-button secondary" type="button" data-detail-shelf-action="remove">Remove from Shelf</button>'
+      :'');
+
+  var pickButton=detailShelfActions.querySelector('[data-detail-shelf-action="pick"]');
+  if(pickButton){
+    pickButton.addEventListener('click',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      openShelfPicker(index);
+    });
+  }
+
+  var removeButton=detailShelfActions.querySelector('[data-detail-shelf-action="remove"]');
+  if(removeButton){
+    removeButton.addEventListener('click',async function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      removeButton.disabled=true;
+      try{
+        await assignRecordToShelf(index,null);
+        renderDetailShelfActions(index);
+      }catch(error){
+        console.error('Kunde inte ta bort albumet från shelf:',error);
+        alert('Could not remove the record from the shelf.\n\n'+(error.message||error));
+        removeButton.disabled=false;
+      }
+    });
+  }
 }
 
 function compactLocalShelfOrder(shelfId){
@@ -1272,6 +1331,7 @@ confirmCreateShelfButton.addEventListener('click',async function(){
 
     if(returnIndex>=0&&records[returnIndex]){
       await assignRecordToShelf(returnIndex,data.id);
+      if(detailOpenRecordIndex===returnIndex)renderDetailShelfActions(returnIndex);
     }else{
       activeShelfId=data.id;
       renderShelfStrip();
@@ -1368,10 +1428,12 @@ confirmShelfPickerButton.addEventListener('click',async function(){
   var selected=shelfPickerList.querySelector('input[name="recordShelf"]:checked');
   if(!selected){shelfPickerStatus.textContent='Choose a shelf.';return;}
 
+  var pickerRecordIndex=shelfPickerRecordIndex;
   confirmShelfPickerButton.disabled=true;
   shelfPickerStatus.textContent='Saving…';
   try{
-    await assignRecordToShelf(shelfPickerRecordIndex,selected.value||null);
+    await assignRecordToShelf(pickerRecordIndex,selected.value);
+    if(detailOpenRecordIndex===pickerRecordIndex)renderDetailShelfActions(pickerRecordIndex);
     closeShelfPicker();
   }catch(error){
     console.error('Kunde inte flytta albumet till shelf:',error);
@@ -2561,13 +2623,6 @@ function recordHTML(record, className){
                 'alt="Spotify">'+
         '</a>'+
     
-        '<a class="streaming-link streaming-external" '+
-            'href="'+esc(appleMusicAlbumLink(record))+'" '+
-            'target="_blank" rel="noopener noreferrer" '+
-            'aria-label="Open Apple Music">'+
-            '<span class="external-link-icon" aria-hidden="true"></span>'+
-        '</a>'+
-    
     '</div>'+
   '</article>';
 
@@ -2599,6 +2654,7 @@ function openAlbum(index){
   var record=records[index];
   if(!record)return;
 
+  detailOpenRecordIndex=index;
   closeTraderaModal();
   closeEbayModal();
   loadTraderaListings(record,index);
@@ -2638,6 +2694,8 @@ function openAlbum(index){
 
     detailRating.innerHTML=stars;
   }
+
+  renderDetailShelfActions(index);
 
   var detailMoveButton=detailRating.querySelector('.detail-move-to-collection');
   if(detailMoveButton){
@@ -2962,6 +3020,8 @@ function closeAlbum(){
   document.body.style.overflow='';
   setCopyDetailsExpanded(false);
   copyDetailsRecordKey='';
+  detailOpenRecordIndex=-1;
+  if(detailShelfActions){detailShelfActions.hidden=true;detailShelfActions.innerHTML='';}
   albumOverlay.scrollTop=0;
   var tracksPanel=albumOverlay.querySelector('.album-tracks');
   if(tracksPanel)tracksPanel.scrollTop=0;
