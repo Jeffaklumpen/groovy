@@ -1746,3 +1746,25 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 @media screen and (min-width:761px){.viewed-user-header{justify-content:space-between}.viewed-user-actions{margin-left:auto;padding-left:9px}.viewed-user-actions button{min-width:82px}.viewed-user-actions .viewed-user-stats{min-width:96px}}
 @media screen and (max-width:760px){.viewed-user-header{gap:9px!important;padding:10px!important}.viewed-user-identity{width:100%;padding-right:0!important}.viewed-user-copy{flex:1}.viewed-user-name{max-width:none!important}.viewed-user-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));width:100%!important;margin:0!important;padding:8px 0 0!important;border-left:0!important;border-top:1px solid rgba(255,255,255,.07)}.viewed-user-actions button{width:100%;min-width:0!important;min-height:40px!important;padding:5px 6px!important;border-radius:8px!important;font-size:10px!important}.viewed-user-actions .viewed-action-label{display:inline!important}.viewed-user-actions .record-icon{width:13px;height:13px;flex-basis:13px}.viewed-user-actions .wishlist-icon{width:15px;height:15px;flex-basis:15px}}
 @media screen and (max-width:380px){.viewed-user-actions button{gap:4px!important;padding-left:4px!important;padding-right:4px!important;font-size:9px!important}}
+
+/* ABOUT THIS ALBUM - Wikipedia intro */
+.album-about{grid-column:1/3;grid-row:2;min-width:0;padding:8px 3px 2px;background:transparent;color:#b5b5ba}
+.album-about[hidden]{display:none!important}
+.album-about h2{margin:0 0 9px;color:#f4f4f5;font-size:18px;font-weight:740;letter-spacing:-.02em}
+.album-about p{margin:0;color:#a8a8ae;font-size:13px;line-height:1.6}
+.album-about-source{display:flex;align-items:center;gap:8px;margin-top:10px;color:#66666d;font-size:9px;line-height:1.3}
+.album-about-source a{color:#d06a32;font-weight:700;text-decoration:none}
+.album-about-source a:hover{color:var(--groovy-orange)}
+.album-about-source .album-about-license{color:#77777e;font-weight:600}
+.album-about-source .album-about-license:hover{color:#aaaab0}
+@media screen and (max-width:1120px) and (min-width:761px){
+.album-about{grid-column:1/-1;grid-row:3;padding:16px 2px 2px}
+.marketplace-panel{grid-column:1/-1;grid-row:4}
+}
+@media screen and (max-width:760px){
+.album-about{grid-column:1/-1;grid-row:5;margin-top:14px;padding:15px 16px;border:1px solid var(--groovy-line);border-radius:8px;background:#121214}
+.album-about h2{margin-bottom:8px;font-size:16px}
+.album-about p{font-size:11px;line-height:1.55}
+.album-about-source{justify-content:space-between;margin-top:10px;font-size:8px}
+.marketplace-panel{grid-column:1/-1!important;grid-row:6!important;margin-top:14px!important}
+}
