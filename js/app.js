@@ -1166,14 +1166,13 @@ function renderDetailShelfStatus(index){
   }
 
   var shelf=shelfById(record[13]);
-  var shelfName=shelf&&shelf.name?shelf.name:'No shelf';
-  var shelfIcon=shelf?shelfIconGlyph(shelf.icon):'○';
+  var shelfName=shelf&&shelf.name?shelf.name:'no shelf';
+  var shelfIcon=shelf?shelfIconGlyph(shelf.icon):'';
 
   detailShelfStatus.hidden=false;
   detailShelfStatus.classList.toggle('unshelved',!shelf);
   detailShelfStatus.innerHTML=
-    '<span class="detail-shelf-status-icon" aria-hidden="true">'+esc(shelfIcon)+'</span>'+
-    '<span class="detail-shelf-status-label">Shelf</span>'+
+    (shelfIcon?'<span class="detail-shelf-status-icon" aria-hidden="true">'+esc(shelfIcon)+'</span>':'')+
     '<strong title="'+esc(shelfName)+'">'+esc(shelfName)+'</strong>';
 }
 
@@ -2692,12 +2691,11 @@ function recordHTML(record, className){
   var condition=!isWishlist?recordConditionMeta(copy.mediaCondition):null;
   var showPressingPrompt=!isWishlist&&viewedUserId===null&&!condition&&!hasCopyDetails(copy);
   var cardShelf=!isWishlist?shelfById(record[13]):null;
-  var cardShelfName=cardShelf&&cardShelf.name?cardShelf.name:'No shelf';
-  var cardShelfIcon=cardShelf?shelfIconGlyph(cardShelf.icon):'○';
+  var cardShelfName=cardShelf&&cardShelf.name?cardShelf.name:'no shelf';
+  var cardShelfIcon=cardShelf?shelfIconGlyph(cardShelf.icon):'';
   var cardShelfStatus=!isWishlist
-    ?'<span class="record-shelf-status '+(cardShelf?'':'unshelved')+'" title="Shelf: '+esc(cardShelfName)+'">'+
-       '<span class="record-shelf-status-icon" aria-hidden="true">'+esc(cardShelfIcon)+'</span>'+
-       '<span class="record-shelf-status-label">Shelf</span>'+
+    ?'<span class="record-shelf-status '+(cardShelf?'':'unshelved')+'" title="'+esc(cardShelfName)+'">'+
+       (cardShelfIcon?'<span class="record-shelf-status-icon" aria-hidden="true">'+esc(cardShelfIcon)+'</span>':'')+
        '<strong>'+esc(cardShelfName)+'</strong>'+
      '</span>'
     :'';
