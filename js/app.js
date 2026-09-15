@@ -711,6 +711,8 @@ var detailRating=document.getElementById('detailRating');
 var detailTracks=document.getElementById('detailTracks');
 var detailAboutAlbum=document.getElementById('detailAboutAlbum');
 var detailAboutAlbumText=document.getElementById('detailAboutAlbumText');
+var detailAboutAlbumBody=document.getElementById('detailAboutAlbumBody');
+var detailAboutAlbumToggle=document.getElementById('detailAboutAlbumToggle');
 var detailAboutAlbumLink=document.getElementById('detailAboutAlbumLink');
 var wikipediaAboutRequestVersion=0;
 var wikipediaAlbumCache=new Map();
@@ -2900,15 +2902,46 @@ function normalizeWikipediaIdentity(value){
 }
 
 function wikipediaCacheKey(record){
-  return 'groovy-wikipedia-about-v1:'+normalizeWikipediaIdentity(record&&record[1])+'|'+normalizeWikipediaIdentity(record&&record[2]);
+  return 'groovy-wikipedia-about-v2:'+normalizeWikipediaIdentity(record&&record[1])+'|'+normalizeWikipediaIdentity(record&&record[2]);
 }
 
-function firstWikipediaParagraph(extract){
-  var text=String(extract||'').replace(/\r/g,'').trim();
-  if(!text)return '';
-  var paragraphs=text.split(/\n\s*\n/).map(function(value){return value.trim();}).filter(Boolean);
-  if(paragraphs.length)return paragraphs[0];
-  return text;
+function wikipediaIntroduction(extract){
+  return String(extract||'').replace(/\r/g,'').replace(/\n{3,}/g,'\n\n').trim();
+}
+
+function setWikipediaAboutExpanded(expanded,animate){
+  if(!detailAboutAlbumBody||!detailAboutAlbumToggle)return;
+  var textSpan=detailAboutAlbumToggle.querySelector('span');
+  var style=window.getComputedStyle(detailAboutAlbumText);
+  var lineHeight=parseFloat(style.lineHeight)||20.8;
+  var collapsedHeight=lineHeight*3;
+  detailAboutAlbumToggle.setAttribute('aria-expanded',expanded?'true':'false');
+  detailAboutAlbumBody.classList.toggle('expanded',expanded);
+  if(textSpan)textSpan.textContent=expanded?'Show less':'Read more';
+  if(!animate)detailAboutAlbumBody.style.transition='none';
+  detailAboutAlbumBody.style.maxHeight=(expanded?detailAboutAlbumBody.scrollHeight:collapsedHeight)+'px';
+  if(!animate){
+    detailAboutAlbumBody.offsetHeight;
+    detailAboutAlbumBody.style.transition='';
+  }
+}
+
+function syncWikipediaAboutToggle(reset){
+  if(!detailAboutAlbumBody||!detailAboutAlbumText||!detailAboutAlbumToggle)return;
+  if(reset)setWikipediaAboutExpanded(false,false);
+  requestAnimationFrame(function(){
+    var style=window.getComputedStyle(detailAboutAlbumText);
+    var lineHeight=parseFloat(style.lineHeight)||20.8;
+    var collapsedHeight=lineHeight*3;
+    var needsToggle=detailAboutAlbumBody.scrollHeight>collapsedHeight+2;
+    detailAboutAlbumToggle.hidden=!needsToggle;
+    if(!needsToggle){
+      detailAboutAlbumBody.classList.add('expanded');
+      detailAboutAlbumBody.style.maxHeight=detailAboutAlbumBody.scrollHeight+'px';
+    }else if(reset){
+      setWikipediaAboutExpanded(false,false);
+    }
+  });
 }
 
 function wikipediaCandidateScore(page,record){
@@ -2983,6 +3016,7 @@ function renderWikipediaAbout(result){
   detailAboutAlbumLink.href=result.url||'https://en.wikipedia.org/';
   detailAboutAlbumLink.setAttribute('aria-label','Read '+(result.title||'this album article')+' on Wikipedia');
   detailAboutAlbum.hidden=false;
+  syncWikipediaAboutToggle(true);
 }
 
 async function loadWikipediaAlbumAbout(record){
@@ -2993,6 +3027,8 @@ async function loadWikipediaAlbumAbout(record){
   if(cached){renderWikipediaAbout(cached);return;}
 
   detailAboutAlbumText.textContent='Loading album information…';
+  if(detailAboutAlbumToggle)detailAboutAlbumToggle.hidden=true;
+  if(detailAboutAlbumBody){detailAboutAlbumBody.classList.remove('expanded');detailAboutAlbumBody.style.maxHeight='';}
   detailAboutAlbumLink.href='https://en.wikipedia.org/';
   detailAboutAlbum.hidden=false;
 
@@ -3009,16 +3045,23 @@ async function loadWikipediaAlbumAbout(record){
     if(requestVersion!==wikipediaAboutRequestVersion)return;
     var ranked=pages.map(function(page){return {page:page,score:wikipediaCandidateScore(page,record)};}).sort(function(a,b){return b.score-a.score;});
     var best=ranked.length?ranked[0]:null;
-    var paragraph=best&&best.score>=18?firstWikipediaParagraph(best.page.extract):'';
+    var introduction=best&&best.score>=18?wikipediaIntroduction(best.page.extract):'';
 
-    if(!paragraph){detailAboutAlbum.hidden=true;return;}
-    var result=saveWikipediaCache(record,{text:paragraph,url:best.page.fullurl||'https://en.wikipedia.org/wiki/'+encodeURIComponent(best.page.title||''),title:best.page.title||''});
+    if(!introduction){detailAboutAlbum.hidden=true;return;}
+    var result=saveWikipediaCache(record,{text:introduction,url:best.page.fullurl||'https://en.wikipedia.org/wiki/'+encodeURIComponent(best.page.title||''),title:best.page.title||''});
     renderWikipediaAbout(result);
   }catch(error){
     if(requestVersion!==wikipediaAboutRequestVersion)return;
     console.warn('Could not load Wikipedia album information:',error);
     detailAboutAlbum.hidden=true;
   }
+}
+
+if(detailAboutAlbumToggle){
+  detailAboutAlbumToggle.addEventListener('click',function(){
+    var expanded=this.getAttribute('aria-expanded')==='true';
+    setWikipediaAboutExpanded(!expanded,true);
+  });
 }
 
 function openAlbum(index){
@@ -3396,6 +3439,8 @@ async function saveTrackRating(trackId,rating){
 function closeAlbum(){
   wikipediaAboutRequestVersion++;
   if(detailAboutAlbum)detailAboutAlbum.hidden=true;
+  if(detailAboutAlbumToggle){detailAboutAlbumToggle.hidden=true;detailAboutAlbumToggle.setAttribute('aria-expanded','false');}
+  if(detailAboutAlbumBody){detailAboutAlbumBody.classList.remove('expanded');detailAboutAlbumBody.style.maxHeight='';}
   closeTraderaModal();
   closeEbayModal();
   traderaRequestVersion++;
