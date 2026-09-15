@@ -23,7 +23,7 @@
   <meta name="application-name" content="Groovy">
   <meta name="theme-color" content="#121214">
   <title>GroovyShelf – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=69">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=70">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/groovy/icons/apple-touch-icon.png">
   <link rel="manifest" href="/groovy/manifest.webmanifest">
@@ -90,6 +90,10 @@
     </div>
   </div>
 </header>
+
+<section id="shelfStrip" class="shelf-strip" aria-label="Shelves" hidden>
+  <div id="shelfStripScroll" class="shelf-strip-scroll"></div>
+</section>
 
 <section class="library-overview" aria-labelledby="libraryTitle">
   <div class="viewed-user-header" id="viewedUserHeader">
@@ -290,6 +294,54 @@
   </div>
 </div>
 
+<div id="createShelfModal" class="add-album-modal shelf-modal" role="dialog" aria-modal="true" aria-labelledby="createShelfTitle">
+  <div class="add-album-box shelf-modal-box">
+    <button id="closeCreateShelf" class="close-add-album" type="button" aria-label="Close">×</button>
+    <div class="search-modal-heading">
+      <span class="search-modal-kicker">Organize your collection</span>
+      <h2 id="createShelfTitle">Create New Shelf</h2>
+      <p>Give your shelf a name and choose an icon.</p>
+    </div>
+    <label class="shelf-name-field"><span>Name</span><input id="shelfNameInput" type="text" maxlength="40" placeholder="e.g. Jazz, Favorites, Sunday Spins" autocomplete="off"></label>
+    <div class="shelf-icon-field">
+      <span>Icon</span>
+      <div id="shelfIconChoices" class="shelf-icon-choices" role="radiogroup" aria-label="Shelf icon">
+        <button type="button" class="shelf-icon-choice selected" data-icon="record" aria-label="Record">◉</button>
+        <button type="button" class="shelf-icon-choice" data-icon="heart" aria-label="Heart">♡</button>
+        <button type="button" class="shelf-icon-choice" data-icon="music" aria-label="Music">♪</button>
+        <button type="button" class="shelf-icon-choice" data-icon="star" aria-label="Star">★</button>
+        <button type="button" class="shelf-icon-choice" data-icon="film" aria-label="Film">▦</button>
+        <button type="button" class="shelf-icon-choice" data-icon="sun" aria-label="Sun">☼</button>
+        <button type="button" class="shelf-icon-choice" data-icon="moon" aria-label="Moon">☾</button>
+        <button type="button" class="shelf-icon-choice" data-icon="bookmark" aria-label="Bookmark">◆</button>
+      </div>
+    </div>
+    <div id="createShelfStatus" class="shelf-modal-status" aria-live="polite"></div>
+    <div class="shelf-modal-actions">
+      <button id="cancelCreateShelf" class="shelf-secondary-button" type="button">Cancel</button>
+      <button id="confirmCreateShelf" class="shelf-primary-button" type="button">Create Shelf</button>
+    </div>
+  </div>
+</div>
+
+<div id="shelfPickerModal" class="add-album-modal shelf-modal" role="dialog" aria-modal="true" aria-labelledby="shelfPickerTitle">
+  <div class="add-album-box shelf-modal-box shelf-picker-box">
+    <button id="closeShelfPicker" class="close-add-album" type="button" aria-label="Close">×</button>
+    <div class="search-modal-heading">
+      <span class="search-modal-kicker">Organize record</span>
+      <h2 id="shelfPickerTitle">Add to Shelf</h2>
+      <p id="shelfPickerSubtitle">Choose one shelf for this record.</p>
+    </div>
+    <div id="shelfPickerList" class="shelf-picker-list"></div>
+    <button id="createShelfFromPicker" class="shelf-picker-create" type="button">+ New Shelf</button>
+    <div id="shelfPickerStatus" class="shelf-modal-status" aria-live="polite"></div>
+    <div class="shelf-modal-actions">
+      <button id="cancelShelfPicker" class="shelf-secondary-button" type="button">Cancel</button>
+      <button id="confirmShelfPicker" class="shelf-primary-button" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
 <div id="addAlbumModal" class="add-album-modal" role="dialog" aria-modal="true" aria-labelledby="addAlbumTitle">
 
     <div class="add-album-box search-modal-box">
@@ -380,7 +432,7 @@
 </div>
 
 <script src="/groovy/js/route-state.js?v=14"></script>
-<script src="/groovy/js/app.js?v=76"></script>
+<script src="/groovy/js/app.js?v=77"></script>
 <script src="/groovy/js/statistics-core.js?v=3"></script>
 <script src="/groovy/js/statistics.js?v=6"></script>
 <script src="/groovy/js/pwa.js?v=3"></script>
