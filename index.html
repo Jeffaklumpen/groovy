@@ -23,7 +23,7 @@
   <meta name="application-name" content="Groovy">
   <meta name="theme-color" content="#121214">
   <title>GroovyShelf – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=75">
+  <link rel="stylesheet" href="/groovy/css/style.css?v=77">
   <link rel="icon" type="image/png" href="/groovy/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/groovy/icons/apple-touch-icon.png">
   <link rel="manifest" href="/groovy/manifest.webmanifest">
@@ -117,6 +117,10 @@
       <div class="subtitle" id="collectionCount">0 RECORDS</div>
     </div>
     <div class="library-title-actions">
+      <button id="editShelfButton" class="edit-shelf-button" type="button" aria-label="Edit shelf" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4ZM13.5 6.5l4 4"/></svg>
+        <span>Edit Shelf</span>
+      </button>
       <button id="deleteShelfButton" class="delete-shelf-button" type="button" aria-label="Delete shelf" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
         <span>Delete Shelf</span>
@@ -193,16 +197,18 @@
 </div>
 
 <div class="album-detail-main">
-  <div class="detail-number" id="detailNumber" hidden></div>
-  <div class="detail-artist" id="detailArtist"></div>
-  <div class="detail-album" id="detailAlbum"></div>
+  <div class="detail-info-card">
+    <div class="detail-number" id="detailNumber" hidden></div>
+    <div class="detail-artist" id="detailArtist"></div>
+    <div class="detail-album" id="detailAlbum"></div>
 
-  <div class="detail-meta">
-    <span id="detailYear"></span>
-    <span id="detailGenre"></span>
+    <div class="detail-meta">
+      <span id="detailYear"></span>
+      <span id="detailGenre"></span>
+    </div>
+
+    <div class="detail-rating" id="detailRating"></div>
   </div>
-
-  <div class="detail-rating" id="detailRating"></div>
   <div id="detailShelfActions" class="detail-shelf-actions" hidden></div>
   <a id="detailSpotifyLink" class="detail-spotify-link" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer">
     <svg class="detail-spotify-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12"></circle><path d="M5.8 9.1c4.3-1.2 8.7-.8 12.4 1.2M6.7 12.5c3.6-.9 7.2-.5 10.3.9M7.6 15.6c2.8-.6 5.5-.3 7.9.7"></path></svg>
@@ -311,9 +317,9 @@
     <div class="search-modal-heading">
       <span class="search-modal-kicker">Organize your collection</span>
       <h2 id="createShelfTitle">Create New Shelf</h2>
-      <p>Give your shelf a name and choose an icon.</p>
+      <p id="createShelfDescription">Give your shelf a name and choose an icon.</p>
     </div>
-    <label class="shelf-name-field"><span>Name</span><input id="shelfNameInput" type="text" maxlength="40" placeholder="e.g. Jazz, Favorites, Sunday Spins" autocomplete="off"></label>
+    <label class="shelf-name-field"><span>Name</span><input id="shelfNameInput" type="text" maxlength="30" placeholder="e.g. Jazz, Favorites, Sunday Spins" autocomplete="off"></label>
     <div class="shelf-icon-field">
       <span>Icon</span>
       <div id="shelfIconChoices" class="shelf-icon-choices" role="radiogroup" aria-label="Shelf icon">
@@ -459,7 +465,7 @@
 </div>
 
 <script src="/groovy/js/route-state.js?v=14"></script>
-<script src="/groovy/js/app.js?v=81"></script>
+<script src="/groovy/js/app.js?v=82"></script>
 <script src="/groovy/js/statistics-core.js?v=3"></script>
 <script src="/groovy/js/statistics.js?v=6"></script>
 <script src="/groovy/js/pwa.js?v=3"></script>
