@@ -1405,6 +1405,11 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .shelf-limit-button:active{transform:none}
 .library-title-copy{min-width:0}
 .library-title-actions{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+.edit-shelf-button{display:inline-flex;min-height:38px;align-items:center;justify-content:center;gap:7px;padding:0 12px;border:1px solid #343438;border-radius:8px;background:#151517;color:#c8c8cd;font:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
+.edit-shelf-button[hidden]{display:none!important}
+.edit-shelf-button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.edit-shelf-button:hover{border-color:#55555a;background:#202023;color:#fff}
+.edit-shelf-button:active{transform:scale(.97)}
 .delete-shelf-button{display:inline-flex;min-height:38px;align-items:center;justify-content:center;gap:7px;padding:0 12px;border:1px solid rgba(255,116,111,.28);border-radius:8px;background:rgba(198,40,40,.06);color:#ff7f7a;font:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
 .delete-shelf-button[hidden]{display:none!important}
 .delete-shelf-button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -1422,6 +1427,9 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .shelf-scroll-arrow,.shelf-strip.has-overflow .shelf-scroll-arrow{display:none!important}
 .record-menu-backdrop{touch-action:pan-y;overscroll-behavior:auto}
 .record-action-menu{pointer-events:auto}
+.edit-shelf-button{width:38px;height:38px;min-height:38px;padding:0;border-radius:50%}
+.edit-shelf-button span{display:none}
+.edit-shelf-button svg{width:17px;height:17px}
 .delete-shelf-button{width:38px;height:38px;min-height:38px;padding:0;border-radius:50%}
 .delete-shelf-button span{display:none}
 .delete-shelf-button svg{width:17px;height:17px}
@@ -1465,4 +1473,19 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .shelf-new-button{width:auto;min-width:auto;max-width:160px;flex-basis:auto}
 .detail-shelf-actions{gap:7px;margin-top:12px}
 .detail-shelf-button{min-height:34px;padding:0 10px;font-size:10px}
+}
+
+/* SHELVES V6.2 - mobile album-detail layout */
+.detail-info-card{display:contents}
+@media screen and (max-width:760px){
+.album-detail-main{display:contents!important;padding:0!important;border:0!important;background:transparent!important}
+.detail-info-card{display:block;grid-column:2;grid-row:1;align-self:end;padding:12px;border:1px solid var(--groovy-line);border-radius:8px;background:#121214}
+.detail-shelf-actions{grid-column:1/-1;grid-row:2;width:100%;margin:14px 0 0;gap:8px;flex-wrap:nowrap}
+.detail-shelf-actions:not([hidden]){display:flex}
+.detail-shelf-button{min-width:0;flex:1 1 0;min-height:40px;padding:0 12px;font-size:11px}
+.detail-spotify-link{grid-column:1/-1;grid-row:3;width:100%;min-height:62px;margin:12px 0 0;padding:14px 16px;border:1px solid var(--groovy-line);border-radius:8px;background:#121214;gap:11px}
+.detail-spotify-mark{width:30px;height:30px;flex-basis:30px}
+.detail-spotify-link small{display:block}
+.detail-spotify-link .external-link-icon{margin-left:auto}
+.album-tracks{grid-row:4;margin-top:12px}
 }
