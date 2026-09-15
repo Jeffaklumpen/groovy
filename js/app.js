@@ -1885,10 +1885,32 @@ function recordHTML(record, className){
       ?'<button class="move-to-collection-button" type="button"><span class="record-icon" aria-hidden="true"></span>Add to collection</button>'
       :'')+
     '<div class="record-card-footer">'+
-        '<a class="apple-music-link spotify-link" href="'+esc(appleMusicAlbumLink(record))+'" target="_blank" rel="noopener noreferrer" aria-label="Listen to '+esc(record[2])+' by '+esc(record[1])+' on Apple Music">'+
-            '<img class="apple-music-lockup" src="/groovy/Apple_Music_Listen_on_Lockup_RGB_All-Wht_USGB-EN_CI_122225.svg" alt="Listen on Apple Music">'+
+    
+        '<a class="streaming-link streaming-service apple-service" '+
+            'href="'+esc(appleMusicAlbumLink(record))+'" '+
+            'target="_blank" rel="noopener noreferrer" '+
+            'aria-label="Listen to '+esc(record[2])+' by '+esc(record[1])+' on Apple Music">'+
+            '<img class="apple-music-small-badge" '+
+                'src="/groovy/Apple_Music_Listen_on_Badge_Small.svg" '+
+                'alt="Listen on Apple Music">'+
+        '</a>'+
+    
+        '<a class="streaming-link streaming-service spotify-service" '+
+            'href="'+esc(spotifyAlbumLink(record))+'" '+
+            'target="_blank" rel="noopener noreferrer" '+
+            'aria-label="Listen to '+esc(record[2])+' by '+esc(record[1])+' on Spotify">'+
+            '<img class="spotify-service-logo" '+
+                'src="/groovy/Full_Logo_Green_RGB.svg" '+
+                'alt="Spotify">'+
+        '</a>'+
+    
+        '<a class="streaming-link streaming-external" '+
+            'href="'+esc(appleMusicAlbumLink(record))+'" '+
+            'target="_blank" rel="noopener noreferrer" '+
+            'aria-label="Open Apple Music">'+
             '<span class="external-link-icon" aria-hidden="true"></span>'+
         '</a>'+
+    
     '</div>'+
   '</article>';
 
@@ -2427,11 +2449,11 @@ function attachAlbumClicks(){
   collection.addEventListener('click',async function(event){
     var target=event.target||event.srcElement;
 
-    var spotifyLink=target.closest
-      ?target.closest('.spotify-link')
+    var streamingLink=target.closest
+      ?target.closest('.streaming-link')
       :null;
-
-    if(spotifyLink){
+    
+    if(streamingLink){
       event.stopPropagation();
       return;
     }
@@ -2993,7 +3015,7 @@ function enableGridSorting(){
       if(pointerId!==null)return;
       if(event.button!==undefined&&event.button!==0)return;
       if(event.pointerType==='touch')return;
-      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button,.spotify-link'))return;
+      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button,.streaming-link'))return;
 
       pointerId=event.pointerId;
       pointerCard=this;
@@ -3041,7 +3063,7 @@ function enableGridSorting(){
 
     cards[i].addEventListener('touchstart',function(event){
       if(touchId!==null||!event.changedTouches.length)return;
-      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button,.spotify-link'))return;
+      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button,.streaming-link'))return;
 
       var touch=event.changedTouches[0];
       touchId=touch.identifier;
