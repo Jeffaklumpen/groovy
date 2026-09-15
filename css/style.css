@@ -1337,6 +1337,8 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .record-action-item.danger{color:#ff746f}
 .record-action-item.danger:hover{background:rgba(198,40,40,.14);color:#ff8c87}
 
+.record-menu-backdrop{display:none;position:fixed;z-index:12000;inset:0;background:transparent;touch-action:none;-webkit-tap-highlight-color:transparent}
+
 .shelf-modal-box{max-width:470px;padding:26px}
 .shelf-name-field{display:flex;flex-direction:column;gap:8px;margin-top:18px}
 .shelf-name-field>span,.shelf-icon-field>span{color:#a4a4aa;font-size:11px;font-weight:700;letter-spacing:.03em}
@@ -1377,10 +1379,12 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .shelf-new-button{min-width:auto}
 .shelf-new-button .shelf-chip-icon{border:0;font-size:18px}
 .shelf-new-button .shelf-chip-copy strong{max-width:none}
-.record-menu-button{display:flex;right:-2px;width:25px;height:23px;color:#8b8b91}
-.record-action-menu{position:fixed;z-index:12000;left:15px;right:15px;top:auto;bottom:calc(16px + env(safe-area-inset-bottom));width:auto;padding:8px;border-radius:12px;background:#19191c;box-shadow:0 18px 55px rgba(0,0,0,.75)}
+.record-menu-button{display:flex;right:0;width:20px;height:20px;border-radius:4px;color:#8b8b91;font-size:10px;letter-spacing:.35px}
+.record-card-topbar.record-menu-open{z-index:12001}
+.record-menu-backdrop.open{display:block}
+.record-action-menu{position:fixed;z-index:12002;left:auto;right:auto;top:auto;bottom:auto;width:156px;padding:5px;border-radius:9px;background:#19191c;box-shadow:0 12px 34px rgba(0,0,0,.72)}
 .record-action-menu.open{display:block}
-.record-action-item{min-height:45px;padding:0 13px;font-size:13px}
+.record-action-item{min-height:37px;padding:0 10px;font-size:11px}
 .shelf-modal{align-items:flex-end;padding:0}
 .shelf-modal-box{width:100%;max-width:none;max-height:82vh;margin:0;padding:24px 18px calc(18px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0}
 .shelf-modal-box:before{content:"";display:block;width:42px;height:4px;margin:-12px auto 18px;border-radius:4px;background:#55555a}
