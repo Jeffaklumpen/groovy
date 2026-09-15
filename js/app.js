@@ -709,6 +709,12 @@ var detailYear=document.getElementById('detailYear');
 var detailGenre=document.getElementById('detailGenre');
 var detailRating=document.getElementById('detailRating');
 var detailTracks=document.getElementById('detailTracks');
+var detailAboutAlbum=document.getElementById('detailAboutAlbum');
+var detailAboutAlbumText=document.getElementById('detailAboutAlbumText');
+var detailAboutAlbumLink=document.getElementById('detailAboutAlbumLink');
+var wikipediaAboutRequestVersion=0;
+var wikipediaAlbumCache=new Map();
+var WIKIPEDIA_CACHE_TTL=14*24*60*60*1000;
 var traderaButton=document.getElementById('traderaButton');
 var traderaButtonLabel=document.getElementById('traderaButtonLabel');
 var traderaModal=document.getElementById('traderaModal');
@@ -2889,6 +2895,132 @@ function loadVisibleImages(){
   }
 }
 
+function normalizeWikipediaIdentity(value){
+  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim();
+}
+
+function wikipediaCacheKey(record){
+  return 'groovy-wikipedia-about-v1:'+normalizeWikipediaIdentity(record&&record[1])+'|'+normalizeWikipediaIdentity(record&&record[2]);
+}
+
+function firstWikipediaParagraph(extract){
+  var text=String(extract||'').replace(/\r/g,'').trim();
+  if(!text)return '';
+  var paragraphs=text.split(/\n\s*\n/).map(function(value){return value.trim();}).filter(Boolean);
+  if(paragraphs.length)return paragraphs[0];
+  return text;
+}
+
+function wikipediaCandidateScore(page,record){
+  var album=normalizeWikipediaIdentity(record&&record[2]);
+  var artist=normalizeWikipediaIdentity(record&&record[1]);
+  var title=normalizeWikipediaIdentity(page&&page.title);
+  var extract=normalizeWikipediaIdentity(page&&page.extract);
+  var year=String(record&&record[3]||'').trim();
+  var score=0;
+
+  if(!album||!title)return -100;
+  if(title===album)score+=30;
+  else if(title.indexOf(album+' ')===0)score+=25;
+  else if(title.indexOf(album)!==-1)score+=13;
+  if(/\balbum\b/.test(title))score+=7;
+  if(artist&&title.indexOf(artist)!==-1)score+=12;
+  if(artist&&extract.indexOf(artist)!==-1)score+=22;
+  if(/\b(studio|live|compilation|soundtrack|debut|album)\b/.test(extract))score+=8;
+  if(year&&extract.indexOf(year)!==-1)score+=3;
+  if(/may refer to|can refer to|disambiguation/.test(extract))score-=60;
+  if(page&&page.index)score+=Math.max(0,6-Number(page.index));
+  return score;
+}
+
+async function fetchWikipediaAlbumCandidates(record,query){
+  var params=new URLSearchParams({
+    action:'query',
+    format:'json',
+    formatversion:'2',
+    origin:'*',
+    generator:'search',
+    gsrsearch:query,
+    gsrnamespace:'0',
+    gsrlimit:'5',
+    prop:'extracts|info',
+    exintro:'1',
+    explaintext:'1',
+    inprop:'url',
+    redirects:'1'
+  });
+  var response=await fetch('https://en.wikipedia.org/w/api.php?'+params.toString(),{method:'GET',credentials:'omit'});
+  if(!response.ok)throw new Error('Wikipedia returned '+response.status);
+  var data=await response.json();
+  return data&&data.query&&Array.isArray(data.query.pages)?data.query.pages:[];
+}
+
+function readWikipediaCache(record){
+  var key=wikipediaCacheKey(record);
+  if(wikipediaAlbumCache.has(key))return wikipediaAlbumCache.get(key);
+  try{
+    var stored=JSON.parse(localStorage.getItem(key)||'null');
+    if(stored&&stored.savedAt&&Date.now()-stored.savedAt<WIKIPEDIA_CACHE_TTL&&stored.text){
+      wikipediaAlbumCache.set(key,stored);
+      return stored;
+    }
+  }catch(error){}
+  return null;
+}
+
+function saveWikipediaCache(record,result){
+  var key=wikipediaCacheKey(record);
+  var cached={text:result.text,url:result.url,title:result.title,savedAt:Date.now()};
+  wikipediaAlbumCache.set(key,cached);
+  try{localStorage.setItem(key,JSON.stringify(cached));}catch(error){}
+  return cached;
+}
+
+function renderWikipediaAbout(result){
+  if(!detailAboutAlbum||!detailAboutAlbumText||!detailAboutAlbumLink)return;
+  if(!result||!result.text){detailAboutAlbum.hidden=true;return;}
+  detailAboutAlbumText.textContent=result.text;
+  detailAboutAlbumLink.href=result.url||'https://en.wikipedia.org/';
+  detailAboutAlbumLink.setAttribute('aria-label','Read '+(result.title||'this album article')+' on Wikipedia');
+  detailAboutAlbum.hidden=false;
+}
+
+async function loadWikipediaAlbumAbout(record){
+  var requestVersion=++wikipediaAboutRequestVersion;
+  if(!detailAboutAlbum||!detailAboutAlbumText||!detailAboutAlbumLink)return;
+
+  var cached=readWikipediaCache(record);
+  if(cached){renderWikipediaAbout(cached);return;}
+
+  detailAboutAlbumText.textContent='Loading album information…';
+  detailAboutAlbumLink.href='https://en.wikipedia.org/';
+  detailAboutAlbum.hidden=false;
+
+  try{
+    var album=String(record&&record[2]||'').trim();
+    var artist=String(record&&record[1]||'').trim();
+    var queries=['"'+album+'" "'+artist+'" album',album+' '+artist+' album'];
+    var pages=[];
+
+    for(var q=0;q<queries.length&&!pages.length;q++){
+      pages=await fetchWikipediaAlbumCandidates(record,queries[q]);
+    }
+
+    if(requestVersion!==wikipediaAboutRequestVersion)return;
+    var ranked=pages.map(function(page){return {page:page,score:wikipediaCandidateScore(page,record)};}).sort(function(a,b){return b.score-a.score;});
+    var best=ranked.length?ranked[0]:null;
+    var paragraph=best&&best.score>=18?firstWikipediaParagraph(best.page.extract):'';
+
+    if(!paragraph){detailAboutAlbum.hidden=true;return;}
+    var result=saveWikipediaCache(record,{text:paragraph,url:best.page.fullurl||'https://en.wikipedia.org/wiki/'+encodeURIComponent(best.page.title||''),title:best.page.title||''});
+    renderWikipediaAbout(result);
+  }catch(error){
+    if(requestVersion!==wikipediaAboutRequestVersion)return;
+    console.warn('Could not load Wikipedia album information:',error);
+    detailAboutAlbum.hidden=true;
+  }
+}
+
 function openAlbum(index){
   var record=records[index];
   if(!record)return;
@@ -2920,6 +3052,7 @@ function openAlbum(index){
   }
   detailSpotifyLink.href=spotifyAlbumLink(record);
   detailSpotifyLink.setAttribute('aria-label','Find '+record[2]+' by '+record[1]+' on Spotify');
+  loadWikipediaAlbumAbout(record);
 
   var rating=parseInt(record[5],10);
   if(isNaN(rating))rating=0;
@@ -3261,6 +3394,8 @@ async function saveTrackRating(trackId,rating){
 }
     
 function closeAlbum(){
+  wikipediaAboutRequestVersion++;
+  if(detailAboutAlbum)detailAboutAlbum.hidden=true;
   closeTraderaModal();
   closeEbayModal();
   traderaRequestVersion++;
