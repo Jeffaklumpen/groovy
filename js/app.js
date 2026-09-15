@@ -785,7 +785,7 @@ var loadedShelfUserId='';
 var shelfPickerRecordIndex=-1;
 var createShelfReturnRecordIndex=-1;
 var selectedShelfIcon='record';
-var SHELF_COLORS=['#E85301','#FF3B45','#FF6B4A','#F43F8C','#8B5CF6','#6366F1','#3B82F6','#14B8D4','#10B981','#84CC16','#F5C542','#6B7280'];
+var SHELF_COLORS=['#E85301','#FF3B45','#FF6B4A','#F43F8C','#8B5CF6','#6366F1','#3B82F6','#14B8D4','#10B981','#84CC16','#F5C542','#6B7280','#14B8A6','#F59E0B'];
 var selectedShelfColor=SHELF_COLORS[0];
 var editingShelfId='';
 var MAX_SHELVES=10;
@@ -827,10 +827,75 @@ var detailShelfStatus=document.getElementById('detailShelfStatus');
 var detailInfoCard=document.querySelector('.detail-info-card');
 var detailOpenRecordIndex=-1;
 
-function shelfIconGlyph(icon){
-  var icons={record:'◉',heart:'♡',music:'♪',star:'★',film:'▦',sun:'☼',moon:'☾',bookmark:'◆'};
-  return icons[icon]||icons.record;
+var SHELF_ICON_OPTIONS=[
+  {id:'record',label:'Vinyl'},
+  {id:'heart',label:'Heart'},
+  {id:'music',label:'Music note'},
+  {id:'star',label:'Star'},
+  {id:'bookmark',label:'Bookmark'},
+  {id:'headphones',label:'Headphones'},
+  {id:'guitar',label:'Guitar'},
+  {id:'bolt',label:'Lightning'},
+  {id:'flame',label:'Fire'},
+  {id:'crown',label:'Crown'},
+  {id:'coffee',label:'Coffee'},
+  {id:'party',label:'Party'},
+  {id:'smiley',label:'Smiley'},
+  {id:'diamond',label:'Diamond'},
+  {id:'radio',label:'Radio'},
+  {id:'skull',label:'Skull'},
+  {id:'mushroom',label:'Mushroom'},
+  {id:'rocket',label:'Rocket'},
+  {id:'microphone',label:'Microphone'},
+  {id:'eye',label:'Eye'},
+  {id:'ufo',label:'UFO'}
+];
+
+var SHELF_ICON_ALIASES={film:'radio',sun:'star',moon:'eye',vinyl:'record',lightning:'bolt',fire:'flame'};
+
+var SHELF_ICON_PATHS={
+  record:'<circle cx="12" cy="12" r="8.5"></circle><circle cx="12" cy="12" r="2"></circle><path d="M12 3.5a8.5 8.5 0 0 1 7.4 4.3M4.6 16.2A8.5 8.5 0 0 0 12 20.5"></path>',
+  heart:'<path d="M20.8 4.7a5.6 5.6 0 0 0-7.9 0L12 5.6l-.9-.9a5.6 5.6 0 0 0-7.9 7.9L12 21l8.8-8.4a5.6 5.6 0 0 0 0-7.9Z"></path>',
+  music:'<path d="M9 18V5l10-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="16" cy="16" r="3"></circle>',
+  star:'<path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2-4.6-4.4 6.3-.9L12 2.8Z"></path>',
+  bookmark:'<path d="M6 3.5h12v17l-6-4-6 4v-17Z"></path>',
+  headphones:'<path d="M4 14v-2a8 8 0 0 1 16 0v2"></path><path d="M4 14h3v6H5.5A1.5 1.5 0 0 1 4 18.5V14Zm16 0h-3v6h1.5a1.5 1.5 0 0 0 1.5-1.5V14Z"></path>',
+  guitar:'<path d="M15.5 3.5 20.5 8.5"></path><path d="M14.3 4.7 18.8 9.2"></path><path d="m17.7 6.3-6.1 6.1"></path><path d="M11.8 10.8c-1.6-1.6-4.5-1.2-6.5.8-2.2 2.2-2.4 5.3-.5 7.2 1.9 1.9 5 1.7 7.2-.5 2-2 2.4-4.9.8-6.5"></path><circle cx="8.2" cy="15.7" r="1.8"></circle>',
+  bolt:'<path d="M13.5 2.5 5.8 13h5.6l-.9 8.5L18.2 11h-5.6l.9-8.5Z"></path>',
+  flame:'<path d="M12.6 2.7c.7 3.4-1.9 4.9-3.3 7.1-1.1 1.7-.8 3.5.5 4.6-.1-2.2 1.1-3.4 2.5-4.8.5 2.4 3.4 3.7 3.4 6.8 0 2.8-1.8 4.6-4.2 4.6-4.5 0-7.2-3.3-6.1-7.6.9-3.3 3.9-5.6 7.2-10.7Z"></path>',
+  crown:'<path d="m3.5 7 4.2 4 4.3-6 4.3 6 4.2-4-1.5 11H5L3.5 7Z"></path><path d="M6 21h12"></path>',
+  coffee:'<path d="M5 8h11v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8Z"></path><path d="M16 10h2a2.5 2.5 0 0 1 0 5h-2"></path><path d="M8 4c0 1 1 1 1 2M12 3c0 1 1 1 1 2"></path>',
+  party:'<path d="m4 20 4-12 8 8-12 4Z"></path><path d="M14 5h.01M19 9h.01M17 3l1-1M21 5l1-1M12 2l1 2"></path><path d="M11 7c2-2 4-2 6 0"></path>',
+  smiley:'<circle cx="12" cy="12" r="9"></circle><path d="M8.5 14.5c.9 1.3 2 2 3.5 2s2.6-.7 3.5-2"></path><path d="M9 9h.01M15 9h.01"></path>',
+  diamond:'<path d="m12 2.8 7.5 7.1L12 21.2 4.5 9.9 12 2.8Z"></path><path d="M4.5 9.9h15M9.1 9.9 12 2.8l2.9 7.1L12 21.2 9.1 9.9Z"></path>',
+  radio:'<rect x="3" y="6" width="18" height="14" rx="2"></rect><path d="m7 6 10-3"></path><circle cx="15.5" cy="13" r="3"></circle><path d="M6.5 11h3M6.5 14h3M6.5 17h3"></path>',
+  skull:'<path d="M5 11a7 7 0 1 1 14 0c0 3-1.4 4.7-3.2 5.7V20H8.2v-3.3C6.4 15.7 5 14 5 11Z"></path><circle cx="9" cy="11" r="1.2"></circle><circle cx="15" cy="11" r="1.2"></circle><path d="M10.5 15h3M10 20v-2M14 20v-2"></path>',
+  mushroom:'<path d="M4 11a8 8 0 0 1 16 0H4Z"></path><path d="M10 11v4.3c0 1.6-.8 2.7-2 3.7h8c-1.2-1-2-2.1-2-3.7V11"></path><path d="M8 7h.01M15 8h.01"></path>',
+  rocket:'<path d="M14 4c2.7-1.6 5.4-1.5 6-1-.5.6-.4 3.3-2 6l-5 5-3-3 4-7Z"></path><path d="m10 11-4 1-2 3 5 1M13 14l1 5 3-2 1-4"></path><circle cx="15.5" cy="7.5" r="1.5"></circle><path d="M7 17c-1.3.4-2.6 1.7-3 3 1.3-.4 2.6-1.7 3-3Z"></path>',
+  microphone:'<rect x="8" y="3" width="8" height="12" rx="4"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"></path>',
+  eye:'<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.8"></circle>',
+  ufo:'<path d="M8 10a4 4 0 0 1 8 0"></path><path d="M5 11.5c1.6-1 4-1.5 7-1.5s5.4.5 7 1.5c1.1.7 1.1 1.8 0 2.5-1.6 1-4 1.5-7 1.5S6.6 15 5 14c-1.1-.7-1.1-1.8 0-2.5Z"></path><path d="M8 17.5 6.5 20M12 17.5V21M16 17.5l1.5 2.5"></path>'
+};
+
+function normalizeShelfIcon(icon){
+  var key=String(icon||'record');
+  key=SHELF_ICON_ALIASES[key]||key;
+  return SHELF_ICON_PATHS[key]?key:'record';
 }
+
+function shelfIconSvg(icon){
+  var key=normalizeShelfIcon(icon);
+  return '<svg class="shelf-svg-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+SHELF_ICON_PATHS[key]+'</svg>';
+}
+
+function renderShelfIconChoices(){
+  if(!shelfIconChoices)return;
+  shelfIconChoices.innerHTML=SHELF_ICON_OPTIONS.map(function(item,index){
+    return '<button type="button" class="shelf-icon-choice '+(index===0?'selected':'')+'" role="radio" aria-checked="'+(index===0?'true':'false')+'" data-icon="'+item.id+'" aria-label="'+item.label+'" title="'+item.label+'">'+shelfIconSvg(item.id)+'</button>';
+  }).join('');
+}
+
+renderShelfIconChoices();
 
 function normalizeShelfColor(value){
   var candidate=String(value||'').toUpperCase();
@@ -975,11 +1040,11 @@ function renderShelfStrip(){
   if(activeShelfId!=='all'&&!shelfById(activeShelfId))activeShelfId='all';
 
   var html='<button class="shelf-chip '+(activeShelfId==='all'?'active':'')+'" type="button" data-shelf-id="all">'+
-    '<span class="shelf-chip-icon" aria-hidden="true">◉</span><span class="shelf-chip-copy"><strong>All Records</strong><small>'+shelfRecordCount('all')+' records</small></span></button>';
+    '<span class="shelf-chip-icon" aria-hidden="true">'+shelfIconSvg('record')+'</span><span class="shelf-chip-copy"><strong>All Records</strong><small>'+shelfRecordCount('all')+' records</small></span></button>';
 
   shelves.forEach(function(shelf){
     html+='<button class="shelf-chip shelf-chip-custom '+(String(activeShelfId)===String(shelf.id)?'active':'')+'" type="button" data-shelf-id="'+esc(shelf.id)+'" style="'+shelfColorStyle(shelf)+'">'+
-      '<span class="shelf-chip-icon" aria-hidden="true">'+esc(shelfIconGlyph(shelf.icon))+'</span><span class="shelf-chip-copy"><strong>'+esc(shelf.name)+'</strong><small>'+shelfRecordCount(shelf.id)+' records</small></span></button>';
+      '<span class="shelf-chip-icon" aria-hidden="true">'+shelfIconSvg(shelf.icon)+'</span><span class="shelf-chip-copy"><strong>'+esc(shelf.name)+'</strong><small>'+shelfRecordCount(shelf.id)+' records</small></span></button>';
   });
 
   if(viewedUserId===null){
@@ -1046,7 +1111,7 @@ window.loadShelvesForUser=async function(userId){
 };
 
 function setShelfIconChoice(icon){
-  selectedShelfIcon=icon||'record';
+  selectedShelfIcon=normalizeShelfIcon(icon);
   if(!shelfIconChoices)return;
   shelfIconChoices.querySelectorAll('.shelf-icon-choice').forEach(function(button){
     var selected=button.getAttribute('data-icon')===selectedShelfIcon;
@@ -1154,7 +1219,7 @@ function renderShelfPicker(index){
     var selected=id===currentShelf;
     return '<label class="shelf-picker-option shelf-colored '+(selected?'selected':'')+'" style="'+shelfColorStyle(shelf)+'">'+
       '<input type="radio" name="recordShelf" value="'+esc(id)+'" '+(selected?'checked':'')+'>'+ 
-      '<span class="shelf-picker-icon" aria-hidden="true">'+esc(shelfIconGlyph(shelf.icon))+'</span>'+ 
+      '<span class="shelf-picker-icon" aria-hidden="true">'+shelfIconSvg(shelf.icon)+'</span>'+ 
       '<span class="shelf-picker-name">'+esc(shelf.name)+'</span>'+ 
       '<span class="shelf-choice-check" aria-hidden="true">✓</span>'+ 
     '</label>';
@@ -1201,12 +1266,12 @@ function renderDetailShelfStatus(index){
 
   var shelf=shelfById(record[13]);
   var shelfName=shelf&&shelf.name?shelf.name:'no shelf';
-  var shelfIcon=shelf?shelfIconGlyph(shelf.icon):'';
+  var shelfIcon=shelf?shelfIconSvg(shelf.icon):'';
 
   detailShelfStatus.hidden=false;
   detailShelfStatus.classList.toggle('unshelved',!shelf);
   detailShelfStatus.innerHTML=
-    (shelfIcon?'<span class="detail-shelf-status-icon" aria-hidden="true">'+esc(shelfIcon)+'</span>':'')+
+    (shelfIcon?'<span class="detail-shelf-status-icon" aria-hidden="true">'+shelfIcon+'</span>':'')+
     '<strong title="'+esc(shelfName)+'">'+esc(shelfName)+'</strong>';
 }
 
@@ -2733,10 +2798,10 @@ function recordHTML(record, className){
   var showPressingPrompt=!isWishlist&&viewedUserId===null&&!condition&&!hasCopyDetails(copy);
   var cardShelf=!isWishlist?shelfById(record[13]):null;
   var cardShelfName=cardShelf&&cardShelf.name?cardShelf.name:'';
-  var cardShelfIcon=cardShelf?shelfIconGlyph(cardShelf.icon):'';
+  var cardShelfIcon=cardShelf?shelfIconSvg(cardShelf.icon):'';
   var cardShelfStatus=cardShelf
     ?'<span class="record-shelf-status" title="'+esc(cardShelfName)+'">'+
-       (cardShelfIcon?'<span class="record-shelf-status-icon" aria-hidden="true">'+esc(cardShelfIcon)+'</span>':'')+
+       (cardShelfIcon?'<span class="record-shelf-status-icon" aria-hidden="true">'+cardShelfIcon+'</span>':'')+
        '<strong>'+esc(cardShelfName)+'</strong>'+
      '</span>'
     :'';
