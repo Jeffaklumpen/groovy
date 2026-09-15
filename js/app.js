@@ -455,7 +455,9 @@ function wishlistRecord(item,index){
     sides,
     album.id,
     item.id,
-    album.discogs_master_id||''
+    album.discogs_master_id||'',
+    {},
+    album.apple_collection_url||''
   ];
 }
 
@@ -475,6 +477,7 @@ window.loadWishlist=async function(userId){
         release_year,
         genre,
         cover_url,
+        apple_collection_url,
         discogs_master_id,
         artists(id,name),
         tracks(id,disc_side,track_number,title)
@@ -556,6 +559,7 @@ window.loadCollection=async function(){
         release_year,
         genre,
         cover_url,
+        apple_collection_url,
         discogs_master_id,
         artists(
           id,
@@ -675,7 +679,8 @@ window.loadCollection=async function(){
           album.id,
           item.id,
           album.discogs_master_id||'',
-          copyDetailsFromRow(item)
+          copyDetailsFromRow(item),
+          album.apple_collection_url||''
         ];
     });
 
@@ -1824,12 +1829,6 @@ closePressingModalButton.addEventListener('click',closePressingPicker);
 pressingModal.addEventListener('click',function(event){if(event.target===pressingModal)closePressingPicker();});
 
 function spotifyAlbumLink(record){
-    var savedUrl=record&&record[12];
-
-    if(/^https:\/\/open\.spotify\.com\/album\/[A-Za-z0-9]+(?:[/?#].*)?$/.test(String(savedUrl||''))){
-        return savedUrl;
-    }
-
     var query=[
         record&&record[1],
         record&&record[2]
@@ -1839,6 +1838,12 @@ function spotifyAlbumLink(record){
 }
 
 function appleMusicAlbumLink(record){
+    var savedUrl=record&&record[12];
+
+    if(/^https:\/\/(?:music|itunes)\.apple\.com\//.test(String(savedUrl||''))){
+        return savedUrl;
+    }
+
     var query=[
         record&&record[1],
         record&&record[2]
@@ -4216,6 +4221,7 @@ async function loadOtherUserCollection(userId){
                 release_year,
                 genre,
                 cover_url,
+                apple_collection_url,
                 discogs_master_id,
                 artists(
                     id,
@@ -4338,7 +4344,8 @@ async function loadOtherUserCollection(userId){
                 album.id,
                 item.id,
                 album.discogs_master_id||'',
-                copyDetailsFromRow(item)
+                copyDetailsFromRow(item),
+                album.apple_collection_url||''
             ];
         });
 
