@@ -766,6 +766,13 @@ var closeEbayModalButton=document.getElementById('closeEbayModal');
 var ebayModalSubtitle=document.getElementById('ebayModalSubtitle');
 var ebayListingsStatus=document.getElementById('ebayListingsStatus');
 var ebayListingsGrid=document.getElementById('ebayListingsGrid');
+var marketplaceCurrencySelect=document.getElementById('marketplaceCurrencySelect');
+var marketplacePriceSummary=document.getElementById('marketplacePriceSummary');
+var marketplaceLowestPriceLink=document.getElementById('marketplaceLowestPriceLink');
+var marketplaceLowestPrice=document.getElementById('marketplaceLowestPrice');
+var marketplaceLowestMeta=document.getElementById('marketplaceLowestMeta');
+var marketplacePriceStatus=document.getElementById('marketplacePriceStatus');
+var marketplacePriceNote=document.getElementById('marketplacePriceNote');
 var copyDetails=document.getElementById('copyDetails');
 var copyDetailsContent=document.getElementById('copyDetailsContent');
 var copyDetailsToggle=document.getElementById('copyDetailsToggle');
@@ -809,6 +816,11 @@ var ebayAlbumIndex=-1;
 var ebayRequestVersion=0;
 var ebayListings=[];
 var ebayListingCache=new Map();
+var marketplacePriceAlbumIndex=-1;
+var marketplacePriceFinished={tradera:false,ebay:false};
+var marketplacePriceRenderVersion=0;
+var marketplaceFxCache=new Map();
+var MARKETPLACE_CURRENCY_STORAGE_KEY='groovy-marketplace-currency-v1';
 var libraryPage=1;
 var RECORDS_PER_PAGE=52;
 var libraryPaginationTop=document.getElementById('libraryPaginationTop');
@@ -1864,6 +1876,156 @@ function isRelevantTraderaListing(listing,record){
   return !remainder;
 }
 
+function marketplaceRegionCurrency(){
+  var region='';
+  try{
+    var locale=(navigator.languages&&navigator.languages[0])||navigator.language||'';
+    if(typeof Intl.Locale==='function')region=(new Intl.Locale(locale)).region||'';
+    if(!region){var match=String(locale).match(/[-_]([A-Z]{2})\b/i);region=match?match[1].toUpperCase():'';}
+  }catch(error){}
+
+  var byRegion={SE:'SEK',NO:'NOK',DK:'DKK',GB:'GBP',US:'USD',CA:'CAD',AU:'AUD',NZ:'NZD',CH:'CHF',JP:'JPY',PL:'PLN',CZ:'CZK',AT:'EUR',BE:'EUR',CY:'EUR',DE:'EUR',EE:'EUR',ES:'EUR',FI:'EUR',FR:'EUR',GR:'EUR',HR:'EUR',IE:'EUR',IT:'EUR',LT:'EUR',LU:'EUR',LV:'EUR',MT:'EUR',NL:'EUR',PT:'EUR',SI:'EUR',SK:'EUR'};
+  if(byRegion[region])return byRegion[region];
+
+  try{
+    var timezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'';
+    if(timezone==='Europe/Stockholm')return 'SEK';
+    if(timezone==='Europe/Oslo')return 'NOK';
+    if(timezone==='Europe/Copenhagen')return 'DKK';
+    if(timezone==='Europe/London')return 'GBP';
+    if(timezone==='Europe/Zurich')return 'CHF';
+    if(timezone==='Europe/Warsaw')return 'PLN';
+    if(timezone==='Europe/Prague')return 'CZK';
+    if(/^Europe\//.test(timezone))return 'EUR';
+  }catch(error){}
+  return 'EUR';
+}
+
+function marketplaceCurrencyPreference(){
+  try{return localStorage.getItem(MARKETPLACE_CURRENCY_STORAGE_KEY)||'auto';}catch(error){return 'auto';}
+}
+
+function marketplaceDisplayCurrency(){
+  var preference=marketplaceCurrencyPreference();
+  return preference==='auto'?marketplaceRegionCurrency():preference;
+}
+
+function syncMarketplaceCurrencyControl(){
+  if(!marketplaceCurrencySelect)return;
+  var preference=marketplaceCurrencyPreference();
+  var autoOption=marketplaceCurrencySelect.querySelector('option[value="auto"]');
+  if(autoOption)autoOption.textContent='Auto · '+marketplaceRegionCurrency();
+  marketplaceCurrencySelect.value=Array.from(marketplaceCurrencySelect.options).some(function(option){return option.value===preference;})?preference:'auto';
+}
+
+function marketplaceFormatMoney(amount,currency){
+  if(!isFinite(amount)||amount<=0)return '';
+  try{
+    return new Intl.NumberFormat((navigator.languages&&navigator.languages[0])||navigator.language||undefined,{style:'currency',currency:String(currency||'EUR').toUpperCase(),currencyDisplay:'narrowSymbol',minimumFractionDigits:0,maximumFractionDigits:String(currency||'').toUpperCase()==='JPY'?0:2}).format(amount);
+  }catch(error){return Math.round(amount*100)/100+' '+String(currency||'').toUpperCase();}
+}
+
+function marketplaceBuyNowCandidates(listings,marketplace){
+  return (listings||[]).map(function(listing){
+    var amount=Number(listing&&listing.buyNowPrice||0);
+    if(!isFinite(amount)||amount<=0)return null;
+    return {amount:amount,currency:String(listing.currency||'EUR').toUpperCase(),marketplace:marketplace,url:safeExternalUrl(listing.url),listing:listing};
+  }).filter(Boolean);
+}
+
+async function marketplaceFxRate(from,to){
+  from=String(from||'').toUpperCase();to=String(to||'').toUpperCase();
+  if(!from||!to)throw new Error('Missing currency');
+  if(from===to)return 1;
+  var key=from+'-'+to;
+  var memory=marketplaceFxCache.get(key);
+  if(memory&&Date.now()-memory.savedAt<12*60*60*1000)return memory.rate;
+  var storageKey='groovy-fx-v1-'+key;
+  try{
+    var stored=JSON.parse(localStorage.getItem(storageKey)||'null');
+    if(stored&&Number(stored.rate)>0&&Date.now()-Number(stored.savedAt)<12*60*60*1000){marketplaceFxCache.set(key,stored);return Number(stored.rate);}
+  }catch(error){}
+
+  var response=await fetch('https://api.frankfurter.dev/v2/rate/'+encodeURIComponent(from.toLowerCase())+'/'+encodeURIComponent(to.toLowerCase()),{headers:{Accept:'application/json'}});
+  if(!response.ok)throw new Error('FX rate unavailable');
+  var data=await response.json();
+  var rate=Number(data&&data.rate);
+  if(!isFinite(rate)||rate<=0)throw new Error('Invalid FX rate');
+  var cached={rate:rate,savedAt:Date.now()};
+  marketplaceFxCache.set(key,cached);
+  try{localStorage.setItem(storageKey,JSON.stringify(cached));}catch(error){}
+  return rate;
+}
+
+function resetMarketplacePriceSummary(index){
+  marketplacePriceAlbumIndex=index;
+  marketplacePriceFinished={tradera:false,ebay:!ebayEnabled};
+  marketplacePriceRenderVersion++;
+  if(!marketplacePriceSummary)return;
+  marketplacePriceSummary.classList.add('loading');
+  marketplacePriceSummary.classList.remove('empty','partial','ready');
+  marketplaceLowestPriceLink.hidden=true;
+  marketplacePriceStatus.hidden=false;
+  marketplacePriceStatus.textContent='Checking fixed prices…';
+  marketplacePriceNote.textContent='Excl. shipping';
+}
+
+async function refreshMarketplaceBestPrice(index){
+  if(index!==marketplacePriceAlbumIndex||!marketplacePriceSummary)return;
+  if(!marketplacePriceFinished.tradera||!marketplacePriceFinished.ebay)return;
+  var renderVersion=++marketplacePriceRenderVersion;
+  var candidates=marketplaceBuyNowCandidates(traderaListings,'Tradera');
+  if(ebayEnabled)candidates=candidates.concat(marketplaceBuyNowCandidates(ebayListings,'eBay'));
+  marketplacePriceSummary.classList.remove('loading','empty','partial','ready');
+
+  if(!candidates.length){
+    marketplacePriceSummary.classList.add('empty');
+    marketplaceLowestPriceLink.hidden=true;
+    marketplacePriceStatus.hidden=false;
+    marketplacePriceStatus.textContent='No Buy Now prices found';
+    marketplacePriceNote.textContent='Auctions are not included';
+    return;
+  }
+
+  var target=marketplaceDisplayCurrency();
+  var converted=[];
+  for(var i=0;i<candidates.length;i++){
+    try{
+      var rate=await marketplaceFxRate(candidates[i].currency,target);
+      if(renderVersion!==marketplacePriceRenderVersion||index!==marketplacePriceAlbumIndex)return;
+      converted.push(Object.assign({},candidates[i],{converted:candidates[i].amount*rate}));
+    }catch(error){converted.push(Object.assign({},candidates[i],{converted:null}));}
+  }
+  if(renderVersion!==marketplacePriceRenderVersion||index!==marketplacePriceAlbumIndex)return;
+
+  var comparable=converted.filter(function(item){return isFinite(item.converted)&&item.converted>0;});
+  if(candidates.length>1&&comparable.length!==candidates.length){
+    marketplacePriceSummary.classList.add('partial');
+    marketplaceLowestPriceLink.hidden=true;
+    marketplacePriceStatus.hidden=false;
+    marketplacePriceStatus.textContent=converted.map(function(item){return item.marketplace+' '+marketplaceFormatMoney(item.amount,item.currency);}).join(' · ');
+    marketplacePriceNote.textContent='Currency conversion unavailable';
+    return;
+  }
+
+  var best=(comparable.length?comparable:converted).slice().sort(function(a,b){
+    var av=isFinite(a.converted)?a.converted:a.amount;
+    var bv=isFinite(b.converted)?b.converted:b.amount;
+    return av-bv;
+  })[0];
+  var shownAmount=isFinite(best.converted)?best.converted:best.amount;
+  var shownCurrency=isFinite(best.converted)?target:best.currency;
+  var original=marketplaceFormatMoney(best.amount,best.currency);
+  var convertedLabel=marketplaceFormatMoney(shownAmount,shownCurrency);
+  marketplacePriceSummary.classList.add('ready');
+  marketplacePriceStatus.hidden=true;
+  marketplaceLowestPrice.textContent=convertedLabel;
+  marketplaceLowestMeta.textContent=best.marketplace+(best.currency!==shownCurrency?' · '+original:'');
+  marketplaceLowestPriceLink.href=best.url||'#';
+  marketplaceLowestPriceLink.hidden=false;
+  marketplacePriceNote.textContent='Excl. shipping';
+}
+
 function setTraderaButtonState(state,count){
   traderaButton.classList.remove('loading','empty','unavailable');
   traderaButton.disabled=false;
@@ -1981,6 +2143,8 @@ async function loadTraderaListings(record,index){
   if(cached&&Date.now()-cached.savedAt<5*60*1000){
     traderaListings=cached.listings;
     setTraderaButtonState(traderaListings.length?'ready':'empty',traderaListings.length);
+    marketplacePriceFinished.tradera=true;
+    refreshMarketplaceBestPrice(index);
     return;
   }
 
@@ -2005,6 +2169,9 @@ async function loadTraderaListings(record,index){
     traderaListings=[];
     setTraderaButtonState('unavailable',0);
   }
+
+  marketplacePriceFinished.tradera=true;
+  refreshMarketplaceBestPrice(index);
 
   if(traderaModal.classList.contains('visible')&&traderaAlbumIndex===index){
     openTraderaModal();
@@ -2100,6 +2267,8 @@ async function loadEbayListings(record,index){
   if(cached&&Date.now()-cached.savedAt<5*60*1000){
     ebayListings=cached.listings;
     setEbayButtonState(ebayListings.length?'ready':'empty',ebayListings.length);
+    marketplacePriceFinished.ebay=true;
+    refreshMarketplaceBestPrice(index);
     return;
   }
 
@@ -2124,6 +2293,9 @@ async function loadEbayListings(record,index){
     ebayListings=[];
     setEbayButtonState('unavailable',0);
   }
+
+  marketplacePriceFinished.ebay=true;
+  refreshMarketplaceBestPrice(index);
 
   if(ebayModal.classList.contains('visible')&&ebayAlbumIndex===index){
     openEbayModal();
@@ -3205,6 +3377,7 @@ function openAlbum(index){
   detailOpenRecordIndex=index;
   closeTraderaModal();
   closeEbayModal();
+  resetMarketplacePriceSummary(index);
   loadTraderaListings(record,index);
   if(ebayEnabled)loadEbayListings(record,index);
   copyDetailsRecordKey='';
@@ -4901,6 +5074,13 @@ function setView(nextView){
 albumClose.onclick=function(){
   closeAlbum();
 };
+
+syncMarketplaceCurrencyControl();
+if(marketplaceCurrencySelect)marketplaceCurrencySelect.addEventListener('change',function(){
+  try{localStorage.setItem(MARKETPLACE_CURRENCY_STORAGE_KEY,this.value);}catch(error){}
+  syncMarketplaceCurrencyControl();
+  if(marketplacePriceAlbumIndex>=0)refreshMarketplaceBestPrice(marketplacePriceAlbumIndex);
+});
 
 traderaButton.addEventListener('click',function(event){
   event.preventDefault();
