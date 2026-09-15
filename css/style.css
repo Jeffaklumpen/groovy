@@ -1008,6 +1008,15 @@ body{padding:0 32px 56px;background:radial-gradient(circle at 50% -15%,#18100c 0
 .add-album-button:hover{background:rgba(255,100,24,.16)!important;border-color:var(--groovy-orange)!important}
 #authBox{flex:0 0 auto}
 #profileButton{width:42px;height:42px;border:1px solid rgba(255,100,24,.32);box-shadow:none}
+.online-users-pill{display:flex;height:38px;flex:0 0 auto;align-items:center;gap:8px;padding:0 12px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:#121214;color:#8d8d94;box-shadow:inset 0 1px 0 rgba(255,255,255,.025);user-select:none;-webkit-user-select:none}
+.online-users-dot{position:relative;width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#55555c;box-shadow:0 0 0 2px rgba(255,255,255,.025);transition:background .2s ease,box-shadow .2s ease}
+.online-users-pill.has-users .online-users-dot{background:#2fd477;box-shadow:0 0 0 3px rgba(47,212,119,.09),0 0 11px rgba(47,212,119,.34)}
+.online-users-pill.has-users .online-users-dot:after{content:"";position:absolute;inset:-4px;border:1px solid rgba(47,212,119,.45);border-radius:50%;animation:groovyOnlinePulse 2.2s ease-out infinite}
+.online-users-copy{display:flex;align-items:baseline;gap:4px;white-space:nowrap}
+.online-users-copy strong{color:#f0f0f2;font-size:12px;font-weight:760;line-height:1;font-variant-numeric:tabular-nums}
+.online-users-desktop,.online-users-mobile{color:#85858c;font-size:8.5px;font-weight:750;letter-spacing:1px;line-height:1;text-transform:uppercase}
+.online-users-mobile{display:none}
+@keyframes groovyOnlinePulse{0%{opacity:.75;transform:scale(.7)}70%,100%{opacity:0;transform:scale(1.65)}}
 #profileMenu{z-index:2200}
 
 .library-overview{width:min(1400px,100%);margin:0 auto 18px}
@@ -1138,6 +1147,11 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .library-search:focus-within input::placeholder{color:#777}
 .header-controls{display:none}
 #profileButton{width:40px;height:40px}
+.online-users-pill{height:36px;gap:6px;padding:0 9px}
+.online-users-copy{gap:3px}
+.online-users-copy strong{font-size:11px}
+.online-users-desktop{display:none}
+.online-users-mobile{display:inline;font-size:8px;letter-spacing:.7px}
 .library-overview{margin-bottom:14px}
 .library-title-row{align-items:center}
 .library-title-row h1{font-size:27px}
@@ -1792,3 +1806,6 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .marketplace-price-summary+.marketplace-triggers{margin-top:10px}
 @media screen and (max-width:760px){.marketplace-heading{flex-wrap:wrap}.marketplace-heading>div{flex:1}.marketplace-currency-control{margin-left:auto}.marketplace-currency-control>span{display:none}.marketplace-currency-control select{height:28px;max-width:96px;padding-left:8px;font-size:8px}.marketplace-price-summary{align-items:flex-end;margin-top:13px;padding:12px}.marketplace-lowest-price{gap:6px}.marketplace-lowest-price strong{font-size:20px}.marketplace-lowest-price span{font-size:9px}.marketplace-price-status{font-size:10px}.marketplace-price-note{font-size:7.5px}.marketplace-price-summary+.marketplace-triggers{margin-top:9px}}
 @media screen and (max-width:380px){.marketplace-price-summary{gap:8px;padding:11px}.marketplace-lowest-price{flex-wrap:wrap;row-gap:3px}.marketplace-lowest-price strong{font-size:18px}.marketplace-price-note{max-width:70px;text-align:right;white-space:normal}}
+
+@media screen and (max-width:390px){.logo{width:126px}.header-tools{gap:5px}.library-search{width:36px;flex-basis:36px}.online-users-pill{height:34px;gap:5px;padding:0 7px}.online-users-copy strong{font-size:10px}.online-users-mobile{font-size:7.5px;letter-spacing:.5px}#profileButton{width:38px;height:38px}}
+@media (prefers-reduced-motion:reduce){.online-users-pill.has-users .online-users-dot:after{animation:none}}
