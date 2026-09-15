@@ -75,10 +75,7 @@
 
   if('serviceWorker' in navigator){
     window.addEventListener('load',function(){
-      var hostedInGroovyPath=window.location.pathname.indexOf('/groovy')===0;
-      var workerUrl=hostedInGroovyPath?'/groovy/service-worker.js':'/service-worker.js';
-      var workerScope=hostedInGroovyPath?'/groovy/':'/';
-      navigator.serviceWorker.register(workerUrl,{scope:workerScope,updateViaCache:'none'})
+      navigator.serviceWorker.register('/service-worker.js',{scope:'/',updateViaCache:'none'})
         .catch(function(error){console.warn('Could not enable app installation:',error);});
     });
   }
