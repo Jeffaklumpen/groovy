@@ -1624,3 +1624,48 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .detail-spotify-service{padding-left:4px;padding-right:4px}
 .detail-spotify-service-logo{width:56px;max-width:56px}
 }
+
+/* SHELVES V6.12 - detail streaming polish, portrait-only phone UX and mobile detail balance */
+@media screen and (min-width:761px){
+.detail-streaming-row{flex-direction:column;align-items:flex-start;justify-content:flex-start;width:max-content;margin:24px 0 0;gap:8px}
+.detail-streaming-row:before{content:"LISTEN";display:block;margin:0 0 1px 1px;color:#6f6f75;font-size:9px;font-weight:800;letter-spacing:.14em;line-height:1;text-transform:uppercase}
+.detail-streaming-link{height:38px}
+.detail-apple-music-badge{height:38px}
+.detail-spotify-service{height:38px;min-width:97px;padding:0 10px;border-radius:8px}
+.detail-spotify-service-logo{width:76px;max-width:76px}
+}
+
+@media screen and (max-width:760px){
+/* The info card stays exactly as tall as the square cover, but its contents sit visually centered. */
+.detail-info-card{justify-content:center!important;align-self:stretch!important}
+
+/* Streaming links sit directly on the album background rather than inside another card. */
+.detail-streaming-row{grid-column:1/-1;grid-row:3;width:100%;min-height:40px;margin:10px 0 0;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;gap:9px;justify-content:center}
+.detail-streaming-row:before{display:none!important}
+.detail-streaming-link{height:35px}
+.detail-apple-music-badge{height:35px}
+.detail-spotify-service{height:35px;padding-left:8px;padding-right:8px;border-radius:7px}
+.detail-spotify-service-logo{width:68px;max-width:68px}
+.album-tracks{grid-row:4!important;margin-top:12px}
+}
+
+@media screen and (max-width:380px){
+.detail-streaming-row{gap:7px}
+.detail-streaming-link{height:33px}
+.detail-apple-music-badge{height:33px}
+.detail-spotify-service{height:33px;padding-left:6px;padding-right:6px}
+.detail-spotify-service-logo{width:64px;max-width:64px}
+}
+
+/* While an in-app window is open, horizontal overscroll belongs to GroovyShelves, not browser history. */
+html.groovy-modal-open,body.groovy-modal-open{overscroll-behavior-x:none}
+
+/* Browser pages cannot universally force the physical device orientation. On phones we block the
+   landscape UI and ask the user to rotate back; installed/fullscreen browsers may also accept the
+   Screen Orientation lock requested by app.js. */
+.groovy-portrait-guard{display:none;position:fixed;z-index:2147483647;inset:0;align-items:center;justify-content:center;padding:28px;background:#09090a;color:#f5f5f5;text-align:center}
+.groovy-portrait-guard-card{display:flex;max-width:360px;flex-direction:column;align-items:center;gap:13px}
+.groovy-portrait-guard-icon{display:flex;width:58px;height:58px;align-items:center;justify-content:center;border:1px solid rgba(232,83,1,.55);border-radius:18px;background:rgba(232,83,1,.1);color:#ff6b24;font-size:30px;transform:rotate(-90deg)}
+.groovy-portrait-guard strong{font-size:20px;letter-spacing:-.02em}
+.groovy-portrait-guard span{color:#929298;font-size:13px;line-height:1.5}
+.groovy-portrait-guard.visible{display:flex}
