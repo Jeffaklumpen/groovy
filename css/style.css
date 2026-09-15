@@ -1709,3 +1709,16 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .detail-spotify-service-copy strong{font-size:11px}
 .detail-spotify-service-copy small{font-size:8px}
 }
+
+/* PROFILE NAV V1 - own-library header tabs + viewed-user local navigation */
+.viewed-user-actions .viewed-user-nav,.viewed-user-actions .viewed-user-stats{border-color:transparent!important;background:transparent!important;color:#96969d!important;box-shadow:none!important}
+.viewed-user-actions .viewed-user-nav.active{border-color:rgba(255,100,24,.34)!important;background:rgba(255,100,24,.1)!important;color:#fff!important}
+.viewed-user-actions .viewed-user-nav.active>span:first-child{color:var(--groovy-orange)!important}
+.viewed-user-actions .viewed-user-nav:hover,.viewed-user-actions .viewed-user-stats:hover{border-color:rgba(255,255,255,.1)!important;background:rgba(255,255,255,.055)!important;color:#fff!important}
+.viewed-user-actions .viewed-user-stats:hover{border-color:rgba(255,100,24,.25)!important;background:rgba(255,100,24,.075)!important}
+.viewed-user-actions .record-icon{width:14px;height:14px;flex-basis:14px}
+.viewed-user-actions .wishlist-icon{width:16px;height:16px;flex-basis:16px}
+#copyProfileLinkButton[hidden]{display:none!important}
+@media screen and (min-width:761px){.viewed-user-header{justify-content:space-between}.viewed-user-actions{margin-left:auto;padding-left:9px}.viewed-user-actions button{min-width:82px}.viewed-user-actions .viewed-user-stats{min-width:96px}}
+@media screen and (max-width:760px){.viewed-user-header{display:flex!important;gap:9px!important;padding:10px!important}.viewed-user-identity{width:100%;padding-right:0!important}.viewed-user-copy{flex:1}.viewed-user-name{max-width:none!important}.viewed-user-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));width:100%!important;margin:0!important;padding:8px 0 0!important;border-left:0!important;border-top:1px solid rgba(255,255,255,.07)}.viewed-user-actions button{width:100%;min-width:0!important;min-height:40px!important;padding:5px 6px!important;border-radius:8px!important;font-size:10px!important}.viewed-user-actions .viewed-action-label{display:inline!important}.viewed-user-actions .record-icon{width:13px;height:13px;flex-basis:13px}.viewed-user-actions .wishlist-icon{width:15px;height:15px;flex-basis:15px}}
+@media screen and (max-width:380px){.viewed-user-actions button{gap:4px!important;padding-left:4px!important;padding-right:4px!important;font-size:9px!important}}
