@@ -4816,24 +4816,81 @@ function appleArtistMatches(candidate,artist){
     var candidateText=normalizeAppleSearchText(candidate);
     var artistText=normalizeAppleSearchText(artist);
 
+    if(!candidateText||!artistText)return false;
+
+    // Ignorera ett inledande "The" vid artistmatchning.
+    var candidateWithoutThe=candidateText.replace(/^the\s+/,'');
+    var artistWithoutThe=artistText.replace(/^the\s+/,'');
+
     return candidateText===artistText||
+        candidateWithoutThe===artistWithoutThe||
         candidateText.indexOf(artistText+' ')===0||
-        artistText.indexOf(candidateText+' ')===0;
+        artistText.indexOf(candidateText+' ')===0||
+        candidateWithoutThe.indexOf(artistWithoutThe+' ')===0||
+        artistWithoutThe.indexOf(candidateWithoutThe+' ')===0;
 }
 
-function appleAlbumMatches(candidate,albumTitle){
+function appleAlbumMatches(candidate,albumTitle,artist){
     var candidateText=normalizeAppleSearchText(candidate);
     var albumText=normalizeAppleSearchText(albumTitle);
+    var artistText=normalizeAppleSearchText(artist);
 
+    if(!candidateText||!albumText)return false;
+
+    // Vanlig exakt titel.
     if(candidateText===albumText)return true;
+
+    // Apple kan ibland skriva:
+    // "ABBA: The Album"
+    // när vår titel bara är:
+    // "The Album"
+    //
+    // Tillåt detta ENDAST när prefixet är samma artist.
+    if(artistText){
+        var artistWithoutThe=artistText.replace(/^the\s+/,'');
+        var candidateWithoutThe=candidateText.replace(/^the\s+/,'');
+
+        var possiblePrefixes=[
+            artistText,
+            artistWithoutThe
+        ];
+
+        for(var i=0;i<possiblePrefixes.length;i+=1){
+            var prefix=possiblePrefixes[i];
+
+            if(!prefix)continue;
+
+            if(candidateText.indexOf(prefix+' ')===0){
+                var remaining=candidateText
+                    .slice(prefix.length)
+                    .trim();
+
+                if(remaining===albumText){
+                    return true;
+                }
+            }
+
+            if(candidateWithoutThe.indexOf(prefix+' ')===0){
+                var remainingWithoutThe=candidateWithoutThe
+                    .slice(prefix.length)
+                    .trim();
+
+                if(remainingWithoutThe===albumText){
+                    return true;
+                }
+            }
+        }
+    }
+
+    // Behåll den gamla säkra remaster-regeln.
     if(candidateText.indexOf(albumText+' ')!==0)return false;
 
-    // Only allow a harmless remaster suffix. Broad prefix matching made a
-    // short title such as "ABBA" incorrectly match "ABBA: The Album".
-    var suffix=candidateText.slice(albumText.length).trim();
+    var suffix=candidateText
+        .slice(albumText.length)
+        .trim();
+
     return /^(?:\d{4}\s+)?remaster(?:ed)?(?:\s+edition)?$/.test(suffix);
 }
-
 function appleArtworkUrl(album){
     return album&&album.artworkUrl100
         ?album.artworkUrl100.replace('100x100bb','1200x1200bb')
@@ -4901,7 +4958,7 @@ function pickBestAppleAlbum(results,artist,albumTitle,originalYear){
     return (results||[])
         .filter(function(item){
             return appleArtistMatches(item.artistName,artist)&&
-                appleAlbumMatches(item.collectionName,albumTitle)&&
+                appleAlbumMatches(item.collectionName,albumTitle,artist)&&
                 !appleReleaseIsExcluded(item.collectionName)&&
                 item.artworkUrl100;
         })
