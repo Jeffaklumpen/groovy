@@ -457,7 +457,8 @@ function wishlistRecord(item,index){
     item.id,
     album.discogs_master_id||'',
     {},
-    album.apple_collection_url||''
+    album.apple_collection_url||'',
+    ''
   ];
 }
 
@@ -533,12 +534,15 @@ window.loadCollection=async function(){
     return;
   }
 
+  await window.loadShelvesForUser(user.id);
+
   var {data:collectionData,error:collectionError}=await supabaseClient
     .from('collections')
     .select(`
       id,
       collection_number,
       sort_order,
+      shelf_id,
       cover_url,
       discogs_style,
       discogs_release_id,
@@ -680,7 +684,8 @@ window.loadCollection=async function(){
           item.id,
           album.discogs_master_id||'',
           copyDetailsFromRow(item),
-          album.apple_collection_url||''
+          album.apple_collection_url||'',
+          item.shelf_id||''
         ];
     });
 
@@ -771,6 +776,349 @@ var mobileAddRecordButton=document.getElementById('mobileAddRecordButton');
 var librarySearchQuery='';
 var librarySort='added';
 var refreshedStyleMasters=new Set();
+
+var shelves=[];
+var activeShelfId='all';
+var loadedShelfUserId='';
+var shelfPickerRecordIndex=-1;
+var createShelfReturnRecordIndex=-1;
+var selectedShelfIcon='record';
+
+var shelfStrip=document.getElementById('shelfStrip');
+var shelfStripScroll=document.getElementById('shelfStripScroll');
+var createShelfModal=document.getElementById('createShelfModal');
+var closeCreateShelfButton=document.getElementById('closeCreateShelf');
+var cancelCreateShelfButton=document.getElementById('cancelCreateShelf');
+var confirmCreateShelfButton=document.getElementById('confirmCreateShelf');
+var shelfNameInput=document.getElementById('shelfNameInput');
+var shelfIconChoices=document.getElementById('shelfIconChoices');
+var createShelfStatus=document.getElementById('createShelfStatus');
+var shelfPickerModal=document.getElementById('shelfPickerModal');
+var closeShelfPickerButton=document.getElementById('closeShelfPicker');
+var cancelShelfPickerButton=document.getElementById('cancelShelfPicker');
+var confirmShelfPickerButton=document.getElementById('confirmShelfPicker');
+var createShelfFromPickerButton=document.getElementById('createShelfFromPicker');
+var shelfPickerList=document.getElementById('shelfPickerList');
+var shelfPickerSubtitle=document.getElementById('shelfPickerSubtitle');
+var shelfPickerStatus=document.getElementById('shelfPickerStatus');
+
+function shelfIconGlyph(icon){
+  var icons={record:'◉',heart:'♡',music:'♪',star:'★',film:'▦',sun:'☼',moon:'☾',bookmark:'◆'};
+  return icons[icon]||icons.record;
+}
+
+function shelfById(id){
+  return shelves.find(function(shelf){return String(shelf.id)===String(id);})||null;
+}
+
+function shelfRecordCount(id){
+  if(id==='all')return records.length;
+  return records.filter(function(record){return String(record[13]||'')===String(id);}).length;
+}
+
+function closeRecordActionMenus(except){
+  collection.querySelectorAll('.record-action-menu.open').forEach(function(menu){
+    if(menu!==except)menu.classList.remove('open');
+  });
+  collection.querySelectorAll('.record-menu-button[aria-expanded="true"]').forEach(function(button){
+    var menu=button.parentElement&&button.parentElement.querySelector('.record-action-menu');
+    if(menu!==except)button.setAttribute('aria-expanded','false');
+  });
+}
+
+function renderShelfStrip(){
+  if(!shelfStrip||!shelfStripScroll)return;
+
+  var hide=window.libraryView==='wishlist'||window.loginRequiredForViewedCollection||window.profileNotFound||(!window.hasAuthenticatedUser&&viewedUserId===null);
+  shelfStrip.hidden=hide;
+  if(hide){shelfStripScroll.innerHTML='';return;}
+
+  if(activeShelfId!=='all'&&!shelfById(activeShelfId))activeShelfId='all';
+
+  var html='<button class="shelf-chip '+(activeShelfId==='all'?'active':'')+'" type="button" data-shelf-id="all">'+
+    '<span class="shelf-chip-icon" aria-hidden="true">◉</span><span class="shelf-chip-copy"><strong>All Records</strong><small>'+shelfRecordCount('all')+' records</small></span></button>';
+
+  shelves.forEach(function(shelf){
+    html+='<button class="shelf-chip '+(String(activeShelfId)===String(shelf.id)?'active':'')+'" type="button" data-shelf-id="'+esc(shelf.id)+'">'+
+      '<span class="shelf-chip-icon" aria-hidden="true">'+esc(shelfIconGlyph(shelf.icon))+'</span><span class="shelf-chip-copy"><strong>'+esc(shelf.name)+'</strong><small>'+shelfRecordCount(shelf.id)+' records</small></span></button>';
+  });
+
+  if(viewedUserId===null){
+    html+='<button class="shelf-chip shelf-new-button" type="button"><span class="shelf-chip-icon" aria-hidden="true">+</span><span class="shelf-chip-copy"><strong>New Shelf</strong><small>Create a shelf</small></span></button>';
+  }
+
+  shelfStripScroll.innerHTML=html;
+
+  shelfStripScroll.querySelectorAll('.shelf-chip[data-shelf-id]').forEach(function(button){
+    button.addEventListener('click',function(){
+      activeShelfId=button.getAttribute('data-shelf-id')||'all';
+      libraryPage=1;
+      buildGrid();
+    });
+  });
+
+  var newShelfButton=shelfStripScroll.querySelector('.shelf-new-button');
+  if(newShelfButton)newShelfButton.addEventListener('click',function(){openCreateShelfModal(-1);});
+}
+
+window.renderShelfStrip=renderShelfStrip;
+
+window.loadShelvesForUser=async function(userId){
+  if(!userId){
+    shelves=[];
+    activeShelfId='all';
+    loadedShelfUserId='';
+    renderShelfStrip();
+    return;
+  }
+
+  if(String(loadedShelfUserId)!==String(userId))activeShelfId='all';
+  loadedShelfUserId=String(userId);
+
+  var {data,error}=await supabaseClient
+    .from('shelves')
+    .select('id,user_id,name,icon,sort_order,created_at')
+    .eq('user_id',userId)
+    .order('sort_order',{ascending:true})
+    .order('created_at',{ascending:true});
+
+  if(error){
+    console.error('Kunde inte hämta shelves:',error);
+    shelves=[];
+    activeShelfId='all';
+  }else{
+    shelves=data||[];
+    if(activeShelfId!=='all'&&!shelfById(activeShelfId))activeShelfId='all';
+  }
+
+  renderShelfStrip();
+};
+
+function resetShelfIconChoice(){
+  selectedShelfIcon='record';
+  if(!shelfIconChoices)return;
+  shelfIconChoices.querySelectorAll('.shelf-icon-choice').forEach(function(button){
+    button.classList.toggle('selected',button.getAttribute('data-icon')===selectedShelfIcon);
+  });
+}
+
+function closeCreateShelfModal(){
+  createShelfModal.style.display='none';
+  shelfNameInput.value='';
+  createShelfStatus.textContent='';
+  resetShelfIconChoice();
+}
+
+function openCreateShelfModal(returnRecordIndex){
+  if(viewedUserId!==null)return;
+  createShelfReturnRecordIndex=typeof returnRecordIndex==='number'?returnRecordIndex:-1;
+  shelfNameInput.value='';
+  createShelfStatus.textContent='';
+  resetShelfIconChoice();
+  createShelfModal.style.display='flex';
+  setTimeout(function(){shelfNameInput.focus();},0);
+}
+
+function closeShelfPicker(){
+  shelfPickerModal.style.display='none';
+  shelfPickerRecordIndex=-1;
+  shelfPickerStatus.textContent='';
+}
+
+function renderShelfPicker(index){
+  var record=records[index];
+  if(!record)return;
+  var currentShelf=String(record[13]||'');
+  shelfPickerSubtitle.textContent='Choose one shelf for “'+record[2]+'”.';
+
+  var options=[{id:'',name:'All Records only',icon:'record'}].concat(shelves);
+  shelfPickerList.innerHTML=options.map(function(shelf){
+    var id=String(shelf.id||'');
+    var selected=id===currentShelf;
+    return '<label class="shelf-picker-option '+(selected?'selected':'')+'">'+
+      '<input type="radio" name="recordShelf" value="'+esc(id)+'" '+(selected?'checked':'')+'>'+ 
+      '<span class="shelf-picker-icon" aria-hidden="true">'+esc(shelfIconGlyph(shelf.icon))+'</span>'+ 
+      '<span class="shelf-picker-name">'+esc(shelf.name)+'</span>'+ 
+      '<span class="shelf-choice-check" aria-hidden="true">✓</span>'+ 
+    '</label>';
+  }).join('');
+
+  shelfPickerList.querySelectorAll('input[name="recordShelf"]').forEach(function(input){
+    input.addEventListener('change',function(){
+      shelfPickerList.querySelectorAll('.shelf-picker-option').forEach(function(option){
+        var radio=option.querySelector('input');
+        option.classList.toggle('selected',!!(radio&&radio.checked));
+      });
+    });
+  });
+}
+
+function openShelfPicker(index){
+  if(viewedUserId!==null||window.libraryView==='wishlist')return;
+  if(!records[index])return;
+  shelfPickerRecordIndex=index;
+  shelfPickerStatus.textContent='';
+  renderShelfPicker(index);
+  shelfPickerModal.style.display='flex';
+}
+
+async function assignRecordToShelf(index,shelfId){
+  var record=records[index];
+  if(!record||viewedUserId!==null)return false;
+
+  var {data:{session}}=await supabaseClient.auth.getSession();
+  var user=session&&session.user;
+  if(!user)throw new Error('Du måste vara inloggad.');
+
+  var normalizedShelfId=shelfId||null;
+  var {data,error}=await supabaseClient
+    .from('collections')
+    .update({shelf_id:normalizedShelfId})
+    .eq('id',record[9])
+    .eq('user_id',user.id)
+    .select('id,shelf_id');
+
+  if(error)throw error;
+  if(!data||!data.length)throw new Error('Ingen collection-rad uppdaterades.');
+
+  record[13]=normalizedShelfId||'';
+  libraryPage=1;
+  renderShelfStrip();
+  buildGrid();
+  return true;
+}
+
+function attachRecordActionMenus(){
+  var menuButtons=collection.querySelectorAll('.record-menu-button');
+
+  menuButtons.forEach(function(button){
+    button.addEventListener('click',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      var menu=button.parentElement.querySelector('.record-action-menu');
+      var opening=!menu.classList.contains('open');
+      closeRecordActionMenus(menu);
+      menu.classList.toggle('open',opening);
+      button.setAttribute('aria-expanded',opening?'true':'false');
+    });
+  });
+
+  collection.querySelectorAll('.record-action-item').forEach(function(button){
+    button.addEventListener('click',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      var recordElement=button.closest('.record');
+      if(!recordElement)return;
+      var index=parseInt(recordElement.getAttribute('data-index'),10);
+      if(isNaN(index)||!records[index])return;
+      closeRecordActionMenus();
+
+      var action=button.getAttribute('data-action');
+      if(action==='view'){
+        openAlbum(index);
+      }else if(action==='shelf'){
+        openShelfPicker(index);
+      }else if(action==='delete'){
+        removeAlbumIndex=index;
+        document.getElementById('removeAlbumMessage').textContent='Are you sure you want to remove "'+records[index][2]+'" from your collection?';
+        document.getElementById('removeAlbumModal').style.display='flex';
+      }
+    });
+  });
+}
+
+if(shelfIconChoices){
+  shelfIconChoices.addEventListener('click',function(event){
+    var button=event.target.closest('.shelf-icon-choice');
+    if(!button)return;
+    selectedShelfIcon=button.getAttribute('data-icon')||'record';
+    shelfIconChoices.querySelectorAll('.shelf-icon-choice').forEach(function(item){item.classList.toggle('selected',item===button);});
+  });
+}
+
+closeCreateShelfButton.addEventListener('click',closeCreateShelfModal);
+cancelCreateShelfButton.addEventListener('click',closeCreateShelfModal);
+createShelfModal.addEventListener('click',function(event){if(event.target===createShelfModal)closeCreateShelfModal();});
+
+confirmCreateShelfButton.addEventListener('click',async function(){
+  var name=shelfNameInput.value.trim();
+  if(!name){createShelfStatus.textContent='Enter a shelf name.';shelfNameInput.focus();return;}
+  if(name.length>40){createShelfStatus.textContent='Use 40 characters or fewer.';return;}
+  if(shelves.some(function(shelf){return String(shelf.name).toLocaleLowerCase()===name.toLocaleLowerCase();})){
+    createShelfStatus.textContent='You already have a shelf with that name.';
+    return;
+  }
+
+  confirmCreateShelfButton.disabled=true;
+  createShelfStatus.textContent='Creating…';
+
+  try{
+    var {data:{session}}=await supabaseClient.auth.getSession();
+    var user=session&&session.user;
+    if(!user)throw new Error('Du måste vara inloggad.');
+
+    var {data,error}=await supabaseClient
+      .from('shelves')
+      .insert({user_id:user.id,name:name,icon:selectedShelfIcon,sort_order:shelves.length+1})
+      .select('id,user_id,name,icon,sort_order,created_at')
+      .single();
+
+    if(error)throw error;
+    shelves.push(data);
+    shelves.sort(function(a,b){return (a.sort_order||0)-(b.sort_order||0);});
+    var returnIndex=createShelfReturnRecordIndex;
+    closeCreateShelfModal();
+
+    if(returnIndex>=0&&records[returnIndex]){
+      await assignRecordToShelf(returnIndex,data.id);
+    }else{
+      activeShelfId=data.id;
+      renderShelfStrip();
+      buildGrid();
+    }
+  }catch(error){
+    console.error('Kunde inte skapa shelf:',error);
+    createShelfStatus.textContent='Could not create shelf.';
+  }finally{
+    confirmCreateShelfButton.disabled=false;
+  }
+});
+
+closeShelfPickerButton.addEventListener('click',closeShelfPicker);
+cancelShelfPickerButton.addEventListener('click',closeShelfPicker);
+shelfPickerModal.addEventListener('click',function(event){if(event.target===shelfPickerModal)closeShelfPicker();});
+
+createShelfFromPickerButton.addEventListener('click',function(){
+  var returnIndex=shelfPickerRecordIndex;
+  closeShelfPicker();
+  openCreateShelfModal(returnIndex);
+});
+
+confirmShelfPickerButton.addEventListener('click',async function(){
+  if(shelfPickerRecordIndex<0)return;
+  var selected=shelfPickerList.querySelector('input[name="recordShelf"]:checked');
+  if(!selected){shelfPickerStatus.textContent='Choose a shelf.';return;}
+
+  confirmShelfPickerButton.disabled=true;
+  shelfPickerStatus.textContent='Saving…';
+  try{
+    await assignRecordToShelf(shelfPickerRecordIndex,selected.value||null);
+    closeShelfPicker();
+  }catch(error){
+    console.error('Kunde inte flytta albumet till shelf:',error);
+    shelfPickerStatus.textContent='Could not save shelf.';
+  }finally{
+    confirmShelfPickerButton.disabled=false;
+  }
+});
+
+shelfNameInput.addEventListener('keydown',function(event){
+  if(event.key==='Enter')confirmCreateShelfButton.click();
+});
+
+document.addEventListener('click',function(event){
+  if(!event.target.closest('.record-menu-button')&&!event.target.closest('.record-action-menu'))closeRecordActionMenus();
+});
 
 if(ebayButton)ebayButton.hidden=!ebayEnabled;
 
@@ -1861,7 +2209,12 @@ function recordHTML(record, className){
   var removeButton=viewedUserId===null
     ?(isWishlist
       ?'<button class="wishlist-remove-button" type="button" aria-label="Remove from wishlist">×</button>'
-      :'<button class="delete-cover-button" type="button" aria-label="Remove record">×</button>')
+      :'<button class="record-menu-button" type="button" aria-label="Record menu" aria-expanded="false">•••</button>'+
+       '<div class="record-action-menu">'+
+         '<button class="record-action-item" type="button" data-action="view">View Record</button>'+
+         '<button class="record-action-item" type="button" data-action="shelf">Add to Shelf</button>'+
+         '<button class="record-action-item danger" type="button" data-action="delete">Delete Record</button>'+
+       '</div>')
     :'';
 
   var html='<article class="record '+(isWishlist?'wishlist-record ':'')+(className||'')+'" draggable="false" data-index="'+(parseInt(record[0],10)-1)+'">'+
@@ -2454,6 +2807,15 @@ function attachAlbumClicks(){
   collection.addEventListener('click',async function(event){
     var target=event.target||event.srcElement;
 
+    var recordMenuControl=target.closest
+      ?target.closest('.record-menu-button,.record-action-menu')
+      :null;
+
+    if(recordMenuControl){
+      event.stopPropagation();
+      return;
+    }
+
     var streamingLink=target.closest
       ?target.closest('.streaming-link')
       :null;
@@ -2790,7 +3152,8 @@ function enableGridSorting(){
     var visibleIndexes=[];
     records.forEach(function(record,index){
       var rating=parseInt(record[5],10);
-      if(isWishlist||selectedRating==='all'||rating===parseInt(selectedRating,10))visibleIndexes.push(index);
+      var matchesShelf=isWishlist||activeShelfId==='all'||String(record[13]||'')===String(activeShelfId);
+      if(matchesShelf&&(isWishlist||selectedRating==='all'||rating===parseInt(selectedRating,10)))visibleIndexes.push(index);
     });
     var pageStart=(libraryPage-1)*RECORDS_PER_PAGE;
     var pageIndexes=visibleIndexes.slice(pageStart,pageStart+reorderedPage.length);
@@ -3020,7 +3383,7 @@ function enableGridSorting(){
       if(pointerId!==null)return;
       if(event.button!==undefined&&event.button!==0)return;
       if(event.pointerType==='touch')return;
-      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button,.streaming-link'))return;
+      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button,.streaming-link,.record-menu-button,.record-action-menu'))return;
 
       pointerId=event.pointerId;
       pointerCard=this;
@@ -3068,7 +3431,7 @@ function enableGridSorting(){
 
     cards[i].addEventListener('touchstart',function(event){
       if(touchId!==null||!event.changedTouches.length)return;
-      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button,.streaming-link'))return;
+      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button,.streaming-link,.record-menu-button,.record-action-menu'))return;
 
       var touch=event.changedTouches[0];
       touchId=touch.identifier;
@@ -3292,10 +3655,15 @@ window.buildGrid=function(){
   var libraryTabs=document.getElementById('libraryTabs');
   var libraryTitle=document.getElementById('libraryTitle');
   var viewedUsername=window.groovyViewedStatisticsProfile&&window.groovyViewedStatisticsProfile.username;
+  var activeShelf=(!isWishlist&&activeShelfId!=='all')?shelfById(activeShelfId):null;
 
-  libraryTitle.textContent=isViewingProfile
-    ?((viewedUsername||'User')+(isWishlist?"'s Wishlist":"'s Shelf"))
-    :(isWishlist?'My Wishlist':'My Shelf');
+  renderShelfStrip();
+
+  libraryTitle.textContent=activeShelf
+    ?activeShelf.name
+    :(isViewingProfile
+      ?((viewedUsername||'User')+(isWishlist?"'s Wishlist":"'s Shelf"))
+      :(isWishlist?'My Wishlist':'My Shelf'));
   librarySearchInput.placeholder=isWishlist?'Search this wishlist...':'Search this shelf...';
   mobileAddRecordButton.style.display=isViewingProfile?'none':'';
 
@@ -3315,8 +3683,18 @@ window.buildGrid=function(){
   document.getElementById('addAlbumButton').style.display=isViewingProfile?'none':'';
   document.getElementById('filterButton').parentElement.style.display=isWishlist?'none':'';
 
+  var shelfRecords=records.filter(function(record){
+    return isWishlist||activeShelfId==='all'||String(record[13]||'')===String(activeShelfId);
+  });
+
+  if(!isWishlist){
+    document.getElementById('collectionCount').textContent=activeShelf
+      ?shelfRecords.length+' RECORDS IN '+activeShelf.name.toLocaleUpperCase()
+      :records.length+' RECORDS IN COLLECTION';
+  }
+
   var query=librarySearchQuery.toLocaleLowerCase();
-  var visibleRecords=records.filter(function(record){
+  var visibleRecords=shelfRecords.filter(function(record){
     var rating=parseInt(record[5],10);
     var matchesRating=isWishlist||selectedRating==='all'||rating===parseInt(selectedRating,10);
     var matchesSearch=!query||[record[1],record[2],record[3],record[4]].join(' ').toLocaleLowerCase().indexOf(query)!==-1;
@@ -3338,10 +3716,10 @@ window.buildGrid=function(){
   var html=pageRecords.map(function(record){return recordHTML(record,'');}).join('');
 
   if(!pageRecords.length&&records.length){
-    html='<div class="library-no-results"><strong>No records found</strong><span>Try another search or filter.</span></div>';
+    html='<div class="library-no-results"><strong>'+(activeShelf&&shelfRecords.length===0?'This shelf is empty':'No records found')+'</strong><span>'+(activeShelf&&shelfRecords.length===0?'Use the record menu to add records to this shelf.':'Try another search or filter.')+'</span></div>';
   }
 
-  if(canShowAddAlbumCard&&libraryPage===totalPages){
+  if(canShowAddAlbumCard&&activeShelfId==='all'&&libraryPage===totalPages){
     html+='<button class="add-album-card" type="button" aria-label="Add record">'+
       '<span class="add-album-card-icon" aria-hidden="true">+</span>'+
       '<span class="add-album-card-title">Add Record</span>'+
@@ -3360,6 +3738,7 @@ window.buildGrid=function(){
   }
 
   attachWishlistRemoveControls();
+  attachRecordActionMenus();
   attachAlbumClicks();
   enableGridSorting();
   loadVisibleImages();
@@ -4307,12 +4686,15 @@ async function loadOtherUserCollection(userId){
         return;
     }
 
+    await window.loadShelvesForUser(userId);
+
     const {data,error}=await supabaseClient
         .from('collections')
         .select(`
             id,
             collection_number,
             sort_order,
+            shelf_id,
             cover_url,
             discogs_style,
             discogs_release_id,
@@ -4457,7 +4839,8 @@ async function loadOtherUserCollection(userId){
                 item.id,
                 album.discogs_master_id||'',
                 copyDetailsFromRow(item),
-                album.apple_collection_url||''
+                album.apple_collection_url||'',
+                item.shelf_id||''
             ];
         });
 
