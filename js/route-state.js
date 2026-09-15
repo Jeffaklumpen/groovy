@@ -10,7 +10,7 @@
   }
 })(typeof window!=='undefined'?window:null,function(){
   function profileUsernameFromPath(pathname){
-    var match=String(pathname||'').match(/^\/groovy\/user\/([^\/]+)\/?$/);
+    var match=String(pathname||'').match(/^\/user\/([^\/]+)\/?$/);
 
     if(!match)return null;
 
