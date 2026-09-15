@@ -2691,6 +2691,16 @@ function recordHTML(record, className){
   var copy=record[11]||{};
   var condition=!isWishlist?recordConditionMeta(copy.mediaCondition):null;
   var showPressingPrompt=!isWishlist&&viewedUserId===null&&!condition&&!hasCopyDetails(copy);
+  var cardShelf=!isWishlist?shelfById(record[13]):null;
+  var cardShelfName=cardShelf&&cardShelf.name?cardShelf.name:'No shelf';
+  var cardShelfIcon=cardShelf?shelfIconGlyph(cardShelf.icon):'○';
+  var cardShelfStatus=!isWishlist
+    ?'<span class="record-shelf-status '+(cardShelf?'':'unshelved')+'" title="Shelf: '+esc(cardShelfName)+'">'+
+       '<span class="record-shelf-status-icon" aria-hidden="true">'+esc(cardShelfIcon)+'</span>'+
+       '<span class="record-shelf-status-label">Shelf</span>'+
+       '<strong>'+esc(cardShelfName)+'</strong>'+
+     '</span>'
+    :'';
   var removeButton=viewedUserId===null
     ?(isWishlist
       ?'<button class="wishlist-remove-button" type="button" aria-label="Remove from wishlist">×</button>'
@@ -2704,7 +2714,7 @@ function recordHTML(record, className){
     :'';
 
   var html='<article class="record '+(isWishlist?'wishlist-record ':'')+(className||'')+'" draggable="false" data-index="'+recordIndex+'">'+
-    '<div class="record-card-topbar"><span class="number">'+displayNumber+'</span>'+removeButton+'</div>'+
+    '<div class="record-card-topbar"><span class="number">'+displayNumber+'</span>'+cardShelfStatus+removeButton+'</div>'+
     '<div class="cover-wrapper">'+
       '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
     '</div>'+
@@ -4215,11 +4225,9 @@ window.buildGrid=function(){
 
   renderShelfStrip();
 
-  libraryTitle.textContent=activeShelf
-    ?activeShelf.name
-    :(isViewingProfile
-      ?((viewedUsername||'User')+(isWishlist?"'s Wishlist":"'s Shelf"))
-      :(isWishlist?'My Wishlist':'My Shelf'));
+  libraryTitle.textContent=isWishlist
+    ?(isViewingProfile?((viewedUsername||'User')+"'s Wishlist"):'My Wishlist')
+    :(activeShelf?activeShelf.name:'All Records');
   librarySearchInput.placeholder=isWishlist?'Search this wishlist...':'Search this shelf...';
   mobileAddRecordButton.style.display=isViewingProfile?'none':'';
 
