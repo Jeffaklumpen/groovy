@@ -785,6 +785,8 @@ var loadedShelfUserId='';
 var shelfPickerRecordIndex=-1;
 var createShelfReturnRecordIndex=-1;
 var selectedShelfIcon='record';
+var SHELF_COLORS=['#E85301','#FF3B45','#FF6B4A','#F43F8C','#8B5CF6','#6366F1','#3B82F6','#14B8D4','#10B981','#84CC16','#F5C542','#6B7280'];
+var selectedShelfColor=SHELF_COLORS[0];
 var editingShelfId='';
 var MAX_SHELVES=10;
 
@@ -809,6 +811,7 @@ var cancelCreateShelfButton=document.getElementById('cancelCreateShelf');
 var confirmCreateShelfButton=document.getElementById('confirmCreateShelf');
 var shelfNameInput=document.getElementById('shelfNameInput');
 var shelfIconChoices=document.getElementById('shelfIconChoices');
+var shelfColorChoices=document.getElementById('shelfColorChoices');
 var createShelfStatus=document.getElementById('createShelfStatus');
 var shelfPickerModal=document.getElementById('shelfPickerModal');
 var closeShelfPickerButton=document.getElementById('closeShelfPicker');
@@ -827,6 +830,22 @@ var detailOpenRecordIndex=-1;
 function shelfIconGlyph(icon){
   var icons={record:'◉',heart:'♡',music:'♪',star:'★',film:'▦',sun:'☼',moon:'☾',bookmark:'◆'};
   return icons[icon]||icons.record;
+}
+
+function normalizeShelfColor(value){
+  var candidate=String(value||'').toUpperCase();
+  for(var i=0;i<SHELF_COLORS.length;i++){if(SHELF_COLORS[i].toUpperCase()===candidate)return SHELF_COLORS[i];}
+  return SHELF_COLORS[0];
+}
+
+function shelfColorRgb(value){
+  var color=normalizeShelfColor(value).replace('#','');
+  return parseInt(color.slice(0,2),16)+','+parseInt(color.slice(2,4),16)+','+parseInt(color.slice(4,6),16);
+}
+
+function shelfColorStyle(shelf){
+  var color=normalizeShelfColor(shelf&&shelf.color);
+  return '--shelf-color:'+color+';--shelf-rgb:'+shelfColorRgb(color)+';';
 }
 
 function syncMobileDetailPairHeight(){
@@ -959,7 +978,7 @@ function renderShelfStrip(){
     '<span class="shelf-chip-icon" aria-hidden="true">◉</span><span class="shelf-chip-copy"><strong>All Records</strong><small>'+shelfRecordCount('all')+' records</small></span></button>';
 
   shelves.forEach(function(shelf){
-    html+='<button class="shelf-chip '+(String(activeShelfId)===String(shelf.id)?'active':'')+'" type="button" data-shelf-id="'+esc(shelf.id)+'">'+
+    html+='<button class="shelf-chip shelf-chip-custom '+(String(activeShelfId)===String(shelf.id)?'active':'')+'" type="button" data-shelf-id="'+esc(shelf.id)+'" style="'+shelfColorStyle(shelf)+'">'+
       '<span class="shelf-chip-icon" aria-hidden="true">'+esc(shelfIconGlyph(shelf.icon))+'</span><span class="shelf-chip-copy"><strong>'+esc(shelf.name)+'</strong><small>'+shelfRecordCount(shelf.id)+' records</small></span></button>';
   });
 
@@ -1009,7 +1028,7 @@ window.loadShelvesForUser=async function(userId){
 
   var {data,error}=await supabaseClient
     .from('shelves')
-    .select('id,user_id,name,icon,sort_order,created_at')
+    .select('id,user_id,name,icon,color,sort_order,created_at')
     .eq('user_id',userId)
     .order('sort_order',{ascending:true})
     .order('created_at',{ascending:true});
@@ -1019,7 +1038,7 @@ window.loadShelvesForUser=async function(userId){
     shelves=[];
     activeShelfId='all';
   }else{
-    shelves=data||[];
+    shelves=(data||[]).map(function(shelf){shelf.color=normalizeShelfColor(shelf.color);return shelf;});
     if(activeShelfId!=='all'&&!shelfById(activeShelfId))activeShelfId='all';
   }
 
@@ -1030,13 +1049,26 @@ function setShelfIconChoice(icon){
   selectedShelfIcon=icon||'record';
   if(!shelfIconChoices)return;
   shelfIconChoices.querySelectorAll('.shelf-icon-choice').forEach(function(button){
-    button.classList.toggle('selected',button.getAttribute('data-icon')===selectedShelfIcon);
+    var selected=button.getAttribute('data-icon')===selectedShelfIcon;
+    button.classList.toggle('selected',selected);
+    button.setAttribute('aria-checked',selected?'true':'false');
   });
 }
 
-function resetShelfIconChoice(){
-  setShelfIconChoice('record');
+function resetShelfIconChoice(){setShelfIconChoice('record');}
+
+function setShelfColorChoice(color){
+  selectedShelfColor=normalizeShelfColor(color);
+  if(createShelfModal)createShelfModal.style.setProperty('--shelf-choice-color',selectedShelfColor);
+  if(!shelfColorChoices)return;
+  shelfColorChoices.querySelectorAll('.shelf-color-choice').forEach(function(button){
+    var selected=normalizeShelfColor(button.getAttribute('data-color'))===selectedShelfColor;
+    button.classList.toggle('selected',selected);
+    button.setAttribute('aria-checked',selected?'true':'false');
+  });
 }
+
+function resetShelfColorChoice(){setShelfColorChoice(SHELF_COLORS[0]);}
 
 function shouldAutofocusShelfModal(){
   return !(window.matchMedia&&window.matchMedia('(max-width: 760px)').matches);
@@ -1054,9 +1086,10 @@ function closeCreateShelfModal(){
   createShelfReturnRecordIndex=-1;
   editingShelfId='';
   if(createShelfTitle)createShelfTitle.textContent='Create New Shelf';
-  if(createShelfDescription)createShelfDescription.textContent='Give your shelf a name and choose an icon.';
+  if(createShelfDescription)createShelfDescription.textContent='Give your shelf a name, icon and color.';
   if(confirmCreateShelfButton)confirmCreateShelfButton.textContent='Create Shelf';
   resetShelfIconChoice();
+  resetShelfColorChoice();
 }
 
 function openCreateShelfModal(returnRecordIndex){
@@ -1072,9 +1105,10 @@ function openCreateShelfModal(returnRecordIndex){
   shelfNameInput.value='';
   createShelfStatus.textContent='';
   if(createShelfTitle)createShelfTitle.textContent='Create New Shelf';
-  if(createShelfDescription)createShelfDescription.textContent='Give your shelf a name and choose an icon.';
+  if(createShelfDescription)createShelfDescription.textContent='Give your shelf a name, icon and color.';
   if(confirmCreateShelfButton)confirmCreateShelfButton.textContent='Create Shelf';
   resetShelfIconChoice();
+  resetShelfColorChoice();
   createShelfModal.style.display='flex';
   resetShelfModalScroll();
   if(shouldAutofocusShelfModal())setTimeout(function(){shelfNameInput.focus();},0);
@@ -1090,9 +1124,10 @@ function openEditShelfModal(){
   shelfNameInput.value=String(shelf.name||'');
   createShelfStatus.textContent='';
   if(createShelfTitle)createShelfTitle.textContent='Edit Shelf';
-  if(createShelfDescription)createShelfDescription.textContent='Change the shelf name or choose a different icon.';
+  if(createShelfDescription)createShelfDescription.textContent='Change the shelf name, icon or color.';
   if(confirmCreateShelfButton)confirmCreateShelfButton.textContent='Save Changes';
   setShelfIconChoice(shelf.icon||'record');
+  setShelfColorChoice(shelf.color||SHELF_COLORS[0]);
   createShelfModal.style.display='flex';
   resetShelfModalScroll();
   if(shouldAutofocusShelfModal())setTimeout(function(){shelfNameInput.focus();shelfNameInput.select();},0);
@@ -1117,7 +1152,7 @@ function renderShelfPicker(index){
   shelfPickerList.innerHTML=options.map(function(shelf){
     var id=String(shelf.id||'');
     var selected=id===currentShelf;
-    return '<label class="shelf-picker-option '+(selected?'selected':'')+'">'+
+    return '<label class="shelf-picker-option shelf-colored '+(selected?'selected':'')+'" style="'+shelfColorStyle(shelf)+'">'+
       '<input type="radio" name="recordShelf" value="'+esc(id)+'" '+(selected?'checked':'')+'>'+ 
       '<span class="shelf-picker-icon" aria-hidden="true">'+esc(shelfIconGlyph(shelf.icon))+'</span>'+ 
       '<span class="shelf-picker-name">'+esc(shelf.name)+'</span>'+ 
@@ -1382,8 +1417,15 @@ if(shelfIconChoices){
   shelfIconChoices.addEventListener('click',function(event){
     var button=event.target.closest('.shelf-icon-choice');
     if(!button)return;
-    selectedShelfIcon=button.getAttribute('data-icon')||'record';
-    shelfIconChoices.querySelectorAll('.shelf-icon-choice').forEach(function(item){item.classList.toggle('selected',item===button);});
+    setShelfIconChoice(button.getAttribute('data-icon')||'record');
+  });
+}
+
+if(shelfColorChoices){
+  shelfColorChoices.addEventListener('click',function(event){
+    var button=event.target.closest('.shelf-color-choice');
+    if(!button)return;
+    setShelfColorChoice(button.getAttribute('data-color'));
   });
 }
 
@@ -1421,10 +1463,10 @@ confirmCreateShelfButton.addEventListener('click',async function(){
     if(editingShelf){
       var {data:updatedShelf,error:updateError}=await supabaseClient
         .from('shelves')
-        .update({name:name,icon:selectedShelfIcon})
+        .update({name:name,icon:selectedShelfIcon,color:selectedShelfColor})
         .eq('id',editingShelf.id)
         .eq('user_id',user.id)
-        .select('id,user_id,name,icon,sort_order,created_at')
+        .select('id,user_id,name,icon,color,sort_order,created_at')
         .single();
 
       if(updateError)throw updateError;
@@ -1441,8 +1483,8 @@ confirmCreateShelfButton.addEventListener('click',async function(){
 
     var {data,error}=await supabaseClient
       .from('shelves')
-      .insert({user_id:user.id,name:name,icon:selectedShelfIcon,sort_order:shelves.length+1})
-      .select('id,user_id,name,icon,sort_order,created_at')
+      .insert({user_id:user.id,name:name,icon:selectedShelfIcon,color:selectedShelfColor,sort_order:shelves.length+1})
+      .select('id,user_id,name,icon,color,sort_order,created_at')
       .single();
 
     if(error)throw error;
