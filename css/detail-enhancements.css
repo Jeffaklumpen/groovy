@@ -19,6 +19,16 @@ body.logged-out-home .library-overview{display:none!important}
 .groovy-remove-rating:disabled{opacity:.55;cursor:wait;text-decoration:none}
 .detail-rating .groovy-star-meter.is-community{font-size:22px!important;letter-spacing:.075em!important}
 
+/* Give Your Rating the same numeric treatment as Community Rating. The filled
+   star classes are already updated by app.js, so CSS can derive the value. */
+.rating-panel-your .rating-panel-stars{align-items:center!important}
+.rating-panel-your .rating-panel-stars:after{content:'—';display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;margin-left:7px;color:#f5f5f5;font-size:23px;font-weight:800;line-height:1}
+.rating-panel-your .rating-panel-stars:has(.album-rating-star[data-rating="1"].filled):after{content:'1'}
+.rating-panel-your .rating-panel-stars:has(.album-rating-star[data-rating="2"].filled):after{content:'2'}
+.rating-panel-your .rating-panel-stars:has(.album-rating-star[data-rating="3"].filled):after{content:'3'}
+.rating-panel-your .rating-panel-stars:has(.album-rating-star[data-rating="4"].filled):after{content:'4'}
+.rating-panel-your .rating-panel-stars:has(.album-rating-star[data-rating="5"].filled):after{content:'5'}
+
 /* Wishlist detail action uses the same location as shelf actions. */
 .detail-shelf-actions.wishlist-detail-actions{display:flex!important}
 .detail-shelf-actions.wishlist-detail-actions .detail-move-to-collection{min-height:34px;padding:0 13px}
@@ -28,26 +38,28 @@ body.logged-out-home .library-overview{display:none!important}
 }
 
 @media screen and (max-width:760px){
-  /* app.js still writes an inline height equal to the cover. Override it: the
-     information card should only be as tall as its actual content. */
-  .detail-info-card{height:auto!important;min-height:0!important;align-self:start!important;justify-content:flex-start!important;padding:8px 9px!important;overflow:visible!important}
-  .detail-info-card .detail-artist{margin:0 0 3px!important;font-size:14px!important;line-height:1.08!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .detail-info-card .detail-album{display:block!important;margin:0!important;font-size:clamp(14px,4.45vw,19px)!important;line-height:1.07!important;overflow:visible!important;text-overflow:clip!important;white-space:normal!important;-webkit-line-clamp:unset!important;-webkit-box-orient:initial!important}
-  .detail-info-card .detail-meta{display:flex!important;flex-wrap:nowrap!important;min-width:0;margin-top:6px!important;gap:5px!important;font-size:9px!important;line-height:1.15!important;white-space:nowrap;overflow:hidden}
+  /* app.js measures the square cover and writes that exact pixel height inline.
+     Do not override height here. Keep the old equal-height composition and
+     center the new content vertically inside the information card. */
+  .detail-info-card{box-sizing:border-box;min-height:0!important;align-self:stretch!important;justify-content:center!important;padding:8px 9px!important;overflow:hidden!important}
+  .detail-info-card .detail-artist{flex:0 0 auto;margin:0 0 3px!important;font-size:13px!important;line-height:1.08!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .detail-info-card .detail-album{display:-webkit-box!important;flex:0 0 auto;margin:0!important;padding:0!important;font-size:clamp(15px,4.6vw,18px)!important;line-height:1.06!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden!important}
+  .detail-info-card .detail-meta{display:flex!important;flex:0 0 auto;flex-wrap:nowrap!important;min-width:0;margin-top:6px!important;gap:4px!important;font-size:9px!important;line-height:1.15!important;white-space:nowrap;overflow:hidden}
   .detail-info-card .detail-meta>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .detail-info-card .detail-meta>span+span{padding-left:8px!important}
-  .detail-shelf-status{flex:0 0 auto!important;min-height:19px!important;max-height:none!important;margin-top:5px!important;padding:2px 6px!important;gap:4px!important;font-size:8px!important;line-height:1!important}
+  .detail-info-card .detail-meta>span+span{padding-left:7px!important}
+  .detail-shelf-status{flex:0 0 auto!important;min-height:18px!important;max-height:20px!important;margin-top:6px!important;padding:2px 6px!important;gap:4px!important;font-size:8px!important;line-height:1!important}
   .detail-shelf-status-icon{width:13px!important;height:13px!important;flex-basis:13px!important}
-  .detail-shelf-status strong{max-width:min(27vw,105px)!important;font-size:8px!important;line-height:1!important}
+  .detail-shelf-status strong{max-width:min(27vw,100px)!important;font-size:8px!important;line-height:1!important}
 
-  /* Compact streaming badges live directly after the album information. */
+  /* Ratings moved out of the top card. Apple Music + Spotify now occupy the
+     old rating area, but remain compact enough to fit beside the square cover. */
   .detail-streaming-row{display:none!important}
-  .groovy-mobile-streaming{display:flex;flex:0 0 auto;align-items:center;gap:7px;width:100%;margin-top:7px!important;padding-top:7px;border-top:1px solid rgba(255,255,255,.07);overflow:hidden}
-  .groovy-mobile-streaming-link{display:inline-flex;align-items:center;min-width:0;max-width:50%;height:20px;text-decoration:none;-webkit-tap-highlight-color:transparent}
-  .groovy-mobile-streaming-link img{display:block;max-width:100%;max-height:19px;width:auto;height:auto;object-fit:contain}
-  .groovy-mobile-apple{flex:0 1 96px}
-  .groovy-mobile-spotify{flex:0 1 76px}
-  .groovy-mobile-spotify img{max-height:16px}
+  .groovy-mobile-streaming{display:flex;flex:0 0 auto;align-items:center;justify-content:flex-start;gap:6px;width:100%;margin-top:8px!important;padding-top:8px;border-top:1px solid rgba(255,255,255,.07);overflow:hidden}
+  .groovy-mobile-streaming-link{display:inline-flex;align-items:center;min-width:0;max-width:50%;height:19px;text-decoration:none;-webkit-tap-highlight-color:transparent}
+  .groovy-mobile-streaming-link img{display:block;max-width:100%;max-height:18px;width:auto;height:auto;object-fit:contain}
+  .groovy-mobile-apple{flex:0 1 76px}
+  .groovy-mobile-spotify{flex:0 1 60px}
+  .groovy-mobile-spotify img{max-height:15px}
 
   /* Rating is a full-width row below cover + album info. */
   .album-detail>.detail-rating{grid-column:1/-1!important;grid-row:2!important;width:100%;margin:12px 0 0!important}
@@ -57,12 +69,20 @@ body.logged-out-home .library-overview{display:none!important}
   .album-detail>.detail-rating .rating-panel-icon{display:none!important}
   .album-detail>.detail-rating .rating-panel-stars{display:flex!important;min-height:22px!important;margin-top:6px!important;gap:1px!important;flex-wrap:nowrap!important}
   .album-detail>.detail-rating .rating-panel .album-rating-star{padding:0 1px!important;font-size:19px!important;line-height:1!important}
+  .album-detail>.detail-rating .rating-panel-your .rating-panel-stars:after{margin-left:6px;font-size:20px!important}
   .album-detail>.detail-rating .rating-panel-community-main{min-height:22px!important;margin-top:6px!important;gap:7px!important;white-space:nowrap;overflow:hidden}
   .album-detail>.detail-rating .groovy-star-meter.is-community{font-size:17px!important;letter-spacing:.055em!important;flex:0 1 auto;min-width:0}
   .album-detail>.detail-rating .rating-panel-community-main strong{font-size:20px!important;line-height:1!important;flex:0 0 auto}
   .album-detail>.detail-rating .rating-panel-footer{display:flex;align-items:center;min-height:24px!important;margin-top:5px!important}
   .album-detail>.detail-rating .rating-panel-meta,.album-detail>.detail-rating .rating-panel-empty-note{font-size:8px!important}
   .album-detail>.detail-rating .groovy-remove-rating{min-height:24px;font-size:8px}
+
+  /* Mobile collector labels should hug the avatar + username rather than
+     stretching to an equal-width grid cell. */
+  .detail-social-context:not(.own-match) .detail-social-people{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:flex-start!important;gap:6px!important}
+  .detail-social-context:not(.own-match) .detail-social-people>.detail-social-person{width:auto!important;min-width:0!important;max-width:160px!important;flex:0 0 auto!important;padding:3px 9px 3px 4px!important}
+  .detail-social-context:not(.own-match) .detail-social-people>.detail-social-person .detail-social-person-name{display:block!important;min-width:0!important;max-width:116px!important;flex:0 1 auto!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+  .detail-social-context:not(.own-match) .detail-social-more{width:30px!important;min-width:30px!important;flex:0 0 30px!important}
 
   /* Grid cards: stars stay inside the card; rating number is desktop-only. */
   .cover-rating{min-width:0!important;max-width:72px!important;flex:0 1 72px!important;overflow:hidden!important}
@@ -85,22 +105,26 @@ body.logged-out-home .library-overview{display:none!important}
 @media screen and (max-width:380px){
   .detail-info-card{padding:7px!important}
   .detail-info-card .detail-artist{font-size:12px!important;margin-bottom:2px!important}
-  .detail-info-card .detail-album{font-size:13px!important;line-height:1.05!important}
+  .detail-info-card .detail-album{font-size:13px!important;line-height:1.04!important}
   .detail-info-card .detail-meta{margin-top:4px!important;font-size:8px!important}
   .detail-shelf-status{margin-top:4px!important;padding:2px 5px!important}
   .detail-shelf-status-icon{width:11px!important;height:11px!important;flex-basis:11px!important}
   .detail-shelf-status strong{font-size:7.5px!important;max-width:82px!important}
   .groovy-mobile-streaming{gap:5px;margin-top:6px!important;padding-top:6px}
-  .groovy-mobile-apple{flex-basis:84px}
-  .groovy-mobile-spotify{flex-basis:66px}
-  .groovy-mobile-streaming-link{height:18px}
-  .groovy-mobile-streaming-link img{max-height:17px}
-  .groovy-mobile-spotify img{max-height:14px}
+  .groovy-mobile-apple{flex-basis:68px}
+  .groovy-mobile-spotify{flex-basis:54px}
+  .groovy-mobile-streaming-link{height:17px}
+  .groovy-mobile-streaming-link img{max-height:16px}
+  .groovy-mobile-spotify img{max-height:13px}
+
   .album-detail>.detail-rating .rating-panels{gap:6px!important}
   .album-detail>.detail-rating .rating-panel{padding:9px 8px!important}
   .album-detail>.detail-rating .rating-panel .album-rating-star{font-size:17px!important}
+  .album-detail>.detail-rating .rating-panel-your .rating-panel-stars:after{margin-left:4px;font-size:18px!important}
   .album-detail>.detail-rating .groovy-star-meter.is-community{font-size:15px!important;letter-spacing:.035em!important}
   .album-detail>.detail-rating .rating-panel-community-main strong{font-size:18px!important}
+  .detail-social-context:not(.own-match) .detail-social-people>.detail-social-person{max-width:145px!important;padding-right:8px!important}
+  .detail-social-context:not(.own-match) .detail-social-people>.detail-social-person .detail-social-person-name{max-width:104px!important}
   .cover-rating{max-width:66px!important;flex-basis:66px!important}
   .cover-rating .groovy-star-meter.is-compact{font-size:10px!important;letter-spacing:.035em!important}
 }
