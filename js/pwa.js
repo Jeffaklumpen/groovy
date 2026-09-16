@@ -14,8 +14,39 @@
   var isIos=/iPad|iPhone|iPod/.test(userAgent)||
     (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   var isAndroid=/Android/i.test(userAgent);
+  var isTwa=document.referrer.indexOf('android-app://')===0;
   var isStandalone=window.matchMedia('(display-mode: standalone)').matches||
-    window.navigator.standalone===true;
+    window.navigator.standalone===true||
+    isTwa;
+  var androidApkUrl='/GroovyShelves.apk';
+
+  function setInstallCopy(){
+    installMenuButton.textContent='Get the App';
+    installShortcutButton.setAttribute('aria-label','Get the GroovyShelves app');
+    installShortcutButton.setAttribute('title','Get the GroovyShelves app');
+
+    if(!installBanner)return;
+    var title=installBanner.querySelector('strong');
+    var subtitle=installBanner.querySelector('small');
+
+    if(isAndroid){
+      installBanner.setAttribute('aria-label','Install GroovyShelves for Android');
+      if(title)title.textContent='Install GroovyShelves';
+      if(subtitle)subtitle.textContent='Download the Android app';
+      return;
+    }
+
+    if(isIos){
+      installBanner.setAttribute('aria-label','Add GroovyShelves to your home screen');
+      if(title)title.textContent='Get GroovyShelves';
+      if(subtitle)subtitle.textContent='Add it to your home screen';
+      return;
+    }
+
+    installBanner.setAttribute('aria-label','Get the GroovyShelves app');
+    if(title)title.textContent='Get GroovyShelves';
+    if(subtitle)subtitle.textContent='Install it on your device';
+  }
 
   function wasDismissed(){
     try{
@@ -36,11 +67,9 @@
   function openHelp(){
     var steps=isIos
       ?['Tap the Share button in your browser.','Choose “Add to Home Screen”.','Tap “Add” to install Groovy.']
-      :(isAndroid
-        ?['Open your browser menu.','Choose “Install app” or “Add to Home screen”.','Confirm to install Groovy.']
-        :['Open Groovy on your phone.','Open the menu in Safari or Chrome.','Choose “Add to Home Screen” to use it like an app.']);
-    helpModal.classList.toggle('desktop-install-help',!isIos&&!isAndroid);
-    document.getElementById('installHelpTitle').textContent=isIos||isAndroid
+      :['Open Groovy on your phone.','Open the menu in Safari or Chrome.','Choose “Add to Home Screen” to use it like an app.'];
+    helpModal.classList.toggle('desktop-install-help',!isIos);
+    document.getElementById('installHelpTitle').textContent=isIos
       ?'Add Groovy to your home screen'
       :'Add it to your phone’s home screen';
     helpSteps.innerHTML=steps.map(function(step,index){
@@ -56,12 +85,24 @@
     helpModal.setAttribute('aria-hidden','true');
   }
 
+  function startAndroidApkInstall(){
+    hideBanner();
+    window.location.assign(androidApkUrl);
+  }
+
   async function startInstall(){
     profileMenuElement.classList.remove('open');
-    if(!isIos&&!isAndroid){
+
+    if(isAndroid){
+      startAndroidApkInstall();
+      return;
+    }
+
+    if(!isIos){
       openHelp();
       return;
     }
+
     if(!deferredInstallPrompt){
       openHelp();
       return;
@@ -72,6 +113,8 @@
     deferredInstallPrompt=null;
     if(choice&&choice.outcome==='accepted')hideBanner();
   }
+
+  setInstallCopy();
 
   if('serviceWorker' in navigator){
     window.addEventListener('load',function(){
