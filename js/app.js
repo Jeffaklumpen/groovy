@@ -45,6 +45,57 @@ document.body.appendChild(loginPanel);
 
 let registerMode=false;
 
+function setAuthMode(mode){
+    registerMode=mode==='register';
+
+    if(registerMode){
+        authKicker.textContent='Join the groove';
+        authTitle.textContent='Create your account';
+        authDescription.textContent='Start building and sharing your vinyl collection.';
+        registerFields.style.display='block';
+        loginButton.style.display='none';
+        registerButton.style.display='block';
+        authSwitchPrompt.textContent='Already have an account?';
+        authSwitchButton.textContent='Log in';
+        loginPassword.setAttribute('autocomplete','new-password');
+    }else{
+        authKicker.textContent='Your collection awaits';
+        authTitle.textContent='Welcome back';
+        authDescription.textContent='Sign in and pick up exactly where you left off.';
+        registerFields.style.display='none';
+        loginButton.style.display='block';
+        registerButton.style.display='none';
+        authSwitchPrompt.textContent='New to Groovy?';
+        authSwitchButton.textContent='Create account';
+        loginPassword.setAttribute('autocomplete','current-password');
+    }
+}
+
+function focusAuthField(){
+    if(registerMode){
+        registerUsername.focus();
+    }else{
+        loginEmail.focus();
+    }
+}
+
+function openAuthPanel(mode){
+    profileMenu.classList.remove('open');
+    setAuthMode(mode||'login');
+    loginPanel.classList.add('open');
+    window.requestAnimationFrame(focusAuthField);
+}
+
+function shouldShowLoggedOutLanding(){
+    return !window.hasAuthenticatedUser&&!window.loginRequiredForViewedCollection&&!window.profileNotFound&&viewedUserId===null;
+}
+
+function updateLibraryTabLabels(){
+    var loggedOut=shouldShowLoggedOutLanding();
+    collectionTabButton.innerHTML='<span class="record-icon" aria-hidden="true"></span>'+(loggedOut?'Collection':'My Shelf');
+    wishlistTabButton.innerHTML='<span class="wishlist-icon" aria-hidden="true"></span>'+(loggedOut?'Wishlist':'My Wishlist');
+}
+
 loginClose.addEventListener('click',function(){
     loginPanel.classList.remove('open');
 });
@@ -60,10 +111,10 @@ profileButton.addEventListener('click',async function(event){
         profileMenu.classList.toggle('open');
     }else{
         profileMenu.classList.remove('open');
-        loginPanel.classList.toggle('open');
-
         if(loginPanel.classList.contains('open')){
-            loginEmail.focus();
+            loginPanel.classList.remove('open');
+        }else{
+            openAuthPanel('login');
         }
     }
 });
@@ -82,31 +133,8 @@ document.addEventListener('click',function(){
 });
 
 authSwitchButton.addEventListener('click',function(){
-    registerMode=!registerMode;
-
-    if(registerMode){
-        authKicker.textContent='Join the groove';
-        authTitle.textContent='Create your account';
-        authDescription.textContent='Start building and sharing your vinyl collection.';
-        registerFields.style.display='block';
-        loginButton.style.display='none';
-        registerButton.style.display='block';
-        authSwitchPrompt.textContent='Already have an account?';
-        authSwitchButton.textContent='Log in';
-        loginPassword.setAttribute('autocomplete','new-password');
-        registerUsername.focus();
-    }else{
-        authKicker.textContent='Your collection awaits';
-        authTitle.textContent='Welcome back';
-        authDescription.textContent='Sign in and pick up exactly where you left off.';
-        registerFields.style.display='none';
-        loginButton.style.display='block';
-        registerButton.style.display='none';
-        authSwitchPrompt.textContent='New to Groovy?';
-        authSwitchButton.textContent='Create account';
-        loginPassword.setAttribute('autocomplete','current-password');
-        loginEmail.focus();
-    }
+    setAuthMode(registerMode?'login':'register');
+    focusAuthField();
 });
 
 async function updateAuthUI(){
@@ -4834,16 +4862,29 @@ window.buildGrid=function(){
   var libraryTitle=document.getElementById('libraryTitle');
   var viewedUsername=window.groovyViewedStatisticsProfile&&window.groovyViewedStatisticsProfile.username;
   var activeShelf=(!isWishlist&&activeShelfId!=='all')?shelfById(activeShelfId):null;
+  var showLoggedOutLanding=shouldShowLoggedOutLanding();
 
   renderShelfStrip();
+
+  document.body.classList.toggle('logged-out-home',showLoggedOutLanding);
+  updateLibraryTabLabels();
 
   libraryTitle.textContent=isWishlist
     ?(isViewingProfile?((viewedUsername||'User')+"'s Wishlist"):'My Wishlist')
     :(activeShelf?activeShelf.name:'All Records');
-  librarySearchInput.placeholder=isWishlist?'Search this wishlist...':'Search this shelf...';
+  librarySearchInput.placeholder=showLoggedOutLanding?'Search for an album, artist, or label...':(isWishlist?'Search this wishlist...':'Search this shelf...');
+  librarySearchInput.readOnly=showLoggedOutLanding;
   mobileAddRecordButton.style.display=isViewingProfile?'none':'';
 
-  emptyCollection.style.display=(isOwnCollection&&!isWishlist&&records.length===0)?'flex':'none';
+  if(showLoggedOutLanding){
+    librarySearchQuery='';
+    librarySearchInput.value='';
+    renderLoggedOutLanding();
+  }else{
+    restoreEmptyCollectionMarkup();
+  }
+
+  emptyCollection.style.display=((isOwnCollection&&!isWishlist&&records.length===0)||showLoggedOutLanding)?'flex':'none';
   loginToViewCollection.style.display=window.loginRequiredForViewedCollection?'flex':'none';
   profileNotFound.style.display=window.profileNotFound?'flex':'none';
   emptyViewedCollection.style.display=(isViewingProfile&&!isWishlist&&records.length===0&&!hasBlockingState)?'flex':'none';
@@ -4853,13 +4894,13 @@ window.buildGrid=function(){
     ?"This user hasn't added any records yet."
     :'Save records you want to add next.';
   document.getElementById('emptyWishlistAddButton').style.display=isViewingProfile?'none':'';
-  libraryTabs.style.display=window.hasAuthenticatedUser?'flex':'none';
-  document.getElementById('collectionTabButton').classList.toggle('active',isOwnCollection&&!isWishlist);
-  document.getElementById('wishlistTabButton').classList.toggle('active',isOwnCollection&&isWishlist);
-  document.getElementById('collectionTabButton').setAttribute('aria-current',isOwnCollection&&!isWishlist?'page':'false');
-  document.getElementById('wishlistTabButton').setAttribute('aria-current',isOwnCollection&&isWishlist?'page':'false');
+  libraryTabs.style.display=(window.hasAuthenticatedUser||showLoggedOutLanding)?'flex':'none';
+  document.getElementById('collectionTabButton').classList.toggle('active',showLoggedOutLanding||(isOwnCollection&&!isWishlist));
+  document.getElementById('wishlistTabButton').classList.toggle('active',window.hasAuthenticatedUser&&isOwnCollection&&isWishlist);
+  document.getElementById('collectionTabButton').setAttribute('aria-current',(showLoggedOutLanding||(isOwnCollection&&!isWishlist))?'page':'false');
+  document.getElementById('wishlistTabButton').setAttribute('aria-current',(window.hasAuthenticatedUser&&isOwnCollection&&isWishlist)?'page':'false');
   document.getElementById('addAlbumButton').style.display=isViewingProfile?'none':'';
-  document.getElementById('filterButton').parentElement.style.display=isWishlist?'none':'';
+  document.getElementById('filterButton').parentElement.style.display=(isWishlist||showLoggedOutLanding)?'none':'';
 
   var shelfRecords=records.filter(function(record){
     return isWishlist||activeShelfId==='all'||String(record[13]||'')===String(activeShelfId);
@@ -5171,6 +5212,26 @@ librarySearchInput.addEventListener('input',function(){
   librarySearchQuery=this.value.trim();
   libraryPage=1;
   buildGrid();
+});
+
+function promptAuthFromLibrarySearch(event){
+  if(!shouldShowLoggedOutLanding())return;
+  event.preventDefault();
+  event.stopPropagation();
+  librarySearchInput.blur();
+  openAuthPanel('login');
+}
+
+librarySearchInput.addEventListener('focus',function(event){
+  if(shouldShowLoggedOutLanding())promptAuthFromLibrarySearch(event);
+});
+
+librarySearchInput.addEventListener('pointerdown',function(event){
+  if(shouldShowLoggedOutLanding())promptAuthFromLibrarySearch(event);
+});
+
+librarySearchInput.addEventListener('keydown',function(event){
+  if(shouldShowLoggedOutLanding())promptAuthFromLibrarySearch(event);
 });
 
 librarySortButton.addEventListener('click',function(event){
@@ -5578,7 +5639,10 @@ myCollectionButton.addEventListener('click',async function(){
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
 
-    if(!user)return;
+    if(!user){
+        openAuthPanel('login');
+        return;
+    }
 
     history.pushState({},'','/');
     libraryPage=1;
@@ -5589,7 +5653,12 @@ myCollectionButton.addEventListener('click',async function(){
     await window.loadCollection();
 });
 
-function navigateOwnLibrary(nextView){
+async function navigateOwnLibrary(nextView){
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    if(!session||!session.user){
+        openAuthPanel(nextView==='wishlist'?'register':'login');
+        return;
+    }
     libraryPage=1;
     setDeleteMode(false);
     var url='/';
@@ -5669,8 +5738,7 @@ addAlbumButton.addEventListener('click',async function(event){
     const {data:{session}}=await supabaseClient.auth.getSession();
 
     if(!session||!session.user){
-        loginPanel.classList.add('open');
-        loginEmail.focus();
+        openAuthPanel('login');
         return;
     }
 
@@ -5681,8 +5749,61 @@ const emptyCollectionAddButton=document.getElementById('emptyCollectionAddButton
 const loginToViewCollection=document.getElementById('loginToViewCollection');
 const loginToViewCollectionButton=document.getElementById('loginToViewCollectionButton');
 const emptyViewedCollection=document.getElementById('emptyViewedCollection');
+const defaultEmptyCollectionMarkup=emptyCollection.innerHTML;
 
-emptyCollectionAddButton.addEventListener('click',async function(event){
+function restoreEmptyCollectionMarkup(){
+    if(emptyCollection.getAttribute('data-landing')==='true'){
+        emptyCollection.innerHTML=defaultEmptyCollectionMarkup;
+        emptyCollection.classList.remove('landing-state');
+        emptyCollection.removeAttribute('data-landing');
+    }
+}
+
+function renderLoggedOutLanding(){
+    if(emptyCollection.getAttribute('data-landing')==='true')return;
+    emptyCollection.setAttribute('data-landing','true');
+    emptyCollection.classList.add('landing-state');
+    emptyCollection.innerHTML=''+
+      '<div class="landing-hero">'+
+        '<img class="landing-record-art" src="/record.png" alt="Vinyl record">'+
+        '<div class="landing-kicker">GroovyShelves</div>'+
+        '<h2 class="landing-title">Track every record you own</h2>'+
+        '<p class="landing-copy">Build your shelf, organize your collection, keep a wishlist, rate your favorites and discover the collectors who share your taste.</p>'+
+        '<div class="landing-actions">'+
+          '<button class="landing-primary" type="button" data-auth-mode="register">Create account</button>'+
+          '<button class="landing-secondary" type="button" data-auth-mode="login">Log in</button>'+
+        '</div>'+
+        '<div class="landing-feature-grid">'+
+          '<article class="landing-feature-card">'+
+            '<div class="landing-feature-icon"><span class="record-icon" aria-hidden="true"></span></div>'+
+            '<h3>Everything in one place</h3>'+
+            '<p>Keep all your records together with artwork, notes, ratings and the exact pressing you own.</p>'+
+          '</article>'+
+          '<article class="landing-feature-card">'+
+            '<div class="landing-feature-icon"><span class="wishlist-icon" aria-hidden="true"></span></div>'+
+            '<h3>Organize your collection</h3>'+
+            '<p>Use shelves and wishlists to sort your albums, plan future buys and make your library easy to browse.</p>'+
+          '</article>'+
+          '<article class="landing-feature-card">'+
+            '<div class="landing-feature-icon feature-chart-icon" aria-hidden="true"><span></span><span></span><span></span></div>'+
+            '<h3>Stats, collectors & prices</h3>'+
+            '<p>See collection stats, find like-minded collectors and compare marketplace listings to spot better prices.</p>'+
+          '</article>'+
+        '</div>'+
+      '</div>';
+
+}
+
+document.getElementById('emptyCollection').addEventListener('click',async function(event){
+    var authButton=event.target.closest('[data-auth-mode]');
+    if(authButton){
+        event.preventDefault();
+        event.stopPropagation();
+        openAuthPanel(authButton.getAttribute('data-auth-mode')||'login');
+        return;
+    }
+
+    if(!event.target.closest('#emptyCollectionAddButton'))return;
     event.preventDefault();
     event.stopPropagation();
 
@@ -5690,7 +5811,7 @@ emptyCollectionAddButton.addEventListener('click',async function(event){
     const user=session&&session.user;
 
     if(!user){
-        loginPanel.classList.add('open');
+        openAuthPanel('register');
         return;
     }
 
@@ -5701,8 +5822,7 @@ loginToViewCollectionButton.addEventListener('click',function(event){
     event.preventDefault();
     event.stopPropagation();
 
-    loginPanel.classList.add('open');
-    loginEmail.focus();
+    openAuthPanel('login');
 });
 
 closeAddAlbum.addEventListener('click',function(){
