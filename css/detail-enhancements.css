@@ -42,28 +42,30 @@ body.logged-out-home .library-overview{display:none!important}
      The flexible margins around the metadata block keep artist -> shelf vertically
      centered in the area ABOVE the streaming divider for both 1- and 2-line titles. */
   .detail-info-card{box-sizing:border-box;min-height:0!important;align-self:stretch!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;padding:8px 9px!important;overflow:hidden!important}
-  .detail-info-card .detail-artist{flex:0 0 auto;margin:0 0 3px!important;margin-top:auto!important;font-size:13px!important;line-height:1.08!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .detail-info-card .detail-album{display:-webkit-box!important;flex:0 0 auto;margin:0!important;padding:0!important;font-size:clamp(15px,4.65vw,19px)!important;font-weight:750!important;line-height:1.04!important;letter-spacing:-.25px!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden!important}
+  .detail-info-card .detail-artist{flex:0 0 auto;margin:0 0 4px!important;margin-top:auto!important;font-size:14px!important;line-height:1.08!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .detail-info-card .detail-album{display:-webkit-box!important;flex:0 0 auto;margin:0!important;padding:0!important;font-size:clamp(17px,5vw,21px)!important;font-weight:760!important;line-height:1.03!important;letter-spacing:-.3px!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden!important}
 
-  /* Year and genre sit closer together with the same slim divider as the mockup. */
-  .detail-info-card .detail-meta{display:flex!important;flex:0 0 auto;flex-wrap:nowrap!important;align-items:center!important;min-width:0;margin-top:6px!important;gap:0!important;font-size:9px!important;line-height:1.15!important;white-space:nowrap;overflow:hidden}
+  /* Year and genre sit close to the divider with equal spacing on both sides. */
+  .detail-info-card .detail-meta{display:flex!important;flex:0 0 auto;flex-wrap:nowrap!important;align-items:center!important;min-width:0;margin-top:7px!important;gap:0!important;font-size:10px!important;line-height:1.15!important;white-space:nowrap;overflow:hidden}
   .detail-info-card .detail-meta>span{min-width:0;margin:0!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .detail-info-card .detail-meta>span+span{position:relative!important;margin-left:7px!important;padding-left:9px!important}
-  .detail-info-card .detail-meta>span+span:before{content:''!important;position:absolute!important;left:0!important;top:50%!important;width:1px!important;height:12px!important;margin:0!important;background:rgba(255,255,255,.18)!important;transform:translateY(-50%)!important}
-  .detail-info-card .detail-meta #detailGenre:after{font-size:9px!important}
+  .detail-info-card .detail-meta>span+span{position:relative!important;margin-left:6px!important;padding-left:6px!important}
+  .detail-info-card .detail-meta>span+span:before{content:''!important;position:absolute!important;left:0!important;top:50%!important;width:1px!important;height:13px!important;margin:0!important;background:rgba(255,255,255,.18)!important;transform:translateY(-50%)!important}
+  .detail-info-card .detail-meta #detailGenre:after{font-size:10px!important}
 
-  .detail-shelf-status{flex:0 0 auto!important;align-self:flex-start!important;min-height:20px!important;max-height:22px!important;margin-top:7px!important;margin-bottom:auto!important;padding:2px 7px!important;gap:4px!important;font-size:8px!important;line-height:1!important}
-  .detail-shelf-status-icon{width:13px!important;height:13px!important;flex-basis:13px!important}
-  .detail-shelf-status strong{max-width:min(27vw,100px)!important;font-size:8px!important;line-height:1!important}
+  .detail-shelf-status{flex:0 0 auto!important;align-self:flex-start!important;min-height:22px!important;max-height:24px!important;margin-top:7px!important;margin-bottom:auto!important;padding:3px 8px!important;gap:4px!important;font-size:9px!important;line-height:1!important}
+  .detail-shelf-status-icon{width:14px!important;height:14px!important;flex-basis:14px!important}
+  .detail-shelf-status strong{max-width:min(27vw,100px)!important;font-size:9px!important;line-height:1!important}
   .detail-info-card:has(.detail-shelf-status[hidden]) .detail-meta{margin-bottom:auto!important}
 
   /* Ratings live below the cover pair. Streaming occupies a fixed lower zone in
      the info card, separated from the centered metadata block by a clean divider. */
   .detail-streaming-row{display:none!important}
-  .groovy-mobile-streaming{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:6px;width:100%;min-height:29px;margin-top:6px!important;padding-top:7px;border-top:1px solid rgba(255,255,255,.09);overflow:hidden}
-  .groovy-mobile-streaming-link{display:inline-flex;align-items:center;justify-content:center;min-width:0;height:22px;padding:2px 4px;border:1px solid rgba(255,255,255,.14);border-radius:6px;background:#0b0b0d;text-decoration:none;-webkit-tap-highlight-color:transparent}
-  .groovy-mobile-streaming-link img{display:block;max-width:100%;max-height:17px;width:auto;height:auto;object-fit:contain}
-  .groovy-mobile-apple{flex:1 1 0}
+  .groovy-mobile-streaming{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:7px;width:100%;min-height:30px;margin-top:6px!important;padding-top:7px;border-top:1px solid rgba(255,255,255,.09);overflow:hidden}
+  .groovy-mobile-streaming-link{display:inline-flex;align-items:center;justify-content:center;min-width:0;height:23px;padding:2px 4px;border:1px solid rgba(255,255,255,.14);border-radius:6px;background:#0b0b0d;text-decoration:none;-webkit-tap-highlight-color:transparent}
+  .groovy-mobile-streaming-link img{display:block;max-width:100%;max-height:18px;width:auto;height:auto;object-fit:contain}
+  /* Apple artwork already contains its own badge/container, exactly like the grid thumbnail. */
+  .groovy-mobile-apple{flex:0 1 78px;height:auto!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;justify-content:flex-start!important}
+  .groovy-mobile-apple img{max-height:20px!important}
   .groovy-mobile-spotify{flex:1 1 0}
   .groovy-mobile-spotify img{max-height:14px}
 
@@ -109,18 +111,20 @@ body.logged-out-home .library-overview{display:none!important}
 
 @media screen and (max-width:380px){
   .detail-info-card{padding:7px!important}
-  .detail-info-card .detail-artist{font-size:12px!important;margin-bottom:2px!important}
-  .detail-info-card .detail-album{font-size:13px!important;line-height:1.04!important;letter-spacing:-.1px!important}
-  .detail-info-card .detail-meta{margin-top:4px!important;font-size:8px!important}
-  .detail-info-card .detail-meta #detailGenre:after{font-size:8px!important}
-  .detail-info-card .detail-meta>span+span{margin-left:6px!important;padding-left:8px!important}
-  .detail-info-card .detail-meta>span+span:before{height:10px!important}
-  .detail-shelf-status{margin-top:5px!important;padding:2px 5px!important}
-  .detail-shelf-status-icon{width:11px!important;height:11px!important;flex-basis:11px!important}
-  .detail-shelf-status strong{font-size:7.5px!important;max-width:82px!important}
-  .groovy-mobile-streaming{gap:5px;min-height:26px;margin-top:5px!important;padding-top:6px}
+  .detail-info-card .detail-artist{font-size:13px!important;margin-bottom:3px!important}
+  .detail-info-card .detail-album{font-size:15px!important;line-height:1.03!important;letter-spacing:-.15px!important}
+  .detail-info-card .detail-meta{margin-top:5px!important;font-size:9px!important}
+  .detail-info-card .detail-meta #detailGenre:after{font-size:9px!important}
+  .detail-info-card .detail-meta>span+span{margin-left:5px!important;padding-left:5px!important}
+  .detail-info-card .detail-meta>span+span:before{height:11px!important}
+  .detail-shelf-status{margin-top:5px!important;padding:2px 6px!important;min-height:20px!important;max-height:22px!important}
+  .detail-shelf-status-icon{width:12px!important;height:12px!important;flex-basis:12px!important}
+  .detail-shelf-status strong{font-size:8px!important;max-width:82px!important}
+  .groovy-mobile-streaming{gap:5px;min-height:27px;margin-top:5px!important;padding-top:6px}
   .groovy-mobile-streaming-link{height:20px;padding:2px 3px;border-radius:5px}
   .groovy-mobile-streaming-link img{max-height:15px}
+  .groovy-mobile-apple{flex-basis:68px;height:auto!important;padding:0!important;border:0!important;background:transparent!important}
+  .groovy-mobile-apple img{max-height:17px!important}
   .groovy-mobile-spotify img{max-height:12px}
 
   .album-detail>.detail-rating .rating-panels{gap:6px!important}
