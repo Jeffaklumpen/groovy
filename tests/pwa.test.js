@@ -83,3 +83,13 @@ test('routing state stays pure and runtime compatibility loads separately',funct
   const appPosition=html.indexOf('/js/app.js');
   assert.ok(statePosition>=0&&runtimePosition>statePosition&&appPosition>runtimePosition);
 });
+
+test('signup uses the auth trigger and collection membership checks are direct',function(){
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+
+  assert.match(app,/handle_new_user creates the profile from signup metadata/);
+  assert.doesNotMatch(app,/\.from\('profiles'\)[\s\S]{0,80}\.insert\(\{[\s\S]{0,80}id:data\.user\.id/);
+  assert.match(app,/\.eq\('album_id',albumId\)\s*\.limit\(1\)/);
+  assert.match(app,/\.eq\('album_id',record\[8\]\)\s*\.limit\(1\)/);
+  assert.doesNotMatch(app,/\.limit\(500\)/);
+});
