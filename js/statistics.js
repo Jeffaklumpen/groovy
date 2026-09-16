@@ -78,7 +78,55 @@
     return '<article class="stats-release"><img src="'+escapeHtml(coverUrl(release.cover))+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'"><div class="stats-release-copy"><span>'+label+'</span><strong>'+escapeHtml(release.title)+'</strong><small>'+escapeHtml(release.artist)+' · '+release.year+'</small>'+releaseStreaming(release)+'</div></article>';
   }
 
-  function render(profile,stats){
+  function followingComparisonCard(label,item,type){
+    if(!item){
+      return '<article class="stats-community-card stats-community-empty"><strong>No comparison yet</strong><small>Follow collectors with records in their shelves to unlock this statistic.</small></article>';
+    }
+    var value=type==='taste'?Math.round(Number(item.taste_similarity)||0)+'%':Number(item.common_count||0);
+    var valueLabel=type==='taste'?'genre match':'records in common';
+    var note=type==='taste'?'Closest music taste among collectors you follow':'Most shared collected albums among collectors you follow';
+    return '<article class="stats-community-card'+(type==='taste'?' stats-community-card-accent':'')+'">'+
+      '<img class="stats-community-avatar" src="'+escapeHtml(item.avatar_url||'/avatar_placeholder.png')+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'">'+
+      '<div class="stats-community-copy"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(item.username||'Collector')+'</strong><small>'+escapeHtml(note)+'</small></div>'+
+      '<div class="stats-community-value"><strong>'+escapeHtml(value)+'</strong><span>'+escapeHtml(valueLabel)+'</span></div>'+
+    '</article>';
+  }
+
+  function followingComparisonPanel(social){
+    if(!social||!social.isOwn)return '';
+    var hasFollowing=social.followingCount>0;
+    return '<section class="stats-panel stats-community"><div class="stats-section-heading"><span>Your community</span><h3>Collectors you connect with</h3></div>'+
+      '<div class="stats-community-grid">'+
+        followingComparisonCard('Most records in common',hasFollowing?social.mostCommon:null,'common')+
+        followingComparisonCard('Closest music taste',hasFollowing?social.closestTaste:null,'taste')+
+      '</div>'+
+      (hasFollowing?'<p class="stats-community-note">Music taste match compares the full genre mix across both collections. 100% means the genre distributions are identical; genres that do not overlap lower the score.</p>':'')+
+    '</section>';
+  }
+
+  async function fetchFollowingComparisons(userId){
+    var sessionResult=await supabaseClient.auth.getSession();
+    var sessionUser=sessionResult.data&&sessionResult.data.session&&sessionResult.data.session.user;
+    if(!sessionUser||String(sessionUser.id)!==String(userId))return {isOwn:false,followingCount:0,mostCommon:null,closestTaste:null};
+
+    var response=await supabaseClient.rpc('get_following_statistics');
+    if(response.error){
+      console.warn('Could not load following statistics:',response.error);
+      return {isOwn:true,followingCount:0,mostCommon:null,closestTaste:null};
+    }
+
+    var rows=(response.data||[]).slice();
+    var mostCommon=rows.slice().sort(function(a,b){
+      return Number(b.common_count||0)-Number(a.common_count||0)||String(a.username||'').localeCompare(String(b.username||''));
+    })[0]||null;
+    var closestTaste=rows.slice().sort(function(a,b){
+      return Number(b.taste_similarity||0)-Number(a.taste_similarity||0)||Number(b.common_count||0)-Number(a.common_count||0)||String(a.username||'').localeCompare(String(b.username||''));
+    })[0]||null;
+
+    return {isOwn:true,followingCount:rows.length,mostCommon:mostCommon,closestTaste:closestTaste};
+  }
+
+  function render(profile,stats,social){
     var topStyle=stats.topStyles[0];
     var topArtist=stats.topArtists[0];
     var topDecade=stats.topDecades[0];
@@ -100,6 +148,7 @@
         '<article class="stats-feature"><span>Most collected artist</span><strong>'+escapeHtml(topArtist?topArtist.label:'—')+'</strong><small>'+(topArtist?topArtist.count+' records':'No artist data yet')+'</small></article>'+
         '<article class="stats-feature"><span>Strongest decade</span><strong>'+escapeHtml(topDecade?topDecade.label:'—')+'</strong><small>'+(topDecade?topDecade.count+' releases':'No dated releases yet')+'</small></article>'+
       '</section>'+
+      followingComparisonPanel(social)+
       '<section class="stats-split">'+rankedBars('Top styles',stats.topStyles,'Add records to reveal the collection’s sound.')+rankedBars('Decades',stats.topDecades,'Release years will build this timeline.')+'</section>'+
       '<section class="stats-panel"><div class="stats-section-heading"><span>The collection</span><h3>More in the grooves</h3></div><div class="stats-detail-grid">'+
         metric('Five-star records',stats.fiveStarAlbums,'personal essentials')+
@@ -121,9 +170,12 @@
     if(results[1].error)throw results[1].error;
     if(results[2].error)throw results[2].error;
 
+    var social=await fetchFollowingComparisons(userId);
+
     return {
       profile:results[0].data||{},
-      stats:window.GroovyStatistics.build(results[1].data||[],(results[2].data||[]).length,results[3].error?[]:results[3].data)
+      stats:window.GroovyStatistics.build(results[1].data||[],(results[2].data||[]).length,results[3].error?[]:results[3].data),
+      social:social
     };
   }
 
@@ -145,7 +197,7 @@
       if(version!==requestVersion)return;
       result.profile.username=result.profile.username||(profileHint&&profileHint.username)||'';
       result.profile.avatar_url=result.profile.avatar_url||(profileHint&&profileHint.avatar_url)||'';
-      render(result.profile,result.stats);
+      render(result.profile,result.stats,result.social);
     }catch(error){
       console.error('Could not load statistics:',error);
       if(version!==requestVersion)return;
