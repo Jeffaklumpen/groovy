@@ -131,8 +131,18 @@
     }
   }
 
+  function loadAlbumRatingContext(){
+    if(document.getElementById('groovyAlbumRatingContextScript'))return;
+    var script=document.createElement('script');
+    script.id='groovyAlbumRatingContextScript';
+    script.src='/js/album-rating-context.js?v=1';
+    script.async=false;
+    document.body.appendChild(script);
+  }
+
   setInstallCopy();
   loadProfileModule();
+  loadAlbumRatingContext();
 
   if('serviceWorker' in navigator){
     window.addEventListener('load',function(){
