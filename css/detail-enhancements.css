@@ -25,6 +25,15 @@
 }
 
 @media screen and (max-width:760px){
+  /* Compact streaming badges live inside the top-right album information card. */
+  .detail-streaming-row{display:none!important}
+  .groovy-mobile-streaming{display:flex;align-items:center;gap:8px;width:100%;margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.08);overflow:hidden}
+  .groovy-mobile-streaming-link{display:inline-flex;align-items:center;min-width:0;max-width:50%;height:24px;text-decoration:none;-webkit-tap-highlight-color:transparent}
+  .groovy-mobile-streaming-link img{display:block;max-width:100%;max-height:22px;width:auto;height:auto;object-fit:contain}
+  .groovy-mobile-apple{flex:0 1 105px}
+  .groovy-mobile-spotify{flex:0 1 82px}
+  .groovy-mobile-spotify img{max-height:19px}
+
   /* Rating becomes its own full-width row below cover + album info. */
   .album-detail>.detail-rating{grid-column:1/-1!important;grid-row:2!important;width:100%;margin:12px 0 0!important}
   .album-detail>.detail-rating .rating-panels{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px!important}
@@ -33,20 +42,25 @@
   .album-detail>.detail-rating .rating-panel-icon{display:none!important}
   .album-detail>.detail-rating .rating-panel-stars{display:flex!important;min-height:22px!important;margin-top:6px!important;gap:1px!important;flex-wrap:nowrap!important}
   .album-detail>.detail-rating .rating-panel .album-rating-star{padding:0 1px!important;font-size:19px!important;line-height:1!important}
-  .album-detail>.detail-rating .rating-panel-community-main{min-height:22px!important;margin-top:6px!important;gap:7px!important;white-space:nowrap}
-  .album-detail>.detail-rating .groovy-star-meter.is-community{font-size:12px!important;letter-spacing:.08em!important}
-  .album-detail>.detail-rating .rating-panel-community-main strong{font-size:20px!important;line-height:1!important}
+  .album-detail>.detail-rating .rating-panel-community-main{min-height:22px!important;margin-top:6px!important;gap:7px!important;white-space:nowrap;overflow:hidden}
+  .album-detail>.detail-rating .groovy-star-meter.is-community{font-size:17px!important;letter-spacing:.055em!important;flex:0 1 auto;min-width:0}
+  .album-detail>.detail-rating .rating-panel-community-main strong{font-size:20px!important;line-height:1!important;flex:0 0 auto}
   .album-detail>.detail-rating .rating-panel-footer{display:flex;align-items:center;min-height:24px!important;margin-top:5px!important}
   .album-detail>.detail-rating .rating-panel-meta,.album-detail>.detail-rating .rating-panel-empty-note{font-size:8px!important}
   .album-detail>.detail-rating .groovy-remove-rating{min-height:24px;font-size:8px}
 
-  /* Shift the remaining mobile detail sections down one logical row. */
+  /* Grid cards: stars must stay inside the card; the number is hidden on mobile. */
+  .cover-rating{min-width:0!important;max-width:72px!important;flex:0 1 72px!important;overflow:hidden!important}
+  .cover-rating-inner{min-width:0!important;max-width:100%!important;gap:0!important;overflow:hidden!important}
+  .cover-rating-number{display:none!important}
+  .cover-rating .groovy-star-meter.is-compact{font-size:11px!important;letter-spacing:.045em!important;max-width:100%!important;overflow:hidden!important}
+
+  /* Shift the remaining mobile detail sections up now that streaming is inside info. */
   .detail-shelf-actions{grid-row:3!important}
-  .detail-streaming-row{grid-row:4!important}
-  .detail-social-context,.detail-social-context:not(.own-match),.detail-social-context.own-match{grid-row:5!important}
-  .album-tracks{grid-row:6!important}
-  .album-about{grid-row:7!important}
-  .marketplace-panel{grid-row:8!important}
+  .detail-social-context,.detail-social-context:not(.own-match),.detail-social-context.own-match{grid-row:4!important}
+  .album-tracks{grid-row:5!important}
+  .album-about{grid-row:6!important}
+  .marketplace-panel{grid-row:7!important}
 
   .detail-shelf-actions.wishlist-detail-actions{grid-column:1/-1!important;width:100%;margin:10px 0 0!important}
   .detail-shelf-actions.wishlist-detail-actions .detail-move-to-collection{width:100%;min-height:42px;justify-content:center;font-size:12px}
@@ -59,6 +73,11 @@
   .album-detail>.detail-rating .rating-panels{gap:6px!important}
   .album-detail>.detail-rating .rating-panel{padding:9px 8px!important}
   .album-detail>.detail-rating .rating-panel .album-rating-star{font-size:17px!important}
-  .album-detail>.detail-rating .groovy-star-meter.is-community{font-size:10px!important}
+  .album-detail>.detail-rating .groovy-star-meter.is-community{font-size:15px!important;letter-spacing:.035em!important}
   .album-detail>.detail-rating .rating-panel-community-main strong{font-size:18px!important}
+  .cover-rating{max-width:66px!important;flex-basis:66px!important}
+  .cover-rating .groovy-star-meter.is-compact{font-size:10px!important;letter-spacing:.035em!important}
+  .groovy-mobile-streaming{gap:6px}
+  .groovy-mobile-apple{flex-basis:96px}
+  .groovy-mobile-spotify{flex-basis:74px}
 }
