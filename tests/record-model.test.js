@@ -30,7 +30,7 @@ test('record model loads before consumers and separated modules use named access
   const detail=fs.readFileSync(path.join(root,'js','detail-enhancements-v2.js'),'utf8');
   const layout=fs.readFileSync(path.join(root,'js','album-rating-layout-v4.js'),'utf8');
   const modelPosition=html.indexOf('/js/record-model.js?v=1');
-  const appPosition=html.indexOf('/js/app.js?v=126');
+  const appPosition=html.indexOf('/js/app.js?v=127');
   assert.ok(modelPosition>=0&&appPosition>modelPosition);
   assert.match(detail,/var Record=window.GroovyRecord/);
   assert.match(layout,/var Record=window.GroovyRecord/);

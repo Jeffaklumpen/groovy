@@ -773,7 +773,9 @@ function copyDetailsFromRow(item){
 (function(){
 
 var Record=window.GroovyRecord;
+var Wikipedia=window.GroovyWikipedia;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
+if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
 
 window.records = [];
 window.viewedUserId=null;
@@ -2504,8 +2506,8 @@ function safeExternalUrl(value){
 }
 
 function traderaCacheKey(record){
-  return String(record&&record[1]||'').trim().toLowerCase()+'|'+
-    String(record&&record[2]||'').trim().toLowerCase();
+  return String(Record.artist(record)||'').trim().toLowerCase()+'|'+
+    String(Record.title(record)||'').trim().toLowerCase();
 }
 
 function normalizeTraderaIdentity(value){
@@ -3760,32 +3762,6 @@ function loadVisibleImages(){
   }
 }
 
-function normalizeWikipediaIdentity(value){
-  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim();
-}
-
-function wikipediaCacheKey(record){
-  return 'groovy-wikipedia-about-v5:'+normalizeWikipediaIdentity(Record.artist(record))+'|'+normalizeWikipediaIdentity(Record.title(record));
-}
-
-function wikipediaIntroduction(extract){
-  var html=String(extract||'').trim();
-  if(!html)return '';
-
-  try{
-    var doc=new DOMParser().parseFromString(html,'text/html');
-    var paragraphs=Array.prototype.slice.call(doc.body.querySelectorAll('p')).map(function(paragraph){
-      return String(paragraph.textContent||'').replace(/\s+/g,' ').trim();
-    }).filter(Boolean);
-    if(paragraphs.length)return paragraphs.join('\n\n');
-    return String(doc.body.textContent||'').replace(/\r/g,'').replace(/\n{3,}/g,'\n\n').trim();
-  }catch(error){
-    var fallback=document.createElement('div');
-    fallback.innerHTML=html;
-    return String(fallback.textContent||'').replace(/\r/g,'').replace(/\n{3,}/g,'\n\n').trim();
-  }
-}
-
 function wikipediaAboutLineHeight(){
   if(!detailAboutAlbumText)return 20.8;
   var sample=detailAboutAlbumText.querySelector('p')||detailAboutAlbumText;
@@ -3849,105 +3825,8 @@ function syncWikipediaAboutToggle(reset){
   });
 }
 
-function wikipediaCandidateScore(page,record){
-  var album=normalizeWikipediaIdentity(Record.title(record));
-  var artist=normalizeWikipediaIdentity(Record.artist(record));
-  var title=normalizeWikipediaIdentity(page&&page.title);
-  var extract=normalizeWikipediaIdentity(wikipediaIntroduction(page&&page.extract));
-  var year=String(Record.year(record)||'').trim();
-  var score=0;
-
-  if(!album||!title)return -100;
-  if(title===album)score+=30;
-  else if(title.indexOf(album+' ')===0)score+=25;
-  else if(title.indexOf(album)!==-1)score+=13;
-  if(/\balbum\b/.test(title))score+=7;
-  if(artist&&title.indexOf(artist)!==-1)score+=12;
-  if(artist&&extract.indexOf(artist)!==-1)score+=22;
-  if(/\b(studio|live|compilation|soundtrack|debut|album)\b/.test(extract))score+=8;
-  if(year&&extract.indexOf(year)!==-1)score+=3;
-  if(/may refer to|can refer to|disambiguation/.test(extract))score-=60;
-  if(page&&page.index)score+=Math.max(0,6-Number(page.index));
-  return score;
-}
-
-async function fetchWikipediaAlbumCandidates(record,query){
-  var params=new URLSearchParams({
-    action:'query',
-    format:'json',
-    formatversion:'2',
-    origin:'*',
-    generator:'search',
-    gsrsearch:query,
-    gsrnamespace:'0',
-    gsrlimit:'5',
-    prop:'extracts|info',
-    exintro:'1',
-    inprop:'url',
-    redirects:'1'
-  });
-  var response=await fetch('https://en.wikipedia.org/w/api.php?'+params.toString(),{method:'GET',credentials:'omit'});
-  if(!response.ok)throw new Error('Wikipedia returned '+response.status);
-  var data=await response.json();
-  return data&&data.query&&Array.isArray(data.query.pages)?data.query.pages:[];
-}
-
-async function fetchWikipediaFirstSection(page){
-  if(!page)return null;
-  var params=new URLSearchParams({
-    action:'parse',
-    format:'json',
-    formatversion:'2',
-    origin:'*',
-    prop:'sections',
-    redirects:'1'
-  });
-  if(page.pageid)params.set('pageid',String(page.pageid));
-  else if(page.title)params.set('page',String(page.title));
-  else return null;
-  var response=await fetch('https://en.wikipedia.org/w/api.php?'+params.toString(),{method:'GET',credentials:'omit'});
-  if(!response.ok)return null;
-  var data=await response.json();
-  var sections=data&&data.parse&&Array.isArray(data.parse.sections)?data.parse.sections:[];
-  var section=sections.find(function(item){return String(item.level||'')==='2'||Number(item.toclevel)===1;});
-  if(!section||!section.line)return null;
-  var holder=document.createElement('div');
-  holder.innerHTML=String(section.line);
-  return {
-    heading:String(holder.textContent||'').replace(/\s+/g,' ').trim(),
-    index:section.index===undefined||section.index===null?'':String(section.index)
-  };
-}
-
-async function fetchWikipediaSectionParagraphs(page,sectionIndex){
-  if(!page||sectionIndex==='')return [];
-  var params=new URLSearchParams({
-    action:'parse',
-    format:'json',
-    formatversion:'2',
-    origin:'*',
-    prop:'text',
-    section:String(sectionIndex),
-    redirects:'1',
-    disableeditsection:'1'
-  });
-  if(page.pageid)params.set('pageid',String(page.pageid));
-  else if(page.title)params.set('page',String(page.title));
-  else return [];
-  var response=await fetch('https://en.wikipedia.org/w/api.php?'+params.toString(),{method:'GET',credentials:'omit'});
-  if(!response.ok)return [];
-  var data=await response.json();
-  var html=data&&data.parse?String(data.parse.text||''):'';
-  if(!html)return [];
-  var doc=new DOMParser().parseFromString(html,'text/html');
-  Array.prototype.slice.call(doc.body.querySelectorAll('sup.reference,.mw-editsection,style,script,table,figure,.navbox,.infobox,.thumb,.hatnote')).forEach(function(element){element.remove();});
-  return Array.prototype.slice.call(doc.body.querySelectorAll('p')).map(function(paragraph){
-    return String(paragraph.textContent||'').replace(/\s+/g,' ').trim();
-  }).filter(Boolean);
-}
-
 function readWikipediaCache(record){
-  var key=wikipediaCacheKey(record);
+  var key=Wikipedia.cacheKey(record);
   if(wikipediaAlbumCache.has(key))return wikipediaAlbumCache.get(key);
   try{
     var stored=JSON.parse(localStorage.getItem(key)||'null');
@@ -3960,7 +3839,7 @@ function readWikipediaCache(record){
 }
 
 function saveWikipediaCache(record,result){
-  var key=wikipediaCacheKey(record);
+  var key=Wikipedia.cacheKey(record);
   var cached={text:result.text,heading:result.heading||'',sectionParagraphs:Array.isArray(result.sectionParagraphs)?result.sectionParagraphs:[],url:result.url,title:result.title,savedAt:Date.now()};
   wikipediaAlbumCache.set(key,cached);
   try{localStorage.setItem(key,JSON.stringify(cached));}catch(error){}
@@ -3991,25 +3870,25 @@ async function loadWikipediaAlbumAbout(record){
   detailAboutAlbum.hidden=false;
 
   try{
-    var album=String(record&&record[2]||'').trim();
-    var artist=String(record&&record[1]||'').trim();
+    var album=String(Record.title(record)||'').trim();
+    var artist=String(Record.artist(record)||'').trim();
     var queries=['"'+album+'" "'+artist+'" album',album+' '+artist+' album'];
     var pages=[];
 
     for(var q=0;q<queries.length&&!pages.length;q++){
-      pages=await fetchWikipediaAlbumCandidates(record,queries[q]);
+      pages=await Wikipedia.searchCandidates(record,queries[q]);
     }
 
     if(requestVersion!==wikipediaAboutRequestVersion)return;
-    var ranked=pages.map(function(page){return {page:page,score:wikipediaCandidateScore(page,record)};}).sort(function(a,b){return b.score-a.score;});
+    var ranked=pages.map(function(page){return {page:page,score:Wikipedia.candidateScore(page,record)};}).sort(function(a,b){return b.score-a.score;});
     var best=ranked.length?ranked[0]:null;
-    var introduction=best&&best.score>=18?wikipediaIntroduction(best.page.extract):'';
+    var introduction=best&&best.score>=18?Wikipedia.introduction(best.page.extract):'';
 
     if(!introduction){detailAboutAlbum.hidden=true;return;}
-    var firstSection=await fetchWikipediaFirstSection(best.page);
+    var firstSection=await Wikipedia.firstSection(best.page);
     if(requestVersion!==wikipediaAboutRequestVersion)return;
     var firstHeading=firstSection&&firstSection.heading?firstSection.heading:'';
-    var sectionParagraphs=firstSection?await fetchWikipediaSectionParagraphs(best.page,firstSection.index):[];
+    var sectionParagraphs=firstSection?await Wikipedia.sectionParagraphs(best.page,firstSection.index):[];
     if(requestVersion!==wikipediaAboutRequestVersion)return;
     var result=saveWikipediaCache(record,{text:introduction,heading:firstHeading,sectionParagraphs:sectionParagraphs,url:best.page.fullurl||'https://en.wikipedia.org/wiki/'+encodeURIComponent(best.page.title||''),title:best.page.title||''});
     renderWikipediaAbout(result);
