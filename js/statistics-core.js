@@ -64,7 +64,8 @@
         year:entry.year,
         title:clean(album.title)||'Untitled',
         artist:artistName(album),
-        cover:clean(entry.row.cover_url||album.cover_url)
+        cover:clean(entry.row.cover_url||album.cover_url),
+        appleUrl:clean(album.apple_collection_url)
       };
     }
 
