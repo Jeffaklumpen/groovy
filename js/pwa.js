@@ -114,7 +114,25 @@
     if(choice&&choice.outcome==='accepted')hideBanner();
   }
 
+  function loadProfileModule(){
+    if(!document.getElementById('groovyProfileStyles')){
+      var style=document.createElement('link');
+      style.id='groovyProfileStyles';
+      style.rel='stylesheet';
+      style.href='/css/profile.css?v=2';
+      document.head.appendChild(style);
+    }
+
+    if(!document.getElementById('groovyProfileScript')){
+      var script=document.createElement('script');
+      script.id='groovyProfileScript';
+      script.src='/js/profile.js?v=2';
+      document.body.appendChild(script);
+    }
+  }
+
   setInstallCopy();
+  loadProfileModule();
 
   if('serviceWorker' in navigator){
     window.addEventListener('load',function(){
