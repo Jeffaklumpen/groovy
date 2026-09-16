@@ -210,3 +210,14 @@ body.collector-profile-open .header{position:relative;z-index:2205}
 .collector-profile-toolbar-label{color:#74747b;font-size:9px;font-weight:800;letter-spacing:.16em}
 .collector-profile-content{padding-top:32px}
 @media(max-width:760px){.collector-profile-toolbar{height:52px}.collector-profile-return{min-height:34px;padding:0 10px;font-size:10px}.collector-profile-toolbar-label{font-size:8px}.collector-profile-content{padding-top:20px}}
+
+/* Public profile is a real routed page v7 */
+body.collector-profile-open{overflow-x:hidden!important;overflow-y:auto!important}
+body.collector-profile-open>.library-overview,body.collector-profile-open>#libraryPaginationTop,body.collector-profile-open>#collection,body.collector-profile-open>#libraryPaginationBottom,body.collector-profile-open>#emptyCollection,body.collector-profile-open>#loginToViewCollection,body.collector-profile-open>#emptyViewedCollection,body.collector-profile-open>#emptyWishlist,body.collector-profile-open>#profileNotFound,body.collector-profile-open>#scrollTopButton{display:none!important}
+body.collector-profile-open .header{position:relative;z-index:200}
+.collector-profile-page{display:none!important;position:relative!important;inset:auto!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;width:100%;height:auto!important;min-height:calc(100vh - 140px);z-index:auto!important;margin:0;background:#0b0b0c;color:#f5f5f5;opacity:1!important;visibility:visible!important;pointer-events:auto!important;overflow:visible!important;transition:none!important}
+.collector-profile-page.visible{display:block!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important}
+.collector-profile-shell{padding-top:0}
+.collector-profile-toolbar{position:relative!important;top:auto!important;z-index:1;height:58px}
+.collector-profile-content{padding:30px 0 44px}
+@media(max-width:760px){.collector-profile-page{min-height:calc(100vh - 90px)}.collector-profile-toolbar{height:52px}.collector-profile-content{padding:20px 0 34px}}
