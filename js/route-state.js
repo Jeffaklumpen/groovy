@@ -7,6 +7,64 @@
 
   if(root){
     root.GroovyRouteState=api;
+    installRuntimeFixes(root);
+  }
+
+  function installRuntimeFixes(windowObject){
+    if(!windowObject||!windowObject.document)return;
+
+    /*
+     * app.js guards public shelf routes inside loadCollection(), but its old
+     * implementation increments collectionLoadVersion before that guard.
+     * A stray own-library reload can therefore invalidate an in-flight
+     * loadOtherUserCollection() and leave the previous user's records visible.
+     * Intercept the app.js assignment so public shelf routes never enter the
+     * own-library loader in the first place.
+     */
+    try{
+      var guardedLoadCollection;
+      Object.defineProperty(windowObject,'loadCollection',{
+        configurable:true,
+        enumerable:true,
+        get:function(){return guardedLoadCollection;},
+        set:function(loader){
+          if(typeof loader!=='function'){
+            guardedLoadCollection=loader;
+            return;
+          }
+
+          if(loader.__groovyPublicShelfGuard){
+            guardedLoadCollection=loader;
+            return;
+          }
+
+          var wrapped=function(){
+            var pathname=String(windowObject.location&&windowObject.location.pathname||'');
+            if(/^\/(?:user|shelf)\/[^\/]+\/?$/.test(pathname)){
+              return Promise.resolve();
+            }
+            return loader.apply(this,arguments);
+          };
+
+          wrapped.__groovyPublicShelfGuard=true;
+          wrapped.__groovyOriginal=loader;
+          guardedLoadCollection=wrapped;
+        }
+      });
+    }catch(error){}
+
+    /* Final cascade fixes for album detail rules that are intentionally kept
+       here so they load after the main stylesheet without touching mobile. */
+    try{
+      var style=windowObject.document.createElement('style');
+      style.id='groovy-route-runtime-fixes';
+      style.textContent=
+        '.detail-social-context[hidden]{display:none!important;}'+
+        '@media screen and (min-width:761px){'+
+          '.detail-shelf-actions:not([hidden]) + .detail-streaming-row:after{top:-5px!important;}'+
+        '}';
+      (windowObject.document.head||windowObject.document.documentElement).appendChild(style);
+    }catch(error){}
   }
 })(typeof window!=='undefined'?window:null,function(){
   function profileUsernameFromPath(pathname){
