@@ -2,10 +2,10 @@
 'use strict';
 
 var currentDetailIndex=-1;
-var ratingRefreshTimer=null;
 var libraryRatingTimer=null;
 var socialRequestToken=0;
 var ratingMoveHome=null;
+var lastRatingTouchAt=0;
 
 function clampRating(value){
   var number=Number(value);
@@ -26,8 +26,8 @@ function ratingFill(value){
 
 function starMeter(value,extraClass){
   return '<span class="groovy-star-meter'+(extraClass?' '+extraClass:'')+'" style="--rating-fill:'+ratingFill(value)+';" aria-label="'+clampRating(value).toFixed(1)+' out of 5">'+
-    '<span class="groovy-star-meter-base" aria-hidden="true">★★★★★</span>'+
-    '<span class="groovy-star-meter-fill" aria-hidden="true">★★★★★</span>'+
+    '<span class="groovy-star-meter-base" aria-hidden="true">★★★★★</span>'+ 
+    '<span class="groovy-star-meter-fill" aria-hidden="true">★★★★★</span>'+ 
   '</span>';
 }
 
@@ -93,6 +93,13 @@ function updateRecordRatingMeta(albumId,entry){
     record[5]=entry.own||0;
     record[15]=entry.average||0;
     record[16]=entry.count||0;
+  });
+}
+
+function updateOwnRatingOnly(albumId,rating){
+  if(!Array.isArray(window.records))return;
+  window.records.forEach(function(record){
+    if(record&&String(record[8])===String(albumId))record[5]=rating||0;
   });
 }
 
@@ -216,6 +223,28 @@ async function refreshCurrentAlbumRatings(index){
   patchVisibleCardRatings();
 }
 
+async function saveCurrentRating(index,rating){
+  var record=recordAt(index);
+  if(!record||!record[8])return;
+  var user=await sessionUser();
+  if(!user){alert('Du måste vara inloggad.');return;}
+
+  var albumId=record[8];
+  updateOwnRatingOnly(albumId,rating);
+  updateDetailRatingDom(index);
+
+  var result=await supabaseClient.from('album_ratings')
+    .upsert({user_id:user.id,album_id:albumId,rating:rating},{onConflict:'user_id,album_id'});
+
+  if(result.error){
+    console.error('Could not save album rating:',result.error);
+    alert('Kunde inte spara ratingen.\n\n'+(result.error.message||result.error));
+  }
+
+  await refreshCurrentAlbumRatings(index);
+  scheduleLibraryRatingRefresh(80);
+}
+
 async function removeCurrentRating(index,button){
   var record=recordAt(index);
   if(!record||!record[8])return;
@@ -256,6 +285,57 @@ function placeRatingSection(){
   }
 }
 
+function syncMobileStreamingPlacement(){
+  var infoCard=document.querySelector('.detail-info-card');
+  var apple=document.getElementById('detailAppleMusicLink');
+  var spotify=document.getElementById('detailSpotifyLink');
+  if(!infoCard||!apple||!spotify)return;
+
+  var mobile=window.matchMedia&&window.matchMedia('(max-width:760px)').matches;
+  var existing=infoCard.querySelector('.groovy-mobile-streaming');
+  if(!mobile){
+    if(existing)existing.remove();
+    return;
+  }
+
+  if(!existing){
+    existing=document.createElement('div');
+    existing.className='groovy-mobile-streaming';
+    infoCard.appendChild(existing);
+  }
+
+  existing.innerHTML=
+    '<a class="groovy-mobile-streaming-link groovy-mobile-apple" href="'+escapeHtml(apple.href)+'" target="_blank" rel="noopener noreferrer" aria-label="'+escapeHtml(apple.getAttribute('aria-label')||'Listen on Apple Music')+'">'+
+      '<img src="/Apple_Music_Listen_on_Badge_Small.svg" alt="Listen on Apple Music">'+
+    '</a>'+ 
+    '<a class="groovy-mobile-streaming-link groovy-mobile-spotify" href="'+escapeHtml(spotify.href)+'" target="_blank" rel="noopener noreferrer" aria-label="'+escapeHtml(spotify.getAttribute('aria-label')||'Listen on Spotify')+'">'+
+      '<img src="/Full_Logo_Green_RGB.svg" alt="Spotify">'+
+    '</a>';
+}
+
+function cleanupLoggedOutPublicUi(){
+  window.viewedUserId=null;
+  window.groovyViewedStatisticsProfile=null;
+
+  var header=document.getElementById('viewedUserHeader');
+  if(header){
+    header.style.display='none';
+    header.dataset.own='false';
+  }
+
+  var shelfStrip=document.getElementById('shelfStrip');
+  if(shelfStrip)shelfStrip.hidden=true;
+
+  var search=document.getElementById('librarySearchInput');
+  if(search)search.value='';
+
+  var social=document.getElementById('detailSocialContext');
+  if(social){
+    social.hidden=true;
+    social.innerHTML='';
+  }
+}
+
 function escapeHtml(value){
   return String(value==null?'':value).replace(/[&<>"']/g,function(ch){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
@@ -286,14 +366,14 @@ function renderCollectedProfiles(profiles){
     var username=escapeHtml(profile.username||'Collector');
     var avatar=escapeHtml(profile.avatar_url||'/avatar_placeholder.png');
     return '<button class="detail-social-person'+(extraClass?' '+extraClass:'')+'" type="button" data-detail-social-username="'+username+'" data-tooltip="'+username+'" aria-label="View '+username+'">'+
-      '<span class="detail-social-avatar" style="background-image:url(&quot;'+avatar+'&quot;)"></span>'+
-      '<span class="detail-social-person-name">'+username+'</span>'+
+      '<span class="detail-social-avatar" style="background-image:url(&quot;'+avatar+'&quot;)"></span>'+ 
+      '<span class="detail-social-person-name">'+username+'</span>'+ 
     '</button>';
   }
 
-  social.innerHTML='<div class="detail-social-heading"><strong>Collected by</strong><small>Collectors you follow</small></div>'+
+  social.innerHTML='<div class="detail-social-heading"><strong>Collected by</strong><small>Collectors you follow</small></div>'+ 
     '<div class="detail-social-people">'+visible.map(function(profile){return person(profile,'');}).join('')+
-    (hasMore?'<button class="detail-social-more" type="button" data-detail-social-more aria-expanded="false" aria-label="Show more collectors">…</button>':'')+'</div>'+
+    (hasMore?'<button class="detail-social-more" type="button" data-detail-social-more aria-expanded="false" aria-label="Show more collectors">…</button>':'')+'</div>'+ 
     (hasMore?'<div class="detail-social-menu" data-detail-social-menu hidden><div class="detail-social-menu-title">More collectors</div><div class="detail-social-menu-list">'+extra.map(function(profile){return person(profile,'detail-social-menu-person');}).join('')+'</div></div>':'');
 }
 
@@ -405,6 +485,7 @@ function ensureWishlistDetailAction(){
 
 function onDetailOpened(){
   placeRatingSection();
+  syncMobileStreamingPlacement();
   var index=resolveDetailIndex();
   if(index<0)return;
   currentDetailIndex=index;
@@ -416,6 +497,23 @@ function onDetailOpened(){
   }
 }
 
+function interceptRatingStar(event,isTouch){
+  var star=event.target.closest&&event.target.closest('.album-rating-star');
+  if(!star)return false;
+
+  event.preventDefault();
+  event.stopPropagation();
+  if(event.stopImmediatePropagation)event.stopImmediatePropagation();
+
+  if(isTouch)lastRatingTouchAt=Date.now();
+  else if(Date.now()-lastRatingTouchAt<700)return true;
+
+  var index=resolveDetailIndex();
+  var rating=parseInt(star.getAttribute('data-rating'),10);
+  if(index>=0&&rating>=1&&rating<=5)saveCurrentRating(index,rating);
+  return true;
+}
+
 function install(){
   var collection=document.getElementById('collection');
   var overlay=document.getElementById('albumOverlay');
@@ -423,7 +521,13 @@ function install(){
   ratingMoveHome=document.querySelector('.detail-info-card');
   placeRatingSection();
 
+  document.addEventListener('touchend',function(event){
+    interceptRatingStar(event,true);
+  },true);
+
   document.addEventListener('click',function(event){
+    if(interceptRatingStar(event,false))return;
+
     var card=event.target.closest&&event.target.closest('#collection .record[data-index]');
     if(card){
       var index=parseInt(card.getAttribute('data-index'),10);
@@ -447,15 +551,6 @@ function install(){
       if(addIndex>=0)addWishlistRecordToCollection(addIndex,add);
       return;
     }
-
-    var star=event.target.closest&&event.target.closest('.album-rating-star');
-    if(star){
-      clearTimeout(ratingRefreshTimer);
-      ratingRefreshTimer=setTimeout(function(){
-        var starIndex=resolveDetailIndex();
-        if(starIndex>=0)refreshCurrentAlbumRatings(starIndex);
-      },350);
-    }
   },true);
 
   new MutationObserver(function(){scheduleLibraryRatingRefresh(80);})
@@ -468,8 +563,16 @@ function install(){
 
   window.addEventListener('resize',function(){
     placeRatingSection();
+    syncMobileStreamingPlacement();
     if(overlay.classList.contains('visible'))setTimeout(onDetailOpened,0);
   },{passive:true});
+
+  supabaseClient.auth.onAuthStateChange(function(event,session){
+    if(!session){
+      cleanupLoggedOutPublicUi();
+      setTimeout(cleanupLoggedOutPublicUi,120);
+    }
+  });
 
   scheduleLibraryRatingRefresh(40);
   if(overlay.classList.contains('visible'))onDetailOpened();
