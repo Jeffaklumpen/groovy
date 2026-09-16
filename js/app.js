@@ -1027,51 +1027,7 @@ window.loadCollection=async function(){
     return item.albums&&item.albums.id;
   }).filter(Boolean);
 
-  var ratings={};
-
-  if(albumIds.length){
-    var {data:ratingData,error:ratingError}=await supabaseClient
-      .from('album_ratings')
-      .select('album_id,rating')
-      .eq('user_id',user.id)
-      .in('album_id',albumIds);
-
-    if(ratingError){
-      console.error('Kunde inte hämta albumratings:',ratingError);
-    }else{
-      ratingData.forEach(function(item){
-        ratings[item.album_id]=item.rating||0;
-      });
-    }
-  }
-
-  var trackIds=[];
-
-  collectionData.forEach(function(item){
-    if(item.albums&&Array.isArray(item.albums.tracks)){
-      item.albums.tracks.forEach(function(track){
-        if(track.id)trackIds.push(track.id);
-      });
-    }
-  });
-
-  var trackRatings={};
-
-  if(trackIds.length){
-    var {data:trackRatingData,error:trackRatingError}=await supabaseClient
-      .from('track_ratings')
-      .select('track_id,rating')
-      .eq('user_id',user.id)
-      .in('track_id',trackIds);
-
-    if(trackRatingError){
-      console.error('Kunde inte hämta låtratings:',trackRatingError);
-    }else{
-      trackRatingData.forEach(function(item){
-        trackRatings[item.track_id]=item.rating||0;
-      });
-    }
-  }
+  var ratingMeta=await loadAlbumRatingData(albumIds,user.id);
 
   if(loadVersion!==window.collectionLoadVersion)return;
 
@@ -1102,18 +1058,19 @@ window.loadCollection=async function(){
             sides[side].push({
               id:track.id,
               title:track.title||'Okänd låt',
-              rating:trackRatings[track.id]||0
+              trackNumber:track.track_number==null?null:track.track_number,
+              duration:track.duration||''
             });
           });
       }
 
-        return [
+        return applyAlbumRatingMeta([
           index+1,
           artist,
           album.title||'Okänd titel',
           album.release_year||'',
           item.discogs_style||album.genre||'',
-          ratings[album.id]||0,
+          0,
           item.cover_url||album.cover_url||'',
           sides,
           album.id,
@@ -1122,8 +1079,11 @@ window.loadCollection=async function(){
           copyDetailsFromRow(item),
           album.apple_collection_url||'',
           item.shelf_id||'',
-          item.shelf_sort_order==null?null:item.shelf_sort_order
-        ];
+          item.shelf_sort_order==null?null:item.shelf_sort_order,
+          0,
+          0
+        ],ratingMeta);
+
     });
 
   document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';
@@ -3500,9 +3460,7 @@ function recordHTML(record, className){
   if(isWishlist){
     html+='<span class="wishlist-cover-label"><span class="wishlist-icon" aria-hidden="true"></span>Wishlisted</span>';
   }else{
-    for(var r=1;r<=5;r++){
-      html+=r<=record[5]?'★':'<span class="empty">★</span>';
-    }
+    html+='<span class="cover-rating-inner">'+renderStaticStarMeter(record[15]||0,'is-compact')+'<span class="cover-rating-number">'+esc(formatCommunityRating(record[15]||0))+'</span></span>';
   }
 
   html+='</span></div></div>'+
@@ -4062,199 +4020,12 @@ function openAlbum(index){
   detailSpotifyLink.setAttribute('aria-label','Find '+record[2]+' by '+record[1]+' on Spotify');
   loadWikipediaAlbumAbout(record);
 
-  var rating=parseInt(record[5],10);
-  if(isNaN(rating))rating=0;
-  rating=Math.max(0,Math.min(5,rating));
-
-  var stars='';
-
-  if(isWishlist){
-    detailRating.innerHTML=viewedUserId===null
-      ?'<button class="detail-move-to-collection" type="button"><span class="record-icon" aria-hidden="true"></span>Add to collection</button>'
-      :'';
-  }else{
-    for(var i=1;i<=5;i++){
-      stars+='<button class="album-rating-star '+(i<=rating?'filled':'empty')+'" type="button" data-rating="'+i+'">★</button>';
-    }
-
-    detailRating.innerHTML=stars;
-  }
-
+  renderDetailRatingPanels(index);
   renderDetailShelfStatus(index);
   renderDetailShelfActions(index);
   loadDetailSocialContext(record,index);
-
-  var detailMoveButton=detailRating.querySelector('.detail-move-to-collection');
-  if(detailMoveButton){
-    detailMoveButton.addEventListener('click',async function(event){
-      event.preventDefault();
-      event.stopPropagation();
-      var moved=await moveWishlistAlbumToCollection(index,detailMoveButton);
-      if(moved)closeAlbum();
-    });
-  }
-
-  var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
-
-  for(var r=0;r<ratingButtons.length;r++){
-    ratingButtons[r].addEventListener('mouseenter',function(){
-      if(viewedUserId!==null)return;
-
-      var hoverRating=parseInt(this.getAttribute('data-rating'),10);
-
-      for(var i=0;i<ratingButtons.length;i++){
-        ratingButtons[i].classList.toggle(
-          'hover-filled',
-          i<hoverRating
-        );
-      }
-    });
-
-    ratingButtons[r].addEventListener('mouseleave',function(){
-      for(var i=0;i<ratingButtons.length;i++){
-        ratingButtons[i].classList.remove('hover-filled');
-      }
-    });
-
-    ratingButtons[r].addEventListener('click',function(event){
-      event.preventDefault();
-      event.stopPropagation();
-
-      if(viewedUserId!==null)return;
-
-      var newRating=parseInt(
-        this.getAttribute('data-rating'),
-        10
-      );
-
-      saveAlbumRating(index,newRating);
-    });
-
-    ratingButtons[r].addEventListener('touchend',function(event){
-      event.preventDefault();
-      event.stopPropagation();
-
-      if(viewedUserId!==null)return;
-
-      var newRating=parseInt(
-        this.getAttribute('data-rating'),
-        10
-      );
-
-      saveAlbumRating(index,newRating);
-    },{passive:false});
-  }
-
-  var sides=record[7]||{};
-  var sideNames=['A','B','C','D','E','F','G','H'];
-  var html='';
-
-  for(i=0;i<sideNames.length;i++){
-    var side=sideNames[i];
-    var tracks=sides[side];
-
-    if(!tracks||!tracks.length)continue;
-
-    html+='<section class="track-side">'+
-      '<div class="side-title"><span>SIDE</span>'+side+'</div>'+
-      '<ol class="tracks-list">';
-
-    for(var j=0;j<tracks.length;j++){
-      var track=tracks[j];
-
-      var title=track.title||'Okänd låt';
-      var trackRating=parseInt(track.rating,10);
-
-      if(isNaN(trackRating))trackRating=0;
-      trackRating=Math.max(0,Math.min(5,trackRating));
-
-      var trackStars='';
-
-      if(!isWishlist){
-        for(var s=1;s<=5;s++){
-          trackStars+='<button class="track-rating-star '+(s<=trackRating?'filled':'empty')+'" type="button" data-track-id="'+track.id+'" data-rating="'+s+'">★</button>';
-        }
-      }
-
-      html+='<li data-track-id="'+track.id+'">'+
-        '<span class="track-title">'+esc(title)+'</span>'+
-        '<span class="track-rating">'+trackStars+'</span>'+
-      '</li>';
-    }
-
-    html+='</ol></section>';
-  }
-
-  detailTracks.innerHTML=html||
-    '<div style="color:#666;font-size:13px">Ingen låtlista tillagd</div>';
-
-  var trackRatingButtons=detailTracks.querySelectorAll('.track-rating-star');
-
-  for(var t=0;t<trackRatingButtons.length;t++){
-    trackRatingButtons[t].addEventListener('click',function(event){
-      event.preventDefault();
-      event.stopPropagation();
-
-      if(viewedUserId!==null)return;
-
-      var trackId=parseInt(
-        this.getAttribute('data-track-id'),
-        10
-      );
-
-      var newRating=parseInt(
-        this.getAttribute('data-rating'),
-        10
-      );
-
-      saveTrackRating(trackId,newRating);
-    });
-
-    trackRatingButtons[t].addEventListener('touchend',function(event){
-      event.preventDefault();
-      event.stopPropagation();
-
-      if(viewedUserId!==null)return;
-
-      var trackId=parseInt(
-        this.getAttribute('data-track-id'),
-        10
-      );
-
-      var newRating=parseInt(
-        this.getAttribute('data-rating'),
-        10
-      );
-
-      saveTrackRating(trackId,newRating);
-    },{passive:false});
-  }
-
-  for(var h=0;h<trackRatingButtons.length;h++){
-    trackRatingButtons[h].addEventListener('mouseenter',function(){
-      if(viewedUserId!==null)return;
-
-      var buttons=detailTracks.querySelectorAll(
-        '.track-rating-star[data-track-id="'+this.getAttribute('data-track-id')+'"]'
-      );
-
-      var hoverRating=parseInt(this.getAttribute('data-rating'),10);
-
-      for(var i=0;i<buttons.length;i++){
-        buttons[i].style.color=buttons[i].classList.contains('filled')?'#E85301':(i<hoverRating?'#aaa':'#555');
-      }
-    });
-
-    trackRatingButtons[h].addEventListener('mouseleave',function(){
-      var buttons=detailTracks.querySelectorAll(
-        '.track-rating-star[data-track-id="'+this.getAttribute('data-track-id')+'"]'
-      );
-
-      for(var i=0;i<buttons.length;i++){
-        buttons[i].style.color=buttons[i].classList.contains('filled')?'#E85301':'#555';
-      }
-    });
-  }
+  renderDetailTracklist(record);
+  ensureDetailTrackDurations(record,index);
 
   albumOverlay.className='album-overlay visible';
   document.body.style.overflow='hidden';
@@ -4265,19 +4036,19 @@ function openAlbum(index){
 }
 
 async function saveAlbumRating(index,rating){
-  if(viewedUserId!==null)return;  
   var record=records[index];
-
   if(!record)return;
 
   var {data:{user},error:userError}=await supabaseClient.auth.getUser();
-
   if(userError||!user){
     alert('Du måste vara inloggad.');
     return;
   }
 
   var albumId=record[8];
+  var previousOwnRating=clampGroovyRating(record[5]);
+  var previousAverage=clampGroovyRating(record[15]);
+  var previousCount=parseInt(record[16],10)||0;
 
   var {error}=await supabaseClient
     .from('album_ratings')
@@ -4295,113 +4066,37 @@ async function saveAlbumRating(index,rating){
     return;
   }
 
-  record[5]=rating;
-
-  var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
-
-  for(var i=0;i<ratingButtons.length;i++){
-    var starRating=i+1;
-
-    ratingButtons[i].classList.remove('hover-filled');
-    ratingButtons[i].classList.toggle(
-      'filled',
-      starRating<=rating
-    );
-    ratingButtons[i].classList.toggle(
-      'empty',
-      starRating>rating
-    );
+  var nextCount=previousCount;
+  var nextAverage=previousAverage;
+  if(previousOwnRating>0&&previousCount>0){
+    nextAverage=((previousAverage*previousCount)-previousOwnRating+rating)/previousCount;
+  }else if(rating>0){
+    nextCount=previousCount+1;
+    nextAverage=((previousAverage*previousCount)+rating)/Math.max(1,nextCount);
   }
-
-  var cards=collection.querySelectorAll('.record');
-
-  for(var c=0;c<cards.length;c++){
-    var cardIndex=parseInt(
-      cards[c].getAttribute('data-index'),
-      10
-    );
-
-    if(cardIndex!==index)continue;
-
-    var coverRating=cards[c].querySelector('.cover-rating');
-
-    if(!coverRating)continue;
-
-    var coverStars='';
-
-    for(var s=1;s<=5;s++){
-      coverStars+=s<=rating
-        ?'★'
-        :'<span class="empty">★</span>';
-    }
-
-    coverRating.innerHTML=coverStars;
-    break;
-  }
-}
-
-async function saveTrackRating(trackId,rating){
-  if(viewedUserId!==null)return;  
-  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
-
-  if(userError||!user){
-    alert('Du måste vara inloggad.');
-    return;
-  }
-
-  var {error}=await supabaseClient
-    .from('track_ratings')
-    .upsert({
-      user_id:user.id,
-      track_id:trackId,
-      rating:rating
-    },{
-      onConflict:'user_id,track_id'
-    });
-
-  if(error){
-    console.error('Kunde inte spara låtrating:',error);
-    alert('Kunde inte spara ratingen.\n\n'+error.message);
-    return;
-  }
-
-  var trackButtons=detailTracks.querySelectorAll(
-    '.track-rating-star[data-track-id="'+trackId+'"]'
-  );
-
-  for(var i=0;i<trackButtons.length;i++){
-    var starRating=i+1;
-
-    trackButtons[i].classList.toggle(
-      'filled',
-      starRating<=rating
-    );
-
-    trackButtons[i].classList.toggle(
-      'empty',
-      starRating>rating
-    );
-  }
-
-  for(var i=0;i<trackButtons.length;i++){
-    trackButtons[i].style.color=trackButtons[i].classList.contains('filled')?'#E85301':'#555';
-  }
+  nextAverage=Math.round(clampGroovyRating(nextAverage)*10)/10;
 
   for(var r=0;r<records.length;r++){
-    var sides=records[r][7]||{};
+    if(records[r][8]!==albumId)continue;
+    records[r][5]=rating;
+    records[r][15]=nextAverage;
+    records[r][16]=nextCount;
+  }
 
-    for(var side in sides){
-      if(!sides.hasOwnProperty(side))continue;
+  renderDetailRatingPanels(index);
 
-      for(var j=0;j<sides[side].length;j++){
-        if(sides[side][j].id===trackId){
-          sides[side][j].rating=rating;
-        }
-      }
+  var cards=collection.querySelectorAll('.record');
+  for(var c=0;c<cards.length;c++){
+    var cardIndex=parseInt(cards[c].getAttribute('data-index'),10);
+    var cardRecord=records[cardIndex];
+    if(!cardRecord||cardRecord[8]!==albumId)continue;
+    var coverRating=cards[c].querySelector('.cover-rating');
+    if(coverRating){
+      coverRating.innerHTML='<span class="cover-rating-inner">'+renderStaticStarMeter(nextAverage,'is-compact')+'<span class="cover-rating-number">'+esc(formatCommunityRating(nextAverage))+'</span></span>';
     }
   }
 }
-    
+
 function closeAlbum(){
   wikipediaAboutRequestVersion++;
   if(detailAboutAlbum)detailAboutAlbum.hidden=true;
@@ -6973,51 +6668,9 @@ async function loadOtherUserCollection(userId){
         })
         .filter(Boolean);
 
-    var albumRatings={};
-
-    if(albumIds.length){
-        var {data:albumRatingData,error:albumRatingError}=await supabaseClient
-            .from('album_ratings')
-            .select('album_id,rating')
-            .eq('user_id',userId)
-            .in('album_id',albumIds);
-
-        if(albumRatingError){
-            console.error('Kunde inte hämta användarens albumratings:',albumRatingError);
-        }else{
-            albumRatingData.forEach(function(item){
-                albumRatings[item.album_id]=item.rating||0;
-            });
-        }
-    }
-
-    var trackIds=[];
-
-    data.forEach(function(item){
-        if(item.albums&&Array.isArray(item.albums.tracks)){
-            item.albums.tracks.forEach(function(track){
-                if(track.id)trackIds.push(track.id);
-            });
-        }
-    });
-
-    var trackRatings={};
-
-    if(trackIds.length){
-        var {data:trackRatingData,error:trackRatingError}=await supabaseClient
-            .from('track_ratings')
-            .select('track_id,rating')
-            .eq('user_id',userId)
-            .in('track_id',trackIds);
-
-        if(trackRatingError){
-            console.error('Kunde inte hämta användarens låtratings:',trackRatingError);
-        }else{
-            trackRatingData.forEach(function(item){
-                trackRatings[item.track_id]=item.rating||0;
-            });
-        }
-    }
+    var {data:{user:sessionUser}}=await supabaseClient.auth.getUser();
+    var ownRatingUserId=sessionUser&&sessionUser.id?sessionUser.id:null;
+    var albumRatingsMeta=await loadAlbumRatingData(albumIds,ownRatingUserId);
 
      if(loadVersion!==window.collectionLoadVersion)return;
 
@@ -7049,18 +6702,19 @@ async function loadOtherUserCollection(userId){
                         sides[side].push({
                             id:track.id,
                             title:track.title||'Okänd låt',
-                            rating:trackRatings[track.id]||0
+                            trackNumber:track.track_number==null?null:track.track_number,
+                            duration:track.duration||''
                         });
                     });
             }
 
-            return [
+            return applyAlbumRatingMeta([
                 index+1,
                 artist,
                 album.title||'Okänd titel',
                 album.release_year||'',
                 item.discogs_style||album.genre||'',
-                albumRatings[album.id]||0,
+                0,
                 item.cover_url||album.cover_url||'',
                 sides,
                 album.id,
@@ -7069,8 +6723,10 @@ async function loadOtherUserCollection(userId){
                 copyDetailsFromRow(item),
                 album.apple_collection_url||'',
                 item.shelf_id||'',
-                item.shelf_sort_order==null?null:item.shelf_sort_order
-            ];
+                item.shelf_sort_order==null?null:item.shelf_sort_order,
+                0,
+                0
+            ],albumRatingsMeta);
         });
 
     document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';
@@ -8244,7 +7900,7 @@ async function searchAppleAlbumArtwork(artist,albumTitle,originalYear){
         return empty;
     }
 }
-function discogsTrackRows(albumId,tracklist){
+function discogsTrackRows(albumId,tracklist,includeDuration){
     const rawTracks=[];
 
     (Array.isArray(tracklist)?tracklist:[]).forEach(function(track){
@@ -8278,12 +7934,15 @@ function discogsTrackRows(albumId,tracklist){
             trackNumber=index<middle?index+1:index-middle+1;
         }
 
-        return {
+        var row={
             album_id:albumId,
             disc_side:discSide,
             track_number:Number.isNaN(trackNumber)?null:trackNumber,
             title:track.title||'Okänd låt'
         };
+
+        if(includeDuration)row.duration=String(track.duration||'').trim();
+        return row;
     });
 }
 
