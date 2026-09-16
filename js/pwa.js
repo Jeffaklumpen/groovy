@@ -140,9 +140,19 @@
     document.body.appendChild(script);
   }
 
+  function loadAlbumRatingLayoutV2(){
+    if(document.getElementById('groovyAlbumRatingLayoutV2Script'))return;
+    var script=document.createElement('script');
+    script.id='groovyAlbumRatingLayoutV2Script';
+    script.src='/js/album-rating-layout-v2.js?v=1';
+    script.async=false;
+    document.body.appendChild(script);
+  }
+
   setInstallCopy();
   loadProfileModule();
   loadAlbumRatingContext();
+  loadAlbumRatingLayoutV2();
 
   if('serviceWorker' in navigator){
     window.addEventListener('load',function(){
