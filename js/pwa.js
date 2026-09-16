@@ -131,18 +131,18 @@
     }
   }
 
-  function loadAlbumRatingLayoutV3(){
-    if(document.getElementById('groovyAlbumRatingLayoutV3Script'))return;
+  function loadAlbumRatingLayoutV4(){
+    if(document.getElementById('groovyAlbumRatingLayoutV4Script'))return;
     var script=document.createElement('script');
-    script.id='groovyAlbumRatingLayoutV3Script';
-    script.src='/js/album-rating-layout-v3.js?v=1';
+    script.id='groovyAlbumRatingLayoutV4Script';
+    script.src='/js/album-rating-layout-v4.js?v=1';
     script.async=false;
     document.body.appendChild(script);
   }
 
   setInstallCopy();
   loadProfileModule();
-  loadAlbumRatingLayoutV3();
+  loadAlbumRatingLayoutV4();
 
   if('serviceWorker' in navigator){
     window.addEventListener('load',function(){
