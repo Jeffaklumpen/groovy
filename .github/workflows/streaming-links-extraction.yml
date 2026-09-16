@@ -55,7 +55,8 @@ jobs:
 
           function appleMusicAlbumLink(record){
             var savedUrl=Record.appleUrl(record);
-            if(/^https:\/\/(?:music|itunes)\.apple\.com\//.test(String(savedUrl||'')))return savedUrl;
+            var savedUrlText=String(savedUrl||'');
+            if(savedUrlText.indexOf('https://music.apple.com/')===0||savedUrlText.indexOf('https://itunes.apple.com/')===0)return savedUrl;
             var query=[Record.artist(record),Record.title(record)].filter(Boolean).join(' ');
             return 'https://music.apple.com/se/search?term='+encodeURIComponent(query);
           }
