@@ -31,10 +31,3 @@ create index if not exists collections_user_sort_order_idx
 
 create index if not exists wishlists_user_sort_order_idx
   on public.wishlists (user_id, sort_order);
-
--- Frontend validation already caps profile images at 5 MB. Enforce the same
--- limit server-side so bypassing the UI cannot upload arbitrarily large files.
-update storage.buckets
-set file_size_limit = 5242880
-where id = 'profile-images'
-  and (file_size_limit is null or file_size_limit > 5242880);
