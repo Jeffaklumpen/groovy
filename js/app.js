@@ -328,6 +328,12 @@ function ensureFollowingPage(){
             catch(error){console.error('Could not unfollow:',error);unfollow.disabled=false;unfollow.textContent='Unfollow';}
             return;
         }
+        var shelf=event.target.closest('[data-shelf-username]');
+        if(shelf){
+            event.preventDefault();
+            openCollectorRoute(shelf.getAttribute('data-shelf-username'),'collection');
+            return;
+        }
         var open=event.target.closest('[data-profile-username]');
         if(open){
             event.preventDefault();
@@ -377,7 +383,7 @@ async function renderFollowingPage(){
             '<div><strong>'+Number(item.wishlist_count||0)+'</strong><span>Wishlist</span></div>'+
             '<div><strong>'+Number(item.common_count||0)+'</strong><span>In common</span></div>'+
           '</div>'+
-          '<div class="following-actions"><button type="button" data-profile-username="'+escapeSocialHtml(item.username||'')+'">View profile</button><button class="following-unfollow" type="button" data-unfollow-user="'+escapeSocialHtml(item.user_id||'')+'">Unfollow</button></div>'+
+          '<div class="following-actions"><button type="button" data-profile-username="'+escapeSocialHtml(item.username||'')+'">View Profile</button><button type="button" data-shelf-username="'+escapeSocialHtml(item.username||'')+'">View Shelf</button><button class="following-unfollow" type="button" data-unfollow-user="'+escapeSocialHtml(item.user_id||'')+'">Unfollow</button></div>'+
         '</article>';
     }).join('');
 }
