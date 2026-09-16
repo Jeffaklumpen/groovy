@@ -1,6 +1,9 @@
 (function(){
 'use strict';
 
+var Record=window.GroovyRecord;
+if(!Record)return;
+
 var currentDetailIndex=-1;
 var wishlistRatingTimer=null;
 var socialToken=0;
@@ -49,7 +52,7 @@ function detailIndex(){
   artist=artist.trim();
 
   var current=recordAt(currentDetailIndex);
-  if(current&&String(current[2]||'').trim()===album&&(!artist||String(current[1]||'').trim()===artist)){
+  if(current&&String(Record.title(current)||'').trim()===album&&(!artist||String(Record.artist(current)||'').trim()===artist)){
     return currentDetailIndex;
   }
 
@@ -57,8 +60,8 @@ function detailIndex(){
   for(var i=0;i<window.records.length;i++){
     var record=window.records[i];
     if(!record)continue;
-    if(String(record[2]||'').trim()!==album)continue;
-    if(artist&&String(record[1]||'').trim()!==artist)continue;
+    if(String(Record.title(record)||'').trim()!==album)continue;
+    if(artist&&String(Record.artist(record)||'').trim()!==artist)continue;
     currentDetailIndex=i;
     return i;
   }
@@ -106,9 +109,9 @@ function updateDetailRating(index){
   var root=document.getElementById('detailRating');
   if(!record||!root)return;
 
-  var own=clamp(record[5]);
-  var community=clamp(record[15]);
-  var count=parseInt(record[16],10)||0;
+  var own=clamp(Record.ownRating(record));
+  var community=clamp(Record.communityRating(record));
+  var count=parseInt(Record.communityCount(record),10)||0;
   var yours=root.querySelector('.rating-panel-your');
   var communityPanel=root.querySelector('.rating-panel-community');
 
@@ -135,8 +138,8 @@ function patchCard(card,record){
   if(!card||!record)return;
   var target=card.querySelector('.cover-rating');
   if(!target)return;
-  var average=clamp(record[15]);
-  var marker=average+'|'+(record[16]||0);
+  var average=clamp(Record.communityRating(record));
+  var marker=average+'|'+(Record.communityCount(record)||0);
   if(target.dataset.communityMarker===marker&&target.querySelector('.cover-rating-inner'))return;
   target.dataset.communityMarker=marker;
   target.innerHTML='<span class="cover-rating-inner">'+starMeter(average,'is-compact')+'<span class="cover-rating-number">'+ratingText(average)+'</span></span>';
@@ -148,7 +151,7 @@ function patchCardsForAlbum(albumId){
   collection.querySelectorAll('.record[data-index]').forEach(function(card){
     var index=parseInt(card.getAttribute('data-index'),10);
     var record=recordAt(index);
-    if(!record||String(record[8])!==String(albumId))return;
+    if(!record||String(Record.albumId(record))!==String(albumId))return;
     patchCard(card,record);
   });
 }
@@ -172,7 +175,7 @@ async function refreshWishlistRatings(){
   var user=await sessionUser();
   if(!user)return;
 
-  var albumIds=Array.from(new Set(records.map(function(record){return record&&record[8];}).filter(Boolean)));
+  var albumIds=Array.from(new Set(records.map(function(record){return record&&Record.albumId(record);}).filter(Boolean)));
   if(!albumIds.length)return;
 
   var result=await supabaseClient.from('album_ratings')
@@ -186,10 +189,8 @@ async function refreshWishlistRatings(){
   var map=ratingMap(result.data||[],user.id);
   records.forEach(function(record){
     if(!record)return;
-    var entry=map[String(record[8])]||{own:0,average:0,count:0};
-    record[5]=entry.own||0;
-    record[15]=entry.average||0;
-    record[16]=entry.count||0;
+    var entry=map[String(Record.albumId(record))]||{own:0,average:0,count:0};
+    Record.setRatings(record,entry.own||0,entry.average||0,entry.count||0);
   });
 
   patchAllWishlistCards();
@@ -211,10 +212,10 @@ async function removeRating(index,button){
   var user=await sessionUser();
   if(!record||!user)return;
 
-  var albumId=record[8];
-  var oldOwn=clamp(record[5]);
-  var oldAverage=clamp(record[15]);
-  var oldCount=parseInt(record[16],10)||0;
+  var albumId=Record.albumId(record);
+  var oldOwn=clamp(Record.ownRating(record));
+  var oldAverage=clamp(Record.communityRating(record));
+  var oldCount=parseInt(Record.communityCount(record),10)||0;
 
   button.disabled=true;
   button.textContent='Removing…';
@@ -239,10 +240,8 @@ async function removeRating(index,button){
   }
 
   (window.records||[]).forEach(function(item){
-    if(!item||String(item[8])!==String(albumId))return;
-    item[5]=0;
-    item[15]=nextAverage;
-    item[16]=nextCount;
+    if(!item||String(Record.albumId(item))!==String(albumId))return;
+    Record.setRatings(item,0,nextAverage,nextCount);
   });
 
   updateDetailRating(index);
@@ -350,11 +349,11 @@ async function refreshWishlistCollectedBy(index){
   var followedIds=(follows.data||[]).map(function(row){return row.followed_id;}).filter(Boolean);
   if(!followedIds.length){renderCollectedBy([]);return;}
 
-  var masterId=String(record[10]||'').trim();
+  var masterId=String(Record.discogsMasterId(record)||'').trim();
   var query=supabaseClient.from('collections')
     .select(masterId?'user_id,albums!inner(discogs_master_id)':'user_id')
     .in('user_id',followedIds);
-  query=masterId?query.eq('albums.discogs_master_id',masterId):query.eq('album_id',record[8]);
+  query=masterId?query.eq('albums.discogs_master_id',masterId):query.eq('album_id',Record.albumId(record));
 
   var matches=await query;
   if(matches.error||token!==socialToken)return;
@@ -386,7 +385,7 @@ async function addWishlistToCollection(index,button){
     var existing=await supabaseClient.from('collections')
       .select('id')
       .eq('user_id',user.id)
-      .eq('album_id',record[8])
+      .eq('album_id',Record.albumId(record))
       .limit(1);
     if(existing.error)throw existing.error;
 
@@ -401,9 +400,9 @@ async function addWishlistToCollection(index,button){
       var nextOrder=last.data&&last.data.length?(parseInt(last.data[0].sort_order,10)||0)+1:1;
       var inserted=await supabaseClient.from('collections').insert({
         user_id:user.id,
-        album_id:record[8],
-        cover_url:record[6]||null,
-        discogs_style:record[4]||null,
+        album_id:Record.albumId(record),
+        cover_url:Record.coverUrl(record)||null,
+        discogs_style:Record.genre(record)||null,
         sort_order:nextOrder
       });
       if(inserted.error)throw inserted.error;
@@ -411,7 +410,7 @@ async function addWishlistToCollection(index,button){
 
     var removed=await supabaseClient.from('wishlists')
       .delete()
-      .eq('id',record[9])
+      .eq('id',Record.entryId(record))
       .eq('user_id',user.id);
     if(removed.error)throw removed.error;
 
@@ -498,7 +497,7 @@ function install(){
     if(index<0)return;
     var albumId=event&&event.detail&&event.detail.albumId;
     var record=recordAt(index);
-    if(albumId&&record&&String(record[8])!==String(albumId))return;
+    if(albumId&&record&&String(Record.albumId(record))!==String(albumId))return;
     updateDetailRating(index);
   });
 

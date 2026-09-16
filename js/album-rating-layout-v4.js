@@ -1,6 +1,9 @@
 (function(){
 'use strict';
 
+var Record=window.GroovyRecord;
+if(!Record)return;
+
 var overlay=document.getElementById('albumOverlay');
 var ratingRoot=document.getElementById('detailRating');
 var profileCache=new Map();
@@ -40,8 +43,8 @@ function currentRecord(){
 
   for(var i=0;i<window.records.length;i++){
     var record=window.records[i];
-    if(!record||String(record[2]||'').trim()!==album)continue;
-    if(artist&&String(record[1]||'').trim()!==artist)continue;
+    if(!record||String(Record.title(record)||'').trim()!==album)continue;
+    if(artist&&String(Record.artist(record)||'').trim()!==artist)continue;
     return record;
   }
   return null;
@@ -127,7 +130,7 @@ function decorateYour(record){
   var label=panel.querySelector('.rating-panel-label span:last-child');
   if(label&&label.textContent!=='Your Rating')label.textContent='Your Rating';
 
-  var own=clamp(record&&record[5]);
+  var own=clamp(record&&Record.ownRating(record));
   var stars=panel.querySelector('.rating-panel-stars');
   if(stars){
     stars.querySelectorAll('.album-rating-star').forEach(function(star){
@@ -159,8 +162,8 @@ function decorateCommunity(record){
   var label=panel.querySelector('.rating-panel-label span:last-child');
   if(label&&label.textContent!=='Community Rating')label.textContent='Community Rating';
 
-  var average=clamp(record&&record[15]);
-  var count=parseInt(record&&record[16],10)||0;
+  var average=clamp(record&&Record.communityRating(record));
+  var count=parseInt(record&&Record.communityCount(record),10)||0;
   var main=panel.querySelector('.rating-panel-community-main');
   var marker=average+'|'+count;
   if(main&&panel.dataset.groovyCommunityV4!==marker){
@@ -255,8 +258,8 @@ async function syncViewed(){
   }
 
   var record=currentRecord();
-  if(!record||!record[8])return;
-  var albumId=record[8];
+  if(!record||!Record.albumId(record))return;
+  var albumId=Record.albumId(record);
   var token=++viewedToken;
 
   try{
@@ -356,7 +359,7 @@ function install(){
     if(!overlay.classList.contains('visible'))return;
     var record=currentRecord();
     var albumId=event&&event.detail&&event.detail.albumId;
-    if(albumId&&record&&String(record[8])!==String(albumId))return;
+    if(albumId&&record&&String(Record.albumId(record))!==String(albumId))return;
     setTimeout(decorateBase,0);
   });
 

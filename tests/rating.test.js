@@ -22,7 +22,7 @@ test('changed frontend assets are cache-busted in index',function(){
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   assert.match(html,/detail-enhancements\.css\?v=8/);
   assert.match(html,/app\.js\?v=125/);
-  assert.match(html,/detail-enhancements-v2\.js\?v=8/);
+  assert.match(html,/detail-enhancements-v2\.js\?v=9/);
   assert.match(html,/profile\.js\?v=10/);
-  assert.match(html,/album-rating-layout-v4\.js\?v=2/);
+  assert.match(html,/album-rating-layout-v4\.js\?v=3/);
 });

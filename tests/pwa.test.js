@@ -32,7 +32,7 @@ test('mobile header offers app installation instead of a delete toggle',function
   assert.doesNotMatch(pwa,/loadProfileModule|loadAlbumRatingLayoutV4|profile\.js|album-rating-layout-v4/);
   assert.match(html,/href="\/css\/profile\.css\?v=9"/);
   assert.match(html,/src="\/js\/profile\.js\?v=10"/);
-  assert.match(html,/src="\/js\/album-rating-layout-v4\.js\?v=2"/);
+  assert.match(html,/src="\/js\/album-rating-layout-v4\.js\?v=3"/);
 });
 
 test('long press enters delete mode before movement starts sorting',function(){
@@ -80,7 +80,7 @@ test('routing state stays pure and detail enhancements load directly',function()
   assert.doesNotMatch(routeState,/installRuntimeFixes|syncPublicShelfRecords|Object\.defineProperty\(windowObject,'loadCollection'/);
   assert.doesNotMatch(html,/route-runtime\.js/);
   assert.match(html,/href="\/css\/detail-enhancements\.css\?v=8"/);
-  assert.match(html,/src="\/js\/detail-enhancements-v2\.js\?v=8"/);
+  assert.match(html,/src="\/js\/detail-enhancements-v2\.js\?v=9"/);
 
   const statePosition=html.indexOf('/js/route-state.js');
   const appPosition=html.indexOf('/js/app.js');
