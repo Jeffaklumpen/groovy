@@ -716,13 +716,7 @@ registerButton.addEventListener('click',async function(){
     }
 
     if(data.session){
-        await supabaseClient
-            .from('profiles')
-            .insert({
-                id:data.user.id,
-                username:username
-            });
-
+        // The auth trigger handle_new_user creates the profile from signup metadata.
         await updateAuthUI();
     }else{
         alert('Kontot är skapat. Kontrollera din e-post för att bekräfta kontot.');
@@ -4484,18 +4478,13 @@ async function moveWishlistAlbumToCollection(index,button){
 
     var {data:existingCollection,error:existingError}=await supabaseClient
       .from('collections')
-      .select('id,album_id,albums(title,artists(name))')
+      .select('id')
       .eq('user_id',user.id)
-      .limit(500);
+      .eq('album_id',record[8])
+      .limit(1);
     if(existingError)throw existingError;
 
-    var wantedKey=window.albumIdentityKey(record[1],record[2]);
-    var alreadyCollected=(existingCollection||[]).some(function(item){
-      var album=item.albums;
-      return item.album_id===record[8]||(
-        album&&window.albumIdentityKey(album.artists&&album.artists.name,album.title)===wantedKey
-      );
-    });
+    var alreadyCollected=!!(existingCollection&&existingCollection.length);
 
     if(!alreadyCollected){
       var {data:lastCollection,error:lastError}=await supabaseClient
@@ -8565,19 +8554,14 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,coverState,but
         if(isWishlistDestination){
             const {data:collectionRows,error:collectionMatchError}=await supabaseClient
                 .from('collections')
-                .select('id,album_id,albums(title,artists(name))')
+                .select('id')
                 .eq('user_id',user.id)
-                .limit(500);
+                .eq('album_id',albumId)
+                .limit(1);
 
             if(collectionMatchError)throw collectionMatchError;
 
-            const destinationKey=window.albumIdentityKey(discogsArtist,discogsTitle);
-            const collectionMatch=(collectionRows||[]).some(function(item){
-                var album=item.albums;
-                return item.album_id===albumId||(
-                    album&&window.albumIdentityKey(album.artists&&album.artists.name,album.title)===destinationKey
-                );
-            });
+            const collectionMatch=!!(collectionRows&&collectionRows.length);
 
             if(collectionMatch){
                 setSearchResultStatus(button,'collection');
