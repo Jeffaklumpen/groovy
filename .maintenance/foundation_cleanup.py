@@ -6,8 +6,8 @@ app=app_path.read_text(encoding='utf-8')
 # Internal shelf navigation should use the canonical route directly.
 old="'/user/'+encodeURIComponent"
 count=app.count(old)
-if count!=2:
-    raise SystemExit(f'Expected two internal /user/ route builders, found {count}')
+if count!=3:
+    raise SystemExit(f'Expected three internal /user/ route builders, found {count}')
 app=app.replace(old,"'/shelf/'+encodeURIComponent")
 
 # Programmatic application routing announces the URL change to feature modules.
