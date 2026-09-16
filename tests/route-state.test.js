@@ -70,3 +70,18 @@ test('profile routing does not monkey patch browser history or route helpers',fu
   assert.doesNotMatch(profile,/GroovyRouteState\.profileUsernameFromPath\s*=/);
   assert.match(profile,/addEventListener\('groovy-route-change',syncRoute\)/);
 });
+
+
+test('own collection loader cannot invalidate a viewed shelf load',function(){
+  const fs=require('node:fs');
+  const path=require('node:path');
+  const app=fs.readFileSync(path.resolve(__dirname,'..','js','app.js'),'utf8');
+  const start=app.indexOf('window.loadCollection=async function(){');
+  const end=app.indexOf('function safeExternalUrl',start);
+  assert.ok(start>=0&&end>start,'loadCollection block should exist');
+  const block=app.slice(start,end);
+  const routeGuard=block.indexOf("var path=window.location.pathname;");
+  const loadVersion=block.indexOf('var loadVersion=++window.collectionLoadVersion;');
+  assert.ok(routeGuard>=0,'route guard should exist');
+  assert.ok(loadVersion>routeGuard,'load version must be incremented only after the public shelf route guard');
+});

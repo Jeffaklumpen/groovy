@@ -1159,12 +1159,13 @@ function renderDetailRatingPanels(index){
 }
 
 window.loadCollection=async function(){
-  var loadVersion=++window.collectionLoadVersion;
   var path=window.location.pathname;
 
   if(/^\/(?:user|shelf)\/[^\/]+\/?$/.test(path)){
     return;
   }
+
+  var loadVersion=++window.collectionLoadVersion;
 
   viewedUserId=null;
   window.loginRequiredForViewedCollection=false;
