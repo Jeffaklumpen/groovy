@@ -2006,3 +2006,20 @@ body.following-page-open .library-overview,body.following-page-open #libraryPagi
 
 /* Viewed-library action row keeps all four navigation buttons on one row */
 @media screen and (max-width:760px){.viewed-user-header>.viewed-user-actions{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+
+/* ALBUM SOCIAL CONTEXT V2 - streaming first, max two collector rows */
+.detail-social-context{position:relative;display:block;margin-top:12px;padding:10px 11px}
+.detail-social-heading{display:block;min-width:0;margin:0 0 8px}
+.detail-social-heading>strong{color:#e8e8eb;font-size:10px;font-weight:760;line-height:1.2}
+.detail-social-people{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;overflow:visible}
+.detail-social-person{display:flex;width:100%;min-width:0;height:30px;padding:3px 7px 3px 4px;overflow:hidden}
+.detail-social-person-name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.detail-social-more{display:flex;width:100%;height:30px;align-items:center;justify-content:center;border:1px solid #343438;border-radius:999px;background:#151517;color:#d6d6da;font-family:inherit;font-size:16px;font-weight:800;line-height:1;cursor:pointer}
+.detail-social-more:hover,.detail-social-more[aria-expanded="true"]{border-color:rgba(255,100,24,.5);background:#202023;color:#fff}
+.detail-social-menu[hidden]{display:none!important}
+.detail-social-menu{position:absolute;z-index:45;right:10px;top:calc(100% + 6px);width:min(290px,calc(100vw - 44px));max-height:260px;padding:10px;border:1px solid #343438;border-radius:10px;background:#111113;box-shadow:0 18px 45px rgba(0,0,0,.55);overflow-y:auto}
+.detail-social-menu-title{margin:0 0 8px;color:#888890;font-size:8px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}
+.detail-social-menu-list{display:grid;grid-template-columns:1fr;gap:6px}
+.detail-social-menu-person{width:100%}
+@media screen and (max-width:760px){.detail-streaming-row{grid-column:1/-1;grid-row:3!important;margin-top:10px}.detail-social-context{grid-column:1/-1;grid-row:4!important;width:100%;margin:10px 0 0}.detail-social-people{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-social-heading{margin-bottom:7px}.detail-social-heading>strong{font-size:9px}.detail-social-person,.detail-social-more{height:29px}.album-tracks{grid-row:5!important}.album-about{grid-row:6!important}.marketplace-panel{grid-row:7!important}}
+
