@@ -288,14 +288,14 @@
       if(!windowObject.document.querySelector('link[data-groovy-detail-enhancements]')){
         var link=windowObject.document.createElement('link');
         link.rel='stylesheet';
-        link.href='/css/detail-enhancements.css?v=5';
+        link.href='/css/detail-enhancements.css?v=6';
         link.setAttribute('data-groovy-detail-enhancements','true');
         (windowObject.document.head||windowObject.document.documentElement).appendChild(link);
       }
 
       if(!windowObject.document.querySelector('script[data-groovy-detail-enhancements]')){
         var script=windowObject.document.createElement('script');
-        script.src='/js/detail-enhancements-v2.js?v=5';
+        script.src='/js/detail-enhancements-v2.js?v=6';
         script.async=false;
         script.setAttribute('data-groovy-detail-enhancements','true');
         (windowObject.document.body||windowObject.document.documentElement).appendChild(script);
