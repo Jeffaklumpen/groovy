@@ -1,0 +1,58 @@
+/* Groovy album-detail enhancements */
+
+/* Match the vertical rhythm between My Pressing -> Tracklist and Tracklist -> Marketplace. */
+.album-tracks .copy-details{margin-bottom:0!important}
+.album-tracks .tracks-title{margin-top:14px!important}
+
+/* COLLECTION MATCH belongs in the same social-context slot as Also collected by. */
+@media screen and (min-width:1121px){
+  .detail-social-context.own-match{grid-column:1/-1!important;grid-row:8!important;margin:8px 0 0!important}
+}
+
+/* Rating removal action. */
+.groovy-remove-rating{display:inline-flex;align-items:center;justify-content:center;min-height:25px;padding:0;border:0;background:transparent;color:#d07a4d;font-family:inherit;font-size:9px;font-weight:700;line-height:1;cursor:pointer;text-decoration:none}
+.groovy-remove-rating:hover{color:#ff7a1a;text-decoration:underline}
+.groovy-remove-rating:disabled{opacity:.55;cursor:wait;text-decoration:none}
+
+/* Wishlist detail action uses the same location as shelf actions. */
+.detail-shelf-actions.wishlist-detail-actions{display:flex!important}
+.detail-shelf-actions.wishlist-detail-actions .detail-move-to-collection{min-height:34px;padding:0 13px}
+
+@media screen and (max-width:760px){
+  /* Rating becomes its own full-width row below cover + album info. */
+  .album-detail>.detail-rating{grid-column:1/-1!important;grid-row:2!important;width:100%;margin:12px 0 0!important}
+  .album-detail>.detail-rating .rating-panels{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px!important}
+  .album-detail>.detail-rating .rating-panel{min-width:0;padding:10px 11px!important;border-radius:8px!important}
+  .album-detail>.detail-rating .rating-panel-label{gap:5px!important;font-size:9px!important;line-height:1.1}
+  .album-detail>.detail-rating .rating-panel-icon{display:none!important}
+  .album-detail>.detail-rating .rating-panel-stars{display:flex!important;min-height:22px!important;margin-top:6px!important;gap:1px!important;flex-wrap:nowrap!important}
+  .album-detail>.detail-rating .rating-panel .album-rating-star{padding:0 1px!important;font-size:19px!important;line-height:1!important}
+  .album-detail>.detail-rating .rating-panel-community-main{min-height:22px!important;margin-top:6px!important;gap:7px!important;white-space:nowrap}
+  .album-detail>.detail-rating .groovy-star-meter.is-community{font-size:12px!important;letter-spacing:.08em!important}
+  .album-detail>.detail-rating .rating-panel-community-main strong{font-size:20px!important;line-height:1!important}
+  .album-detail>.detail-rating .rating-panel-footer{display:flex;align-items:center;min-height:24px!important;margin-top:5px!important}
+  .album-detail>.detail-rating .rating-panel-meta,.album-detail>.detail-rating .rating-panel-empty-note{font-size:8px!important}
+  .album-detail>.detail-rating .groovy-remove-rating{min-height:24px;font-size:8px}
+
+  /* Shift the remaining mobile detail sections down one logical row. */
+  .detail-shelf-actions{grid-row:3!important}
+  .detail-streaming-row{grid-row:4!important}
+  .detail-social-context,.detail-social-context:not(.own-match),.detail-social-context.own-match{grid-row:5!important}
+  .album-tracks{grid-row:6!important}
+  .album-about{grid-row:7!important}
+  .marketplace-panel{grid-row:8!important}
+
+  .detail-shelf-actions.wishlist-detail-actions{grid-column:1/-1!important;width:100%;margin:10px 0 0!important}
+  .detail-shelf-actions.wishlist-detail-actions .detail-move-to-collection{width:100%;min-height:42px;justify-content:center;font-size:12px}
+
+  .album-tracks .copy-details{margin-bottom:0!important}
+  .album-tracks .tracks-title{margin-top:12px!important}
+}
+
+@media screen and (max-width:380px){
+  .album-detail>.detail-rating .rating-panels{gap:6px!important}
+  .album-detail>.detail-rating .rating-panel{padding:9px 8px!important}
+  .album-detail>.detail-rating .rating-panel .album-rating-star{font-size:17px!important}
+  .album-detail>.detail-rating .groovy-star-meter.is-community{font-size:10px!important}
+  .album-detail>.detail-rating .rating-panel-community-main strong{font-size:18px!important}
+}
