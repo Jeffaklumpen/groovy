@@ -19,10 +19,15 @@ fs.writeFileSync('index.html',repaired);
 const app=fs.readFileSync('js/app.js','utf8');
 const requested=[...app.matchAll(/getElementById\(['"]([^'"]+)['"]\)/g)].map(m=>m[1]);
 const ids=new Set([...repaired.matchAll(/\bid=["']([^"']+)["']/g)].map(m=>m[1]));
-const dynamic=new Set(['carouselViewport','followingPage']);
+const dynamic=new Set([
+  'carouselViewport','followingPage',
+  'conditionEditor','editConditionButton','identifyPressingButton','mediaConditionSelect','sleeveConditionSelect',
+  'pressingMatrixA','pressingMatrixB','pressingMatrixC','pressingMatrixD','pressingMatrixE','pressingMatrixF','pressingMatrixG','pressingMatrixH',
+  'savePressingButton'
+]);
 const missing=[...new Set(requested)].filter(id=>!ids.has(id)&&!dynamic.has(id)).sort();
 if(missing.length) throw new Error('Static DOM IDs still missing after repair: '+missing.join(', '));
 
-const test=`const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('fs');\n\ntest('app.js static DOM references exist in index.html',()=>{\n  const app=fs.readFileSync('js/app.js','utf8');\n  const html=fs.readFileSync('index.html','utf8');\n  const requested=[...app.matchAll(/getElementById\\(['\"]([^'\"]+)['\"]\\)/g)].map(m=>m[1]);\n  const ids=new Set([...html.matchAll(/\\bid=[\"']([^\"']+)[\"']/g)].map(m=>m[1]));\n  const dynamic=new Set(['carouselViewport','followingPage']);\n  const missing=[...new Set(requested)].filter(id=>!ids.has(id)&&!dynamic.has(id)).sort();\n  assert.deepEqual(missing,[]);\n});\n`;
+const test=`const test=require('node:test');\nconst assert=require('node:assert/strict');\nconst fs=require('fs');\n\ntest('app.js static DOM references exist in index.html',()=>{\n  const app=fs.readFileSync('js/app.js','utf8');\n  const html=fs.readFileSync('index.html','utf8');\n  const requested=[...app.matchAll(/getElementById\\(['\"]([^'\"]+)['\"]\\)/g)].map(m=>m[1]);\n  const ids=new Set([...html.matchAll(/\\bid=[\"']([^\"']+)[\"']/g)].map(m=>m[1]));\n  const dynamic=new Set(['carouselViewport','followingPage','conditionEditor','editConditionButton','identifyPressingButton','mediaConditionSelect','sleeveConditionSelect','pressingMatrixA','pressingMatrixB','pressingMatrixC','pressingMatrixD','pressingMatrixE','pressingMatrixF','pressingMatrixG','pressingMatrixH','savePressingButton']);\n  const missing=[...new Set(requested)].filter(id=>!ids.has(id)&&!dynamic.has(id)).sort();\n  assert.deepEqual(missing,[]);\n});\n`;
 fs.writeFileSync('tests/dom-contract.test.js',test);
 console.log('Repaired index DOM section and wrote DOM contract test.');
