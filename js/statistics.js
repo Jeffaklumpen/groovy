@@ -100,7 +100,6 @@
         followingComparisonCard('Most records in common',hasFollowing?social.mostCommon:null,'common')+
         followingComparisonCard('Closest music taste',hasFollowing?social.closestTaste:null,'taste')+
       '</div>'+
-      (hasFollowing?'<p class="stats-community-note">Music taste match compares the full genre mix across both collections. 100% means the genre distributions are identical; genres that do not overlap lower the score.</p>':'')+
     '</section>';
   }
 
@@ -212,7 +211,14 @@
     if(user)openStatistics(user.id,{username:profileUsername.textContent});
   });
 
-  viewedButton.addEventListener('click',function(){
+  viewedButton.addEventListener('click',async function(){
+    var header=document.getElementById('viewedUserHeader');
+    if(header&&header.dataset.own==='true'){
+      var sessionResult=await supabaseClient.auth.getSession();
+      var user=sessionResult.data&&sessionResult.data.session&&sessionResult.data.session.user;
+      if(user)openStatistics(user.id,{username:profileUsername.textContent});
+      return;
+    }
     var profile=window.groovyViewedStatisticsProfile;
     if(profile)openStatistics(profile.id,profile);
   });
