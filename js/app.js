@@ -772,6 +772,9 @@ function copyDetailsFromRow(item){
 
 (function(){
 
+var Record=window.GroovyRecord;
+if(!Record)throw new Error('GroovyRecord must load before app.js');
+
 window.records = [];
 window.viewedUserId=null;
 window.hasAuthenticatedUser=false;
@@ -3618,23 +3621,23 @@ pressingModal.addEventListener('click',function(event){if(event.target===pressin
 
 function spotifyAlbumLink(record){
     var query=[
-        record&&record[1],
-        record&&record[2]
+        record&&Record.artist(record),
+        record&&Record.title(record)
     ].filter(Boolean).join(' ');
 
     return 'https://open.spotify.com/search/'+encodeURIComponent(query);
 }
 
 function appleMusicAlbumLink(record){
-    var savedUrl=record&&record[12];
+    var savedUrl=record&&Record.appleUrl(record);
 
     if(/^https:\/\/(?:music|itunes)\.apple\.com\//.test(String(savedUrl||''))){
         return savedUrl;
     }
 
     var query=[
-        record&&record[1],
-        record&&record[2]
+        record&&Record.artist(record),
+        record&&Record.title(record)
     ].filter(Boolean).join(' ');
 
     return 'https://music.apple.com/se/search?term='+encodeURIComponent(query);
@@ -3644,13 +3647,13 @@ function recordDisplayNumber(record){
   if(
     window.libraryView!=='wishlist'&&
     activeShelfId!=='all'&&
-    String(record&&record[13]||'')===String(activeShelfId)
+    String(record&&Record.shelfId(record)||'')===String(activeShelfId)
   ){
-    var shelfNumber=parseInt(record&&record[14],10);
+    var shelfNumber=parseInt(record&&Record.shelfSortOrder(record),10);
     if(!isNaN(shelfNumber)&&shelfNumber>0)return shelfNumber;
   }
 
-  var allRecordsNumber=parseInt(record&&record[0],10);
+  var allRecordsNumber=parseInt(record&&Record.order(record),10);
   return !isNaN(allRecordsNumber)&&allRecordsNumber>0?allRecordsNumber:'';
 }
 
@@ -3659,14 +3662,14 @@ function recordArrayIndex(record){
 }
 
 function recordHTML(record, className){
-  var smallSrc=record[6];
+  var smallSrc=Record.coverUrl(record);
   var isWishlist=window.libraryView==='wishlist';
   var recordIndex=recordArrayIndex(record);
   var displayNumber=recordDisplayNumber(record);
-  var copy=record[11]||{};
+  var copy=Record.pressing(record)||{};
   var condition=!isWishlist?recordConditionMeta(copy.mediaCondition):null;
   var showPressingPrompt=!isWishlist&&viewedUserId===null&&!condition&&!hasCopyDetails(copy);
-  var cardShelf=!isWishlist?shelfById(record[13]):null;
+  var cardShelf=!isWishlist?shelfById(Record.shelfId(record)):null;
   var cardShelfName=cardShelf&&cardShelf.name?cardShelf.name:'';
   var cardShelfIcon=cardShelf?shelfIconSvg(cardShelf.icon):'';
   var cardShelfStatus=cardShelf
@@ -3681,8 +3684,8 @@ function recordHTML(record, className){
       :'<button class="record-menu-button" type="button" aria-label="Record menu" aria-expanded="false">•••</button>'+
        '<div class="record-action-menu">'+
          '<button class="record-action-item" type="button" data-action="view">View Record</button>'+
-         '<button class="record-action-item" type="button" data-action="shelf">'+(record[13]?'Move to Shelf':'Add to Shelf')+'</button>'+
-         (record[13]?'<button class="record-action-item" type="button" data-action="unshelf">Remove from Shelf</button>':'')+
+         '<button class="record-action-item" type="button" data-action="shelf">'+(Record.shelfId(record)?'Move to Shelf':'Add to Shelf')+'</button>'+
+         (Record.shelfId(record)?'<button class="record-action-item" type="button" data-action="unshelf">Remove from Shelf</button>':'')+
          '<button class="record-action-item danger" type="button" data-action="delete">Delete Record</button>'+
        '</div>')
     :'';
@@ -3690,12 +3693,12 @@ function recordHTML(record, className){
   var html='<article class="record '+(isWishlist?'wishlist-record ':'')+(className||'')+'" draggable="false" data-index="'+recordIndex+'">'+
     '<div class="record-card-topbar"><span class="number">'+displayNumber+'</span>'+cardShelfStatus+removeButton+'</div>'+
     '<div class="cover-wrapper">'+
-      '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(record[1]+' - '+record[2])+'">'+
+      '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(Record.artist(record)+' - '+Record.title(record))+'">'+
     '</div>'+
     '<div class="info">'+
-      '<div class="record-heading-row"><div class="album">'+esc(record[2])+'</div></div>'+
-      '<div class="artist">'+esc(record[1])+'</div>'+
-      '<div class="record-meta-row"><span class="year">'+esc(record[3])+'</span>'+
+      '<div class="record-heading-row"><div class="album">'+esc(Record.title(record))+'</div></div>'+
+      '<div class="artist">'+esc(Record.artist(record))+'</div>'+
+      '<div class="record-meta-row"><span class="year">'+esc(Record.year(record))+'</span>'+
       (condition?'<span class="record-condition-badge condition-'+condition.className+'" title="Record condition: '+esc(condition.label)+'">'+esc(copy.mediaCondition)+'</span>':'')+
       (showPressingPrompt?'<span class="pressing-prompt-badge" title="Add pressing details">Add pressing</span>':'')+
       '<span class="cover-rating">';
@@ -3703,7 +3706,7 @@ function recordHTML(record, className){
   if(isWishlist){
     html+='<span class="wishlist-cover-label"><span class="wishlist-icon" aria-hidden="true"></span>Wishlisted</span>';
   }else{
-    html+='<span class="cover-rating-inner">'+renderStaticStarMeter(record[15]||0,'is-compact')+'<span class="cover-rating-number">'+esc(formatCommunityRating(record[15]||0))+'</span></span>';
+    html+='<span class="cover-rating-inner">'+renderStaticStarMeter(Record.communityRating(record)||0,'is-compact')+'<span class="cover-rating-number">'+esc(formatCommunityRating(Record.communityRating(record)||0))+'</span></span>';
   }
 
   html+='</span></div></div>'+
@@ -3715,7 +3718,7 @@ function recordHTML(record, className){
         '<a class="streaming-link streaming-service apple-service" '+
             'href="'+esc(appleMusicAlbumLink(record))+'" '+
             'target="_blank" rel="noopener noreferrer" '+
-            'aria-label="Listen to '+esc(record[2])+' by '+esc(record[1])+' on Apple Music">'+
+            'aria-label="Listen to '+esc(Record.title(record))+' by '+esc(Record.artist(record))+' on Apple Music">'+
             '<img class="apple-music-small-badge" '+
                 'src="/Apple_Music_Listen_on_Badge_Small.svg" '+
                 'alt="Listen on Apple Music">'+
@@ -3724,7 +3727,7 @@ function recordHTML(record, className){
         '<a class="streaming-link streaming-service spotify-service" '+
             'href="'+esc(spotifyAlbumLink(record))+'" '+
             'target="_blank" rel="noopener noreferrer" '+
-            'aria-label="Listen to '+esc(record[2])+' by '+esc(record[1])+' on Spotify">'+
+            'aria-label="Listen to '+esc(Record.title(record))+' by '+esc(Record.artist(record))+' on Spotify">'+
             '<img class="spotify-service-logo" '+
                 'src="/Full_Logo_Green_RGB.svg" '+
                 'alt="Spotify">'+
@@ -3762,7 +3765,7 @@ function normalizeWikipediaIdentity(value){
 }
 
 function wikipediaCacheKey(record){
-  return 'groovy-wikipedia-about-v5:'+normalizeWikipediaIdentity(record&&record[1])+'|'+normalizeWikipediaIdentity(record&&record[2]);
+  return 'groovy-wikipedia-about-v5:'+normalizeWikipediaIdentity(Record.artist(record))+'|'+normalizeWikipediaIdentity(Record.title(record));
 }
 
 function wikipediaIntroduction(extract){
@@ -3847,11 +3850,11 @@ function syncWikipediaAboutToggle(reset){
 }
 
 function wikipediaCandidateScore(page,record){
-  var album=normalizeWikipediaIdentity(record&&record[2]);
-  var artist=normalizeWikipediaIdentity(record&&record[1]);
+  var album=normalizeWikipediaIdentity(Record.title(record));
+  var artist=normalizeWikipediaIdentity(Record.artist(record));
   var title=normalizeWikipediaIdentity(page&&page.title);
   var extract=normalizeWikipediaIdentity(wikipediaIntroduction(page&&page.extract));
-  var year=String(record&&record[3]||'').trim();
+  var year=String(Record.year(record)||'').trim();
   var score=0;
 
   if(!album||!title)return -100;
