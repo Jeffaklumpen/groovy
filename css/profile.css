@@ -221,3 +221,9 @@ body.collector-profile-open .header{position:relative;z-index:200}
 .collector-profile-toolbar{position:relative!important;top:auto!important;z-index:1;height:58px}
 .collector-profile-content{padding:30px 0 44px}
 @media(max-width:760px){.collector-profile-page{min-height:calc(100vh - 90px)}.collector-profile-toolbar{height:52px}.collector-profile-content{padding:20px 0 34px}}
+
+.collector-profile-follow{min-width:112px;height:42px;padding:0 18px;border:1px solid #e85301;border-radius:10px;background:#e85301;color:#fff;font-family:inherit;font-size:12px;font-weight:750;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
+.collector-profile-follow:hover{background:#f16a22;border-color:#f16a22;transform:translateY(-1px)}
+.collector-profile-follow.following{border-color:rgba(255,255,255,.14);background:#1d1d20;color:#c5c5ca}
+.collector-profile-follow.following:hover{border-color:rgba(255,255,255,.25);background:#29292d;color:#fff}
+.collector-profile-follow:disabled{opacity:.65;cursor:wait;transform:none}
