@@ -97,3 +97,15 @@ test('signup uses the auth trigger and collection membership checks are direct',
   assert.match(app,/\.eq\('album_id',record\[8\]\)\s*\.limit\(1\)/);
   assert.doesNotMatch(app,/\.limit\(500\)/);
 });
+
+
+test('document metadata is accessible and obsolete rating scripts are gone',function(){
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  assert.match(html,/<html lang="en">/);
+  assert.match(html,/name="viewport" content="width=device-width, initial-scale=1.0"/);
+  assert.doesNotMatch(html,/user-scalable=no|maximum-scale|minimum-scale/);
+  ['album-rating-context.js','album-rating-layout-v2.js','album-rating-layout-v3.js'].forEach(function(file){
+    assert.equal(fs.existsSync(path.join(root,'js',file)),false);
+  });
+  assert.equal(fs.existsSync(path.join(root,'js','album-rating-layout-v4.js')),true);
+});
