@@ -1141,18 +1141,21 @@ function renderDetailRatingPanels(index){
   var communityAverage=clampGroovyRating(record[15]);
   var communityCount=parseInt(record[16],10)||0;
   var ownStars='';
+  var personIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.2"></circle><path d="M5.8 19.3c.4-4 2.8-6.2 6.2-6.2s5.8 2.2 6.2 6.2"></path></svg>';
+  var communityIcon='<svg viewBox="0 0 28 24" aria-hidden="true"><circle cx="14" cy="6.2" r="2.8"></circle><circle cx="6.6" cy="8.1" r="2.3"></circle><circle cx="21.4" cy="8.1" r="2.3"></circle><path d="M8.4 19.4c.35-4.1 2.45-6.4 5.6-6.4s5.25 2.3 5.6 6.4"></path><path d="M1.9 19.4c.25-3.2 1.9-5.1 4.7-5.1 1.1 0 2 .25 2.8.75M26.1 19.4c-.25-3.2-1.9-5.1-4.7-5.1-1.1 0-2 .25-2.8.75"></path></svg>';
+
   for(var i=1;i<=5;i++){
     ownStars+='<button class="album-rating-star '+(i<=ownRating?'filled':'empty')+'" type="button" data-rating="'+i+'" aria-label="Rate '+i+' out of 5">★</button>';
   }
 
   detailRating.innerHTML='<div class="rating-panels">'+
     '<section class="rating-panel rating-panel-your">'+
-      '<div class="rating-panel-label"><span class="rating-panel-icon" aria-hidden="true">●</span><span>Your rating</span><button class="rating-panel-help" type="button" tabindex="-1" aria-label="Your rating info">i</button></div>'+
+      '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-user">'+personIcon+'</span><span>Your rating</span></div>'+
       '<div class="rating-panel-stars" aria-label="Your rating">'+ownStars+'</div>'+
-      '<div class="rating-panel-footer">'+(ownRating?'<button class="rating-panel-edit" type="button">Edit rating</button>':'<span class="rating-panel-empty-note">Not rated yet</span>')+'</div>'+
+      (ownRating?'':'<div class="rating-panel-footer"><span class="rating-panel-empty-note">Not rated yet</span></div>')+
     '</section>'+
     '<section class="rating-panel rating-panel-community">'+
-      '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-group" aria-hidden="true">◔</span><span>Community rating</span><button class="rating-panel-help" type="button" tabindex="-1" aria-label="Community rating info">i</button></div>'+
+      '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-group">'+communityIcon+'</span><span>Community rating</span></div>'+
       '<div class="rating-panel-community-main">'+renderStaticStarMeter(communityAverage,'is-community')+'<strong>'+esc(formatCommunityRating(communityAverage))+'</strong></div>'+
       '<div class="rating-panel-footer"><span class="rating-panel-meta">'+esc(String(communityCount||0))+' rating'+(communityCount===1?'':'s')+'</span></div>'+
     '</section>'+
@@ -1178,23 +1181,13 @@ function renderDetailRatingPanels(index){
       saveAlbumRating(index,parseInt(this.getAttribute('data-rating'),10));
     },{passive:false});
   }
-
-  var editButton=detailRating.querySelector('.rating-panel-edit');
-  if(editButton){
-    editButton.addEventListener('click',function(event){
-      event.preventDefault();
-      event.stopPropagation();
-      var firstEmpty=detailRating.querySelector('.album-rating-star.empty')||detailRating.querySelector('.album-rating-star:last-child');
-      if(firstEmpty)firstEmpty.focus();
-    });
-  }
 }
 
 window.loadCollection=async function(){
   var loadVersion=++window.collectionLoadVersion;
   var path=window.location.pathname;
 
-  if(/^\/user\/[^\/]+\/?$/.test(path)){
+  if(/^\/(?:user|shelf)\/[^\/]+\/?$/.test(path)){
     return;
   }
 
@@ -1397,7 +1390,30 @@ function syncAlbumDesktopColumns(){
 }
 
 syncAlbumDesktopColumns();
-window.addEventListener('resize',syncAlbumDesktopColumns,{passive:true});
+
+function syncDesktopAlbumMiddleHeight(){
+  if(!albumDetailElement)return;
+  var main=albumDetailElement.querySelector('.album-detail-main');
+  var cover=albumDetailElement.querySelector('.album-detail-cover');
+  if(!main||!cover)return;
+
+  if(window.innerWidth<=1120){
+    main.style.height='';
+    main.style.maxHeight='';
+    return;
+  }
+
+  var coverHeight=Math.floor(cover.getBoundingClientRect().height||0);
+  if(coverHeight>0){
+    main.style.height=coverHeight+'px';
+    main.style.maxHeight=coverHeight+'px';
+  }
+}
+
+window.addEventListener('resize',function(){
+  syncAlbumDesktopColumns();
+  window.requestAnimationFrame(syncDesktopAlbumMiddleHeight);
+},{passive:true});
 var wikipediaAboutRequestVersion=0;
 var wikipediaAlbumCache=new Map();
 var WIKIPEDIA_CACHE_TTL=14*24*60*60*1000;
@@ -4069,16 +4085,17 @@ function renderFollowedCollectorsForAlbum(profiles){
   detailSocialContext.hidden=false;
 
   var compact=window.matchMedia&&window.matchMedia('(max-width:760px)').matches;
-  var slotLimit=compact?4:8;
+  var slotLimit=compact?4:10;
   var hasMore=profiles.length>slotLimit;
   var visibleLimit=hasMore?slotLimit-1:slotLimit;
   var visibleProfiles=profiles.slice(0,visibleLimit);
   var extraProfiles=profiles.slice(visibleLimit);
 
   function personButton(profile,extraClass){
-    return '<button class="detail-social-person'+(extraClass?' '+extraClass:'')+'" type="button" data-detail-social-username="'+detailSocialEscape(profile.username||'')+'">'+
+    var username=profile.username||'Collector';
+    return '<button class="detail-social-person'+(extraClass?' '+extraClass:'')+'" type="button" data-detail-social-username="'+detailSocialEscape(username)+'" data-tooltip="'+detailSocialEscape(username)+'" aria-label="View '+detailSocialEscape(username)+'">'+
       '<span class="detail-social-avatar" style="background-image:url(&quot;'+detailSocialEscape(profile.avatar_url||'/avatar_placeholder.png')+'&quot;)"></span>'+
-      '<span class="detail-social-person-name">'+detailSocialEscape(profile.username||'Collector')+'</span>'+
+      '<span class="detail-social-person-name">'+detailSocialEscape(username)+'</span>'+
     '</button>';
   }
 
@@ -4285,8 +4302,12 @@ function openAlbum(index){
   albumOverlay.className='album-overlay visible';
   document.body.style.overflow='hidden';
   requestAnimationFrame(function(){
+    syncDesktopAlbumMiddleHeight();
     syncMobileDetailPairHeight();
-    requestAnimationFrame(syncMobileDetailPairHeight);
+    requestAnimationFrame(function(){
+      syncDesktopAlbumMiddleHeight();
+      syncMobileDetailPairHeight();
+    });
   });
 }
 
