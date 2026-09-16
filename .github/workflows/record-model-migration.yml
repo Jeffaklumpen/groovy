@@ -130,9 +130,14 @@ jobs:
           fs.writeFileSync('js/album-rating-layout-v4.js',layout);
 
           let pwa=fs.readFileSync('tests/pwa.test.js','utf8');
-          pwa=replaceExact(pwa,'src="\\/js\\/album-rating-layout-v4\\.js\\?v=2"','src="\\/js\\/album-rating-layout-v4\\.js\\?v=3"','rating cache assertion');
-          pwa=replaceExact(pwa,'src="\\/js\\/detail-enhancements-v2\\.js\\?v=8"','src="\\/js\\/detail-enhancements-v2\\.js\\?v=9"','detail cache assertion');
+          pwa=replaceExact(pwa,'src="\\/js\\/album-rating-layout-v4\\.js\\?v=2"','src="\\/js\\/album-rating-layout-v4\\.js\\?v=3"','pwa rating cache assertion');
+          pwa=replaceExact(pwa,'src="\\/js\\/detail-enhancements-v2\\.js\\?v=8"','src="\\/js\\/detail-enhancements-v2\\.js\\?v=9"','pwa detail cache assertion');
           fs.writeFileSync('tests/pwa.test.js',pwa);
+
+          let ratingTests=fs.readFileSync('tests/rating.test.js','utf8');
+          ratingTests=replaceExact(ratingTests,'detail-enhancements-v2\\.js\\?v=8','detail-enhancements-v2\\.js\\?v=9','rating detail cache assertion');
+          ratingTests=replaceExact(ratingTests,'album-rating-layout-v4\\.js\\?v=2','album-rating-layout-v4\\.js\\?v=3','rating layout cache assertion');
+          fs.writeFileSync('tests/rating.test.js',ratingTests);
 
           fs.writeFileSync('tests/record-model.test.js',`const assert=require('node:assert/strict');
           const fs=require('node:fs');
