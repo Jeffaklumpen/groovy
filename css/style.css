@@ -1942,3 +1942,17 @@ body.following-page-open .library-overview,body.following-page-open #libraryPagi
 @media (max-width:1050px){.following-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:720px){#authBox{gap:5px}.notification-bell-button{width:40px;height:40px}.notification-panel{position:fixed;top:76px;left:12px;right:12px;width:auto;max-height:calc(100vh - 90px)}.following-page{padding-bottom:42px}.following-heading{align-items:flex-start;flex-direction:column}.following-heading h1{font-size:31px}.following-heading button{align-self:flex-start}.following-grid{grid-template-columns:1fr;gap:12px}.user-search-follow-button{min-width:68px;padding:7px 9px;font-size:10px}}
 @media screen and (max-width:390px){.notification-bell-button{width:38px;height:38px}.notification-bell-button svg{width:18px;height:18px}#authBox{gap:4px}.notification-badge{top:-5px;right:-5px}}
+
+/* SOCIAL V2 */
+.notification-panel-actions{display:flex;align-items:center;gap:2px}
+.notification-panel-actions button:last-child{color:#d5d5d9}
+.notification-panel-actions button:last-child:hover{background:rgba(232,83,1,.12);color:#ff8a50}
+.notification-shared{display:inline-flex;align-items:center;margin-left:4px;padding:2px 6px;border:1px solid rgba(255,100,24,.28);border-radius:999px;background:rgba(255,100,24,.1);color:#ff8b50;font-size:9px;font-style:normal;font-weight:800;line-height:1.35;white-space:nowrap}
+.viewed-user-actions .viewed-user-follow{border-color:rgba(255,100,24,.24)!important;background:rgba(255,100,24,.07)!important;color:#eaa07a!important}
+.viewed-user-actions .viewed-user-follow:hover{border-color:rgba(255,100,24,.4)!important;background:rgba(255,100,24,.13)!important;color:#fff!important}
+.viewed-user-actions .viewed-user-follow.following{border-color:rgba(91,176,119,.34)!important;background:rgba(91,176,119,.09)!important;color:#8bd5a9!important}
+.viewed-user-actions .viewed-follow-icon{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;flex:0 0 15px;border:1px solid currentColor;border-radius:50%;font-size:11px!important;font-weight:800;line-height:1!important}
+@media screen and (min-width:761px){.viewed-user-actions .viewed-user-follow{min-width:88px!important}}
+@media screen and (max-width:760px){.viewed-user-actions{grid-template-columns:repeat(5,minmax(0,1fr))!important}.viewed-user-actions .viewed-user-follow{width:100%;min-width:0!important}.notification-panel-head{align-items:flex-start}.notification-panel-actions{flex-wrap:wrap;justify-content:flex-end}}
+
+@media screen and (max-width:520px){.viewed-user-actions .viewed-action-label{display:none!important}.viewed-user-actions button{min-height:38px!important}.viewed-user-actions .viewed-follow-icon{margin:0}}
