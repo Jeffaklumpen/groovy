@@ -23,7 +23,7 @@
   <meta name="application-name" content="Groovy">
   <meta name="theme-color" content="#121214">
   <title>GroovyShelves – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/css/style.css?v=106">
+  <link rel="stylesheet" href="/css/style.css?v=107">
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.webmanifest?v=2">
@@ -61,6 +61,16 @@
       </div>
 
       <div id="authBox">
+        <div id="notificationBox" class="notification-box" hidden>
+          <button id="notificationBellButton" class="notification-bell-button" type="button" aria-label="Notifications" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+            <span id="notificationBadge" class="notification-badge" hidden>0</span>
+          </button>
+          <div id="notificationPanel" class="notification-panel" aria-hidden="true">
+            <div class="notification-panel-head"><div><span>ACTIVITY</span><strong>Notifications</strong></div><button id="markAllNotificationsRead" type="button">Mark all read</button></div>
+            <div id="notificationList" class="notification-list"><div class="notification-empty">No notifications yet.</div></div>
+          </div>
+        </div>
         <button id="profileButton" type="button" aria-label="Profil"><span id="profileImage"></span></button>
         <div id="profileMenu">
           <div class="profile-header"><button id="profileAvatarButton" class="profile-avatar" type="button" aria-label="Byt profilbild"><span id="profileImageMenu"></span></button><span id="profileUsername"></span></div>
@@ -68,6 +78,7 @@
           <button id="myCollectionButton" class="menu-button" type="button">My Collection</button>
           <button id="statisticsButton" class="menu-button" type="button">Statistics</button>
           <button id="searchUserButton" class="menu-button" type="button">Search User</button>
+          <button id="followingButton" class="menu-button" type="button">Following</button>
           <button id="installAppMenuButton" class="menu-button" type="button">Install Groovy</button>
           <div class="profile-divider"></div><button id="logoutButton" type="button">Logout</button>
         </div>
@@ -499,9 +510,9 @@
 </div>
 
 <script src="/js/route-state.js?v=15"></script>
-<script src="/js/app.js?v=111"></script>
+<script src="/js/app.js?v=112"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=8"></script>
-<script src="/js/pwa.js?v=10"></script>
+<script src="/js/pwa.js?v=11"></script>
 </body>
 </html>
