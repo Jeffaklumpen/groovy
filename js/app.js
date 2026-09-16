@@ -770,25 +770,6 @@ function copyDetailsFromRow(item){
   };
 }
 
-async function hydrateExtendedMatrices(rows,userId){
-  if(!rows||!rows.length)return;
-  try{
-    var response=await supabaseClient.from('collections')
-      .select('id,matrix_runout_e,matrix_runout_f,matrix_runout_g,matrix_runout_h')
-      .eq('user_id',userId);
-    if(response.error)return;
-    var byId={};
-    (response.data||[]).forEach(function(row){byId[String(row.id)]=row;});
-    rows.forEach(function(row){
-      var extra=byId[String(row.id)];
-      if(extra)Object.assign(row,extra);
-    });
-  }catch(error){
-    // The optional columns are introduced by a migration; older databases keep
-    // working with A-D until that migration is applied.
-  }
-}
-
 (function(){
 
 window.records = [];
@@ -1234,6 +1215,10 @@ window.loadCollection=async function(){
       matrix_runout_b,
       matrix_runout_c,
       matrix_runout_d,
+      matrix_runout_e,
+      matrix_runout_f,
+      matrix_runout_g,
+      matrix_runout_h,
       pressing_match_status,
       albums(
         id,
@@ -1263,7 +1248,7 @@ window.loadCollection=async function(){
         return;
     }
 
-  await hydrateExtendedMatrices(collectionData,user.id);
+
     
   var albumIds=collectionData.map(function(item){
     return item.albums&&item.albums.id;
@@ -3570,6 +3555,10 @@ async function saveSelectedPressing(selected,button){
     matrix_runout_b:matrixB&&matrixB.value?matrixB.value:null,
     matrix_runout_c:matrixC&&matrixC.value?matrixC.value:null,
     matrix_runout_d:matrixD&&matrixD.value?matrixD.value:null,
+    matrix_runout_e:matrixE&&matrixE.value?matrixE.value:null,
+    matrix_runout_f:matrixF&&matrixF.value?matrixF.value:null,
+    matrix_runout_g:matrixG&&matrixG.value?matrixG.value:null,
+    matrix_runout_h:matrixH&&matrixH.value?matrixH.value:null,
     pressing_match_status:'discogs'
   };
   var result=(userError||!user)?{error:userError||new Error('Du måste vara inloggad.')}:await supabaseClient.from('collections').update(payload)
@@ -3582,21 +3571,6 @@ async function saveSelectedPressing(selected,button){
     return;
   }
 
-  var extendedPayload={
-    matrix_runout_e:matrixE&&matrixE.value?matrixE.value:null,
-    matrix_runout_f:matrixF&&matrixF.value?matrixF.value:null,
-    matrix_runout_g:matrixG&&matrixG.value?matrixG.value:null,
-    matrix_runout_h:matrixH&&matrixH.value?matrixH.value:null
-  };
-  var extendedMatricesSaved=true;
-  if(matrixE||matrixF||matrixG||matrixH){
-    var extendedResult=await supabaseClient.from('collections').update(extendedPayload)
-      .eq('id',record[9]).eq('user_id',user.id).select('id');
-    if(extendedResult.error){
-      extendedMatricesSaved=false;
-      console.warn('Extended matrix fields are not available yet:',extendedResult.error);
-    }
-  }
 
   record[11]=record[11]||{};
   record[11].discogsReleaseId=payload.discogs_release_id;
@@ -3608,15 +3582,15 @@ async function saveSelectedPressing(selected,button){
   record[11].matrixB=payload.matrix_runout_b||'';
   record[11].matrixC=payload.matrix_runout_c||'';
   record[11].matrixD=payload.matrix_runout_d||'';
-  record[11].matrixE=extendedMatricesSaved?(extendedPayload.matrix_runout_e||''):'';
-  record[11].matrixF=extendedMatricesSaved?(extendedPayload.matrix_runout_f||''):'';
-  record[11].matrixG=extendedMatricesSaved?(extendedPayload.matrix_runout_g||''):'';
-  record[11].matrixH=extendedMatricesSaved?(extendedPayload.matrix_runout_h||''):'';
+  record[11].matrixE=payload.matrix_runout_e||'';
+  record[11].matrixF=payload.matrix_runout_f||'';
+  record[11].matrixG=payload.matrix_runout_g||'';
+  record[11].matrixH=payload.matrix_runout_h||'';
   record[11].matchStatus='discogs';
   closePressingPicker();
   buildGrid();
   renderCopyDetails(pressingAlbumIndex);
-  copyDetailsSaved.textContent=extendedMatricesSaved?'Saved':'Saved A–D · database update needed for E–H';
+  copyDetailsSaved.textContent='Saved';
 }
 
 function closePressingPicker(){
@@ -6896,6 +6870,10 @@ async function loadOtherUserCollection(userId){
             matrix_runout_b,
             matrix_runout_c,
             matrix_runout_d,
+            matrix_runout_e,
+            matrix_runout_f,
+            matrix_runout_g,
+            matrix_runout_h,
             pressing_match_status,
             albums(
                 id,
@@ -6925,7 +6903,7 @@ async function loadOtherUserCollection(userId){
         return;
     }
 
-    await hydrateExtendedMatrices(data,userId);
+
 
     var albumIds=data
         .map(function(item){
