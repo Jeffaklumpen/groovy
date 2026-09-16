@@ -21,8 +21,9 @@
     return 'https://open.spotify.com/search/'+encodeURIComponent([release.artist,release.title].filter(Boolean).join(' '));
   }
 
-  function spotifyMark(){
-    return '<svg class="spotify-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12"></circle><path d="M5.8 9.1c4.3-1.2 8.7-.8 12.4 1.2M6.7 12.5c3.6-.9 7.2-.5 10.3.9M7.6 15.6c2.8-.6 5.5-.3 7.9.7"></path></svg>';
+  function appleSearchUrl(release){
+    if(release&&release.appleUrl)return release.appleUrl;
+    return 'https://music.apple.com/us/search?term='+encodeURIComponent([release.artist,release.title].filter(Boolean).join(' '));
   }
 
   function hideStatistics(){
@@ -65,9 +66,16 @@
       }).join('')+'</div>':'<p class="stats-empty">'+escapeHtml(emptyText)+'</p>')+'</section>';
   }
 
+  function releaseStreaming(release){
+    return '<div class="stats-release-streaming">'+
+      '<a class="stats-release-service stats-release-apple" href="'+escapeHtml(appleSearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Listen to '+escapeHtml(release.title)+' on Apple Music"><img src="/apple_wide.svg" alt="Listen on Apple Music"></a>'+
+      '<a class="stats-release-service stats-release-spotify" href="'+escapeHtml(spotifySearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(release.title)+' on Spotify"><img src="/spotify_logo.svg" alt="Spotify"></a>'+
+    '</div>';
+  }
+
   function releaseCard(label,release){
     if(!release)return '<article class="stats-release stats-release-empty"><span>'+label+'</span><strong>No dated records yet</strong></article>';
-    return '<article class="stats-release"><img src="'+escapeHtml(coverUrl(release.cover))+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'"><div class="stats-release-copy"><span>'+label+'</span><strong>'+escapeHtml(release.title)+'</strong><small>'+escapeHtml(release.artist)+' · '+release.year+'</small><a class="stats-spotify-link" href="'+escapeHtml(spotifySearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(release.title)+' by '+escapeHtml(release.artist)+' on Spotify">'+spotifyMark()+'<span>Listen on Spotify</span></a></div></article>';
+    return '<article class="stats-release"><img src="'+escapeHtml(coverUrl(release.cover))+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'"><div class="stats-release-copy"><span>'+label+'</span><strong>'+escapeHtml(release.title)+'</strong><small>'+escapeHtml(release.artist)+' · '+release.year+'</small>'+releaseStreaming(release)+'</div></article>';
   }
 
   function render(profile,stats){
@@ -104,7 +112,7 @@
   async function fetchStatistics(userId){
     var results=await Promise.all([
       supabaseClient.from('profiles').select('username,avatar_url').eq('id',userId).maybeSingle(),
-      supabaseClient.from('collections').select('id,cover_url,discogs_style,discogs_release_id,media_condition,pressing_country,albums(id,title,release_year,genre,cover_url,artists(name))').eq('user_id',userId),
+      supabaseClient.from('collections').select('id,cover_url,discogs_style,discogs_release_id,media_condition,pressing_country,albums(id,title,release_year,genre,cover_url,apple_collection_url,artists(name))').eq('user_id',userId),
       supabaseClient.from('wishlists').select('id').eq('user_id',userId),
       supabaseClient.from('album_ratings').select('album_id,rating').eq('user_id',userId)
     ]);
@@ -160,7 +168,7 @@
   copyProfileButton.addEventListener('click',async function(){
     var profile=window.groovyViewedStatisticsProfile;
     if(!profile||!profile.username)return;
-    var profileUrl=window.location.origin+'/user/'+encodeURIComponent(profile.username);
+    var profileUrl=window.location.origin+'/profile/'+encodeURIComponent(profile.username);
     try{
       await navigator.clipboard.writeText(profileUrl);
       var label=copyProfileButton.querySelector('.viewed-action-label');
