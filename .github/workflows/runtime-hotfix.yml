@@ -1,0 +1,63 @@
+name: Runtime hotfix
+
+on:
+  push:
+    branches: [notes]
+    paths:
+      - '.github/workflows/runtime-hotfix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out notes
+        uses: actions/checkout@v4
+        with:
+          ref: notes
+          fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply runtime fixes
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('node:fs');
+          let app=fs.readFileSync('js/app.js','utf8');
+
+          const ratingMarker="  return record;\n}\n\nfunction renderDetailRatingPanels(index){";
+          if((app.split(ratingMarker).length-1)!==1)throw new Error('Could not locate rating helper export point');
+          app=app.replace(ratingMarker,"  return record;\n}\n\nwindow.loadAlbumRatingData=loadAlbumRatingData;\nwindow.applyAlbumRatingMeta=applyAlbumRatingMeta;\n\nfunction renderDetailRatingPanels(index){");
+
+          const notificationOld=`    notificationUserId=user.id;\n    await loadNotifications();\n    notificationChannel=supabaseClient.channel('groovy-notifications-'+user.id)\n      .on('postgres_changes',{event:'*',schema:'public',table:'notifications',filter:'recipient_id=eq.'+user.id},function(){loadNotifications();})\n      .subscribe();`;
+          const notificationNew=`    notificationUserId=user.id;\n    notificationChannel=supabaseClient.channel('groovy-notifications-'+user.id)\n      .on('postgres_changes',{event:'*',schema:'public',table:'notifications',filter:'recipient_id=eq.'+user.id},function(){loadNotifications();})\n      .subscribe();\n    await loadNotifications();`;
+          if((app.split(notificationOld).length-1)!==1)throw new Error('Could not locate notification subscription block');
+          app=app.replace(notificationOld,notificationNew);
+          fs.writeFileSync('js/app.js',app);
+
+          let tests=fs.readFileSync('tests/route-state.test.js','utf8');
+          tests+=`\n\ntest('viewed shelf rating helpers are available outside the collection module',function(){\n  const fs=require('node:fs');\n  const path=require('node:path');\n  const app=fs.readFileSync(path.resolve(__dirname,'..','js','app.js'),'utf8');\n  assert.match(app,/window\\.loadAlbumRatingData=loadAlbumRatingData/);\n  assert.match(app,/window\\.applyAlbumRatingMeta=applyAlbumRatingMeta/);\n});\n\ntest('notification realtime channel is subscribed before the first awaited reload',function(){\n  const fs=require('node:fs');\n  const path=require('node:path');\n  const app=fs.readFileSync(path.resolve(__dirname,'..','js','app.js'),'utf8');\n  const start=app.indexOf('async function syncNotificationSubscription(user)');\n  const end=app.indexOf('function openCollectorRoute',start);\n  assert.ok(start>=0&&end>start);\n  const block=app.slice(start,end);\n  const subscribe=block.indexOf('.subscribe();');\n  const initialLoad=block.lastIndexOf('await loadNotifications();');\n  assert.ok(subscribe>=0&&initialLoad>subscribe,'channel must exist before an awaited notification load can race');\n});\n`;
+          fs.writeFileSync('tests/route-state.test.js',tests);
+          NODE
+      - name: Check JavaScript syntax
+        run: node --check js/app.js
+      - name: Run regression tests
+        run: node --test tests/*.test.js
+      - name: Commit hotfix and clean temporary maintenance files
+        shell: bash
+        run: |
+          rm -f .github/workflows/runtime-hotfix.yml
+          rm -f .github/workflows/foundation-maintenance.yml
+          rm -f .maintenance/foundation_cleanup.js
+          rmdir .maintenance 2>/dev/null || true
+          git config user.name "GroovyShelves Maintenance"
+          git config user.email "150244154+Jeffaklumpen@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "No hotfix changes to commit"; exit 1; }
+          git commit -m "Fix viewed shelf runtime errors"
+          git push origin HEAD:notes
