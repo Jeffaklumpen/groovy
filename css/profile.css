@@ -227,3 +227,17 @@ body.collector-profile-open .header{position:relative;z-index:200}
 .collector-profile-follow.following{border-color:rgba(255,255,255,.14);background:#1d1d20;color:#c5c5ca}
 .collector-profile-follow.following:hover{border-color:rgba(255,255,255,.25);background:#29292d;color:#fff}
 .collector-profile-follow:disabled{opacity:.65;cursor:wait;transform:none}
+
+
+/* PUBLIC PROFILE NAV V9 - primary shelf/wishlist/statistics controls live in the top profile bar */
+.collector-profile-toolbar{gap:18px}
+.collector-profile-toolbar-label{flex:0 0 auto}
+.collector-profile-toolbar-nav{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-left:auto}
+.collector-profile-toolbar-nav button{display:inline-flex;min-height:36px;align-items:center;justify-content:center;gap:7px;padding:0 12px;border:1px solid #303034;border-radius:9px;background:#151517;color:#b8b8bd;font-family:inherit;font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
+.collector-profile-toolbar-nav button:hover{border-color:#45454b;background:#202023;color:#fff}
+.collector-profile-toolbar-nav button:active{transform:scale(.98)}
+.collector-profile-toolbar-nav .collector-profile-record{width:15px;height:15px;flex-basis:15px}
+.collector-profile-toolbar-nav .collector-profile-bookmark{width:10px;height:14px}
+.collector-profile-toolbar-nav .collector-profile-bars{width:14px;height:13px}
+.collector-profile-nav{display:none!important}
+@media(max-width:760px){.collector-profile-toolbar{height:auto!important;min-height:54px;padding:7px 0}.collector-profile-toolbar-label{display:none}.collector-profile-toolbar-nav{display:grid;width:100%;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0}.collector-profile-toolbar-nav button{width:100%;min-width:0;min-height:39px;padding:0 6px;font-size:9px}.collector-profile-content{padding-top:16px!important}}
