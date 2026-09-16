@@ -275,10 +275,6 @@ async function syncViewed(){
   }
 }
 
-async 
-
-
-
 function applyInitialAvatar(element,username){
   if(!element)return;
   var background=String(element.style.backgroundImage||'');
@@ -323,8 +319,6 @@ function scanAvatars(root){
   });
 }
 
-
-
 function queueDecorate(){
   if(queued)return;
   queued=true;
@@ -337,7 +331,7 @@ function queueDecorate(){
 
 function install(){
   if(!overlay||!ratingRoot)return;
-decorateBase();
+  decorateBase();
   scanAvatars(document);
 
   new MutationObserver(function(){
