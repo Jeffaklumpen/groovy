@@ -1,3 +1,4 @@
+# Retry after verifying current app.js anchors.
 name: Streaming links extraction
 
 on:
