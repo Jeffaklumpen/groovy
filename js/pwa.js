@@ -119,14 +119,14 @@
       var style=document.createElement('link');
       style.id='groovyProfileStyles';
       style.rel='stylesheet';
-      style.href='/css/profile.css?v=6';
+      style.href='/css/profile.css?v=7';
       document.head.appendChild(style);
     }
 
     if(!document.getElementById('groovyProfileScript')){
       var script=document.createElement('script');
       script.id='groovyProfileScript';
-      script.src='/js/profile.js?v=6';
+      script.src='/js/profile.js?v=7';
       document.body.appendChild(script);
     }
   }
