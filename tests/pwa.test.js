@@ -5,11 +5,12 @@ const test=require('node:test');
 
 const root=path.resolve(__dirname,'..');
 
-test('manifest defines an installable scoped Groovy app',function(){
+test('manifest defines an installable root-scoped Groovy app',function(){
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));
   assert.equal(manifest.short_name,'Groovy');
-  assert.equal(manifest.start_url,'/groovy/');
-  assert.equal(manifest.scope,'/groovy/');
+  assert.equal(manifest.id,'/');
+  assert.equal(manifest.start_url,'/');
+  assert.equal(manifest.scope,'/');
   assert.equal(manifest.display,'standalone');
   assert.deepEqual(manifest.display_override,['standalone']);
   assert.deepEqual(manifest.icons.map(function(icon){return icon.sizes;}),['192x192','512x512']);
@@ -37,13 +38,14 @@ test('long press enters delete mode before movement starts sorting',function(){
   assert.match(app,/\.delete-cover-button,\.wishlist-remove-button,#removeAlbumModal/);
 });
 
-test('library controls and Spotify links remain separate card actions',function(){
+test('library controls and streaming links remain separate card actions',function(){
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
   const statistics=fs.readFileSync(path.join(root,'js','statistics.js'),'utf8');
   assert.match(html,/id="librarySortMenu"/);
   assert.match(html,/id="detailSpotifyLink"/);
-  assert.match(app,/target\.closest\('\.spotify-link'\)/);
+  assert.match(app,/target\.closest\('\.streaming-link'\)/);
+  assert.match(app,/streaming-service spotify-service/);
   assert.match(statistics,/class="stats-spotify-link"/);
 });
 
@@ -62,5 +64,7 @@ test('login and empty collection actions use the shared viewport-safe flow',func
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
   assert.match(html,/Track your collection/);
   assert.match(app,/document\.body\.appendChild\(loginPanel\)/);
-  assert.equal((app.match(/openAddAlbumSearch\(\);/g)||[]).length,2);
+  assert.match(app,/function openAddAlbumSearch\(user\)/);
+  assert.match(app,/openAddAlbumSearch\(session\.user\)/);
+  assert.match(app,/openAddAlbumSearch\(user\)/);
 });
