@@ -5680,8 +5680,8 @@ function navigateViewedLibrary(nextView){
     renderCurrentRoute();
 }
 
-collectionTabButton.addEventListener('click',function(){navigateOwnLibrary('collection');});
-wishlistTabButton.addEventListener('click',function(){navigateOwnLibrary('wishlist');});
+collectionTabButton.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();navigateOwnLibrary('collection');});
+wishlistTabButton.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();navigateOwnLibrary('wishlist');});
 viewedUserShelfButton.addEventListener('click',function(){navigateViewedLibrary('collection');});
 viewedUserWishlistButton.addEventListener('click',function(){navigateViewedLibrary('wishlist');});
 
