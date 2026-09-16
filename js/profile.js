@@ -494,6 +494,10 @@
       state.publicProfile=profile;
       var sessionUser=await currentUser();
       var isOwner=!!(sessionUser&&sessionUser.id===profile.id);
+      var isFollowing=false;
+      if(sessionUser&&!isOwner&&typeof window.groovyIsFollowing==='function'){
+        try{isFollowing=await window.groovyIsFollowing(profile.id);}catch(error){isFollowing=false;}
+      }
       var counts=await publicCounts(profile.id);
       var facts=[];
       if(profile.favorite_artist)facts.push('<article><span>Favorite artist</span><strong>'+escapeHtml(profile.favorite_artist)+'</strong></article>');
@@ -513,7 +517,7 @@
               '<div><strong>'+countText(counts.shelves)+'</strong><span>Shelves</span></div>'+
             '</div>'+
           '</div>'+
-          '<div class="collector-profile-owner-actions">'+(isOwner?'<button id="collectorProfileEdit" type="button">Edit profile</button>':'')+'</div>'+
+          '<div class="collector-profile-owner-actions">'+(isOwner?'<button id="collectorProfileEdit" type="button">Edit profile</button>':(sessionUser?'<button id="collectorProfileFollow" class="collector-profile-follow'+(isFollowing?' following':'')+'" type="button" data-following="'+(isFollowing?'true':'false')+'">'+(isFollowing?'Following':'Follow')+'</button>':''))+'</div>'+
         '</section>'+
         '<nav class="collector-profile-nav" aria-label="Collector links">'+
           '<button id="collectorProfileShelf" type="button"><span class="collector-profile-record" aria-hidden="true"></span>Shelf</button>'+
@@ -535,6 +539,24 @@
       document.getElementById('collectorProfileStats').addEventListener('click',function(){navigate(statisticsUrl(profile.username));});
       var edit=document.getElementById('collectorProfileEdit');
       if(edit)edit.addEventListener('click',openSettings);
+      var follow=document.getElementById('collectorProfileFollow');
+      if(follow)follow.addEventListener('click',async function(){
+        var currentlyFollowing=follow.dataset.following==='true';
+        follow.disabled=true;
+        follow.textContent=currentlyFollowing?'Unfollowing...':'Following...';
+        try{
+          if(currentlyFollowing&&typeof window.groovyUnfollowUser==='function')await window.groovyUnfollowUser(profile.id);
+          else if(!currentlyFollowing&&typeof window.groovyFollowUser==='function')await window.groovyFollowUser(profile.id);
+          currentlyFollowing=!currentlyFollowing;
+          follow.dataset.following=currentlyFollowing?'true':'false';
+          follow.classList.toggle('following',currentlyFollowing);
+          follow.textContent=currentlyFollowing?'Following':'Follow';
+        }catch(error){
+          console.error('Could not change follow status:',error);
+          follow.textContent=currentlyFollowing?'Following':'Follow';
+        }
+        follow.disabled=false;
+      });
     }catch(error){
       console.error('Could not load public profile:',error);
       publicContent.innerHTML='<div class="collector-profile-empty"><span>PROFILE</span><h1>Profile unavailable</h1><p>Could not load this collector profile right now.</p></div>';
