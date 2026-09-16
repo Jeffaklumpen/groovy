@@ -237,196 +237,113 @@
       <span class="detail-spotify-service-copy"><strong>Listen on Spotify</strong><small>Stream this album on Spotify</small></span>
     </a>
   </div>
-  <div id="detailSocialContext" class="detail-social-context" hidden></div>
-</div>
-
-<div class="album-tracks">
-  <section id="copyDetails" class="copy-details" aria-labelledby="copyDetailsTitle">
-    <div class="copy-details-heading">
-      <button id="copyDetailsToggle" class="copy-details-toggle" type="button" aria-expanded="false" aria-controls="copyDetailsContent">
-        <span id="copyDetailsTitle" class="copy-details-title">My pressing</span>
-        <span id="copyDetailsSummary" class="copy-details-compact-summary"></span>
-        <span class="copy-details-chevron" aria-hidden="true"></span>
-      </button>
-      <span id="copyDetailsSaved" class="copy-details-saved" aria-live="polite"></span>
+  <div class="detail-marketplaces" aria-label="Marketplace listings">
+    <button id="traderaButton" class="detail-marketplace-button tradera-button" type="button"><span class="marketplace-dot" aria-hidden="true"></span><span id="traderaButtonLabel">Tradera · Checking…</span></button>
+    <button id="ebayButton" class="detail-marketplace-button ebay-button" type="button"><span class="marketplace-dot" aria-hidden="true"></span><span id="ebayButtonLabel">eBay · Checking…</span></button>
+  </div>
+  <div id="marketplacePriceSummary" class="marketplace-price-summary" aria-live="polite">
+    <span class="marketplace-price-kicker">Lowest buy now</span>
+    <a id="marketplaceLowestPriceLink" class="marketplace-lowest-price-link" href="#" target="_blank" rel="noopener noreferrer" hidden>
+      <strong id="marketplaceLowestPrice"></strong>
+      <span id="marketplaceLowestMeta"></span>
+    </a>
+    <span id="marketplacePriceStatus" class="marketplace-price-status">Checking fixed prices…</span>
+    <div class="marketplace-price-options">
+      <label for="marketplaceCurrencySelect">Show in</label>
+      <select id="marketplaceCurrencySelect" aria-label="Marketplace display currency">
+        <option value="auto">Auto</option>
+        <option value="SEK">SEK</option>
+        <option value="EUR">EUR</option>
+        <option value="USD">USD</option>
+        <option value="GBP">GBP</option>
+        <option value="NOK">NOK</option>
+        <option value="DKK">DKK</option>
+        <option value="CAD">CAD</option>
+        <option value="AUD">AUD</option>
+        <option value="JPY">JPY</option>
+        <option value="CHF">CHF</option>
+      </select>
+      <small id="marketplacePriceNote">Excl. shipping</small>
     </div>
-    <div id="copyDetailsContent" class="copy-details-content"></div>
-  </section>
-  <div class="tracks-title">TRACKLIST</div>
-  <div id="detailTracks"></div>
-</div>
-
-<section id="detailAboutAlbum" class="album-about" aria-labelledby="detailAboutAlbumTitle" hidden>
-  <h2 id="detailAboutAlbumTitle">About This Album</h2>
-  <div id="detailAboutAlbumBody" class="album-about-body"><div id="detailAboutAlbumText" class="album-about-text"></div></div>
-  <button id="detailAboutAlbumToggle" class="album-about-toggle" type="button" aria-expanded="false" aria-controls="detailAboutAlbumBody" hidden><span>Read more</span><i aria-hidden="true"></i></button>
-  <div class="album-about-source">
-    <a id="detailAboutAlbumLink" href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia ↗</a>
-    <span>Wikipedia contributors · <a class="album-about-license" href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a></span>
   </div>
-</section>
-
-<section class="marketplace-panel" aria-labelledby="marketplaceTitle">
-  <div class="marketplace-heading">
-    <span class="marketplace-icon" aria-hidden="true"></span>
-    <div><strong id="marketplaceTitle">Marketplace</strong><small>Find this record on trusted marketplaces.</small></div>
-    <label class="marketplace-currency-control" for="marketplaceCurrencySelect"><span>Currency</span><select id="marketplaceCurrencySelect" aria-label="Marketplace currency"><option value="auto">Auto</option><option value="SEK">SEK</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="NOK">NOK</option><option value="DKK">DKK</option><option value="CHF">CHF</option><option value="CAD">CAD</option><option value="AUD">AUD</option><option value="JPY">JPY</option><option value="PLN">PLN</option><option value="CZK">CZK</option></select></label>
-  </div>
-  <div id="marketplacePriceSummary" class="marketplace-price-summary loading" aria-live="polite">
-    <div class="marketplace-price-copy"><span class="marketplace-price-kicker">LOWEST BUY NOW</span><a id="marketplaceLowestPriceLink" class="marketplace-lowest-price" href="#" target="_blank" rel="noopener noreferrer" hidden><strong id="marketplaceLowestPrice"></strong><span id="marketplaceLowestMeta"></span></a><span id="marketplacePriceStatus" class="marketplace-price-status">Checking fixed prices…</span></div>
-    <span id="marketplacePriceNote" class="marketplace-price-note">Excl. shipping</span>
-  </div>
-  <div class="marketplace-triggers">
-    <button id="traderaButton" class="tradera-trigger" type="button" aria-haspopup="dialog">
-      <span class="tradera-trigger-mark" aria-hidden="true">T</span>
-      <span id="traderaButtonLabel">Tradera</span>
-      <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
+  <div id="detailSocialContext" class="detail-social-context" hidden></div>
+  <div class="detail-about-card">
+    <button id="detailAboutAlbumToggle" class="detail-about-toggle" type="button" aria-expanded="false" hidden>
+      <span>About album</span><span aria-hidden="true">⌄</span>
     </button>
-    <button id="ebayButton" class="tradera-trigger ebay-trigger" type="button" aria-haspopup="dialog" data-enabled="true">
-      <span class="tradera-trigger-mark ebay-trigger-mark" aria-hidden="true">e</span>
-      <span id="ebayButtonLabel">eBay</span>
-      <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
-    </button>
-  </div>
-</section>
-
+    <div id="detailAboutAlbum" class="detail-about-album" hidden>
+      <div id="detailAboutAlbumBody" class="detail-about-album-body"></div>
+    </div>
   </div>
 </div>
 
-<div id="traderaModal" class="tradera-modal" role="dialog" aria-modal="true" aria-labelledby="traderaModalTitle" aria-hidden="true">
+<div class="album-tracks" id="detailTracks"></div>
+  </div>
+</div>
+
+<div id="copyDetailsPanel" class="copy-details-panel" hidden>
+  <div class="copy-details-card">
+    <button id="copyDetailsClose" class="copy-details-close" type="button" aria-label="Close pressing details">×</button>
+    <span class="search-modal-kicker">YOUR COPY</span>
+    <h2>Pressing details</h2>
+    <div id="copyDetailsFields" class="copy-details-fields"></div>
+  </div>
+</div>
+
+<div id="traderaModal" class="tradera-modal" aria-hidden="true">
   <div class="tradera-modal-panel">
-    <div class="tradera-modal-scroll">
-      <button id="closeTraderaModal" class="tradera-modal-close" type="button" aria-label="Close">×</button>
-      <div class="tradera-modal-heading">
-        <span class="search-modal-kicker">Available now</span>
-        <h2 id="traderaModalTitle">Listings on Tradera</h2>
+    <div class="tradera-modal-header">
+      <div>
+        <span class="tradera-modal-kicker">ACTIVE LISTINGS</span>
+        <h2>Tradera</h2>
         <p id="traderaModalSubtitle"></p>
       </div>
-      <div id="traderaListingsStatus" class="tradera-listings-status" aria-live="polite"></div>
-      <div id="traderaListingsGrid" class="tradera-listings-grid"></div>
+      <button id="closeTraderaModal" class="tradera-modal-close" type="button" aria-label="Close Tradera listings">×</button>
     </div>
+    <div id="traderaListingsStatus" class="tradera-listings-status"></div>
+    <div id="traderaListingsGrid" class="tradera-listings-grid"></div>
   </div>
 </div>
 
-<div id="ebayModal" class="tradera-modal" role="dialog" aria-modal="true" aria-labelledby="ebayModalTitle" aria-hidden="true">
+<div id="ebayModal" class="tradera-modal" aria-hidden="true">
   <div class="tradera-modal-panel">
-    <div class="tradera-modal-scroll">
-      <button id="closeEbayModal" class="tradera-modal-close" type="button" aria-label="Close">×</button>
-      <div class="tradera-modal-heading">
-        <span class="search-modal-kicker">Available now</span>
-        <h2 id="ebayModalTitle">Listings on eBay</h2>
+    <div class="tradera-modal-header">
+      <div>
+        <span class="tradera-modal-kicker">ACTIVE LISTINGS</span>
+        <h2>eBay</h2>
         <p id="ebayModalSubtitle"></p>
       </div>
-      <div id="ebayListingsStatus" class="tradera-listings-status" aria-live="polite"></div>
-      <div id="ebayListingsGrid" class="tradera-listings-grid"></div>
+      <button id="closeEbayModal" class="tradera-modal-close" type="button" aria-label="Close eBay listings">×</button>
     </div>
+    <div id="ebayListingsStatus" class="tradera-listings-status"></div>
+    <div id="ebayListingsGrid" class="tradera-listings-grid"></div>
   </div>
 </div>
 
-<div id="pressingModal" class="add-album-modal pressing-modal" role="dialog" aria-modal="true" aria-labelledby="pressingModalTitle">
-  <div class="add-album-box pressing-modal-box">
-    <button id="closePressingModal" class="close-add-album" type="button" aria-label="Close">×</button>
-    <div class="search-modal-heading">
-      <span class="search-modal-kicker">Identify your copy</span>
-      <h2 id="pressingModalTitle">Find your pressing</h2>
-      <p>Choose what is printed on your record.</p>
-    </div>
-    <div id="pressingLoading" class="pressing-loading" aria-live="polite">Finding vinyl pressings…</div>
-    <div id="pressingForm" class="pressing-form" hidden>
-      <div class="pressing-progress" aria-hidden="true"><span class="active"></span><span></span><span></span><span></span></div>
-      <label class="pressing-field"><span>Country</span><select id="pressingCountry"><option value="">Choose country</option></select></label>
-      <label class="pressing-field"><span>Release year</span><select id="pressingYear" disabled><option value="">Choose year</option></select></label>
-      <label class="pressing-field"><span>Record label</span><select id="pressingLabel" disabled><option value="">Choose label</option></select></label>
-      <label class="pressing-field"><span>Catalog number</span><select id="pressingCatalogNumber" disabled><option value="">Choose catalog number</option></select></label>
-      <div id="pressingMatrixSearch" class="pressing-matrix-search" hidden>
-        <label class="pressing-field"><span>Matrix / runout</span><input id="pressingMatrixQuery" type="text" placeholder="For example SMAS-11163-A-2" autocomplete="off"></label>        <button id="pressingMatrixSearchButton" class="copy-action-button primary" type="button">Find matrix</button>
-        <p class="pressing-help">Enter one side exactly as it appears in the runout groove.</p>
-      </div>
-      <div id="pressingMatches" class="pressing-matches"></div>
-      <p class="pressing-help">Matrix details become available after you choose a pressing.</p>
-    </div>
-    <div id="pressingError" class="pressing-error" hidden></div>
+<div id="shelfModal" class="shelf-modal" aria-hidden="true">
+  <div class="shelf-modal-panel">
+    <button id="closeShelfModal" class="shelf-modal-close" type="button" aria-label="Close">×</button>
+    <span class="search-modal-kicker">ORGANIZE YOUR VINYL</span>
+    <h2 id="shelfModalTitle">Create shelf</h2>
+    <label class="shelf-form-field"><span>Shelf name</span><input id="shelfNameInput" type="text" maxlength="40" placeholder="e.g. Favorites"></label>
+    <div class="shelf-form-field"><span>Icon</span><div id="shelfIconOptions" class="shelf-icon-options"></div></div>
+    <div class="shelf-form-field"><span>Color</span><div id="shelfColorOptions" class="shelf-color-options"></div></div>
+    <div class="shelf-modal-actions"><button id="cancelShelfModal" type="button">Cancel</button><button id="saveShelfModal" type="button">Save shelf</button></div>
   </div>
 </div>
 
-<div id="createShelfModal" class="add-album-modal shelf-modal" role="dialog" aria-modal="true" aria-labelledby="createShelfTitle">
-  <div class="add-album-box shelf-modal-box">
-    <button id="closeCreateShelf" class="close-add-album" type="button" aria-label="Close">×</button>
-    <div class="search-modal-heading">
-      <span class="search-modal-kicker">Organize your collection</span>
-      <h2 id="createShelfTitle">Create New Shelf</h2>
-      <p id="createShelfDescription">Give your shelf a name, icon and color.</p>
-    </div>
-    <label class="shelf-name-field"><span>Name</span><input id="shelfNameInput" type="text" maxlength="30" placeholder="e.g. Jazz, Favorites, Sunday Spins" autocomplete="off"></label>
-    <div class="shelf-icon-field">
-      <span>Icon</span>
-      <div id="shelfIconChoices" class="shelf-icon-choices" role="radiogroup" aria-label="Shelf icon">
-      </div>
-    </div>
-    <div class="shelf-color-field">
-      <span>Color</span>
-      <div id="shelfColorChoices" class="shelf-color-choices" role="radiogroup" aria-label="Shelf color">
-        <button type="button" class="shelf-color-choice selected" role="radio" aria-checked="true" data-color="#E85301" aria-label="Orange" style="--swatch:#E85301"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#FF3B45" aria-label="Red" style="--swatch:#FF3B45"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#FF6B4A" aria-label="Coral" style="--swatch:#FF6B4A"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#F43F8C" aria-label="Pink" style="--swatch:#F43F8C"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#8B5CF6" aria-label="Purple" style="--swatch:#8B5CF6"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#6366F1" aria-label="Indigo" style="--swatch:#6366F1"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#3B82F6" aria-label="Blue" style="--swatch:#3B82F6"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#14B8D4" aria-label="Cyan" style="--swatch:#14B8D4"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#14B8A6" aria-label="Teal" style="--swatch:#14B8A6"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#10B981" aria-label="Green" style="--swatch:#10B981"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#84CC16" aria-label="Lime" style="--swatch:#84CC16"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#F5C542" aria-label="Yellow" style="--swatch:#F5C542"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#F59E0B" aria-label="Amber" style="--swatch:#F59E0B"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#6B7280" aria-label="Slate" style="--swatch:#6B7280"></button>
-      </div>
-    </div>
-    <div id="createShelfStatus" class="shelf-modal-status" aria-live="polite"></div>
-    <div class="shelf-modal-actions">
-      <button id="cancelCreateShelf" class="shelf-secondary-button" type="button">Cancel</button>
-      <button id="confirmCreateShelf" class="shelf-primary-button" type="button">Create Shelf</button>
-    </div>
+<div id="moveToShelfModal" class="shelf-modal" aria-hidden="true">
+  <div class="shelf-modal-panel move-shelf-panel">
+    <button id="closeMoveToShelfModal" class="shelf-modal-close" type="button" aria-label="Close">×</button>
+    <span class="search-modal-kicker">ORGANIZE RECORD</span>
+    <h2>Move to shelf</h2>
+    <p id="moveToShelfRecordTitle"></p>
+    <div id="moveToShelfOptions" class="move-shelf-options"></div>
   </div>
 </div>
 
-<div id="deleteShelfModal" class="add-album-modal shelf-modal" role="dialog" aria-modal="true" aria-labelledby="deleteShelfTitle">
-  <div class="add-album-box shelf-modal-box delete-shelf-modal-box">
-    <button id="closeDeleteShelf" class="close-add-album" type="button" aria-label="Close">×</button>
-    <div class="search-modal-heading">
-      <span class="search-modal-kicker">Shelf settings</span>
-      <h2 id="deleteShelfTitle">Delete Shelf?</h2>
-      <p id="deleteShelfMessage">Records in this shelf will remain in All Records.</p>
-    </div>
-    <div id="deleteShelfStatus" class="shelf-modal-status" aria-live="polite"></div>
-    <div class="shelf-modal-actions">
-      <button id="cancelDeleteShelf" class="shelf-secondary-button" type="button">Cancel</button>
-      <button id="confirmDeleteShelf" class="shelf-danger-button" type="button">Delete Shelf</button>
-    </div>
-  </div>
-</div>
-
-<div id="shelfPickerModal" class="add-album-modal shelf-modal" role="dialog" aria-modal="true" aria-labelledby="shelfPickerTitle">
-  <div class="add-album-box shelf-modal-box shelf-picker-box">
-    <button id="closeShelfPicker" class="close-add-album" type="button" aria-label="Close">×</button>
-    <div class="search-modal-heading">
-      <span class="search-modal-kicker">Organize record</span>
-      <h2 id="shelfPickerTitle">Add to Shelf</h2>
-      <p id="shelfPickerSubtitle">Choose one shelf for this record.</p>
-    </div>
-    <div id="shelfPickerList" class="shelf-picker-list"></div>
-    <button id="createShelfFromPicker" class="shelf-picker-create" type="button">+ New Shelf</button>
-    <div id="shelfPickerStatus" class="shelf-modal-status" aria-live="polite"></div>
-    <div class="shelf-modal-actions">
-      <button id="cancelShelfPicker" class="shelf-secondary-button" type="button">Cancel</button>
-      <button id="confirmShelfPicker" class="shelf-primary-button" type="button">Save</button>
-    </div>
-  </div>
-</div>
-
-<div id="addAlbumModal" class="add-album-modal" role="dialog" aria-modal="true" aria-labelledby="addAlbumTitle">
-
-    <div class="add-album-box search-modal-box">
+<div id="addAlbumModal" class="add-album-modal">
+    <div class="add-album-box">
 
         <button id="closeAddAlbum" class="close-add-album">
             ×
@@ -512,7 +429,8 @@
   </div>
 </div>
 
-<script src="/js/route-state.js?v=19"></script>
+<script src="/js/route-state.js?v=20"></script>
+<script src="/js/route-runtime.js?v=1"></script>
 <script src="/js/app.js?v=123"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=10"></script>
