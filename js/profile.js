@@ -10,14 +10,29 @@
   var originalPushState=history.pushState.bind(history);
   var originalReplaceState=history.replaceState.bind(history);
 
+  var routeSyncTimer=null;
+
   function rewriteLegacyShelfUrl(url){
     if(typeof url!=='string')return url;
     return url.replace(/^\/user\//,'/shelf/');
   }
 
+  function queueRouteSync(){
+    clearTimeout(routeSyncTimer);
+    routeSyncTimer=setTimeout(syncRoute,0);
+  }
+
   if(!history.__groovyShelfRoutesPatched){
-    history.pushState=function(state,title,url){return originalPushState(state,title,rewriteLegacyShelfUrl(url));};
-    history.replaceState=function(state,title,url){return originalReplaceState(state,title,rewriteLegacyShelfUrl(url));};
+    history.pushState=function(state,title,url){
+      var result=originalPushState(state,title,rewriteLegacyShelfUrl(url));
+      queueRouteSync();
+      return result;
+    };
+    history.replaceState=function(state,title,url){
+      var result=originalReplaceState(state,title,rewriteLegacyShelfUrl(url));
+      queueRouteSync();
+      return result;
+    };
     history.__groovyShelfRoutesPatched=true;
   }
 
@@ -156,6 +171,7 @@
   var publicContent=document.getElementById('collectorProfileContent');
   var publicReturn=document.getElementById('collectorProfileReturn');
   var mainHeader=document.querySelector('.header');
+  if(mainHeader&&mainHeader.parentNode)mainHeader.parentNode.insertBefore(publicPage,mainHeader.nextSibling);
   var closeButton=document.getElementById('closeProfileSettings');
   var avatarButton=document.getElementById('profileSettingsAvatarButton');
   var changePhotoButton=document.getElementById('profileSettingsChangePhoto');
@@ -439,11 +455,6 @@
     '</section>';
   }
 
-  function syncPublicProfileTop(){
-    var top=mainHeader?Math.max(0,Math.ceil(mainHeader.getBoundingClientRect().bottom)):0;
-    document.documentElement.style.setProperty('--collector-profile-top',top+'px');
-  }
-
   function dispatchRouteChange(){
     try{window.dispatchEvent(new PopStateEvent('popstate',{state:history.state}));}
     catch(error){window.dispatchEvent(new Event('popstate'));}
@@ -462,11 +473,9 @@
 
   async function renderPublicProfile(username){
     if(!publicPage.classList.contains('visible'))window.scrollTo(0,0);
-    syncPublicProfileTop();
     publicPage.classList.add('visible');
     publicPage.setAttribute('aria-hidden','false');
     document.body.classList.add('collector-profile-open');
-    window.requestAnimationFrame(syncPublicProfileTop);
     publicContent.innerHTML='<div class="collector-profile-loading"><span></span><strong>Loading profile...</strong></div>';
 
     try{
@@ -787,7 +796,6 @@
     if(!username)return;
     publicProfileOpenedWithHistory=true;
     history.pushState({},'', '/profile/'+encodeURIComponent(username));
-    syncRoute();
   }
 
   function closePublicProfile(){
@@ -817,7 +825,6 @@
     navigate('/profile/'+encodeURIComponent(profile.username));
   });
   publicReturn.addEventListener('click',closePublicProfile);
-  window.addEventListener('resize',function(){if(publicPage.classList.contains('visible'))syncPublicProfileTop();},{passive:true});
   closeButton.addEventListener('click',closeSettings);
   settingsPage.addEventListener('click',function(event){if(event.target===settingsPage)closeSettings();});
   document.addEventListener('keydown',function(event){if(event.key==='Escape'&&settingsPage.classList.contains('visible'))closeSettings();});
@@ -850,7 +857,7 @@
   removePhotoButton.addEventListener('click',removeAvatar);
   deleteButton.addEventListener('click',deleteAccount);
 
-  window.addEventListener('popstate',syncRoute);
+  window.addEventListener('popstate',queueRouteSync);
   supabaseClient.auth.onAuthStateChange(function(){setTimeout(syncRoute,0);});
 
   if(shelfUsernameFromPath(window.location.pathname))setTimeout(dispatchRouteChange,0);
