@@ -23,7 +23,7 @@
   <meta name="application-name" content="Groovy">
   <meta name="theme-color" content="#121214">
   <title>GroovyShelves – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/css/style.css?v=107">
+  <link rel="stylesheet" href="/css/style.css?v=108">
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.webmanifest?v=2">
@@ -67,7 +67,7 @@
             <span id="notificationBadge" class="notification-badge" hidden>0</span>
           </button>
           <div id="notificationPanel" class="notification-panel" aria-hidden="true">
-            <div class="notification-panel-head"><div><span>ACTIVITY</span><strong>Notifications</strong></div><button id="markAllNotificationsRead" type="button">Mark all read</button></div>
+            <div class="notification-panel-head"><div><span>ACTIVITY</span><strong>Notifications</strong></div><div class="notification-panel-actions"><button id="markAllNotificationsRead" type="button">Mark all read</button><button id="clearNotificationsButton" type="button">Clear</button></div></div>
             <div id="notificationList" class="notification-list"><div class="notification-empty">No notifications yet.</div></div>
           </div>
         </div>
@@ -116,6 +116,7 @@
       <button class="viewed-user-nav" id="viewedUserShelfButton" type="button" aria-label="View shelf"><span class="record-icon" aria-hidden="true"></span><span class="viewed-action-label">Shelf</span></button>
       <button class="viewed-user-nav" id="viewedUserWishlistButton" type="button" aria-label="View wishlist"><span class="wishlist-icon" aria-hidden="true"></span><span class="viewed-action-label">Wishlist</span></button>
       <button class="viewed-user-stats" id="viewedUserStatsButton" type="button" aria-label="View statistics"><span aria-hidden="true">▥</span><span class="viewed-action-label">Statistics</span></button>
+      <button class="viewed-user-follow" id="viewedUserFollowButton" type="button" aria-label="Follow collector" data-following="false"><span class="viewed-follow-icon" aria-hidden="true">+</span><span class="viewed-action-label">Follow</span></button>
     </div>
   </div>
   <span id="copyProfileLinkButton" hidden aria-hidden="true"><span class="viewed-action-label"></span></span>
@@ -510,7 +511,7 @@
 </div>
 
 <script src="/js/route-state.js?v=15"></script>
-<script src="/js/app.js?v=112"></script>
+<script src="/js/app.js?v=113"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=8"></script>
 <script src="/js/pwa.js?v=11"></script>
