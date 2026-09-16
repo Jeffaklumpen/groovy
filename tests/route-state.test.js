@@ -8,12 +8,17 @@ const {
   albumIdentityKey
 }=require('../js/route-state.js');
 
-test('recognises and decodes a profile URL',function(){
-  assert.equal(profileUsernameFromPath('/groovy/user/Jeffaklumpen'),'Jeffaklumpen');
-  assert.equal(profileUsernameFromPath('/groovy/user/Anna%20Maria/'),'Anna Maria');
-  assert.equal(profileUsernameFromPath('/groovy/'),null);
+test('recognises and decodes current shelf URLs',function(){
+  assert.equal(profileUsernameFromPath('/shelf/Jeffaklumpen'),'Jeffaklumpen');
+  assert.equal(profileUsernameFromPath('/shelf/Anna%20Maria/'),'Anna Maria');
+
+  // Keep the legacy /user route readable while links are migrated to /shelf.
+  assert.equal(profileUsernameFromPath('/user/Jeffaklumpen'),'Jeffaklumpen');
+
+  assert.equal(profileUsernameFromPath('/'),null);
+  assert.equal(profileUsernameFromPath('/groovy/user/Jeffaklumpen'),null);
   assert.equal(profileUsernameFromPath('/other/user/Jeffaklumpen'),null);
-  assert.equal(profileUsernameFromPath('/groovy/user/%E0%A4%A'),null);
+  assert.equal(profileUsernameFromPath('/shelf/%E0%A4%A'),null);
 });
 
 test('reads the library view from the URL',function(){
@@ -39,11 +44,11 @@ test('matches the same album across formatting and edition suffixes',function(){
   );
 });
 
-test('requires login before a profile is resolved',function(){
+test('requires login before a shelf profile is resolved',function(){
   assert.equal(resolveProfileView(null,null),'login-required');
 });
 
-test('distinguishes missing, own and other profiles',function(){
+test('distinguishes missing, own and other shelf profiles',function(){
   const signedInUser={id:'user-1'};
 
   assert.equal(resolveProfileView(signedInUser,null),'not-found');
