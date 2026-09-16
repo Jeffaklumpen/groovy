@@ -69,19 +69,19 @@ test('login and empty collection actions use the shared viewport-safe flow',func
   assert.match(app,/openAddAlbumSearch\(user\)/);
 });
 
-test('routing state stays pure and routing runtime contains no data or history patches',function(){
+test('routing state stays pure and detail enhancements load directly',function(){
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const routeState=fs.readFileSync(path.join(root,'js','route-state.js'),'utf8');
-  const routeRuntime=fs.readFileSync(path.join(root,'js','route-runtime.js'),'utf8');
 
   assert.doesNotMatch(routeState,/installRuntimeFixes|syncPublicShelfRecords|Object\.defineProperty\(windowObject,'loadCollection'/);
-  assert.doesNotMatch(routeRuntime,/syncPublicShelfRecords|Object\.defineProperty|supabaseClient|history\.pushState|history\.replaceState/);
-  assert.match(routeRuntime,/loadDetailEnhancements/);
+  assert.doesNotMatch(html,/route-runtime\.js/);
+  assert.match(html,/href="\/css\/detail-enhancements\.css\?v=7"/);
+  assert.match(html,/src="\/js\/detail-enhancements-v2\.js\?v=7"/);
 
   const statePosition=html.indexOf('/js/route-state.js');
-  const runtimePosition=html.indexOf('/js/route-runtime.js');
   const appPosition=html.indexOf('/js/app.js');
-  assert.ok(statePosition>=0&&runtimePosition>statePosition&&appPosition>runtimePosition);
+  const detailPosition=html.indexOf('/js/detail-enhancements-v2.js');
+  assert.ok(statePosition>=0&&appPosition>statePosition&&detailPosition>appPosition);
 });
 
 test('signup uses the auth trigger and collection membership checks are direct',function(){
