@@ -29,6 +29,10 @@ test('mobile header offers app installation instead of a delete toggle',function
   assert.match(html,/id="installAppShortcutButton"/);
   assert.doesNotMatch(html,/id="deleteModeButton"/);
   assert.match(pwa,/installShortcutButton\.addEventListener\('click',startInstall\)/);
+  assert.doesNotMatch(pwa,/loadProfileModule|loadAlbumRatingLayoutV4|profile\.js|album-rating-layout-v4/);
+  assert.match(html,/href="\/css\/profile\.css\?v=9"/);
+  assert.match(html,/src="\/js\/profile\.js\?v=9"/);
+  assert.match(html,/src="\/js\/album-rating-layout-v4\.js\?v=1"/);
 });
 
 test('long press enters delete mode before movement starts sorting',function(){

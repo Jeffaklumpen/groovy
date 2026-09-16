@@ -114,35 +114,8 @@
     if(choice&&choice.outcome==='accepted')hideBanner();
   }
 
-  function loadProfileModule(){
-    if(!document.getElementById('groovyProfileStyles')){
-      var style=document.createElement('link');
-      style.id='groovyProfileStyles';
-      style.rel='stylesheet';
-      style.href='/css/profile.css?v=9';
-      document.head.appendChild(style);
-    }
-
-    if(!document.getElementById('groovyProfileScript')){
-      var script=document.createElement('script');
-      script.id='groovyProfileScript';
-      script.src='/js/profile.js?v=9';
-      document.body.appendChild(script);
-    }
-  }
-
-  function loadAlbumRatingLayoutV4(){
-    if(document.getElementById('groovyAlbumRatingLayoutV4Script'))return;
-    var script=document.createElement('script');
-    script.id='groovyAlbumRatingLayoutV4Script';
-    script.src='/js/album-rating-layout-v4.js?v=1';
-    script.async=false;
-    document.body.appendChild(script);
-  }
 
   setInstallCopy();
-  loadProfileModule();
-  loadAlbumRatingLayoutV4();
 
   if('serviceWorker' in navigator){
     window.addEventListener('load',function(){
