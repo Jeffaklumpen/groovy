@@ -92,8 +92,8 @@ function shouldShowLoggedOutLanding(){
 
 function updateLibraryTabLabels(){
     var loggedOut=shouldShowLoggedOutLanding();
-    collectionTabButton.innerHTML='<span class="record-icon" aria-hidden="true"></span>'+(loggedOut?'Collection':'My Shelf');
-    wishlistTabButton.innerHTML='<span class="wishlist-icon" aria-hidden="true"></span>'+(loggedOut?'Wishlist':'My Wishlist');
+    collectionTabButton.innerHTML='<span class="record-icon" aria-hidden="true"></span>'+(loggedOut?'My Collection':'My Shelf');
+    wishlistTabButton.innerHTML='<span class="wishlist-icon" aria-hidden="true"></span>My Wishlist';
 }
 
 loginClose.addEventListener('click',function(){
@@ -5656,7 +5656,7 @@ myCollectionButton.addEventListener('click',async function(){
 async function navigateOwnLibrary(nextView){
     const {data:{session}}=await supabaseClient.auth.getSession();
     if(!session||!session.user){
-        openAuthPanel(nextView==='wishlist'?'register':'login');
+        openAuthPanel('login');
         return;
     }
     libraryPage=1;
@@ -5784,7 +5784,7 @@ function renderLoggedOutLanding(){
             '<p>Use shelves and wishlists to sort your albums, plan future buys and make your library easy to browse.</p>'+
           '</article>'+
           '<article class="landing-feature-card">'+
-            '<div class="landing-feature-icon feature-chart-icon" aria-hidden="true"><span></span><span></span><span></span></div>'+
+            '<div class="landing-feature-icon feature-chart-icon" aria-hidden="true"></div>'+
             '<h3>Stats, collectors & prices</h3>'+
             '<p>See collection stats, find like-minded collectors and compare marketplace listings to spot better prices.</p>'+
           '</article>'+
