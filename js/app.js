@@ -4339,6 +4339,8 @@ async function saveAlbumRating(index,rating){
       coverRating.innerHTML='<span class="cover-rating-inner">'+renderStaticStarMeter(nextAverage,'is-compact')+'<span class="cover-rating-number">'+esc(formatCommunityRating(nextAverage))+'</span></span>';
     }
   }
+
+  window.dispatchEvent(new CustomEvent('groovy-rating-updated',{detail:{albumId:albumId,index:index,source:'save'}}));
 }
 
 function closeAlbum(){

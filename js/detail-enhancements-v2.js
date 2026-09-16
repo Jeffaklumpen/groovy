@@ -196,6 +196,8 @@ async function refreshWishlistRatings(){
   var index=detailIndex();
   var overlay=document.getElementById('albumOverlay');
   if(index>=0&&overlay&&overlay.classList.contains('visible'))updateDetailRating(index);
+
+  window.dispatchEvent(new CustomEvent('groovy-rating-updated',{detail:{source:'wishlist-hydrate'}}));
 }
 
 function scheduleWishlistRatings(delay){
@@ -246,6 +248,8 @@ async function removeRating(index,button){
   updateDetailRating(index);
   patchCardsForAlbum(albumId);
   if(window.libraryView==='wishlist')scheduleWishlistRatings(150);
+
+  window.dispatchEvent(new CustomEvent('groovy-rating-updated',{detail:{albumId:albumId,index:index,source:'remove'}}));
 }
 
 function placeRating(){
@@ -486,18 +490,17 @@ function install(){
       return;
     }
 
-    /* Do not intercept rating stars. app.js owns saving and community math. We
-       only restore the Remove Rating footer after its panel has re-rendered. */
-    var star=event.target.closest&&event.target.closest('.album-rating-star');
-    if(star){
-      [180,550,1300].forEach(function(delay){
-        setTimeout(function(){
-          var index=detailIndex();
-          if(index>=0)updateDetailRating(index);
-        },delay);
-      });
-    }
   },false);
+
+  window.addEventListener('groovy-rating-updated',function(event){
+    if(!overlay.classList.contains('visible'))return;
+    var index=detailIndex();
+    if(index<0)return;
+    var albumId=event&&event.detail&&event.detail.albumId;
+    var record=recordAt(index);
+    if(albumId&&record&&String(record[8])!==String(albumId))return;
+    updateDetailRating(index);
+  });
 
   new MutationObserver(function(){
     if(window.libraryView==='wishlist')scheduleWishlistRatings(100);

@@ -5,7 +5,6 @@ var overlay=document.getElementById('albumOverlay');
 var ratingRoot=document.getElementById('detailRating');
 var profileCache=new Map();
 var viewedToken=0;
-var ratingToken=0;
 var queued=false;
 
 function clamp(value){
@@ -244,9 +243,13 @@ function removeViewed(){
 async function syncViewed(){
   if(!overlay||!overlay.classList.contains('visible'))return;
   var viewedId=window.viewedUserId;
-  var user=await currentUser();
+  if(!viewedId){
+    removeViewed();
+    return;
+  }
 
-  if(!viewedId||!user||String(viewedId)===String(user.id)){
+  var user=await currentUser();
+  if(!user||String(viewedId)===String(user.id)){
     removeViewed();
     return;
   }
@@ -272,48 +275,9 @@ async function syncViewed(){
   }
 }
 
-async function refreshGlobal(){
-  if(!overlay||!overlay.classList.contains('visible'))return;
-  var record=currentRecord();
-  var user=await currentUser();
-  if(!record||!record[8]||!user)return;
+async 
 
-  var albumId=record[8];
-  var token=++ratingToken;
 
-  try{
-    var result=await supabaseClient.from('album_ratings').select('user_id,rating').eq('album_id',albumId);
-    if(result.error)throw result.error;
-    if(token!==ratingToken||!overlay.classList.contains('visible'))return;
-
-    var own=0,total=0,count=0;
-    (result.data||[]).forEach(function(row){
-      var value=clamp(row.rating);
-      if(!value)return;
-      total+=value;
-      count++;
-      if(String(row.user_id)===String(user.id))own=value;
-    });
-
-    var average=count?Math.round(total/count*10)/10:0;
-    (window.records||[]).forEach(function(item){
-      if(!item||String(item[8])!==String(albumId))return;
-      item[5]=own;
-      item[15]=average;
-      item[16]=count;
-    });
-
-    decorateBase();
-    syncViewed();
-  }catch(error){
-    console.warn('Could not refresh global album ratings:',error);
-  }
-}
-
-function scheduleRefresh(){
-  [160,420,850,1400].forEach(function(delay){setTimeout(refreshGlobal,delay);});
-  [220,600,1200,1700].forEach(function(delay){setTimeout(syncViewed,delay);});
-}
 
 function applyInitialAvatar(element,username){
   if(!element)return;
@@ -368,7 +332,6 @@ function queueDecorate(){
     queued=false;
     decorateBase();
     scanAvatars(document);
-    syncViewed();
   },25);
 }
 
@@ -389,20 +352,25 @@ decorateBase();
 
   new MutationObserver(function(){
     if(overlay.classList.contains('visible')){
-      setTimeout(function(){decorateBase();syncViewed();refreshGlobal();},40);
+      setTimeout(function(){decorateBase();syncViewed();},40);
     }else{
       viewedToken++;
-      ratingToken++;
     }
   }).observe(overlay,{attributes:true,attributeFilter:['class']});
 
-  document.addEventListener('click',function(event){
-    if(event.target.closest&&event.target.closest('.album-rating-star,.groovy-remove-rating'))scheduleRefresh();
-  },false);
+  window.addEventListener('groovy-rating-updated',function(event){
+    if(!overlay.classList.contains('visible'))return;
+    var record=currentRecord();
+    var albumId=event&&event.detail&&event.detail.albumId;
+    if(albumId&&record&&String(record[8])!==String(albumId))return;
+    setTimeout(decorateBase,0);
+  });
 
-  window.addEventListener('popstate',function(){setTimeout(function(){decorateBase();syncViewed();},80);});
+  window.addEventListener('groovy-route-change',function(){
+    if(overlay.classList.contains('visible'))setTimeout(function(){decorateBase();syncViewed();},0);
+  });
 
-  if(overlay.classList.contains('visible'))setTimeout(function(){decorateBase();syncViewed();refreshGlobal();},35);
+  if(overlay.classList.contains('visible'))setTimeout(function(){decorateBase();syncViewed();},35);
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
