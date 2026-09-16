@@ -1985,3 +1985,24 @@ body.following-page-open .library-overview,body.following-page-open #libraryPagi
 .stats-community-empty small{margin-top:6px;color:#74747b;font-size:10px;line-height:1.5}
 .stats-community-note{margin:12px 0 0;color:#68686f;font-size:9px;line-height:1.5}
 @media screen and (max-width:720px){.stats-community-grid{grid-template-columns:1fr}.stats-community-card{grid-template-columns:50px minmax(0,1fr) auto;gap:11px;padding:14px}.stats-community-avatar{width:50px;height:50px}.stats-community-value strong{font-size:24px}}
+
+
+/* ALBUM SOCIAL CONTEXT V1 - collection overlap with followed collectors */
+.detail-social-context{display:flex;min-width:0;align-items:center;gap:11px;margin-top:14px;padding:10px 11px;border:1px solid rgba(255,100,24,.24);border-radius:9px;background:linear-gradient(110deg,rgba(255,100,24,.07),rgba(255,255,255,.015));text-shadow:none}
+.detail-social-context[hidden]{display:none!important}
+.detail-social-heading{display:flex;min-width:112px;flex:0 0 auto;flex-direction:column;gap:3px}
+.detail-social-heading>span,.detail-social-context.own-match>div>span{color:#ff6f28;font-size:8px;font-weight:850;letter-spacing:.12em;line-height:1;text-transform:uppercase}
+.detail-social-heading>strong,.detail-social-context.own-match>div>strong{color:#e8e8eb;font-size:10px;font-weight:720;line-height:1.25}
+.detail-social-people{display:flex;min-width:0;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.detail-social-people::-webkit-scrollbar{display:none}
+.detail-social-person{display:inline-flex;min-width:0;align-items:center;gap:6px;height:30px;padding:3px 8px 3px 4px;border:1px solid #343438;border-radius:999px;background:#151517;color:#d6d6da;font-family:inherit;font-size:9px;font-weight:700;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease}
+.detail-social-person:hover{border-color:rgba(255,100,24,.5);background:#202023;color:#fff}
+.detail-social-avatar{width:22px;height:22px;flex:0 0 22px;border-radius:50%;background:#202023 center/cover no-repeat}
+.detail-social-context.own-match{border-color:rgba(77,180,112,.32);background:rgba(61,151,92,.08)}
+.detail-social-context.own-match>div{display:flex;min-width:0;flex-direction:column;gap:3px}
+.detail-social-context.own-match>div>span{color:#78c994}
+.detail-social-check{display:flex;width:26px;height:26px;flex:0 0 26px;align-items:center;justify-content:center;border-radius:50%;background:rgba(79,184,113,.15);color:#83d3a0;font-size:14px;font-weight:900}
+@media screen and (max-width:760px){.detail-social-context{grid-column:1/-1;grid-row:3;width:100%;margin:10px 0 0;padding:9px 10px;gap:9px}.detail-social-heading{min-width:96px}.detail-social-heading>strong,.detail-social-context.own-match>div>strong{font-size:9px}.detail-social-people{flex:1;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.detail-social-people::-webkit-scrollbar{display:none}.detail-social-person{flex:0 0 auto;height:29px;font-size:8.5px}.detail-social-avatar{width:21px;height:21px;flex-basis:21px}.detail-streaming-row{grid-row:4!important}.album-tracks{grid-row:5!important}.album-about{grid-row:6!important}.marketplace-panel{grid-row:7!important}}
+
+/* Viewed-library action row keeps all four navigation buttons on one row */
+@media screen and (max-width:760px){.viewed-user-header>.viewed-user-actions{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
