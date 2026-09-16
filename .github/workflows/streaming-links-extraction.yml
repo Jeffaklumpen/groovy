@@ -55,7 +55,7 @@ jobs:
 
           function appleMusicAlbumLink(record){
             var savedUrl=Record.appleUrl(record);
-            if(/^https:\\/\\/(?:music|itunes)\\.apple\\.com\\//.test(String(savedUrl||'')))return savedUrl;
+            if(/^https:\/\/(?:music|itunes)\.apple\.com\//.test(String(savedUrl||'')))return savedUrl;
             var query=[Record.artist(record),Record.title(record)].filter(Boolean).join(' ');
             return 'https://music.apple.com/se/search?term='+encodeURIComponent(query);
           }
@@ -92,6 +92,16 @@ jobs:
             let source=fs.readFileSync(path,'utf8');
             source=source.split('app\\.js\\?v=127').join('app\\.js\\?v=128');
             source=source.split('/js/app.js?v=127').join('/js/app.js?v=128');
+            fs.writeFileSync(path,source);
+          }
+
+          {
+            const path='tests/record-model.test.js';
+            let source=fs.readFileSync(path,'utf8');
+            source=replaceExact(source,
+              "const cardStart=app.indexOf('function spotifyAlbumLink(record){');",
+              "const cardStart=app.indexOf('function recordDisplayNumber(record){');",
+              'record model card anchor');
             fs.writeFileSync(path,source);
           }
 
