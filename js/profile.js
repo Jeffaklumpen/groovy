@@ -46,6 +46,7 @@
   var state={user:null,profile:null,counts:{collection:0,wishlist:0,shelves:0},loading:false,publicProfile:null,grail:null};
   var grailSearchTimer=null;
   var grailSearchVersion=0;
+  var publicProfileOpenedWithHistory=false;
 
   var menuButton=document.createElement('button');
   menuButton.id='profileSettingsMenuButton';
@@ -776,11 +777,19 @@
     var result=await supabaseClient.from('profiles').select('username').eq('id',user.id).maybeSingle();
     var username=result.data&&result.data.username?result.data.username:(user.user_metadata&&user.user_metadata.username)||'';
     if(!username)return;
+    publicProfileOpenedWithHistory=true;
     history.pushState({},'', '/profile/'+encodeURIComponent(username));
     syncRoute();
   }
 
-  function closePublicProfile(){navigate('/');}
+  function closePublicProfile(){
+    if(publicProfileOpenedWithHistory){
+      publicProfileOpenedWithHistory=false;
+      history.back();
+      return;
+    }
+    navigate('/');
+  }
 
   function syncRoute(){
     var username=publicProfileUsernameFromPath(window.location.pathname);
@@ -795,6 +804,7 @@
   if(viewedProfileButton)viewedProfileButton.addEventListener('click',function(){
     var profile=window.groovyViewedStatisticsProfile;
     if(!profile||!profile.username||profile.username==='Unknown user')return;
+    publicProfileOpenedWithHistory=true;
     navigate('/profile/'+encodeURIComponent(profile.username));
   });
   publicClose.addEventListener('click',closePublicProfile);
