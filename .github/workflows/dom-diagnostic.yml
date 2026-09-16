@@ -1,0 +1,21 @@
+name: DOM diagnostic
+
+on:
+  push:
+    branches: [notes]
+    paths:
+      - '.maintenance/dom_diagnostic.js'
+      - '.github/workflows/dom-diagnostic.yml'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: notes
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Compare app DOM references with index
+        run: node .maintenance/dom_diagnostic.js
