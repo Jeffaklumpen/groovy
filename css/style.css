@@ -2065,3 +2065,48 @@ body.following-page-open .library-overview,body.following-page-open #libraryPagi
 @media screen and (min-width:761px){.viewed-user-header{grid-template-columns:minmax(190px,260px) minmax(170px,1fr) auto auto!important}.viewed-user-header>.viewed-user-identity{grid-column:1!important;grid-row:1!important}.viewed-user-search-row{grid-column:2!important;grid-row:1!important;width:100%;min-width:170px;padding:0!important;border-top:0!important}.banner-library-search input{height:36px!important}.viewed-user-header>.viewed-user-actions{grid-column:3!important;grid-row:1!important;margin:0!important;padding-left:9px!important}.viewed-user-header>.viewed-user-follow{grid-column:4!important;grid-row:1!important}.viewed-user-header[data-own="true"]>.viewed-user-actions{grid-column:3/5!important}}
 .detail-social-context:not(.own-match) .detail-social-heading{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;gap:3px!important;min-width:0!important;margin:0 0 9px!important;padding:1px 0 1px 9px!important;border-left:2px solid rgba(255,100,24,.72)!important;text-align:left!important}.detail-social-context:not(.own-match) .detail-social-heading>strong{display:block;color:#f2f2f4;font-size:11px;font-weight:760;line-height:1.15}.detail-social-context:not(.own-match) .detail-social-heading>small{display:block;color:#777780;font-size:8px;font-weight:650;letter-spacing:.02em;line-height:1.15}.detail-social-heading-icon{display:none!important}
 @media screen and (min-width:761px){.detail-social-context:not(.own-match){text-align:left!important}.detail-social-menu{overflow-y:auto}}
+
+/* GLOBAL ALBUM RATING + TRACK DURATIONS V11 */
+.groovy-star-meter{--rating-fill:0%;position:relative;display:inline-block;line-height:1;letter-spacing:.16em;font-size:14px;color:#4e4e54}
+.groovy-star-meter-base,.groovy-star-meter-fill{display:block;font-style:normal}
+.groovy-star-meter-fill{position:absolute;left:0;top:0;width:var(--rating-fill);overflow:hidden;color:#ff7a1a;white-space:nowrap}
+.groovy-star-meter.is-compact{font-size:12px;letter-spacing:.11em}
+.groovy-star-meter.is-community{font-size:19px;letter-spacing:.13em}
+
+.cover-rating{position:static!important;display:flex!important;align-items:center;justify-content:flex-end;min-width:86px;margin-left:auto;padding:0!important;background:none!important;color:inherit!important;font-size:12px!important;letter-spacing:0!important}
+.cover-rating-inner{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.cover-rating-number{color:#d6d6dc;font-size:11px;font-weight:700;line-height:1}
+
+.detail-rating{margin-top:16px!important;color:inherit!important;letter-spacing:0!important}
+.rating-panels{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;width:100%}
+.rating-panel{min-width:0;padding:11px 14px 12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:linear-gradient(180deg,#151517,#101012);box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
+.rating-panel-your{border-color:rgba(255,122,26,.22);background:linear-gradient(180deg,rgba(255,122,26,.08),rgba(255,122,26,.02) 62%,#101012)}
+.rating-panel-community{border-color:rgba(255,255,255,.08)}
+.rating-panel-label{display:flex;align-items:center;gap:8px;color:#d9d9de;font-size:11px;font-weight:760;line-height:1.1}
+.rating-panel-icon{display:inline-flex;width:16px;height:16px;align-items:center;justify-content:center;color:#ff7a1a;font-size:10px}
+.rating-panel-icon-group{font-size:12px}
+.rating-panel-help{margin-left:auto;padding:0;border:0;background:none;color:#7e7e86;font-size:10px;font-weight:700;cursor:default;opacity:.95}
+.rating-panel-stars{display:flex;align-items:center;gap:2px;margin-top:9px;min-height:30px}
+.rating-panel .album-rating-star{border:0;background:none;padding:0;margin:0;color:#5c5c63;font-size:27px;line-height:1;cursor:pointer;transition:color .14s ease,transform .14s ease}
+.rating-panel .album-rating-star.filled,.rating-panel .album-rating-star.hover-filled{color:#ff7a1a}
+.rating-panel .album-rating-star.empty{opacity:1}
+.rating-panel .album-rating-star:hover{transform:translateY(-1px)}
+.rating-panel-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;min-height:16px}
+.rating-panel-edit{padding:0;border:0;background:none;color:#ff7a1a;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.rating-panel-empty-note,.rating-panel-meta{color:#8a8a92;font-size:11px;font-weight:650}
+.rating-panel-community-main{display:flex;align-items:center;gap:12px;margin-top:9px;min-height:30px}
+.rating-panel-community-main strong{color:#f5f5f7;font-size:31px;font-weight:780;letter-spacing:-.03em;line-height:1}
+
+.album-detail-main{overflow:auto}
+.album-detail-main::-webkit-scrollbar{width:7px}.album-detail-main::-webkit-scrollbar-thumb{background:#2d2d32;border-radius:999px}
+@media screen and (min-width:1121px){.album-detail{align-items:start}.album-detail-main{max-height:calc(min(100vw,620px) - 4px);padding-right:10px}}
+
+#detailTracks .tracks-list{list-style:none;margin:0;padding:0}
+#detailTracks .tracks-list li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+#detailTracks .tracks-list li:last-child{border-bottom:0}
+.track-index{color:#6d6d74;font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:.06em}
+.track-title{min-width:0;color:#ebebef;font-size:14px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track-duration{color:#8d8d95;font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:.04em;text-align:right}
+
+@media screen and (max-width:1120px){.rating-panel-community-main strong{font-size:27px}.rating-panel .album-rating-star{font-size:24px}}
+@media screen and (max-width:760px){.rating-panels{grid-template-columns:1fr;gap:10px}.detail-rating{margin-top:12px!important}.rating-panel{padding:11px 12px}.rating-panel .album-rating-star{font-size:25px}.rating-panel-community-main strong{font-size:29px}.track-title{font-size:13px}.track-duration,.track-index{font-size:12px}}
