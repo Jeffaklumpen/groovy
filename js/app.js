@@ -935,6 +935,261 @@ async function renderOwnLibraryHeader(user){
   viewedUserWishlistButton.setAttribute('aria-current',window.libraryView==='wishlist'?'page':'false');
 }
 
+
+function clampGroovyRating(value){
+  var numeric=Number(value);
+  if(!isFinite(numeric))numeric=0;
+  return Math.max(0,Math.min(5,numeric));
+}
+
+function formatCommunityRating(value){
+  var numeric=clampGroovyRating(value);
+  if(!numeric)return '—';
+  var rounded=Math.round(numeric*10)/10;
+  return Number.isInteger(rounded)?String(rounded.toFixed(0)):String(rounded.toFixed(1));
+}
+
+function ratingFillPercent(value){
+  return (clampGroovyRating(value)/5*100).toFixed(1)+'%';
+}
+
+function renderStaticStarMeter(value,extraClass){
+  var label=(clampGroovyRating(value)||0).toFixed(1)+' out of 5';
+  return '<span class="groovy-star-meter'+(extraClass?' '+extraClass:'')+'" style="--rating-fill:'+ratingFillPercent(value)+';" aria-label="'+esc(label)+'">'+
+    '<span class="groovy-star-meter-base" aria-hidden="true">★★★★★</span>'+
+    '<span class="groovy-star-meter-fill" aria-hidden="true">★★★★★</span>'+
+  '</span>';
+}
+
+function loadCachedTrackDurations(record){
+  if(!record||!record[8])return;
+  try{
+    var key='groovy-track-durations:'+String(record[10]||record[8]);
+    var raw=localStorage.getItem(key);
+    if(!raw)return;
+    var parsed=JSON.parse(raw);
+    if(!parsed||!Array.isArray(parsed.tracks))return;
+    applyTrackDurationRows(record,parsed.tracks,false);
+  }catch(error){}
+}
+
+function persistTrackDurations(record,tracks){
+  if(!record||!record[8]||!Array.isArray(tracks)||!tracks.length)return;
+  try{
+    var key='groovy-track-durations:'+String(record[10]||record[8]);
+    localStorage.setItem(key,JSON.stringify({savedAt:Date.now(),tracks:tracks}));
+  }catch(error){}
+}
+
+function applyTrackDurationRows(record,incomingTracks,overwriteExisting){
+  if(!record||!record[7]||!Array.isArray(incomingTracks))return false;
+  var changed=false;
+  var byKey={};
+  incomingTracks.forEach(function(track,index){
+    var side=String(track.disc_side||'').toUpperCase();
+    var number=track.track_number==null?'':String(track.track_number);
+    byKey[side+'|'+number]=Object.assign({__index:index},track);
+  });
+  Object.keys(record[7]).forEach(function(side){
+    var tracks=record[7][side];
+    if(!Array.isArray(tracks))return;
+    tracks.forEach(function(track,idx){
+      var key=String(side).toUpperCase()+'|'+String(track.trackNumber==null?'':track.trackNumber);
+      var match=byKey[key]||incomingTracks.find(function(candidate){
+        return String(candidate.disc_side||'').toUpperCase()===String(side).toUpperCase()&&Number(candidate.track_number||idx+1)===Number(track.trackNumber||idx+1);
+      });
+      if(!match)return;
+      if(overwriteExisting||!track.duration){
+        var nextDuration=String(match.duration||'').trim();
+        if(nextDuration&&track.duration!==nextDuration){
+          track.duration=nextDuration;
+          changed=true;
+        }
+      }
+    });
+  });
+  return changed;
+}
+
+function renderDetailTracklist(record){
+  var sides=record&&record[7]||{};
+  var sideNames=['A','B','C','D','E','F','G','H'];
+  var html='';
+
+  for(var i=0;i<sideNames.length;i++){
+    var side=sideNames[i];
+    var tracks=sides[side];
+    if(!tracks||!tracks.length)continue;
+
+    html+='<section class="track-side">'+
+      '<div class="side-title"><span>SIDE</span>'+side+'</div>'+
+      '<ol class="tracks-list">';
+
+    for(var j=0;j<tracks.length;j++){
+      var track=tracks[j]||{};
+      var title=track.title||'Okänd låt';
+      var number=track.trackNumber==null?String(j+1).padStart(2,'0'):String(track.trackNumber).padStart(2,'0');
+      var duration=String(track.duration||'').trim();
+      html+='<li data-track-id="'+esc(track.id||'')+'">'+
+        '<span class="track-index">'+esc(number)+'</span>'+
+        '<span class="track-title">'+esc(title)+'</span>'+
+        '<span class="track-duration">'+esc(duration||'—')+'</span>'+
+      '</li>';
+    }
+
+    html+='</ol></section>';
+  }
+
+  detailTracks.innerHTML=html||'<div style="color:#666;font-size:13px">Ingen låtlista tillagd</div>';
+}
+
+async function ensureDetailTrackDurations(record,index){
+  if(!record||!record[8])return;
+  loadCachedTrackDurations(record);
+  if(detailOpenRecordIndex===index)renderDetailTracklist(record);
+
+  var hasMissing=false;
+  Object.keys(record[7]||{}).forEach(function(side){
+    (record[7][side]||[]).forEach(function(track){
+      if(!String(track.duration||'').trim())hasMissing=true;
+    });
+  });
+
+  if(!hasMissing)return;
+  var masterId=String(record[10]||'').trim();
+  if(!masterId)return;
+
+  try{
+    var result=await supabaseClient.functions.invoke('discogs-search',{body:{action:'master',masterId:masterId}});
+    var discogsData=result&&result.data?result.data:null;
+    var discogsError=result&&result.error?result.error:null;
+    if(discogsError)throw discogsError;
+
+    var finalTracklist=Array.isArray(discogsData&&discogsData.tracklist)?discogsData.tracklist:[];
+    var hasDiscSides=finalTracklist.some(function(track){
+      var position=String(track&&track.position||'').toUpperCase();
+      return /^[A-H]\d/.test(position);
+    });
+
+    if(!hasDiscSides){
+      var vinylResult=await supabaseClient.functions.invoke('discogs-search',{body:{action:'vinylRelease',masterId:masterId}});
+      if(vinylResult&&vinylResult.data&&Array.isArray(vinylResult.data.tracklist)&&vinylResult.data.tracklist.length){
+        finalTracklist=vinylResult.data.tracklist;
+      }
+    }
+
+    var incoming=discogsTrackRows(record[8],finalTracklist,true);
+    if(!incoming.length)return;
+    var changed=applyTrackDurationRows(record,incoming,false);
+    persistTrackDurations(record,incoming);
+    if(changed&&detailOpenRecordIndex===index)renderDetailTracklist(record);
+  }catch(error){
+    console.warn('Could not hydrate track durations:',error);
+  }
+}
+
+async function loadAlbumRatingData(albumIds,ownUserId){
+  var ids=Array.from(new Set((albumIds||[]).filter(Boolean)));
+  if(!ids.length)return {};
+
+  var map={};
+  ids.forEach(function(id){
+    map[id]={ownRating:0,communityAverage:0,communityCount:0};
+  });
+
+  var ratingsResponse=await supabaseClient
+    .from('album_ratings')
+    .select('album_id,user_id,rating')
+    .in('album_id',ids);
+
+  if(ratingsResponse.error){
+    console.error('Kunde inte hämta albumratings:',ratingsResponse.error);
+    return map;
+  }
+
+  (ratingsResponse.data||[]).forEach(function(row){
+    var entry=map[row.album_id]||(map[row.album_id]={ownRating:0,communityAverage:0,communityCount:0});
+    var rating=clampGroovyRating(row.rating);
+    if(!rating)return;
+    entry.communityTotal=(entry.communityTotal||0)+rating;
+    entry.communityCount=(entry.communityCount||0)+1;
+    if(ownUserId&&row.user_id===ownUserId)entry.ownRating=rating;
+  });
+
+  Object.keys(map).forEach(function(id){
+    var entry=map[id];
+    entry.communityAverage=entry.communityCount?Math.round((entry.communityTotal||0)/entry.communityCount*10)/10:0;
+    delete entry.communityTotal;
+  });
+
+  return map;
+}
+
+function applyAlbumRatingMeta(record,ratingMap){
+  if(!record)return record;
+  var meta=ratingMap&&ratingMap[record[8]]?ratingMap[record[8]]:{};
+  record[5]=meta&&meta.ownRating?meta.ownRating:0;
+  record[15]=meta&&meta.communityAverage?meta.communityAverage:0;
+  record[16]=meta&&meta.communityCount?meta.communityCount:0;
+  return record;
+}
+
+function renderDetailRatingPanels(index){
+  var record=records[index];
+  if(!record)return;
+  var ownRating=clampGroovyRating(record[5]);
+  var communityAverage=clampGroovyRating(record[15]);
+  var communityCount=parseInt(record[16],10)||0;
+  var ownStars='';
+  for(var i=1;i<=5;i++){
+    ownStars+='<button class="album-rating-star '+(i<=ownRating?'filled':'empty')+'" type="button" data-rating="'+i+'" aria-label="Rate '+i+' out of 5">★</button>';
+  }
+
+  detailRating.innerHTML='<div class="rating-panels">'+
+    '<section class="rating-panel rating-panel-your">'+
+      '<div class="rating-panel-label"><span class="rating-panel-icon" aria-hidden="true">●</span><span>Your rating</span><button class="rating-panel-help" type="button" tabindex="-1" aria-label="Your rating info">i</button></div>'+
+      '<div class="rating-panel-stars" aria-label="Your rating">'+ownStars+'</div>'+
+      '<div class="rating-panel-footer">'+(ownRating?'<button class="rating-panel-edit" type="button">Edit rating</button>':'<span class="rating-panel-empty-note">Not rated yet</span>')+'</div>'+
+    '</section>'+
+    '<section class="rating-panel rating-panel-community">'+
+      '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-group" aria-hidden="true">◔</span><span>Community rating</span><button class="rating-panel-help" type="button" tabindex="-1" aria-label="Community rating info">i</button></div>'+
+      '<div class="rating-panel-community-main">'+renderStaticStarMeter(communityAverage,'is-community')+'<strong>'+esc(formatCommunityRating(communityAverage))+'</strong></div>'+
+      '<div class="rating-panel-footer"><span class="rating-panel-meta">'+esc(String(communityCount||0))+' rating'+(communityCount===1?'':'s')+'</span></div>'+
+    '</section>'+
+  '</div>';
+
+  var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
+  for(var r=0;r<ratingButtons.length;r++){
+    ratingButtons[r].addEventListener('mouseenter',function(){
+      var hoverRating=parseInt(this.getAttribute('data-rating'),10);
+      for(var i=0;i<ratingButtons.length;i++)ratingButtons[i].classList.toggle('hover-filled',i<hoverRating);
+    });
+    ratingButtons[r].addEventListener('mouseleave',function(){
+      for(var i=0;i<ratingButtons.length;i++)ratingButtons[i].classList.remove('hover-filled');
+    });
+    ratingButtons[r].addEventListener('click',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      saveAlbumRating(index,parseInt(this.getAttribute('data-rating'),10));
+    });
+    ratingButtons[r].addEventListener('touchend',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      saveAlbumRating(index,parseInt(this.getAttribute('data-rating'),10));
+    },{passive:false});
+  }
+
+  var editButton=detailRating.querySelector('.rating-panel-edit');
+  if(editButton){
+    editButton.addEventListener('click',function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      var firstEmpty=detailRating.querySelector('.album-rating-star.empty')||detailRating.querySelector('.album-rating-star:last-child');
+      if(firstEmpty)firstEmpty.focus();
+    });
+  }
+}
+
 window.loadCollection=async function(){
   var loadVersion=++window.collectionLoadVersion;
   var path=window.location.pathname;
