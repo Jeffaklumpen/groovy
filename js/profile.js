@@ -82,6 +82,19 @@
     viewedUserActions.appendChild(viewedProfileButton);
   }
 
+  function syncViewedProfileButtonLabel(isOwn){
+    if(!viewedProfileButton)return;
+    if(typeof isOwn!=='boolean'){
+      var header=document.getElementById('viewedUserHeader');
+      isOwn=!!(header&&header.dataset.own==='true');
+    }
+    var label=viewedProfileButton.querySelector('.viewed-action-label');
+    if(label)label.textContent=isOwn?'Your Profile':'View Profile';
+    viewedProfileButton.setAttribute('aria-label',isOwn?'View your profile':'View profile');
+  }
+  window.groovySyncViewedProfileButtonLabel=syncViewedProfileButtonLabel;
+  syncViewedProfileButtonLabel();
+
   var publicPage=document.createElement('div');
   publicPage.id='collectorProfilePage';
   publicPage.className='collector-profile-page';
@@ -89,8 +102,12 @@
   publicPage.innerHTML=
     '<div class="collector-profile-shell">'+
       '<div class="collector-profile-toolbar">'+
-        '<button id="collectorProfileReturn" class="collector-profile-return" type="button" aria-label="Return to shelf"><span aria-hidden="true">←</span><strong>Back to Shelf</strong></button>'+
         '<span class="collector-profile-toolbar-label">COLLECTOR PROFILE</span>'+
+        '<nav class="collector-profile-toolbar-nav" aria-label="Collector links">'+
+          '<button id="collectorProfileShelf" type="button"><span class="collector-profile-record" aria-hidden="true"></span>View Shelf</button>'+
+          '<button id="collectorProfileWishlist" type="button"><span class="collector-profile-bookmark" aria-hidden="true"></span>View Wishlist</button>'+
+          '<button id="collectorProfileStats" type="button"><span class="collector-profile-bars" aria-hidden="true"></span>Statistics</button>'+
+        '</nav>'+
       '</div>'+
       '<main id="collectorProfileContent" class="collector-profile-content"></main>'+
     '</div>';
@@ -169,7 +186,9 @@
   document.body.appendChild(settingsPage);
 
   var publicContent=document.getElementById('collectorProfileContent');
-  var publicReturn=document.getElementById('collectorProfileReturn');
+  var publicShelfButton=document.getElementById('collectorProfileShelf');
+  var publicWishlistButton=document.getElementById('collectorProfileWishlist');
+  var publicStatsButton=document.getElementById('collectorProfileStats');
   var mainHeader=document.querySelector('.header');
   if(mainHeader&&mainHeader.parentNode)mainHeader.parentNode.insertBefore(publicPage,mainHeader.nextSibling);
   var closeButton=document.getElementById('closeProfileSettings');
@@ -519,11 +538,6 @@
           '</div>'+
           '<div class="collector-profile-owner-actions">'+(isOwner?'<button id="collectorProfileEdit" type="button">Edit profile</button>':(sessionUser?'<button id="collectorProfileFollow" class="collector-profile-follow'+(isFollowing?' following':'')+'" type="button" data-following="'+(isFollowing?'true':'false')+'">'+(isFollowing?'Following':'Follow')+'</button>':''))+'</div>'+
         '</section>'+
-        '<nav class="collector-profile-nav" aria-label="Collector links">'+
-          '<button id="collectorProfileShelf" type="button"><span class="collector-profile-record" aria-hidden="true"></span>Shelf</button>'+
-          '<button id="collectorProfileWishlist" type="button"><span class="collector-profile-bookmark" aria-hidden="true"></span>Wishlist</button>'+
-          '<button id="collectorProfileStats" type="button"><span class="collector-profile-bars" aria-hidden="true"></span>Statistics</button>'+
-        '</nav>'+
         '<div class="collector-profile-grid">'+
           '<section class="collector-profile-card collector-profile-about"><span class="collector-profile-section-kicker">ABOUT</span><h2>About '+escapeHtml(profile.username)+'</h2>'+
             (profile.bio?'<p>'+escapeHtml(profile.bio).replace(/\n/g,'<br>')+'</p>':'<p class="collector-profile-muted">No about information has been added yet.</p>')+
@@ -534,9 +548,6 @@
           publicGrailMarkup(profile)+
         '</div>';
 
-      document.getElementById('collectorProfileShelf').addEventListener('click',function(){navigate(shelfUrl(profile.username));});
-      document.getElementById('collectorProfileWishlist').addEventListener('click',function(){navigate(shelfUrl(profile.username,'wishlist'));});
-      document.getElementById('collectorProfileStats').addEventListener('click',function(){navigate(statisticsUrl(profile.username));});
       var edit=document.getElementById('collectorProfileEdit');
       if(edit)edit.addEventListener('click',openSettings);
       var follow=document.getElementById('collectorProfileFollow');
@@ -846,7 +857,18 @@
     publicProfileOpenedWithHistory=true;
     navigate('/profile/'+encodeURIComponent(profile.username));
   });
-  publicReturn.addEventListener('click',closePublicProfile);
+  if(publicShelfButton)publicShelfButton.addEventListener('click',function(){
+    var profile=state.publicProfile;
+    if(profile&&profile.username)navigate(shelfUrl(profile.username));
+  });
+  if(publicWishlistButton)publicWishlistButton.addEventListener('click',function(){
+    var profile=state.publicProfile;
+    if(profile&&profile.username)navigate(shelfUrl(profile.username,'wishlist'));
+  });
+  if(publicStatsButton)publicStatsButton.addEventListener('click',function(){
+    var profile=state.publicProfile;
+    if(profile&&profile.username)navigate(statisticsUrl(profile.username));
+  });
   closeButton.addEventListener('click',closeSettings);
   settingsPage.addEventListener('click',function(event){if(event.target===settingsPage)closeSettings();});
   document.addEventListener('keydown',function(event){if(event.key==='Escape'&&settingsPage.classList.contains('visible'))closeSettings();});
