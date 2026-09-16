@@ -1,0 +1,10 @@
+const fs=require('fs');
+const app=fs.readFileSync('js/app.js','utf8');
+const html=fs.readFileSync('index.html','utf8');
+const requested=[...app.matchAll(/getElementById\(['"]([^'"]+)['"]\)/g)].map(m=>m[1]);
+const unique=[...new Set(requested)].sort();
+const ids=new Set([...html.matchAll(/\bid=["']([^"']+)["']/g)].map(m=>m[1]));
+const missing=unique.filter(id=>!ids.has(id));
+console.log('DOM IDs requested by app.js:',unique.length);
+console.log('Missing from index.html:',missing.length);
+for(const id of missing) console.log('MISSING '+id);
