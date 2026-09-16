@@ -46,7 +46,7 @@ test('library controls and streaming links remain separate card actions',functio
   assert.match(html,/id="detailSpotifyLink"/);
   assert.match(app,/target\.closest\('\.streaming-link'\)/);
   assert.match(app,/streaming-service spotify-service/);
-  assert.match(statistics,/class="stats-spotify-link"/);
+  assert.match(statistics,/stats-release-service stats-release-spotify/);
 });
 
 test('record rendering supports four LP track sides',function(){
@@ -67,4 +67,19 @@ test('login and empty collection actions use the shared viewport-safe flow',func
   assert.match(app,/function openAddAlbumSearch\(user\)/);
   assert.match(app,/openAddAlbumSearch\(session\.user\)/);
   assert.match(app,/openAddAlbumSearch\(user\)/);
+});
+
+test('routing state stays pure and runtime compatibility loads separately',function(){
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const routeState=fs.readFileSync(path.join(root,'js','route-state.js'),'utf8');
+  const routeRuntime=fs.readFileSync(path.join(root,'js','route-runtime.js'),'utf8');
+
+  assert.doesNotMatch(routeState,/installRuntimeFixes|syncPublicShelfRecords|Object\.defineProperty\(windowObject,'loadCollection'/);
+  assert.match(routeRuntime,/syncPublicShelfRecords/);
+  assert.match(routeRuntime,/Object\.defineProperty\(windowObject,'loadCollection'/);
+
+  const statePosition=html.indexOf('/js/route-state.js');
+  const runtimePosition=html.indexOf('/js/route-runtime.js');
+  const appPosition=html.indexOf('/js/app.js');
+  assert.ok(statePosition>=0&&runtimePosition>statePosition&&appPosition>runtimePosition);
 });
