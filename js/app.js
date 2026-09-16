@@ -6088,7 +6088,7 @@ async function loadTopUsers(){
 
         div.addEventListener('click',function(){
             searchUserModal.style.display='none';
-            history.pushState({},'','/user/'+encodeURIComponent(user.username));
+            history.pushState({},'','/shelf/'+encodeURIComponent(user.username));
             renderCurrentRoute();
         });
     });
@@ -6177,7 +6177,7 @@ async function searchUsers(query){
 
         div.addEventListener('click',function(){
             searchUserModal.style.display='none';
-            history.pushState({},'','/user/'+encodeURIComponent(user.username));
+            history.pushState({},'','/shelf/'+encodeURIComponent(user.username));
             renderCurrentRoute();
         });
     });
@@ -6276,7 +6276,7 @@ function navigateViewedLibrary(nextView){
     if(!profile||!profile.username)return;
     libraryPage=1;
     setDeleteMode(false);
-    var url='/user/'+encodeURIComponent(profile.username);
+    var url='/shelf/'+encodeURIComponent(profile.username);
     if(nextView==='wishlist')url+='?view=wishlist';
     if(window.location.pathname+window.location.search===url)return;
     history.pushState({},'',url);
@@ -8737,6 +8737,7 @@ scrollTopButton.addEventListener('click',function(){
 });
 
 async function renderCurrentRoute(){
+    window.dispatchEvent(new Event('groovy-route-change'));
     window.libraryView=GroovyRouteState.libraryViewFromSearch(window.location.search);
     await updateAuthUI();
     closeNotificationPanel();

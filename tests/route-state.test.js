@@ -55,3 +55,18 @@ test('distinguishes missing, own and other shelf profiles',function(){
   assert.equal(resolveProfileView(signedInUser,{id:'user-1'}),'own');
   assert.equal(resolveProfileView(signedInUser,{id:'user-2'}),'other');
 });
+
+
+test('profile routing does not monkey patch browser history or route helpers',function(){
+  const fs=require('node:fs');
+  const path=require('node:path');
+  const root=path.resolve(__dirname,'..');
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const profile=fs.readFileSync(path.join(root,'js','profile.js'),'utf8');
+
+  assert.match(app,/groovy-route-change/);
+  assert.doesNotMatch(app,/['"]\/user\/['"]\+encodeURIComponent/);
+  assert.doesNotMatch(profile,/history\.pushState\s*=|history\.replaceState\s*=|__groovyShelfRoutesPatched/);
+  assert.doesNotMatch(profile,/GroovyRouteState\.profileUsernameFromPath\s*=/);
+  assert.match(profile,/addEventListener\('groovy-route-change',syncRoute\)/);
+});

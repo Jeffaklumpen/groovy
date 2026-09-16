@@ -7,55 +7,13 @@
   var myCollectionButton=document.getElementById('myCollectionButton');
   if(!profileMenu||!myCollectionButton)return;
 
-  var originalPushState=history.pushState.bind(history);
-  var originalReplaceState=history.replaceState.bind(history);
-
-  var routeSyncTimer=null;
-
-  function rewriteLegacyShelfUrl(url){
-    if(typeof url!=='string')return url;
-    return url.replace(/^\/user\//,'/shelf/');
-  }
-
-  function queueRouteSync(){
-    clearTimeout(routeSyncTimer);
-    routeSyncTimer=setTimeout(syncRoute,0);
-  }
-
-  if(!history.__groovyShelfRoutesPatched){
-    history.pushState=function(state,title,url){
-      var result=originalPushState(state,title,rewriteLegacyShelfUrl(url));
-      queueRouteSync();
-      return result;
-    };
-    history.replaceState=function(state,title,url){
-      var result=originalReplaceState(state,title,rewriteLegacyShelfUrl(url));
-      queueRouteSync();
-      return result;
-    };
-    history.__groovyShelfRoutesPatched=true;
-  }
-
   function decodeUsername(value){
     try{return decodeURIComponent(value);}catch(error){return null;}
-  }
-
-  function shelfUsernameFromPath(pathname){
-    var match=String(pathname||'').match(/^\/(?:shelf|user)\/([^\/]+)\/?$/);
-    return match?decodeUsername(match[1]):null;
   }
 
   function publicProfileUsernameFromPath(pathname){
     var match=String(pathname||'').match(/^\/profile\/([^\/]+)\/?$/);
     return match?decodeUsername(match[1]):null;
-  }
-
-  if(window.GroovyRouteState){
-    window.GroovyRouteState.profileUsernameFromPath=shelfUsernameFromPath;
-  }
-
-  if(/^\/user\//.test(window.location.pathname)){
-    originalReplaceState(history.state,'',window.location.pathname.replace(/^\/user\//,'/shelf/')+window.location.search+window.location.hash);
   }
 
   var state={user:null,profile:null,counts:{collection:0,wishlist:0,shelves:0},loading:false,publicProfile:null,grail:null};
@@ -829,6 +787,7 @@
     if(!username)return;
     publicProfileOpenedWithHistory=true;
     history.pushState({},'', '/profile/'+encodeURIComponent(username));
+    syncRoute();
   }
 
   function closePublicProfile(){
@@ -901,9 +860,9 @@
   removePhotoButton.addEventListener('click',removeAvatar);
   deleteButton.addEventListener('click',deleteAccount);
 
-  window.addEventListener('popstate',queueRouteSync);
+  window.addEventListener('popstate',syncRoute);
+  window.addEventListener('groovy-route-change',syncRoute);
   supabaseClient.auth.onAuthStateChange(function(){setTimeout(syncRoute,0);});
 
-  if(shelfUsernameFromPath(window.location.pathname))setTimeout(dispatchRouteChange,0);
   syncRoute();
 })();
