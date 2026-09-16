@@ -1,0 +1,45 @@
+name: Foundation maintenance
+
+on:
+  push:
+    branches: [notes]
+    paths:
+      - '.maintenance/foundation_cleanup.js'
+      - '.github/workflows/foundation-maintenance.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out notes
+        uses: actions/checkout@v4
+        with:
+          ref: notes
+          fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply record model cleanup
+        run: node .maintenance/foundation_cleanup.js
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/record-model.js
+          node --check js/app.js
+          node --check js/detail-enhancements-v2.js
+          node --check js/album-rating-layout-v4.js
+      - name: Run regression tests
+        run: node --test tests/*.test.js
+      - name: Commit cleanup and remove temporary runner
+        run: |
+          rm -f .maintenance/foundation_cleanup.js .github/workflows/foundation-maintenance.yml
+          rmdir .maintenance 2>/dev/null || true
+          git config user.name "GroovyShelves Maintenance"
+          git config user.email "150244154+Jeffaklumpen@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "No cleanup changes to commit"; exit 1; }
+          git commit -m "Introduce named record model adapter"
+          git push origin notes
