@@ -23,7 +23,7 @@
   <meta name="application-name" content="Groovy">
   <meta name="theme-color" content="#121214">
   <title>GroovyShelves – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/css/style.css?v=111">
+  <link rel="stylesheet" href="/css/style.css?v=112">
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.webmanifest?v=2">
@@ -44,10 +44,6 @@
     </nav>
 
     <div class="header-tools">
-      <label class="library-search" for="librarySearchInput">
-        <span aria-hidden="true"></span>
-        <input id="librarySearchInput" type="search" placeholder="Search your collection..." autocomplete="off">
-      </label>
       <div class="header-controls">
         <button id="addAlbumButton" class="add-album-button" type="button">Add Record</button>
 
@@ -117,6 +113,12 @@
       <button class="viewed-user-nav" id="viewedUserShelfButton" type="button" aria-label="View shelf"><span class="record-icon" aria-hidden="true"></span><span class="viewed-action-label">Shelf</span></button>
       <button class="viewed-user-nav" id="viewedUserWishlistButton" type="button" aria-label="View wishlist"><span class="wishlist-icon" aria-hidden="true"></span><span class="viewed-action-label">Wishlist</span></button>
       <button class="viewed-user-stats" id="viewedUserStatsButton" type="button" aria-label="View statistics"><span aria-hidden="true">▥</span><span class="viewed-action-label">Statistics</span></button>
+    </div>
+    <div class="viewed-user-search-row">
+      <label class="banner-library-search" for="librarySearchInput">
+        <span class="banner-search-icon" aria-hidden="true"></span>
+        <input id="librarySearchInput" type="search" placeholder="Search this shelf..." autocomplete="off">
+      </label>
     </div>
   </div>
   <span id="copyProfileLinkButton" hidden aria-hidden="true"><span class="viewed-action-label"></span></span>
@@ -512,7 +514,7 @@
 </div>
 
 <script src="/js/route-state.js?v=15"></script>
-<script src="/js/app.js?v=117"></script>
+<script src="/js/app.js?v=118"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=10"></script>
 <script src="/js/pwa.js?v=12"></script>
