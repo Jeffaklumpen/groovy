@@ -43,7 +43,9 @@
     originalReplaceState(history.state,'',window.location.pathname.replace(/^\/user\//,'/shelf/')+window.location.search+window.location.hash);
   }
 
-  var state={user:null,profile:null,counts:{collection:0,wishlist:0,shelves:0},loading:false,publicProfile:null};
+  var state={user:null,profile:null,counts:{collection:0,wishlist:0,shelves:0},loading:false,publicProfile:null,grail:null};
+  var grailSearchTimer=null;
+  var grailSearchVersion=0;
 
   var menuButton=document.createElement('button');
   menuButton.id='profileSettingsMenuButton';
@@ -52,6 +54,18 @@
   menuButton.textContent='Profile';
   profileMenu.insertBefore(menuButton,myCollectionButton);
 
+  var viewedUserActions=document.querySelector('.viewed-user-actions');
+  var viewedProfileButton=document.getElementById('viewedUserProfileButton');
+  if(viewedUserActions&&!viewedProfileButton){
+    viewedProfileButton=document.createElement('button');
+    viewedProfileButton.id='viewedUserProfileButton';
+    viewedProfileButton.className='viewed-user-nav viewed-user-profile-button';
+    viewedProfileButton.type='button';
+    viewedProfileButton.setAttribute('aria-label','View profile');
+    viewedProfileButton.innerHTML='<span class="viewed-profile-icon" aria-hidden="true"></span><span class="viewed-action-label">View Profile</span>';
+    viewedUserActions.appendChild(viewedProfileButton);
+  }
+
   var publicPage=document.createElement('div');
   publicPage.id='collectorProfilePage';
   publicPage.className='collector-profile-page';
@@ -59,7 +73,7 @@
   publicPage.innerHTML=
     '<div class="collector-profile-shell">'+
       '<div class="collector-profile-toolbar">'+
-        '<button id="collectorProfileHome" class="collector-profile-brand" type="button" aria-label="Go to GroovyShelves"><span class="collector-profile-record" aria-hidden="true"></span><strong>GroovyShelves</strong></button>'+
+        '<button id="collectorProfileHome" class="collector-profile-brand" type="button" aria-label="Go to GroovyShelves"><img class="collector-profile-logo" src="/logo.png" alt="GroovyShelves"></button>'+
         '<button id="collectorProfileClose" class="collector-profile-close" type="button" aria-label="Close profile">×</button>'+
       '</div>'+
       '<main id="collectorProfileContent" class="collector-profile-content"></main>'+
@@ -76,7 +90,7 @@
   settingsPage.innerHTML=
     '<div class="profile-settings-shell">'+
       '<div class="profile-settings-toolbar">'+
-        '<div><span class="profile-settings-mark" aria-hidden="true"></span><strong id="profileSettingsTitle">Edit profile</strong></div>'+
+        '<div class="profile-settings-toolbar-brand"><img class="profile-settings-toolbar-logo" src="/logo.png" alt="GroovyShelves"><strong id="profileSettingsTitle">Edit profile</strong></div>'+
         '<button id="closeProfileSettings" type="button" aria-label="Close profile settings">×</button>'+
       '</div>'+
       '<div class="profile-settings-body">'+
@@ -108,10 +122,13 @@
               '<label class="profile-settings-field"><span>Favorite artist</span><input id="profileSettingsFavoriteArtist" type="text" maxlength="100" placeholder="e.g. Pink Floyd"></label>'+
               '<label class="profile-settings-field"><span>Favorite genre</span><input id="profileSettingsFavoriteGenre" type="text" maxlength="80" placeholder="e.g. Progressive Rock"></label>'+
             '</div>'+
-            '<div class="profile-settings-two-col">'+
-              '<label class="profile-settings-field"><span>Collecting since</span><input id="profileSettingsCollectingSince" type="number" min="1900" max="2100" inputmode="numeric" placeholder="e.g. 2018"></label>'+
-              '<label class="profile-settings-field"><span>Grail record</span><input id="profileSettingsGrailRecord" type="text" maxlength="160" placeholder="The record you are still hunting for"></label>'+
-            '</div>'+
+            '<label class="profile-settings-field profile-settings-year-field"><span>Collecting since</span><input id="profileSettingsCollectingSince" type="number" min="1900" max="2100" inputmode="numeric" placeholder="e.g. 2018"></label>'+
+            '<section class="profile-settings-grail">'+
+              '<div class="profile-settings-grail-heading"><div><span>GRAIL RECORD</span><strong>The one you are hunting for</strong></div><small>Search the same album catalogue used by Groovy.</small></div>'+
+              '<label class="profile-settings-grail-search"><span class="profile-settings-grail-search-icon" aria-hidden="true"></span><input id="profileSettingsGrailSearch" type="search" placeholder="Search artist or album..." autocomplete="off"></label>'+
+              '<div id="profileSettingsGrailResults" class="profile-settings-grail-results" hidden></div>'+
+              '<div id="profileSettingsGrailSelected" class="profile-settings-grail-selected"></div>'+
+            '</section>'+
             '<div class="profile-settings-url-block"><span>Public profile URL</span><a id="profileSettingsPublicUrl" href="/" target="_blank" rel="noopener noreferrer"></a><small>This is the URL you can send to other people. No copy button is needed.</small></div>'+
             '<div class="profile-settings-actions"><button id="profileSettingsSave" class="profile-settings-primary" type="button">Save profile</button></div>'+
           '</section>'+
@@ -149,7 +166,9 @@
   var favoriteArtistInput=document.getElementById('profileSettingsFavoriteArtist');
   var favoriteGenreInput=document.getElementById('profileSettingsFavoriteGenre');
   var collectingSinceInput=document.getElementById('profileSettingsCollectingSince');
-  var grailRecordInput=document.getElementById('profileSettingsGrailRecord');
+  var grailSearchInput=document.getElementById('profileSettingsGrailSearch');
+  var grailResults=document.getElementById('profileSettingsGrailResults');
+  var grailSelected=document.getElementById('profileSettingsGrailSelected');
   var publicUrl=document.getElementById('profileSettingsPublicUrl');
   var saveButton=document.getElementById('profileSettingsSave');
   var emailInput=document.getElementById('profileSettingsEmail');
@@ -169,6 +188,197 @@
   function publicProfileUrl(username){return window.location.origin+'/profile/'+encodeURIComponent(username||'');}
   function shelfUrl(username,view){return '/shelf/'+encodeURIComponent(username||'')+(view==='wishlist'?'?view=wishlist':'');}
   function statisticsUrl(username){return '/shelf/'+encodeURIComponent(username||'')+'?stats=1';}
+
+  function spotifyAlbumUrl(artist,title){return 'https://open.spotify.com/search/'+encodeURIComponent([artist,title].filter(Boolean).join(' '));}
+  function appleFallbackUrl(artist,title){return 'https://music.apple.com/us/search?term='+encodeURIComponent([artist,title].filter(Boolean).join(' '));}
+
+  function normalizeAlbumText(value){
+    var text=safeText(value).toLowerCase();
+    if(text.normalize)text=text.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    return text.replace(/\([^)]*\)/g,' ').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
+  }
+
+  function splitDiscogsTitle(value){
+    var text=safeText(value);
+    var parts=text.split(' - ');
+    if(parts.length<2)return {artist:'',title:text.trim()};
+    return {artist:parts.shift().replace(/\s*\(\d+\)$/,'').trim(),title:parts.join(' - ').trim()};
+  }
+
+  function grailFromProfile(profile){
+    if(!profile||!profile.grail_title)return null;
+    return {
+      masterId:profile.grail_discogs_master_id||'',
+      title:profile.grail_title||'',
+      artist:profile.grail_artist||'',
+      year:profile.grail_year||'',
+      coverUrl:profile.grail_cover_url||'',
+      appleUrl:profile.grail_apple_url||''
+    };
+  }
+
+  function profileStreamingButtons(item,classPrefix){
+    if(!item)return '';
+    var apple=item.appleUrl||appleFallbackUrl(item.artist,item.title);
+    var spotify=spotifyAlbumUrl(item.artist,item.title);
+    return '<div class="'+classPrefix+'-streaming-row">'+
+      '<a class="'+classPrefix+'-streaming-service '+classPrefix+'-apple-service" href="'+escapeHtml(apple)+'" target="_blank" rel="noopener noreferrer" aria-label="Listen to '+escapeHtml(item.title)+' on Apple Music"><img src="/apple_wide.svg" alt="Listen on Apple Music"></a>'+
+      '<a class="'+classPrefix+'-streaming-service '+classPrefix+'-spotify-service" href="'+escapeHtml(spotify)+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(item.title)+' on Spotify"><img src="/spotify_logo.svg" alt="Spotify"></a>'+
+    '</div>';
+  }
+
+  function renderSelectedGrail(){
+    var item=state.grail;
+    if(!item){
+      grailSelected.innerHTML='<div class="profile-grail-empty"><span class="profile-grail-empty-record" aria-hidden="true"></span><div><strong>No grail selected</strong><small>Search above and choose the record you are still chasing.</small></div></div>';
+      return;
+    }
+
+    grailSelected.innerHTML=
+      '<article class="profile-grail-card">'+
+        '<img class="profile-grail-cover" src="'+escapeHtml(item.coverUrl||'/avatar_placeholder.png')+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'">'+
+        '<div class="profile-grail-copy">'+
+          '<span class="profile-grail-label">GRAIL RECORD</span>'+
+          '<strong>'+escapeHtml(item.title)+'</strong>'+
+          '<small>'+escapeHtml(item.artist)+(item.year?' · '+escapeHtml(item.year):'')+'</small>'+
+          profileStreamingButtons(item,'profile-grail')+
+        '</div>'+
+        '<div class="profile-grail-actions"><button id="profileGrailChange" type="button">Change</button><button id="profileGrailRemove" type="button">Remove</button></div>'+
+      '</article>';
+
+    document.getElementById('profileGrailChange').addEventListener('click',function(){
+      grailSearchInput.focus();
+      grailSearchInput.select();
+    });
+    document.getElementById('profileGrailRemove').addEventListener('click',function(){
+      state.grail=null;
+      grailSearchInput.value='';
+      grailResults.hidden=true;
+      grailResults.innerHTML='';
+      renderSelectedGrail();
+    });
+  }
+
+  async function lookupAppleGrail(artist,title,year){
+    try{
+      var term=[artist,title].filter(Boolean).join(' ');
+      var url='https://itunes.apple.com/search?entity=album&limit=25&country=SE&term='+encodeURIComponent(term);
+      var response=await fetch(url,{method:'GET'});
+      if(!response.ok)throw new Error('Apple lookup failed');
+      var payload=await response.json();
+      var wantedArtist=normalizeAlbumText(artist);
+      var wantedTitle=normalizeAlbumText(title);
+      var wantedYear=parseInt(year,10)||0;
+      var candidates=Array.isArray(payload.results)?payload.results:[];
+
+      function score(item){
+        var candidateArtist=normalizeAlbumText(item.artistName);
+        var candidateTitle=normalizeAlbumText(item.collectionName);
+        var candidateYear=parseInt(String(item.releaseDate||'').slice(0,4),10)||0;
+        var points=0;
+        if(candidateArtist===wantedArtist)points+=8;
+        else if(candidateArtist&&wantedArtist&&(candidateArtist.indexOf(wantedArtist)!==-1||wantedArtist.indexOf(candidateArtist)!==-1))points+=4;
+        if(candidateTitle===wantedTitle)points+=10;
+        else if(candidateTitle&&wantedTitle&&(candidateTitle.indexOf(wantedTitle)!==-1||wantedTitle.indexOf(candidateTitle)!==-1))points+=5;
+        if(wantedYear&&candidateYear===wantedYear)points+=2;
+        return points;
+      }
+
+      var scored=candidates.map(function(item){return {item:item,score:score(item)};}).sort(function(a,b){return b.score-a.score;});
+      var best=scored[0]&&scored[0].score>=10?scored[0].item:null;
+      if(!best)return null;
+      var artwork=best.artworkUrl100||'';
+      if(artwork)artwork=artwork.replace(/100x100bb(?:-\d+)?/,'1200x1200bb').replace(/100x100bb/,'1200x1200bb');
+      return {
+        coverUrl:artwork||'',
+        appleUrl:best.collectionViewUrl||'',
+        year:String(best.releaseDate||'').slice(0,4)||''
+      };
+    }catch(error){
+      console.warn('Could not enrich grail with Apple Music:',error);
+      return null;
+    }
+  }
+
+  function normalizeGrailSearchResult(result){
+    var parts=splitDiscogsTitle(result&&result.title);
+    var masterId=result&&(
+      result.master_id||
+      (String(result.type||'').toLowerCase()==='master'?result.id:'')||
+      result.id
+    );
+    return {
+      masterId:masterId||'',
+      title:parts.title||safeText(result&&result.title)||'Untitled',
+      artist:parts.artist||safeText(result&&result.artist)||'Unknown artist',
+      year:result&&result.year?String(result.year):'',
+      coverUrl:safeText(result&&(result.cover_image||result.thumb)),
+      appleUrl:''
+    };
+  }
+
+  function renderGrailSearchResults(items){
+    if(!items.length){
+      grailResults.innerHTML='<div class="profile-grail-search-empty">No albums found. Try another artist or album title.</div>';
+      grailResults.hidden=false;
+      return;
+    }
+
+    grailResults.innerHTML=items.slice(0,8).map(function(item,index){
+      return '<button class="profile-grail-result" type="button" data-grail-index="'+index+'">'+
+        '<img src="'+escapeHtml(item.coverUrl||'/avatar_placeholder.png')+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'">'+
+        '<span><strong>'+escapeHtml(item.title)+'</strong><small>'+escapeHtml(item.artist)+(item.year?' · '+escapeHtml(item.year):'')+'</small></span>'+
+        '<i aria-hidden="true">›</i>'+
+      '</button>';
+    }).join('');
+    grailResults.hidden=false;
+
+    grailResults.querySelectorAll('.profile-grail-result').forEach(function(button){
+      button.addEventListener('click',async function(){
+        var item=items[parseInt(button.getAttribute('data-grail-index'),10)];
+        if(!item)return;
+        state.grail=Object.assign({},item);
+        grailResults.hidden=true;
+        grailResults.innerHTML='';
+        grailSearchInput.value=[item.artist,item.title].filter(Boolean).join(' — ');
+        renderSelectedGrail();
+
+        var apple=await lookupAppleGrail(item.artist,item.title,item.year);
+        if(!state.grail||String(state.grail.masterId)!==String(item.masterId))return;
+        if(apple){
+          if(apple.coverUrl)state.grail.coverUrl=apple.coverUrl;
+          if(apple.appleUrl)state.grail.appleUrl=apple.appleUrl;
+          if(!state.grail.year&&apple.year)state.grail.year=apple.year;
+          renderSelectedGrail();
+        }
+      });
+    });
+  }
+
+  async function searchGrailAlbums(query){
+    var version=++grailSearchVersion;
+    grailResults.hidden=false;
+    grailResults.innerHTML='<div class="profile-grail-search-loading"><span></span>Searching albums…</div>';
+    try{
+      var response=await supabaseClient.functions.invoke('discogs-search',{body:{query:query}});
+      if(version!==grailSearchVersion)return;
+      if(response.error)throw response.error;
+      var raw=response.data&&Array.isArray(response.data.results)?response.data.results:[];
+      var seen={};
+      var items=raw.map(normalizeGrailSearchResult).filter(function(item){
+        var key=normalizeAlbumText(item.artist)+'|'+normalizeAlbumText(item.title)+'|'+item.year;
+        if(!item.title||seen[key])return false;
+        seen[key]=true;
+        return true;
+      });
+      renderGrailSearchResults(items);
+    }catch(error){
+      console.error('Could not search grail albums:',error);
+      if(version!==grailSearchVersion)return;
+      grailResults.innerHTML='<div class="profile-grail-search-empty">Could not search albums right now. Try again in a moment.</div>';
+      grailResults.hidden=false;
+    }
+  }
 
   function validUsername(value){return value.length>=3&&value.length<=30&&/^[\p{L}\p{N}._-]+$/u.test(value);}
 
@@ -214,6 +424,20 @@
 
   function countText(value){return value===null||value===undefined?'—':String(value);}
 
+  function publicGrailMarkup(profile){
+    var item=grailFromProfile(profile);
+    if(!item){
+      return '<section class="collector-profile-card collector-profile-grail"><span class="collector-profile-section-kicker">GRAIL RECORD</span><h2>The one still missing</h2><p class="collector-profile-muted">No grail record has been selected yet.</p></section>';
+    }
+    return '<section class="collector-profile-card collector-profile-grail">'+
+      '<span class="collector-profile-section-kicker">GRAIL RECORD</span>'+
+      '<div class="collector-grail-layout">'+
+        '<img class="collector-grail-cover" src="'+escapeHtml(item.coverUrl||'/avatar_placeholder.png')+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'">'+
+        '<div class="collector-grail-copy"><h2>'+escapeHtml(item.title)+'</h2><p>'+escapeHtml(item.artist)+(item.year?' · '+escapeHtml(item.year):'')+'</p>'+profileStreamingButtons(item,'collector-grail')+'</div>'+
+      '</div>'+
+    '</section>';
+  }
+
   function dispatchRouteChange(){
     try{window.dispatchEvent(new PopStateEvent('popstate',{state:history.state}));}
     catch(error){window.dispatchEvent(new Event('popstate'));}
@@ -238,8 +462,8 @@
 
     try{
       var profileResult=await supabaseClient.from('profiles')
-        .select('id,username,avatar_url,bio,favorite_artist,favorite_genre,collecting_since,grail_record')
-        .eq('username',username)
+        .select('id,username,avatar_url,bio,favorite_artist,favorite_genre,collecting_since,grail_discogs_master_id,grail_title,grail_artist,grail_year,grail_cover_url,grail_apple_url')
+        .ilike('username',username)
         .maybeSingle();
       if(profileResult.error)throw profileResult.error;
       if(!profileResult.data){
@@ -257,7 +481,6 @@
       if(profile.favorite_artist)facts.push('<article><span>Favorite artist</span><strong>'+escapeHtml(profile.favorite_artist)+'</strong></article>');
       if(profile.favorite_genre)facts.push('<article><span>Favorite genre</span><strong>'+escapeHtml(profile.favorite_genre)+'</strong></article>');
       if(profile.collecting_since)facts.push('<article><span>Collecting since</span><strong>'+escapeHtml(profile.collecting_since)+'</strong></article>');
-      if(profile.grail_record)facts.push('<article><span>Grail record</span><strong>'+escapeHtml(profile.grail_record)+'</strong></article>');
 
       publicContent.innerHTML=
         '<section class="collector-profile-hero">'+
@@ -286,6 +509,7 @@
           '<section class="collector-profile-card"><span class="collector-profile-section-kicker">COLLECTOR NOTES</span><h2>In the grooves</h2>'+
             (facts.length?'<div class="collector-profile-facts">'+facts.join('')+'</div>':'<p class="collector-profile-muted">No collector details have been added yet.</p>')+
           '</section>'+
+          publicGrailMarkup(profile)+
         '</div>';
 
       document.getElementById('collectorProfileShelf').addEventListener('click',function(){navigate(shelfUrl(profile.username));});
@@ -308,7 +532,7 @@
       if(!user)throw new Error('You need to be logged in to edit your profile.');
       state.user=user;
       var result=await supabaseClient.from('profiles')
-        .select('id,username,avatar_url,bio,favorite_artist,favorite_genre,collecting_since,grail_record')
+        .select('id,username,avatar_url,bio,favorite_artist,favorite_genre,collecting_since,grail_discogs_master_id,grail_title,grail_artist,grail_year,grail_cover_url,grail_apple_url')
         .eq('id',user.id)
         .maybeSingle();
       if(result.error)throw result.error;
@@ -320,7 +544,11 @@
       favoriteArtistInput.value=safeText(profile.favorite_artist);
       favoriteGenreInput.value=safeText(profile.favorite_genre);
       collectingSinceInput.value=profile.collecting_since||'';
-      grailRecordInput.value=safeText(profile.grail_record);
+      state.grail=grailFromProfile(profile);
+      grailSearchInput.value=state.grail?[state.grail.artist,state.grail.title].filter(Boolean).join(' — '):'';
+      grailResults.hidden=true;
+      grailResults.innerHTML='';
+      renderSelectedGrail();
       emailInput.value=safeText(user.email);
       passwordInput.value='';
       passwordConfirmInput.value='';
@@ -398,18 +626,24 @@
       favorite_artist:favoriteArtistInput.value.trim(),
       favorite_genre:favoriteGenreInput.value.trim(),
       collecting_since:year?parseInt(year,10):null,
-      grail_record:grailRecordInput.value.trim(),
+      grail_discogs_master_id:state.grail&&state.grail.masterId?String(state.grail.masterId):null,
+      grail_title:state.grail?state.grail.title:'',
+      grail_artist:state.grail?state.grail.artist:'',
+      grail_year:state.grail&&state.grail.year?parseInt(state.grail.year,10)||null:null,
+      grail_cover_url:state.grail?state.grail.coverUrl:'',
+      grail_apple_url:state.grail?state.grail.appleUrl:'',
       updated_at:new Date().toISOString()
     };
 
     try{
-      var result=await supabaseClient.from('profiles').upsert(payload,{onConflict:'id'}).select('id,username,avatar_url,bio,favorite_artist,favorite_genre,collecting_since,grail_record').single();
+      var result=await supabaseClient.from('profiles').upsert(payload,{onConflict:'id'}).select('id,username,avatar_url,bio,favorite_artist,favorite_genre,collecting_since,grail_discogs_master_id,grail_title,grail_artist,grail_year,grail_cover_url,grail_apple_url').single();
       if(result.error)throw result.error;
       var metadataResult=await supabaseClient.auth.updateUser({data:{username:username}});
       if(metadataResult.error)console.warn('Could not update auth username metadata:',metadataResult.error);
 
       state.profile=result.data;
       state.publicProfile=result.data;
+      state.grail=grailFromProfile(result.data);
       document.getElementById('profileSettingsHeroName').textContent=username;
       publicUrl.textContent=publicProfileUrl(username);
       publicUrl.href=publicProfileUrl(username);
@@ -558,12 +792,35 @@
   }
 
   menuButton.addEventListener('click',openOwnProfile);
+  if(viewedProfileButton)viewedProfileButton.addEventListener('click',function(){
+    var profile=window.groovyViewedStatisticsProfile;
+    if(!profile||!profile.username||profile.username==='Unknown user')return;
+    navigate('/profile/'+encodeURIComponent(profile.username));
+  });
   publicClose.addEventListener('click',closePublicProfile);
   publicHome.addEventListener('click',function(){navigate('/');});
   closeButton.addEventListener('click',closeSettings);
   settingsPage.addEventListener('click',function(event){if(event.target===settingsPage)closeSettings();});
   document.addEventListener('keydown',function(event){if(event.key==='Escape'&&settingsPage.classList.contains('visible'))closeSettings();});
   bioInput.addEventListener('input',updateBioCount);
+  grailSearchInput.addEventListener('input',function(){
+    clearTimeout(grailSearchTimer);
+    var query=grailSearchInput.value.trim();
+    if(query.length<2){
+      grailSearchVersion++;
+      grailResults.hidden=true;
+      grailResults.innerHTML='';
+      return;
+    }
+    grailSearchTimer=setTimeout(function(){searchGrailAlbums(query);},350);
+  });
+  grailSearchInput.addEventListener('keydown',function(event){
+    if(event.key==='Escape'){
+      grailResults.hidden=true;
+      grailResults.innerHTML='';
+      grailSearchInput.blur();
+    }
+  });
   usernameInput.addEventListener('input',function(){var value=usernameInput.value.trim();publicUrl.textContent=publicProfileUrl(value);publicUrl.href=publicProfileUrl(value);});
   deleteConfirmInput.addEventListener('input',updateDeleteState);
   saveButton.addEventListener('click',saveProfile);
