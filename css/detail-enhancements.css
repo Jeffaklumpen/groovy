@@ -35,6 +35,11 @@ body.logged-out-home .library-overview{display:none!important}
 @media screen and (min-width:761px){
   .detail-shelf-actions.wishlist-detail-actions{grid-column:1/-1!important;grid-row:5!important;justify-self:stretch!important;width:100%;margin:10px 0 0!important}
   .detail-shelf-actions.wishlist-detail-actions .detail-move-to-collection{width:100%;justify-content:center}
+
+  /* Desktop streaming spacing used to be injected by route-runtime.js. */
+  .detail-streaming-row{margin-top:28px!important}
+  .detail-streaming-row:after{content:""!important;position:absolute!important;left:4px!important;right:4px!important;top:-14px!important;height:1px!important;background:rgba(255,255,255,.09)!important;pointer-events:none!important}
+  .detail-shelf-actions:not([hidden]) + .detail-streaming-row:after{top:-14px!important}
 }
 
 @media screen and (max-width:760px){
