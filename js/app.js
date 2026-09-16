@@ -902,7 +902,7 @@ async function renderOwnLibraryHeader(user){
   try{
     var profileResult=await supabaseClient
       .from('profiles')
-      .select('avatar_url')
+      .select('username,avatar_url')
       .eq('id',user.id)
       .maybeSingle();
     if(!profileResult.error&&profileResult.data&&profileResult.data.avatar_url)avatarUrl=profileResult.data.avatar_url;
@@ -915,6 +915,14 @@ async function renderOwnLibraryHeader(user){
   viewedUserAvatar.style.backgroundPosition='center';
   viewedUserName.textContent='Your Shelf';
   viewedUserContext.textContent=window.libraryView==='wishlist'?'Wishlist':'Collection';
+  window.groovyViewedStatisticsProfile={
+    id:user.id,
+    username:profileResult&&!profileResult.error&&profileResult.data&&profileResult.data.username
+      ?profileResult.data.username
+      :(user.user_metadata&&user.user_metadata.username?user.user_metadata.username:''),
+    avatar_url:avatarUrl
+  };
+  if(typeof window.groovySyncViewedProfileButtonLabel==='function')window.groovySyncViewedProfileButtonLabel(true);
   viewedUserShelfButton.classList.toggle('active',window.libraryView!=='wishlist');
   viewedUserWishlistButton.classList.toggle('active',window.libraryView==='wishlist');
   viewedUserShelfButton.setAttribute('aria-current',window.libraryView!=='wishlist'?'page':'false');
@@ -935,6 +943,7 @@ window.loadCollection=async function(){
   var ownHeader=document.getElementById('viewedUserHeader');
   ownHeader.style.display='none';
   ownHeader.dataset.own='false';
+  if(typeof window.groovySyncViewedProfileButtonLabel==='function')window.groovySyncViewedProfileButtonLabel(false);
   if(viewedUserFollowButton)viewedUserFollowButton.style.display='none';
     
   var {data:{session}}=await supabaseClient.auth.getSession();
@@ -1298,8 +1307,11 @@ var shelfPickerStatus=document.getElementById('shelfPickerStatus');
 var shelfPickerTitle=document.getElementById('shelfPickerTitle');
 var detailShelfActions=document.getElementById('detailShelfActions');
 var detailShelfStatus=document.getElementById('detailShelfStatus');
+var detailSocialContext=document.getElementById('detailSocialContext');
 var detailInfoCard=document.querySelector('.detail-info-card');
 var detailOpenRecordIndex=-1;
+var detailSocialRequestVersion=0;
+var detailSocialCache=new Map();
 
 var SHELF_ICON_OPTIONS=[
   {id:'record',label:'Vinyl'},
@@ -3805,6 +3817,142 @@ if(detailAboutAlbumToggle){
   });
 }
 
+
+function detailSocialEscape(value){
+  return esc(value==null?'':String(value));
+}
+
+function detailSocialCacheGet(key){
+  var item=detailSocialCache.get(key);
+  if(!item)return null;
+  if(Date.now()-item.time>120000){detailSocialCache.delete(key);return null;}
+  return item.value;
+}
+
+function detailSocialCacheSet(key,value){
+  detailSocialCache.set(key,{time:Date.now(),value:value});
+  if(detailSocialCache.size>120){
+    var first=detailSocialCache.keys().next();
+    if(!first.done)detailSocialCache.delete(first.value);
+  }
+}
+
+function hideDetailSocialContext(){
+  if(!detailSocialContext)return;
+  detailSocialContext.hidden=true;
+  detailSocialContext.innerHTML='';
+  detailSocialContext.classList.remove('own-match');
+}
+
+function renderFollowedCollectorsForAlbum(profiles){
+  if(!detailSocialContext||!profiles||!profiles.length){hideDetailSocialContext();return;}
+  detailSocialContext.classList.remove('own-match');
+  detailSocialContext.hidden=false;
+  detailSocialContext.innerHTML=
+    '<div class="detail-social-heading"><span>FOLLOWING</span><strong>Also in their collection</strong></div>'+
+    '<div class="detail-social-people">'+profiles.map(function(profile){
+      return '<button class="detail-social-person" type="button" data-detail-social-username="'+detailSocialEscape(profile.username||'')+'">'+
+        '<span class="detail-social-avatar" style="background-image:url(&quot;'+detailSocialEscape(profile.avatar_url||'/avatar_placeholder.png')+'&quot;)"></span>'+
+        '<span>'+detailSocialEscape(profile.username||'Collector')+'</span>'+
+      '</button>';
+    }).join('')+'</div>';
+}
+
+function renderOwnCollectionMatch(){
+  if(!detailSocialContext)return;
+  detailSocialContext.classList.add('own-match');
+  detailSocialContext.hidden=false;
+  detailSocialContext.innerHTML=
+    '<span class="detail-social-check" aria-hidden="true">✓</span>'+
+    '<div><span>COLLECTION MATCH</span><strong>This record is also in your collection</strong></div>';
+}
+
+async function loadDetailSocialContext(record,index){
+  var requestVersion=++detailSocialRequestVersion;
+  hideDetailSocialContext();
+  if(!record||!record[8])return;
+
+  var sessionResult=await supabaseClient.auth.getSession();
+  if(requestVersion!==detailSocialRequestVersion||detailOpenRecordIndex!==index)return;
+  var sessionUser=sessionResult.data&&sessionResult.data.session&&sessionResult.data.session.user;
+  if(!sessionUser)return;
+
+  var albumId=record[8];
+
+  try{
+    if(viewedUserId!==null){
+      var ownKey='own:'+sessionUser.id+':'+albumId;
+      var ownMatch=detailSocialCacheGet(ownKey);
+      if(ownMatch===null){
+        var ownResult=await supabaseClient.from('collections')
+          .select('id')
+          .eq('user_id',sessionUser.id)
+          .eq('album_id',albumId)
+          .limit(1);
+        if(ownResult.error)throw ownResult.error;
+        ownMatch=!!(ownResult.data&&ownResult.data.length);
+        detailSocialCacheSet(ownKey,ownMatch);
+      }
+      if(requestVersion!==detailSocialRequestVersion||detailOpenRecordIndex!==index)return;
+      if(ownMatch)renderOwnCollectionMatch();
+      return;
+    }
+
+    if(window.libraryView==='wishlist')return;
+
+    var followedKey='followed:'+sessionUser.id+':'+albumId;
+    var cachedProfiles=detailSocialCacheGet(followedKey);
+    if(cachedProfiles!==null){
+      if(requestVersion===detailSocialRequestVersion&&detailOpenRecordIndex===index)renderFollowedCollectorsForAlbum(cachedProfiles);
+      return;
+    }
+
+    var followResult=await supabaseClient.from('user_follows')
+      .select('followed_id')
+      .eq('follower_id',sessionUser.id);
+    if(followResult.error)throw followResult.error;
+    var followedIds=(followResult.data||[]).map(function(row){return row.followed_id;}).filter(Boolean);
+    if(!followedIds.length){detailSocialCacheSet(followedKey,[]);return;}
+
+    var collectionResult=await supabaseClient.from('collections')
+      .select('user_id')
+      .eq('album_id',albumId)
+      .in('user_id',followedIds);
+    if(collectionResult.error)throw collectionResult.error;
+    var matchingIds=Array.from(new Set((collectionResult.data||[]).map(function(row){return row.user_id;}).filter(Boolean)));
+    if(!matchingIds.length){detailSocialCacheSet(followedKey,[]);return;}
+
+    var profileResult=await supabaseClient.from('profiles')
+      .select('id,username,avatar_url')
+      .in('id',matchingIds);
+    if(profileResult.error)throw profileResult.error;
+
+    var order=new Map(matchingIds.map(function(id,pos){return [id,pos];}));
+    var profiles=(profileResult.data||[]).slice().sort(function(a,b){
+      return (order.get(a.id)||0)-(order.get(b.id)||0);
+    });
+    detailSocialCacheSet(followedKey,profiles);
+    if(requestVersion!==detailSocialRequestVersion||detailOpenRecordIndex!==index)return;
+    renderFollowedCollectorsForAlbum(profiles);
+  }catch(error){
+    console.warn('Could not load album collection matches:',error);
+    if(requestVersion===detailSocialRequestVersion&&detailOpenRecordIndex===index)hideDetailSocialContext();
+  }
+}
+
+window.addEventListener('groovy-follow-changed',function(){detailSocialCache.clear();});
+
+if(detailSocialContext){
+  detailSocialContext.addEventListener('click',function(event){
+    var button=event.target.closest('[data-detail-social-username]');
+    if(!button)return;
+    var username=button.getAttribute('data-detail-social-username');
+    if(!username)return;
+    closeAlbum();
+    openCollectorRoute(username,'profile');
+  });
+}
+
 function openAlbum(index){
   var record=records[index];
   if(!record)return;
@@ -3859,6 +4007,7 @@ function openAlbum(index){
 
   renderDetailShelfStatus(index);
   renderDetailShelfActions(index);
+  loadDetailSocialContext(record,index);
 
   var detailMoveButton=detailRating.querySelector('.detail-move-to-collection');
   if(detailMoveButton){
@@ -4193,8 +4342,10 @@ function closeAlbum(){
   setCopyDetailsExpanded(false);
   copyDetailsRecordKey='';
   detailOpenRecordIndex=-1;
+  detailSocialRequestVersion++;
   if(detailShelfActions){detailShelfActions.hidden=true;detailShelfActions.innerHTML='';}
   if(detailShelfStatus){detailShelfStatus.hidden=true;detailShelfStatus.innerHTML='';detailShelfStatus.classList.remove('unshelved');}
+  hideDetailSocialContext();
   if(detailInfoCard)detailInfoCard.style.height='';
   albumOverlay.scrollTop=0;
   var tracksPanel=albumOverlay.querySelector('.album-tracks');
@@ -6649,6 +6800,7 @@ async function loadOtherUserCollection(userId){
 
     viewedUserHeader.dataset.own='false';
     viewedUserHeader.style.display='flex';
+    if(typeof window.groovySyncViewedProfileButtonLabel==='function')window.groovySyncViewedProfileButtonLabel(false);
 
     viewedUserAvatar.style.backgroundImage='url("'+
         (profile&&profile.avatar_url
