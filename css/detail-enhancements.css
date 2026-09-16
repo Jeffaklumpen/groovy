@@ -1,5 +1,7 @@
 /* Groovy album-detail enhancements */
 
+.detail-social-context[hidden]{display:none!important}
+
 /* Match the vertical rhythm between My Pressing -> Tracklist and Tracklist -> Marketplace. */
 .album-tracks .copy-details{margin-bottom:0!important}
 .album-tracks .tracks-title{margin-top:14px!important}
@@ -17,6 +19,10 @@
 /* Wishlist detail action uses the same location as shelf actions. */
 .detail-shelf-actions.wishlist-detail-actions{display:flex!important}
 .detail-shelf-actions.wishlist-detail-actions .detail-move-to-collection{min-height:34px;padding:0 13px}
+@media screen and (min-width:761px){
+  .detail-shelf-actions.wishlist-detail-actions{grid-column:1/-1!important;grid-row:5!important;justify-self:stretch!important;width:100%;margin:10px 0 0!important}
+  .detail-shelf-actions.wishlist-detail-actions .detail-move-to-collection{width:100%;justify-content:center}
+}
 
 @media screen and (max-width:760px){
   /* Rating becomes its own full-width row below cover + album info. */
