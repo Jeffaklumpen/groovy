@@ -16,11 +16,6 @@
     var publicShelfLoadToken=0;
     var publicShelfSyncTimer=null;
 
-    /*
-     * Never let the own-library loader start while the URL points at another
-     * collector. app.js historically incremented collectionLoadVersion before
-     * its route guard, which could invalidate the public shelf request.
-     */
     try{
       var guardedLoadCollection;
       Object.defineProperty(windowObject,'loadCollection',{
@@ -184,8 +179,6 @@
 
         if(token!==publicShelfLoadToken||!publicShelfStillCurrent(username))return;
 
-        /* Invalidate every older app.js collection request before replacing the
-           visible records, so a late own-library response cannot win afterward. */
         windowObject.collectionLoadVersion=(Number(windowObject.collectionLoadVersion)||0)+1;
         windowObject.viewedUserId=profile.id;
 
@@ -278,9 +271,6 @@
       setTimeout(function(){syncPublicShelfRecords();},700);
     });
 
-    /* Final cascade fixes: hidden social context must always stay hidden, and
-       the desktop rating/streaming divider gets equal breathing room above
-       and below instead of touching the rating cards. */
     try{
       var style=windowObject.document.createElement('style');
       style.id='groovy-route-runtime-fixes';
@@ -293,6 +283,30 @@
         '}';
       (windowObject.document.head||windowObject.document.documentElement).appendChild(style);
     }catch(error){}
+
+    function loadDetailEnhancements(){
+      if(!windowObject.document.querySelector('link[data-groovy-detail-enhancements]')){
+        var link=windowObject.document.createElement('link');
+        link.rel='stylesheet';
+        link.href='/css/detail-enhancements.css?v=2';
+        link.setAttribute('data-groovy-detail-enhancements','true');
+        (windowObject.document.head||windowObject.document.documentElement).appendChild(link);
+      }
+
+      if(!windowObject.document.querySelector('script[data-groovy-detail-enhancements]')){
+        var script=windowObject.document.createElement('script');
+        script.src='/js/detail-enhancements-v2.js?v=2';
+        script.async=false;
+        script.setAttribute('data-groovy-detail-enhancements','true');
+        (windowObject.document.body||windowObject.document.documentElement).appendChild(script);
+      }
+    }
+
+    if(windowObject.document.readyState==='complete'){
+      setTimeout(loadDetailEnhancements,0);
+    }else{
+      windowObject.addEventListener('load',loadDetailEnhancements,{once:true});
+    }
   }
 })(typeof window!=='undefined'?window:null,function(){
   function profileUsernameFromPath(pathname){
