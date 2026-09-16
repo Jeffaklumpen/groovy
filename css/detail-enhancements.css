@@ -11,10 +11,11 @@
   .detail-social-context.own-match{grid-column:1/-1!important;grid-row:8!important;margin:8px 0 0!important}
 }
 
-/* Rating removal action. */
+/* Rating removal action and balanced community stars. */
 .groovy-remove-rating{display:inline-flex;align-items:center;justify-content:center;min-height:25px;padding:0;border:0;background:transparent;color:#d07a4d;font-family:inherit;font-size:9px;font-weight:700;line-height:1;cursor:pointer;text-decoration:none}
 .groovy-remove-rating:hover{color:#ff7a1a;text-decoration:underline}
 .groovy-remove-rating:disabled{opacity:.55;cursor:wait;text-decoration:none}
+.detail-rating .groovy-star-meter.is-community{font-size:22px!important;letter-spacing:.075em!important}
 
 /* Wishlist detail action uses the same location as shelf actions. */
 .detail-shelf-actions.wishlist-detail-actions{display:flex!important}
