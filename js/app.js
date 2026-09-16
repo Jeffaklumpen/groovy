@@ -3848,14 +3848,28 @@ function renderFollowedCollectorsForAlbum(profiles){
   if(!detailSocialContext||!profiles||!profiles.length){hideDetailSocialContext();return;}
   detailSocialContext.classList.remove('own-match');
   detailSocialContext.hidden=false;
+
+  var compact=window.matchMedia&&window.matchMedia('(max-width:760px)').matches;
+  var slotLimit=compact?4:8;
+  var hasMore=profiles.length>slotLimit;
+  var visibleLimit=hasMore?slotLimit-1:slotLimit;
+  var visibleProfiles=profiles.slice(0,visibleLimit);
+  var extraProfiles=profiles.slice(visibleLimit);
+
+  function personButton(profile,extraClass){
+    return '<button class="detail-social-person'+(extraClass?' '+extraClass:'')+'" type="button" data-detail-social-username="'+detailSocialEscape(profile.username||'')+'">'+
+      '<span class="detail-social-avatar" style="background-image:url(&quot;'+detailSocialEscape(profile.avatar_url||'/avatar_placeholder.png')+'&quot;)"></span>'+
+      '<span class="detail-social-person-name">'+detailSocialEscape(profile.username||'Collector')+'</span>'+
+    '</button>';
+  }
+
   detailSocialContext.innerHTML=
-    '<div class="detail-social-heading"><span>FOLLOWING</span><strong>Also in their collection</strong></div>'+
-    '<div class="detail-social-people">'+profiles.map(function(profile){
-      return '<button class="detail-social-person" type="button" data-detail-social-username="'+detailSocialEscape(profile.username||'')+'">'+
-        '<span class="detail-social-avatar" style="background-image:url(&quot;'+detailSocialEscape(profile.avatar_url||'/avatar_placeholder.png')+'&quot;)"></span>'+
-        '<span>'+detailSocialEscape(profile.username||'Collector')+'</span>'+
-      '</button>';
-    }).join('')+'</div>';
+    '<div class="detail-social-heading"><strong>Also collected by</strong></div>'+
+    '<div class="detail-social-people">'+
+      visibleProfiles.map(function(profile){return personButton(profile,'');}).join('')+
+      (hasMore?'<button class="detail-social-more" type="button" data-detail-social-more aria-expanded="false" aria-label="Show more collectors">…</button>':'')+
+    '</div>'+
+    (hasMore?'<div class="detail-social-menu" data-detail-social-menu hidden><div class="detail-social-menu-title">Also collected by</div><div class="detail-social-menu-list">'+extraProfiles.map(function(profile){return personButton(profile,'detail-social-menu-person');}).join('')+'</div></div>':'');
 }
 
 function renderOwnCollectionMatch(){
@@ -3952,6 +3966,19 @@ window.addEventListener('groovy-follow-changed',function(){detailSocialCache.cle
 
 if(detailSocialContext){
   detailSocialContext.addEventListener('click',function(event){
+    var moreButton=event.target.closest('[data-detail-social-more]');
+    if(moreButton){
+      event.preventDefault();
+      event.stopPropagation();
+      var menu=detailSocialContext.querySelector('[data-detail-social-menu]');
+      if(!menu)return;
+      var opening=menu.hidden;
+      menu.hidden=!opening;
+      moreButton.setAttribute('aria-expanded',opening?'true':'false');
+      detailSocialContext.classList.toggle('menu-open',opening);
+      return;
+    }
+
     var button=event.target.closest('[data-detail-social-username]');
     if(!button)return;
     var username=button.getAttribute('data-detail-social-username');
@@ -3960,6 +3987,15 @@ if(detailSocialContext){
     openCollectorRoute(username,'profile');
   });
 }
+
+document.addEventListener('click',function(event){
+  if(!detailSocialContext||detailSocialContext.hidden||detailSocialContext.contains(event.target))return;
+  var menu=detailSocialContext.querySelector('[data-detail-social-menu]');
+  var moreButton=detailSocialContext.querySelector('[data-detail-social-more]');
+  if(menu)menu.hidden=true;
+  if(moreButton)moreButton.setAttribute('aria-expanded','false');
+  detailSocialContext.classList.remove('menu-open');
+});
 
 function openAlbum(index){
   var record=records[index];
