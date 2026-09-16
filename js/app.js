@@ -5766,7 +5766,6 @@ function renderLoggedOutLanding(){
     emptyCollection.innerHTML=''+
       '<div class="landing-hero">'+
         '<img class="landing-record-art" src="/record.png" alt="Vinyl record">'+
-        '<div class="landing-kicker">GroovyShelves</div>'+
         '<h2 class="landing-title">Track every record you own</h2>'+
         '<p class="landing-copy">Build your shelf, organize your collection, keep a wishlist, rate your favorites and discover the collectors who share your taste.</p>'+
         '<div class="landing-actions">'+
