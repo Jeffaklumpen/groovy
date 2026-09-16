@@ -37,6 +37,16 @@ const registerFields=document.getElementById('registerFields');
 const registerUsername=document.getElementById('registerUsername');
 const registerButton=document.getElementById('registerButton');
 const authSwitchButton=document.getElementById('authSwitchButton');
+const notificationBox=document.getElementById('notificationBox');
+const notificationBellButton=document.getElementById('notificationBellButton');
+const notificationBadge=document.getElementById('notificationBadge');
+const notificationPanel=document.getElementById('notificationPanel');
+const notificationList=document.getElementById('notificationList');
+const markAllNotificationsRead=document.getElementById('markAllNotificationsRead');
+const followingButton=document.getElementById('followingButton');
+let notificationChannel=null;
+let notificationUserId=null;
+let notificationsCache=[];
 
 // A blurred header becomes a containing block for fixed descendants in mobile
 // browsers. Put the dialog at body level after capturing its controls, so it
@@ -96,12 +106,296 @@ function updateLibraryTabLabels(){
     wishlistTabButton.innerHTML='<span class="wishlist-icon" aria-hidden="true"></span>My Wishlist';
 }
 
+function escapeSocialHtml(value){
+    return String(value==null?'':value).replace(/[&<>"']/g,function(character){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character];
+    });
+}
+
+async function currentSessionUser(){
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    return session&&session.user?session.user:null;
+}
+
+async function groovyFollowingIds(userIds){
+    var user=await currentSessionUser();
+    if(!user||!Array.isArray(userIds)||!userIds.length)return new Set();
+    var ids=userIds.filter(function(id){return id&&id!==user.id;});
+    if(!ids.length)return new Set();
+    var {data,error}=await supabaseClient.from('user_follows')
+      .select('followed_id')
+      .eq('follower_id',user.id)
+      .in('followed_id',ids);
+    if(error){console.warn('Could not load follow status:',error);return new Set();}
+    return new Set((data||[]).map(function(row){return row.followed_id;}));
+}
+
+window.groovyIsFollowing=async function(targetUserId){
+    if(!targetUserId)return false;
+    var set=await groovyFollowingIds([targetUserId]);
+    return set.has(targetUserId);
+};
+
+window.groovyFollowUser=async function(targetUserId){
+    var user=await currentSessionUser();
+    if(!user)throw new Error('You need to be logged in to follow collectors.');
+    if(!targetUserId||targetUserId===user.id)return false;
+    var {error}=await supabaseClient.from('user_follows').insert({follower_id:user.id,followed_id:targetUserId});
+    if(error&&error.code!=='23505')throw error;
+    window.dispatchEvent(new CustomEvent('groovy-follow-changed',{detail:{userId:targetUserId,following:true}}));
+    return true;
+};
+
+window.groovyUnfollowUser=async function(targetUserId){
+    var user=await currentSessionUser();
+    if(!user)throw new Error('You need to be logged in.');
+    if(!targetUserId)return false;
+    var {error}=await supabaseClient.from('user_follows').delete()
+      .eq('follower_id',user.id)
+      .eq('followed_id',targetUserId);
+    if(error)throw error;
+    window.dispatchEvent(new CustomEvent('groovy-follow-changed',{detail:{userId:targetUserId,following:false}}));
+    return true;
+};
+
+async function setFollowButtonState(button,targetUserId,isFollowing){
+    if(!button)return;
+    button.dataset.following=isFollowing?'true':'false';
+    button.classList.toggle('following',isFollowing);
+    button.textContent=isFollowing?'Following':'Follow';
+    button.setAttribute('aria-label',(isFollowing?'Unfollow ':'Follow ')+(button.dataset.username||'collector'));
+    button.dataset.userId=targetUserId||'';
+}
+
+function relativeNotificationTime(value){
+    var time=new Date(value).getTime();
+    if(!time)return '';
+    var seconds=Math.max(0,Math.floor((Date.now()-time)/1000));
+    if(seconds<60)return 'now';
+    var minutes=Math.floor(seconds/60);
+    if(minutes<60)return minutes+'m';
+    var hours=Math.floor(minutes/60);
+    if(hours<24)return hours+'h';
+    var days=Math.floor(hours/24);
+    if(days<7)return days+'d';
+    return new Date(value).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+}
+
+function closeNotificationPanel(){
+    if(!notificationPanel||!notificationBellButton)return;
+    notificationPanel.classList.remove('open');
+    notificationPanel.setAttribute('aria-hidden','true');
+    notificationBellButton.setAttribute('aria-expanded','false');
+}
+
+function updateNotificationBadge(){
+    if(!notificationBadge)return;
+    var unread=notificationsCache.filter(function(item){return !item.read_at;}).length;
+    notificationBadge.textContent=unread>99?'99+':String(unread);
+    notificationBadge.hidden=unread===0;
+    if(notificationBellButton)notificationBellButton.classList.toggle('has-unread',unread>0);
+}
+
+function notificationCopy(item){
+    var actor=item.actor&&item.actor.username?item.actor.username:'A collector';
+    if(item.notification_type==='new_follower')return '<strong>'+escapeSocialHtml(actor)+'</strong> started following you.';
+    if(item.notification_type==='collection_activity'){
+        var count=Math.max(1,parseInt(item.item_count,10)||1);
+        var payload=item.payload||{};
+        if(count===1&&payload.album_title){
+            return '<strong>'+escapeSocialHtml(actor)+'</strong> added <em>'+escapeSocialHtml(payload.album_title)+'</em> to their collection.';
+        }
+        return '<strong>'+escapeSocialHtml(actor)+'</strong> added '+count+' records to their collection.';
+    }
+    return '<strong>'+escapeSocialHtml(actor)+'</strong> has new activity.';
+}
+
+function renderNotifications(){
+    if(!notificationList)return;
+    updateNotificationBadge();
+    if(!notificationsCache.length){
+        notificationList.innerHTML='<div class="notification-empty"><span>All caught up</span><p>Updates from collectors you follow will appear here.</p></div>';
+        return;
+    }
+    notificationList.innerHTML=notificationsCache.map(function(item){
+        var actor=item.actor||{};
+        return '<button class="notification-item'+(item.read_at?'':' unread')+'" type="button" data-notification-id="'+item.id+'" data-username="'+escapeSocialHtml(actor.username||'')+'" data-type="'+escapeSocialHtml(item.notification_type||'')+'">'+
+          '<span class="notification-avatar" style="background-image:url(&quot;'+escapeSocialHtml(actor.avatar_url||'/avatar_placeholder.png')+'&quot;)"></span>'+
+          '<span class="notification-item-copy"><span>'+notificationCopy(item)+'</span><small>'+escapeSocialHtml(relativeNotificationTime(item.updated_at||item.created_at))+'</small></span>'+
+          '<i aria-hidden="true"></i>'+
+        '</button>';
+    }).join('');
+}
+
+async function loadNotifications(){
+    var user=await currentSessionUser();
+    if(!user){notificationsCache=[];renderNotifications();return;}
+    var {data,error}=await supabaseClient.from('notifications')
+      .select('id,notification_type,item_count,payload,created_at,updated_at,read_at,actor:profiles!notifications_actor_id_fkey(id,username,avatar_url)')
+      .eq('recipient_id',user.id)
+      .order('updated_at',{ascending:false})
+      .limit(30);
+    if(error){console.warn('Could not load notifications:',error);return;}
+    notificationsCache=data||[];
+    renderNotifications();
+}
+
+async function markNotificationRead(id){
+    var item=notificationsCache.find(function(entry){return String(entry.id)===String(id);});
+    if(item&&!item.read_at)item.read_at=new Date().toISOString();
+    renderNotifications();
+    var user=await currentSessionUser();
+    if(!user)return;
+    await supabaseClient.from('notifications').update({read_at:new Date().toISOString()}).eq('id',id).eq('recipient_id',user.id).is('read_at',null);
+}
+
+async function syncNotificationSubscription(user){
+    if(!notificationBox)return;
+    if(!user){
+        notificationBox.hidden=true;
+        notificationUserId=null;
+        notificationsCache=[];
+        renderNotifications();
+        if(notificationChannel){try{await supabaseClient.removeChannel(notificationChannel);}catch(error){}notificationChannel=null;}
+        return;
+    }
+    notificationBox.hidden=false;
+    if(notificationUserId===user.id&&notificationChannel){await loadNotifications();return;}
+    if(notificationChannel){try{await supabaseClient.removeChannel(notificationChannel);}catch(error){}notificationChannel=null;}
+    notificationUserId=user.id;
+    await loadNotifications();
+    notificationChannel=supabaseClient.channel('groovy-notifications-'+user.id)
+      .on('postgres_changes',{event:'*',schema:'public',table:'notifications',filter:'recipient_id=eq.'+user.id},function(){loadNotifications();})
+      .subscribe();
+}
+
+function openCollectorRoute(username,view){
+    if(!username)return;
+    var url=view==='profile'?'/profile/'+encodeURIComponent(username):'/shelf/'+encodeURIComponent(username);
+    history.pushState({},'',url);
+    renderCurrentRoute();
+}
+
+function ensureFollowingPage(){
+    var page=document.getElementById('followingPage');
+    if(page)return page;
+    page=document.createElement('section');
+    page.id='followingPage';
+    page.className='following-page';
+    page.hidden=true;
+    page.innerHTML='<div class="following-shell">'+
+      '<div class="following-heading"><div><span class="following-kicker">YOUR COMMUNITY</span><h1>Following</h1><p>Collectors you follow, their libraries and the records you have in common.</p></div><button id="followingBackButton" type="button">Back to My Shelf</button></div>'+
+      '<div id="followingGrid" class="following-grid"></div>'+
+    '</div>';
+    document.body.appendChild(page);
+    page.querySelector('#followingBackButton').addEventListener('click',function(){history.pushState({},'','/');renderCurrentRoute();});
+    page.querySelector('#followingGrid').addEventListener('click',async function(event){
+        var unfollow=event.target.closest('[data-unfollow-user]');
+        if(unfollow){
+            event.preventDefault();event.stopPropagation();
+            var id=unfollow.getAttribute('data-unfollow-user');
+            unfollow.disabled=true;unfollow.textContent='Unfollowing...';
+            try{await window.groovyUnfollowUser(id);await renderFollowingPage();}
+            catch(error){console.error('Could not unfollow:',error);unfollow.disabled=false;unfollow.textContent='Unfollow';}
+            return;
+        }
+        var open=event.target.closest('[data-profile-username]');
+        if(open){
+            event.preventDefault();
+            openCollectorRoute(open.getAttribute('data-profile-username'),'profile');
+        }
+    });
+    return page;
+}
+
+function hideFollowingPage(){
+    var page=document.getElementById('followingPage');
+    if(page)page.hidden=true;
+    document.body.classList.remove('following-page-open');
+}
+
+async function renderFollowingPage(){
+    var page=ensureFollowingPage();
+    var grid=page.querySelector('#followingGrid');
+    var user=await currentSessionUser();
+    if(!user){
+        hideFollowingPage();
+        openAuthPanel('login');
+        history.replaceState({},'','/');
+        return;
+    }
+    page.hidden=false;
+    document.body.classList.add('following-page-open');
+    grid.innerHTML='<div class="following-loading"><span></span><strong>Loading collectors...</strong></div>';
+    var {data,error}=await supabaseClient.rpc('get_following_overview');
+    if(error){
+        console.error('Could not load following:',error);
+        grid.innerHTML='<div class="following-empty"><strong>Could not load following.</strong><span>Make sure the social migration has been run in Supabase.</span></div>';
+        return;
+    }
+    if(!data||!data.length){
+        grid.innerHTML='<div class="following-empty"><strong>You are not following anyone yet.</strong><span>Use Search User or visit a collector profile to follow someone.</span></div>';
+        return;
+    }
+    grid.innerHTML=data.map(function(item){
+        return '<article class="following-card">'+
+          '<button class="following-identity" type="button" data-profile-username="'+escapeSocialHtml(item.username||'')+'">'+
+            '<span class="following-avatar" style="background-image:url(&quot;'+escapeSocialHtml(item.avatar_url||'/avatar_placeholder.png')+'&quot;)"></span>'+
+            '<span><strong>'+escapeSocialHtml(item.username||'Collector')+'</strong><small>Following since '+escapeSocialHtml(new Date(item.followed_at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}))+'</small></span>'+
+          '</button>'+
+          '<div class="following-stats">'+
+            '<div><strong>'+Number(item.collection_count||0)+'</strong><span>Records</span></div>'+
+            '<div><strong>'+Number(item.wishlist_count||0)+'</strong><span>Wishlist</span></div>'+
+            '<div><strong>'+Number(item.common_count||0)+'</strong><span>In common</span></div>'+
+          '</div>'+
+          '<div class="following-actions"><button type="button" data-profile-username="'+escapeSocialHtml(item.username||'')+'">View profile</button><button class="following-unfollow" type="button" data-unfollow-user="'+escapeSocialHtml(item.user_id||'')+'">Unfollow</button></div>'+
+        '</article>';
+    }).join('');
+}
+
+if(notificationBox)notificationBox.addEventListener('click',function(event){event.stopPropagation();});
+if(notificationBellButton)notificationBellButton.addEventListener('click',async function(event){
+    event.preventDefault();event.stopPropagation();
+    profileMenu.classList.remove('open');
+    var open=!notificationPanel.classList.contains('open');
+    notificationPanel.classList.toggle('open',open);
+    notificationPanel.setAttribute('aria-hidden',open?'false':'true');
+    notificationBellButton.setAttribute('aria-expanded',open?'true':'false');
+    if(open)await loadNotifications();
+});
+if(markAllNotificationsRead)markAllNotificationsRead.addEventListener('click',async function(event){
+    event.preventDefault();event.stopPropagation();
+    var user=await currentSessionUser();
+    if(!user)return;
+    var now=new Date().toISOString();
+    notificationsCache.forEach(function(item){if(!item.read_at)item.read_at=now;});
+    renderNotifications();
+    var {error}=await supabaseClient.from('notifications').update({read_at:now}).eq('recipient_id',user.id).is('read_at',null);
+    if(error)console.warn('Could not mark notifications read:',error);
+});
+if(notificationList)notificationList.addEventListener('click',async function(event){
+    var itemButton=event.target.closest('.notification-item');
+    if(!itemButton)return;
+    event.preventDefault();event.stopPropagation();
+    await markNotificationRead(itemButton.getAttribute('data-notification-id'));
+    closeNotificationPanel();
+    var username=itemButton.getAttribute('data-username');
+    if(username)openCollectorRoute(username,itemButton.getAttribute('data-type')==='new_follower'?'profile':'shelf');
+});
+if(followingButton)followingButton.addEventListener('click',function(event){
+    event.preventDefault();event.stopPropagation();
+    profileMenu.classList.remove('open');
+    history.pushState({},'','/following');
+    renderCurrentRoute();
+});
+
 loginClose.addEventListener('click',function(){
     loginPanel.classList.remove('open');
 });
 
 profileButton.addEventListener('click',async function(event){
     event.stopPropagation();
+    closeNotificationPanel();
 
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
@@ -130,6 +424,7 @@ profileMenu.addEventListener('click',function(event){
 document.addEventListener('click',function(){
     profileMenu.classList.remove('open');
     loginPanel.classList.remove('open');
+    closeNotificationPanel();
 });
 
 authSwitchButton.addEventListener('click',function(){
@@ -187,6 +482,7 @@ async function updateAuthUI(){
         loginEmail.value='';
         loginPassword.value='';
         registerUsername.value='';
+        syncNotificationSubscription(user);
     }else{
         profileButton.style.display='flex';
         profileMenu.classList.remove('open');
@@ -199,6 +495,7 @@ async function updateAuthUI(){
         profileImageMenu.style.backgroundImage='url("/avatar_placeholder.png")';
         profileImageMenu.style.backgroundSize='cover';
         profileImageMenu.style.backgroundPosition='center';
+        syncNotificationSubscription(null);
     }
 }
 
@@ -5423,6 +5720,32 @@ userSearchInput.addEventListener('input',function(){
     },250);
 });
 
+function appendUserSearchFollowButton(container,user,sessionUser,followingSet){
+    if(!container||!user||!sessionUser||user.id===sessionUser.id)return;
+    var button=document.createElement('button');
+    button.type='button';
+    button.className='user-search-follow-button';
+    button.dataset.username=user.username||'collector';
+    setFollowButtonState(button,user.id,followingSet&&followingSet.has(user.id));
+    button.addEventListener('click',async function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        var wasFollowing=button.dataset.following==='true';
+        button.disabled=true;
+        button.textContent=wasFollowing?'Unfollowing...':'Following...';
+        try{
+            if(wasFollowing)await window.groovyUnfollowUser(user.id);
+            else await window.groovyFollowUser(user.id);
+            setFollowButtonState(button,user.id,!wasFollowing);
+        }catch(error){
+            console.error('Could not change follow status:',error);
+            setFollowButtonState(button,user.id,wasFollowing);
+        }
+        button.disabled=false;
+    });
+    container.appendChild(button);
+}
+
 async function loadTopUsers(){
     const {data:users,error}=await supabaseClient
         .from('profiles')
@@ -5438,6 +5761,9 @@ async function loadTopUsers(){
         userSearchResults.innerHTML='<p>No users found.</p>';
         return;
     }
+
+    const sessionUser=await currentSessionUser();
+    const followingSet=sessionUser?await groovyFollowingIds(users.map(function(user){return user.id;})):new Set();
 
     const userCollectionCounts=await Promise.all(
         users.map(async function(user){
@@ -5501,6 +5827,7 @@ async function loadTopUsers(){
 
         div.appendChild(avatar);
         div.appendChild(userInfo);
+        appendUserSearchFollowButton(div,user,sessionUser,followingSet);
 
         userSearchResults.appendChild(div);
 
@@ -5531,6 +5858,9 @@ async function searchUsers(query){
         userSearchResults.innerHTML='<p>No users found.</p>';
         return;
     }
+
+    const sessionUser=await currentSessionUser();
+    const followingSet=sessionUser?await groovyFollowingIds(data.map(function(user){return user.id;})):new Set();
 
     const userCollectionCounts=await Promise.all(
         data.map(async function(user){
@@ -5586,6 +5916,7 @@ async function searchUsers(query){
         
         div.appendChild(avatar);
         div.appendChild(userInfo);
+        appendUserSearchFollowButton(div,user,sessionUser,followingSet);
     
         userSearchResults.appendChild(div);
 
@@ -5596,6 +5927,12 @@ async function searchUsers(query){
         });
     });
 }
+
+window.addEventListener('groovy-follow-changed',function(event){
+    var detail=event.detail||{};
+    document.querySelectorAll('.user-search-follow-button[data-user-id="'+String(detail.userId||'')+'"]')
+      .forEach(function(button){setFollowButtonState(button,detail.userId,!!detail.following);});
+});
 
 searchUserButton.addEventListener('click',async function(event){
     event.preventDefault();
@@ -8138,6 +8475,12 @@ scrollTopButton.addEventListener('click',function(){
 async function renderCurrentRoute(){
     window.libraryView=GroovyRouteState.libraryViewFromSearch(window.location.search);
     await updateAuthUI();
+    closeNotificationPanel();
+    if(/^\/following\/?$/.test(window.location.pathname)){
+        await renderFollowingPage();
+        return;
+    }
+    hideFollowingPage();
     await loadUserFromUrl();
 }
 
