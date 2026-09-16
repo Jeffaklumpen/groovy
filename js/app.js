@@ -3864,7 +3864,7 @@ function renderFollowedCollectorsForAlbum(profiles){
   }
 
   detailSocialContext.innerHTML=
-    '<div class="detail-social-heading"><span class="detail-social-heading-icon" aria-hidden="true"></span><div><strong>Also collected by</strong><small>Collectors you follow</small></div></div>'+
+    '<div class="detail-social-heading"><strong>Also collected by</strong><small>Collectors you follow</small></div>'+
     '<div class="detail-social-people">'+
       visibleProfiles.map(function(profile){return personButton(profile,'');}).join('')+
       (hasMore?'<button class="detail-social-more" type="button" data-detail-social-more aria-expanded="false" aria-label="Show more collectors">…</button>':'')+
@@ -3964,6 +3964,30 @@ async function loadDetailSocialContext(record,index){
 
 window.addEventListener('groovy-follow-changed',function(){detailSocialCache.clear();});
 
+function positionDetailSocialMenu(menu){
+  if(!menu)return;
+  menu.style.top='';
+  menu.style.bottom='';
+  menu.style.maxHeight='';
+  if(!window.matchMedia||!window.matchMedia('(min-width:761px)').matches)return;
+  var cover=document.querySelector('.album-detail-cover');
+  if(!cover)return;
+  var coverRect=cover.getBoundingClientRect();
+  var contextRect=detailSocialContext.getBoundingClientRect();
+  var gap=6;
+  var below=Math.floor(coverRect.bottom-contextRect.bottom-gap);
+  var above=Math.floor(contextRect.top-coverRect.top-gap);
+  if(below>=96||below>=above){
+    menu.style.top='calc(100% + '+gap+'px)';
+    menu.style.bottom='auto';
+    menu.style.maxHeight=Math.max(72,Math.min(260,below))+'px';
+  }else{
+    menu.style.top='auto';
+    menu.style.bottom='calc(100% + '+gap+'px)';
+    menu.style.maxHeight=Math.max(72,Math.min(260,above))+'px';
+  }
+}
+
 if(detailSocialContext){
   detailSocialContext.addEventListener('click',function(event){
     var moreButton=event.target.closest('[data-detail-social-more]');
@@ -3976,6 +4000,7 @@ if(detailSocialContext){
       menu.hidden=!opening;
       moreButton.setAttribute('aria-expanded',opening?'true':'false');
       detailSocialContext.classList.toggle('menu-open',opening);
+      if(opening)window.requestAnimationFrame(function(){positionDetailSocialMenu(menu);});
       return;
     }
 
