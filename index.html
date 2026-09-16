@@ -64,7 +64,7 @@
           </button>
           <div id="notificationPanel" class="notification-panel" aria-hidden="true">
             <div class="notification-panel-head"><div><span>ACTIVITY</span><strong>Notifications</strong></div><div class="notification-panel-actions"><button id="markAllNotificationsRead" type="button">Mark all read</button><button id="clearNotificationsButton" type="button">Clear</button></div></div>
-            <div id="notificationList" class="notification-list"><div class="notification-empty">No notifications yet.</div>
+            <div id="notificationList" class="notification-list"><div class="notification-empty">No notifications yet.</div></div>
           </div>
         </div>
         <button id="profileButton" type="button" aria-label="Profil"><span id="profileImage"></span></button>
@@ -303,7 +303,7 @@
         <p id="traderaModalSubtitle"></p>
       </div>
       <div id="traderaListingsStatus" class="tradera-listings-status" aria-live="polite"></div>
-      <div id="traderaListingsGrid"></div>
+      <div id="traderaListingsGrid" class="tradera-listings-grid"></div>
     </div>
   </div>
 </div>
@@ -318,7 +318,7 @@
         <p id="ebayModalSubtitle"></p>
       </div>
       <div id="ebayListingsStatus" class="tradera-listings-status" aria-live="polite"></div>
-      <div id="ebayListingsGrid"></div>
+      <div id="ebayListingsGrid" class="tradera-listings-grid"></div>
     </div>
   </div>
 </div>
@@ -454,7 +454,7 @@
         <p>Discover collectors and explore their shelves.</p>
       </div>
       <div class="add-album-search">
-        <input id="userSearchInput" type="text" aria-label="Search username" placeholder="Search username..." autocomplete="off">
+        <input type="text" id="userSearchInput" aria-label="Search username" placeholder="Search username..." autocomplete="off">
       </div>
       <div id="userSearchResults"></div>
     </div>
