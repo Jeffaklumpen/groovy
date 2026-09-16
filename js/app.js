@@ -888,6 +888,39 @@ window.loadWishlist=async function(userId){
   refreshLibraryStyles(data,loadVersion);
 }
 
+async function renderOwnLibraryHeader(user){
+  var viewedUserHeader=document.getElementById('viewedUserHeader');
+  var viewedUserAvatar=document.getElementById('viewedUserAvatar');
+  var viewedUserName=document.getElementById('viewedUserName');
+  var viewedUserContext=document.getElementById('viewedUserContext');
+
+  viewedUserHeader.dataset.own='true';
+  viewedUserHeader.style.display='flex';
+  if(viewedUserFollowButton)viewedUserFollowButton.style.display='none';
+
+  var avatarUrl='/avatar_placeholder.png';
+  try{
+    var profileResult=await supabaseClient
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id',user.id)
+      .maybeSingle();
+    if(!profileResult.error&&profileResult.data&&profileResult.data.avatar_url)avatarUrl=profileResult.data.avatar_url;
+  }catch(error){
+    console.warn('Kunde inte hämta profilbild för egen hylla:',error);
+  }
+
+  viewedUserAvatar.style.backgroundImage='url("'+avatarUrl+'")';
+  viewedUserAvatar.style.backgroundSize='cover';
+  viewedUserAvatar.style.backgroundPosition='center';
+  viewedUserName.textContent='Your Shelf';
+  viewedUserContext.textContent=window.libraryView==='wishlist'?'Wishlist':'Collection';
+  viewedUserShelfButton.classList.toggle('active',window.libraryView!=='wishlist');
+  viewedUserWishlistButton.classList.toggle('active',window.libraryView==='wishlist');
+  viewedUserShelfButton.setAttribute('aria-current',window.libraryView!=='wishlist'?'page':'false');
+  viewedUserWishlistButton.setAttribute('aria-current',window.libraryView==='wishlist'?'page':'false');
+}
+
 window.loadCollection=async function(){
   var loadVersion=++window.collectionLoadVersion;
   var path=window.location.pathname;
@@ -899,7 +932,9 @@ window.loadCollection=async function(){
   viewedUserId=null;
   window.loginRequiredForViewedCollection=false;
   window.profileNotFound=false;
-  document.getElementById('viewedUserHeader').style.display='none';
+  var ownHeader=document.getElementById('viewedUserHeader');
+  ownHeader.style.display='none';
+  ownHeader.dataset.own='false';
   if(viewedUserFollowButton)viewedUserFollowButton.style.display='none';
     
   var {data:{session}}=await supabaseClient.auth.getSession();
@@ -912,6 +947,7 @@ window.loadCollection=async function(){
   }
 
   var user=session.user;
+  await renderOwnLibraryHeader(user);
 
   if(window.libraryView==='wishlist'){
     await window.loadWishlist(user.id);
@@ -6089,8 +6125,16 @@ function navigateViewedLibrary(nextView){
 
 collectionTabButton.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();navigateOwnLibrary('collection');});
 wishlistTabButton.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();navigateOwnLibrary('wishlist');});
-viewedUserShelfButton.addEventListener('click',function(){navigateViewedLibrary('collection');});
-viewedUserWishlistButton.addEventListener('click',function(){navigateViewedLibrary('wishlist');});
+viewedUserShelfButton.addEventListener('click',function(){
+    var header=document.getElementById('viewedUserHeader');
+    if(header&&header.dataset.own==='true')navigateOwnLibrary('collection');
+    else navigateViewedLibrary('collection');
+});
+viewedUserWishlistButton.addEventListener('click',function(){
+    var header=document.getElementById('viewedUserHeader');
+    if(header&&header.dataset.own==='true')navigateOwnLibrary('wishlist');
+    else navigateViewedLibrary('wishlist');
+});
 if(viewedUserFollowButton)viewedUserFollowButton.addEventListener('click',async function(event){
     event.preventDefault();event.stopPropagation();
     var targetUserId=viewedUserFollowButton.dataset.userId;
@@ -6603,6 +6647,7 @@ async function loadOtherUserCollection(userId){
     const viewedUserAvatar=document.getElementById('viewedUserAvatar');
     const viewedUserName=document.getElementById('viewedUserName');
 
+    viewedUserHeader.dataset.own='false';
     viewedUserHeader.style.display='flex';
 
     viewedUserAvatar.style.backgroundImage='url("'+
