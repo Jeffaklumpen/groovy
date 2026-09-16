@@ -197,3 +197,16 @@ body.collector-profile-open,body.profile-settings-open{overflow:hidden}
 .stats-release-spotify{height:28px;padding-left:8px;padding-right:8px}
 .stats-release-spotify img{width:16px!important;height:16px!important;max-width:16px!important;min-width:16px!important}
 @media(max-width:760px){.profile-grail-spotify-service,.collector-grail-spotify-service{gap:5px;padding-left:7px;padding-right:7px}.profile-grail-spotify-service img,.collector-grail-spotify-service img{width:15px!important;height:15px!important;max-width:15px!important;min-width:15px!important}.profile-grail-spotify-service:after,.collector-grail-spotify-service:after,.stats-release-spotify:after{font-size:9px}.stats-release-spotify{gap:5px;padding-left:7px;padding-right:7px}.stats-release-spotify img{width:15px!important;height:15px!important;max-width:15px!important;min-width:15px!important}}
+
+/* Public profile keeps the main Groovy header visible v6 */
+body.collector-profile-open .header{position:relative;z-index:2205}
+.collector-profile-page{top:var(--collector-profile-top,0px);right:0;bottom:0;left:0;inset:auto 0 0 0;height:auto}
+.collector-profile-toolbar{height:58px;justify-content:space-between}
+.collector-profile-return{display:inline-flex;align-items:center;gap:9px;min-height:36px;padding:0 12px;border:1px solid #343438;border-radius:9px;background:#171719;color:#d7d7db;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
+.collector-profile-return span{color:#E85301;font-size:18px;line-height:1;transition:transform .15s ease}
+.collector-profile-return:hover{border-color:#505056;background:#202023;color:#fff}
+.collector-profile-return:hover span{transform:translateX(-2px)}
+.collector-profile-return:active{transform:scale(.98)}
+.collector-profile-toolbar-label{color:#74747b;font-size:9px;font-weight:800;letter-spacing:.16em}
+.collector-profile-content{padding-top:32px}
+@media(max-width:760px){.collector-profile-toolbar{height:52px}.collector-profile-return{min-height:34px;padding:0 10px;font-size:10px}.collector-profile-toolbar-label{font-size:8px}.collector-profile-content{padding-top:20px}}
