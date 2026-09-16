@@ -1,0 +1,149 @@
+name: Wikipedia module extraction
+
+on:
+  push:
+    branches: [notes]
+    paths:
+      - '.github/workflows/wikipedia-module-migration.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out notes
+        uses: actions/checkout@v4
+        with:
+          ref: notes
+          fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Extract Wikipedia service calls
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+
+          function replaceExact(source,from,to,label,expected=1){
+            const count=source.split(from).length-1;
+            if(count!==expected)throw new Error(label+': expected '+expected+', found '+count);
+            return source.split(from).join(to);
+          }
+
+          function removeUntil(source,startMarker,nextMarker,label){
+            const start=source.indexOf(startMarker);
+            if(start<0)throw new Error(label+': start marker missing');
+            const next=source.indexOf(nextMarker,start+startMarker.length);
+            if(next<0)throw new Error(label+': next marker missing');
+            return source.slice(0,start)+source.slice(next);
+          }
+
+          let index=fs.readFileSync('index.html','utf8');
+          index=replaceExact(
+            index,
+            '<script src="/js/record-model.js?v=1"></script>\n<script src="/js/app.js?v=126"></script>',
+            '<script src="/js/record-model.js?v=1"></script>\n<script src="/js/wikipedia-service.js?v=1"></script>\n<script src="/js/app.js?v=127"></script>',
+            'Wikipedia service script order'
+          );
+          fs.writeFileSync('index.html',index);
+
+          let app=fs.readFileSync('js/app.js','utf8');
+          app=replaceExact(
+            app,
+            "var Record=window.GroovyRecord;\nif(!Record)throw new Error('GroovyRecord must load before app.js');",
+            "var Record=window.GroovyRecord;\nvar Wikipedia=window.GroovyWikipedia;\nif(!Record)throw new Error('GroovyRecord must load before app.js');\nif(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');",
+            'Wikipedia app dependency'
+          );
+
+          app=removeUntil(app,'function normalizeWikipediaIdentity(value){','function wikipediaCacheKey(record){','normalize identity extraction');
+          app=removeUntil(app,'function wikipediaCacheKey(record){','function wikipediaIntroduction(extract){','cache key extraction');
+          app=removeUntil(app,'function wikipediaIntroduction(extract){','function wikipediaAboutLineHeight(){','introduction extraction');
+          app=removeUntil(app,'function wikipediaCandidateScore(page,record){','async function fetchWikipediaAlbumCandidates(record,query){','candidate score extraction');
+          app=removeUntil(app,'async function fetchWikipediaAlbumCandidates(record,query){','async function fetchWikipediaFirstSection(page){','candidate fetch extraction');
+          app=removeUntil(app,'async function fetchWikipediaFirstSection(page){','async function fetchWikipediaSectionParagraphs(page,sectionIndex){','first section extraction');
+          app=removeUntil(app,'async function fetchWikipediaSectionParagraphs(page,sectionIndex){','function readWikipediaCache(record){','section paragraphs extraction');
+
+          const replacements=[
+            ['wikipediaCacheKey(','Wikipedia.cacheKey('],
+            ['wikipediaIntroduction(','Wikipedia.introduction('],
+            ['wikipediaCandidateScore(','Wikipedia.candidateScore('],
+            ['fetchWikipediaAlbumCandidates(','Wikipedia.searchCandidates('],
+            ['fetchWikipediaFirstSection(','Wikipedia.firstSection('],
+            ['fetchWikipediaSectionParagraphs(','Wikipedia.sectionParagraphs('],
+            ["String(record&&record[2]||'').trim()","String(Record.title(record)||'').trim()"],
+            ["String(record&&record[1]||'').trim()","String(Record.artist(record)||'').trim()"]
+          ];
+          replacements.forEach(function(pair){app=app.split(pair[0]).join(pair[1]);});
+
+          ['function normalizeWikipediaIdentity(','function wikipediaCacheKey(','function wikipediaIntroduction(','function wikipediaCandidateScore(','async function fetchWikipediaAlbumCandidates(','async function fetchWikipediaFirstSection(','async function fetchWikipediaSectionParagraphs('].forEach(function(token){
+            if(app.includes(token))throw new Error('Extracted Wikipedia function remains in app.js: '+token);
+          });
+          fs.writeFileSync('js/app.js',app);
+
+          for(const file of fs.readdirSync('tests').filter(function(name){return name.endsWith('.test.js');})){
+            const path='tests/'+file;
+            let source=fs.readFileSync(path,'utf8');
+            source=source.split('app\\.js\\?v=126').join('app\\.js\\?v=127');
+            source=source.split('/js/app.js?v=126').join('/js/app.js?v=127');
+            fs.writeFileSync(path,source);
+          }
+
+          fs.writeFileSync('tests/wikipedia-service.test.js',`const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const path=require('node:path');
+          const test=require('node:test');
+          const vm=require('node:vm');
+          const root=path.resolve(__dirname,'..');
+
+          function loadWikipedia(){
+            const source=fs.readFileSync(path.join(root,'js','wikipedia-service.js'),'utf8');
+            const windowObject={GroovyRecord:{artist:function(record){return record[1];},title:function(record){return record[2];},year:function(record){return record[3];}}};
+            const context={window:windowObject};
+            vm.runInNewContext(source,context);
+            return windowObject.GroovyWikipedia;
+          }
+
+          test('Wikipedia service owns album identity and candidate helpers',function(){
+            const Wikipedia=loadWikipedia();
+            const record=[1,'Beyoncé','Renaissance (Deluxe Edition)',2022];
+            assert.equal(Wikipedia.normalizeIdentity('Beyoncé & Jay-Z'),'beyonce and jay z');
+            assert.equal(Wikipedia.cacheKey(record),'groovy-wikipedia-about-v5:beyonce|renaissance deluxe edition');
+            assert.equal(typeof Wikipedia.candidateScore,'function');
+            assert.equal(typeof Wikipedia.searchCandidates,'function');
+            assert.equal(typeof Wikipedia.firstSection,'function');
+            assert.equal(typeof Wikipedia.sectionParagraphs,'function');
+          });
+
+          test('Wikipedia service loads before app and extracted functions leave app.js',function(){
+            const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+            const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+            const recordPosition=html.indexOf('/js/record-model.js?v=1');
+            const wikipediaPosition=html.indexOf('/js/wikipedia-service.js?v=1');
+            const appPosition=html.indexOf('/js/app.js?v=127');
+            assert.ok(recordPosition>=0&&wikipediaPosition>recordPosition&&appPosition>wikipediaPosition);
+            assert.equal(app.includes('var Wikipedia=window.GroovyWikipedia'),true);
+            ['function normalizeWikipediaIdentity(','function wikipediaCacheKey(','function wikipediaIntroduction(','function wikipediaCandidateScore(','async function fetchWikipediaAlbumCandidates(','async function fetchWikipediaFirstSection(','async function fetchWikipediaSectionParagraphs('].forEach(function(token){assert.equal(app.includes(token),false,token+' should live outside app.js');});
+            assert.equal(app.includes('Wikipedia.cacheKey(record)'),true);
+            assert.equal(app.includes('Wikipedia.searchCandidates(record,queries[q])'),true);
+          });
+          `);
+          NODE
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/wikipedia-service.js
+          node --check js/app.js
+      - name: Run regression tests
+        run: node --test tests/*.test.js
+      - name: Commit extraction and remove temporary workflow
+        run: |
+          rm -f .github/workflows/wikipedia-module-migration.yml
+          git config user.name "GroovyShelves Maintenance"
+          git config user.email "150244154+Jeffaklumpen@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "No extraction changes to commit"; exit 1; }
+          git commit -m "Extract Wikipedia service from app"
+          git push origin notes
