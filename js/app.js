@@ -3864,12 +3864,12 @@ function renderFollowedCollectorsForAlbum(profiles){
   }
 
   detailSocialContext.innerHTML=
-    '<div class="detail-social-heading"><strong>Also collected by</strong></div>'+
+    '<div class="detail-social-heading"><span class="detail-social-heading-icon" aria-hidden="true"></span><div><strong>Also collected by</strong><small>Collectors you follow</small></div></div>'+
     '<div class="detail-social-people">'+
       visibleProfiles.map(function(profile){return personButton(profile,'');}).join('')+
       (hasMore?'<button class="detail-social-more" type="button" data-detail-social-more aria-expanded="false" aria-label="Show more collectors">…</button>':'')+
     '</div>'+
-    (hasMore?'<div class="detail-social-menu" data-detail-social-menu hidden><div class="detail-social-menu-title">Also collected by</div><div class="detail-social-menu-list">'+extraProfiles.map(function(profile){return personButton(profile,'detail-social-menu-person');}).join('')+'</div></div>':'');
+    (hasMore?'<div class="detail-social-menu" data-detail-social-menu hidden><div class="detail-social-menu-title">More collectors</div><div class="detail-social-menu-list">'+extraProfiles.map(function(profile){return personButton(profile,'detail-social-menu-person');}).join('')+'</div></div>':'');
 }
 
 function renderOwnCollectionMatch(){
@@ -3878,7 +3878,7 @@ function renderOwnCollectionMatch(){
   detailSocialContext.hidden=false;
   detailSocialContext.innerHTML=
     '<span class="detail-social-check" aria-hidden="true">✓</span>'+
-    '<div><span>COLLECTION MATCH</span><strong>This record is also in your collection</strong></div>';
+    '<div class="detail-own-match-copy"><span>COLLECTION MATCH</span><strong>This record is also in your collection</strong></div>';
 }
 
 async function loadDetailSocialContext(record,index){
