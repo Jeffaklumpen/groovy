@@ -3878,17 +3878,22 @@ async function loadDetailSocialContext(record,index){
   if(!sessionUser)return;
 
   var albumId=record[8];
+  var masterId=String(record[10]||'').trim();
+  var matchKey=masterId?'master:'+masterId:'album:'+albumId;
 
   try{
     if(viewedUserId!==null){
-      var ownKey='own:'+sessionUser.id+':'+albumId;
+      var ownKey='own:'+sessionUser.id+':'+matchKey;
       var ownMatch=detailSocialCacheGet(ownKey);
       if(ownMatch===null){
-        var ownResult=await supabaseClient.from('collections')
-          .select('id')
+        var ownQuery=supabaseClient.from('collections')
+          .select(masterId?'id,albums!inner(discogs_master_id)':'id')
           .eq('user_id',sessionUser.id)
-          .eq('album_id',albumId)
           .limit(1);
+        ownQuery=masterId
+          ?ownQuery.eq('albums.discogs_master_id',masterId)
+          :ownQuery.eq('album_id',albumId);
+        var ownResult=await ownQuery;
         if(ownResult.error)throw ownResult.error;
         ownMatch=!!(ownResult.data&&ownResult.data.length);
         detailSocialCacheSet(ownKey,ownMatch);
@@ -3900,7 +3905,7 @@ async function loadDetailSocialContext(record,index){
 
     if(window.libraryView==='wishlist')return;
 
-    var followedKey='followed:'+sessionUser.id+':'+albumId;
+    var followedKey='followed:'+sessionUser.id+':'+matchKey;
     var cachedProfiles=detailSocialCacheGet(followedKey);
     if(cachedProfiles!==null){
       if(requestVersion===detailSocialRequestVersion&&detailOpenRecordIndex===index)renderFollowedCollectorsForAlbum(cachedProfiles);
@@ -3914,10 +3919,13 @@ async function loadDetailSocialContext(record,index){
     var followedIds=(followResult.data||[]).map(function(row){return row.followed_id;}).filter(Boolean);
     if(!followedIds.length){detailSocialCacheSet(followedKey,[]);return;}
 
-    var collectionResult=await supabaseClient.from('collections')
-      .select('user_id')
-      .eq('album_id',albumId)
+    var collectionQuery=supabaseClient.from('collections')
+      .select(masterId?'user_id,albums!inner(discogs_master_id)':'user_id')
       .in('user_id',followedIds);
+    collectionQuery=masterId
+      ?collectionQuery.eq('albums.discogs_master_id',masterId)
+      :collectionQuery.eq('album_id',albumId);
+    var collectionResult=await collectionQuery;
     if(collectionResult.error)throw collectionResult.error;
     var matchingIds=Array.from(new Set((collectionResult.data||[]).map(function(row){return row.user_id;}).filter(Boolean)));
     if(!matchingIds.length){detailSocialCacheSet(followedKey,[]);return;}
