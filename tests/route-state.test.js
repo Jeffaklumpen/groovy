@@ -85,3 +85,25 @@ test('own collection loader cannot invalidate a viewed shelf load',function(){
   assert.ok(routeGuard>=0,'route guard should exist');
   assert.ok(loadVersion>routeGuard,'load version must be incremented only after the public shelf route guard');
 });
+
+
+test('viewed shelf rating helpers are available outside the collection module',function(){
+  const fs=require('node:fs');
+  const path=require('node:path');
+  const app=fs.readFileSync(path.resolve(__dirname,'..','js','app.js'),'utf8');
+  assert.match(app,/window\.loadAlbumRatingData=loadAlbumRatingData/);
+  assert.match(app,/window\.applyAlbumRatingMeta=applyAlbumRatingMeta/);
+});
+
+test('notification realtime channel is subscribed before the first awaited reload',function(){
+  const fs=require('node:fs');
+  const path=require('node:path');
+  const app=fs.readFileSync(path.resolve(__dirname,'..','js','app.js'),'utf8');
+  const start=app.indexOf('async function syncNotificationSubscription(user)');
+  const end=app.indexOf('function openCollectorRoute',start);
+  assert.ok(start>=0&&end>start);
+  const block=app.slice(start,end);
+  const subscribe=block.indexOf('.subscribe();');
+  const initialLoad=block.lastIndexOf('await loadNotifications();');
+  assert.ok(subscribe>=0&&initialLoad>subscribe,'channel must exist before an awaited notification load can race');
+});

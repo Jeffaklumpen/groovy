@@ -291,10 +291,10 @@ async function syncNotificationSubscription(user){
     if(notificationUserId===user.id&&notificationChannel){await loadNotifications();return;}
     if(notificationChannel){try{await supabaseClient.removeChannel(notificationChannel);}catch(error){}notificationChannel=null;}
     notificationUserId=user.id;
-    await loadNotifications();
     notificationChannel=supabaseClient.channel('groovy-notifications-'+user.id)
       .on('postgres_changes',{event:'*',schema:'public',table:'notifications',filter:'recipient_id=eq.'+user.id},function(){loadNotifications();})
       .subscribe();
+    await loadNotifications();
 }
 
 function openCollectorRoute(username,view){
@@ -1108,6 +1108,9 @@ function applyAlbumRatingMeta(record,ratingMap){
   record[16]=meta&&meta.communityCount?meta.communityCount:0;
   return record;
 }
+
+window.loadAlbumRatingData=loadAlbumRatingData;
+window.applyAlbumRatingMeta=applyAlbumRatingMeta;
 
 function renderDetailRatingPanels(index){
   var record=records[index];
