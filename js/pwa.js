@@ -135,7 +135,7 @@
     if(document.getElementById('groovyAlbumRatingContextScript'))return;
     var script=document.createElement('script');
     script.id='groovyAlbumRatingContextScript';
-    script.src='/js/album-rating-context.js?v=1';
+    script.src='/js/album-rating-context.js?v=2';
     script.async=false;
     document.body.appendChild(script);
   }
@@ -146,7 +146,7 @@
 
   if('serviceWorker' in navigator){
     window.addEventListener('load',function(){
-      navigator.serviceWorker.register('/service-worker.js',{scope:'/',updateViaCache:'none'})
+      navigator.serviceWorker.register('/service-worker.js?v=2',{scope:'/',updateViaCache:'none'})
         .catch(function(error){console.warn('Could not enable app installation:',error);});
     });
   }
