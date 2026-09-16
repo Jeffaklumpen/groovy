@@ -127,9 +127,9 @@ jobs:
             const cardEnd=app.indexOf('function loadVisibleImages(){',cardStart);
             const card=app.slice(cardStart,cardEnd);
             ['record[0]','record[1]','record[2]','record[3]','record[6]','record[11]','record[12]','record[13]','record[14]','record[15]'].forEach(function(token){assert.equal(card.includes(token),false,token+' should not remain in card rendering');});
-            assert.match(card,/Record\.artist\(record\)/);
-            assert.match(card,/Record\.title\(record\)/);
-            assert.match(card,/Record\.communityRating\(record\)/);
+            assert.equal(card.includes('Record.artist(record)'),true);
+            assert.equal(card.includes('Record.title(record)'),true);
+            assert.equal(card.includes('Record.communityRating(record)'),true);
             const wikiStart=app.indexOf('function wikipediaCacheKey(record){');
             const wikiEnd=app.indexOf('async function fetchWikipediaAlbumCandidates',wikiStart);
             const wiki=app.slice(wikiStart,wikiEnd);
