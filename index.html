@@ -7,13 +7,13 @@
   (function(){
     var redirect=sessionStorage.redirect;
     delete sessionStorage.redirect;
-  
+
     if(redirect&&redirect!==location.href){
       history.replaceState(null,null,redirect);
     }
   })();
   </script>
-  
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -108,7 +108,6 @@
     </div>
   </div>
   <span id="copyProfileLinkButton" hidden aria-hidden="true"><span class="viewed-action-label"></span></span>
-
   <section id="shelfStrip" class="shelf-strip" aria-label="Shelves" hidden>
     <button id="shelfScrollLeft" class="shelf-scroll-arrow shelf-scroll-left" type="button" aria-label="Previous shelves">‹</button>
     <div id="shelfStripViewport" class="shelf-strip-viewport">
@@ -217,8 +216,7 @@
     <div class="detail-rating" id="detailRating"></div>
   </div>
   <div id="detailShelfActions" class="detail-shelf-actions" hidden></div>
-  <div class="detail-streaming-row" aria-label="Streaming links">
-    <a id="detailAppleMusicLink" class="detail-streaming-link detail-apple-service" href="https://music.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Listen on Apple Music">
+  <div class="detail-streaming-row" aria-label="Streaming links">    <a id="detailAppleMusicLink" class="detail-streaming-link detail-apple-service" href="https://music.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Listen on Apple Music">
       <img class="detail-apple-music-badge" src="/apple_wide.svg" alt="Listen on Apple Music">
     </a>
     <a id="detailSpotifyLink" class="detail-streaming-link detail-spotify-service" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer" aria-label="Listen on Spotify">
@@ -327,8 +325,7 @@
       <label class="pressing-field"><span>Record label</span><select id="pressingLabel" disabled><option value="">Choose label</option></select></label>
       <label class="pressing-field"><span>Catalog number</span><select id="pressingCatalogNumber" disabled><option value="">Choose catalog number</option></select></label>
       <div id="pressingMatrixSearch" class="pressing-matrix-search" hidden>
-        <label class="pressing-field"><span>Matrix / runout</span><input id="pressingMatrixQuery" type="text" placeholder="For example SMAS-11163-A-2" autocomplete="off"></label>
-        <button id="pressingMatrixSearchButton" class="copy-action-button primary" type="button">Find matrix</button>
+        <label class="pressing-field"><span>Matrix / runout</span><input id="pressingMatrixQuery" type="text" placeholder="For example SMAS-11163-A-2" autocomplete="off"></label>        <button id="pressingMatrixSearchButton" class="copy-action-button primary" type="button">Find matrix</button>
         <p class="pressing-help">Enter one side exactly as it appears in the runout groove.</p>
       </div>
       <div id="pressingMatches" class="pressing-matches"></div>
@@ -437,8 +434,7 @@
 
   <div id="searchUserModal" class="add-album-modal" role="dialog" aria-modal="true" aria-labelledby="searchUserTitle">
     <div class="add-album-box search-modal-box">
-      <button id="closeSearchUser" class="close-add-album">×</button>
-      <div class="search-modal-heading">
+      <button id="closeSearchUser" class="close-add-album">×</button>      <div class="search-modal-heading">
         <span class="search-modal-kicker">The community</span>
         <h2 id="searchUserTitle">Search User</h2>
         <p>Discover collectors and explore their shelves.</p>
@@ -506,6 +502,6 @@
 <script src="/js/app.js?v=106"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=8"></script>
-<script src="/js/pwa.js?v=7"></script>
+<script src="/js/pwa.js?v=8"></script>
 </body>
 </html>
