@@ -69,14 +69,14 @@ test('login and empty collection actions use the shared viewport-safe flow',func
   assert.match(app,/openAddAlbumSearch\(user\)/);
 });
 
-test('routing state stays pure and runtime compatibility loads separately',function(){
+test('routing state stays pure and routing runtime contains no data or history patches',function(){
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const routeState=fs.readFileSync(path.join(root,'js','route-state.js'),'utf8');
   const routeRuntime=fs.readFileSync(path.join(root,'js','route-runtime.js'),'utf8');
 
   assert.doesNotMatch(routeState,/installRuntimeFixes|syncPublicShelfRecords|Object\.defineProperty\(windowObject,'loadCollection'/);
-  assert.match(routeRuntime,/syncPublicShelfRecords/);
-  assert.match(routeRuntime,/Object\.defineProperty\(windowObject,'loadCollection'/);
+  assert.doesNotMatch(routeRuntime,/syncPublicShelfRecords|Object\.defineProperty|supabaseClient|history\.pushState|history\.replaceState/);
+  assert.match(routeRuntime,/loadDetailEnhancements/);
 
   const statePosition=html.indexOf('/js/route-state.js');
   const runtimePosition=html.indexOf('/js/route-runtime.js');
