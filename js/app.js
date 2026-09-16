@@ -43,7 +43,9 @@ const notificationBadge=document.getElementById('notificationBadge');
 const notificationPanel=document.getElementById('notificationPanel');
 const notificationList=document.getElementById('notificationList');
 const markAllNotificationsRead=document.getElementById('markAllNotificationsRead');
+const clearNotificationsButton=document.getElementById('clearNotificationsButton');
 const followingButton=document.getElementById('followingButton');
+const viewedUserFollowButton=document.getElementById('viewedUserFollowButton');
 let notificationChannel=null;
 let notificationUserId=null;
 let notificationsCache=[];
@@ -167,6 +169,19 @@ async function setFollowButtonState(button,targetUserId,isFollowing){
     button.dataset.userId=targetUserId||'';
 }
 
+function setViewedUserFollowState(targetUserId,username,isFollowing){
+    if(!viewedUserFollowButton)return;
+    viewedUserFollowButton.dataset.userId=targetUserId||'';
+    viewedUserFollowButton.dataset.username=username||'collector';
+    viewedUserFollowButton.dataset.following=isFollowing?'true':'false';
+    viewedUserFollowButton.classList.toggle('following',isFollowing);
+    viewedUserFollowButton.setAttribute('aria-label',(isFollowing?'Unfollow ':'Follow ')+(username||'collector'));
+    var label=viewedUserFollowButton.querySelector('.viewed-action-label');
+    var icon=viewedUserFollowButton.querySelector('.viewed-follow-icon');
+    if(label)label.textContent=isFollowing?'Following':'Follow';
+    if(icon)icon.textContent=isFollowing?'✓':'+';
+}
+
 function relativeNotificationTime(value){
     var time=new Date(value).getTime();
     if(!time)return '';
@@ -198,14 +213,27 @@ function updateNotificationBadge(){
 
 function notificationCopy(item){
     var actor=item.actor&&item.actor.username?item.actor.username:'A collector';
+    var payload=item.payload||{};
     if(item.notification_type==='new_follower')return '<strong>'+escapeSocialHtml(actor)+'</strong> started following you.';
     if(item.notification_type==='collection_activity'){
         var count=Math.max(1,parseInt(item.item_count,10)||1);
-        var payload=item.payload||{};
+        var sharedCount=Math.max(0,parseInt(payload.shared_count,10)||0);
         if(count===1&&payload.album_title){
-            return '<strong>'+escapeSocialHtml(actor)+'</strong> added <em>'+escapeSocialHtml(payload.album_title)+'</em> to their collection.';
+            var single='<strong>'+escapeSocialHtml(actor)+'</strong> added <em>'+escapeSocialHtml(payload.album_title)+'</em> to their collection.';
+            if(sharedCount>0)single+=' <b class="notification-shared">You have this too</b>';
+            return single;
         }
-        return '<strong>'+escapeSocialHtml(actor)+'</strong> added '+count+' records to their collection.';
+        var grouped='<strong>'+escapeSocialHtml(actor)+'</strong> added '+count+' records to their collection.';
+        if(sharedCount===1)grouped+=' <b class="notification-shared">1 is also in your collection</b>';
+        if(sharedCount>1)grouped+=' <b class="notification-shared">'+sharedCount+' are also in your collection</b>';
+        return grouped;
+    }
+    if(item.notification_type==='wishlist_match'){
+        var wishlistCount=Math.max(1,parseInt(item.item_count,10)||1);
+        if(wishlistCount===1&&payload.album_title){
+            return '<strong>'+escapeSocialHtml(actor)+'</strong> added <em>'+escapeSocialHtml(payload.album_title)+'</em> to their wishlist. <b class="notification-shared">It is in your collection</b>';
+        }
+        return '<strong>'+escapeSocialHtml(actor)+'</strong> added '+wishlistCount+' records to their wishlist that you already own. <b class="notification-shared">Collection match</b>';
     }
     return '<strong>'+escapeSocialHtml(actor)+'</strong> has new activity.';
 }
@@ -272,6 +300,7 @@ async function syncNotificationSubscription(user){
 function openCollectorRoute(username,view){
     if(!username)return;
     var url=view==='profile'?'/profile/'+encodeURIComponent(username):'/shelf/'+encodeURIComponent(username);
+    if(view==='wishlist')url+='?view=wishlist';
     history.pushState({},'',url);
     renderCurrentRoute();
 }
@@ -373,6 +402,22 @@ if(markAllNotificationsRead)markAllNotificationsRead.addEventListener('click',as
     var {error}=await supabaseClient.from('notifications').update({read_at:now}).eq('recipient_id',user.id).is('read_at',null);
     if(error)console.warn('Could not mark notifications read:',error);
 });
+if(clearNotificationsButton)clearNotificationsButton.addEventListener('click',async function(event){
+    event.preventDefault();event.stopPropagation();
+    var user=await currentSessionUser();
+    if(!user)return;
+    clearNotificationsButton.disabled=true;
+    var previous=notificationsCache.slice();
+    notificationsCache=[];
+    renderNotifications();
+    var {error}=await supabaseClient.from('notifications').delete().eq('recipient_id',user.id);
+    if(error){
+        console.warn('Could not clear notifications:',error);
+        notificationsCache=previous;
+        renderNotifications();
+    }
+    clearNotificationsButton.disabled=false;
+});
 if(notificationList)notificationList.addEventListener('click',async function(event){
     var itemButton=event.target.closest('.notification-item');
     if(!itemButton)return;
@@ -380,7 +425,10 @@ if(notificationList)notificationList.addEventListener('click',async function(eve
     await markNotificationRead(itemButton.getAttribute('data-notification-id'));
     closeNotificationPanel();
     var username=itemButton.getAttribute('data-username');
-    if(username)openCollectorRoute(username,itemButton.getAttribute('data-type')==='new_follower'?'profile':'shelf');
+    if(username){
+        var type=itemButton.getAttribute('data-type');
+        openCollectorRoute(username,type==='new_follower'?'profile':(type==='wishlist_match'?'wishlist':'shelf'));
+    }
 });
 if(followingButton)followingButton.addEventListener('click',function(event){
     event.preventDefault();event.stopPropagation();
@@ -430,6 +478,16 @@ document.addEventListener('click',function(){
 authSwitchButton.addEventListener('click',function(){
     setAuthMode(registerMode?'login':'register');
     focusAuthField();
+});
+
+[loginEmail,loginPassword,registerUsername].forEach(function(field){
+    if(!field)return;
+    field.addEventListener('keydown',function(event){
+        if(event.key!=='Enter')return;
+        event.preventDefault();
+        if(registerMode)registerButton.click();
+        else loginButton.click();
+    });
 });
 
 async function updateAuthUI(){
@@ -678,11 +736,11 @@ logoutButton.addEventListener('click',async function(){
     }
 
     profileMenu.classList.remove('open');
-
+    closeNotificationPanel();
     records=[];
     collection.innerHTML='';
-
-    await updateAuthUI();
+    history.replaceState({},'','/');
+    await renderCurrentRoute();
 });
 
 supabaseClient.auth.onAuthStateChange(function(){
@@ -842,6 +900,7 @@ window.loadCollection=async function(){
   window.loginRequiredForViewedCollection=false;
   window.profileNotFound=false;
   document.getElementById('viewedUserHeader').style.display='none';
+  if(viewedUserFollowButton)viewedUserFollowButton.style.display='none';
     
   var {data:{session}}=await supabaseClient.auth.getSession();
   window.hasAuthenticatedUser=!!(session&&session.user);
@@ -5932,6 +5991,9 @@ window.addEventListener('groovy-follow-changed',function(event){
     var detail=event.detail||{};
     document.querySelectorAll('.user-search-follow-button[data-user-id="'+String(detail.userId||'')+'"]')
       .forEach(function(button){setFollowButtonState(button,detail.userId,!!detail.following);});
+    if(viewedUserFollowButton&&String(viewedUserFollowButton.dataset.userId||'')===String(detail.userId||'')){
+        setViewedUserFollowState(detail.userId,viewedUserFollowButton.dataset.username,!!detail.following);
+    }
 });
 
 searchUserButton.addEventListener('click',async function(event){
@@ -5968,11 +6030,22 @@ const emptyWishlistAddButton=document.getElementById('emptyWishlistAddButton');
 
 const logo=document.querySelector('.logo');
 
-logo.addEventListener('click',function(){
-    myCollectionButton.click();
+logo.addEventListener('click',async function(event){
+    event.preventDefault();
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    if(!session||!session.user){
+        if(window.location.pathname!=='/'||window.location.search)history.replaceState({},'','/');
+        await renderCurrentRoute();
+        return;
+    }
+    history.pushState({},'','/');
+    libraryPage=1;
+    setDeleteMode(false);
+    await renderCurrentRoute();
 });
 
-myCollectionButton.addEventListener('click',async function(){
+myCollectionButton.addEventListener('click',async function(event){
+    if(event){event.preventDefault();event.stopPropagation();}
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
 
@@ -5983,11 +6056,8 @@ myCollectionButton.addEventListener('click',async function(){
 
     history.pushState({},'','/');
     libraryPage=1;
-
     setDeleteMode(false);
-
-    document.getElementById('viewedUserHeader').style.display='none';
-    await window.loadCollection();
+    await renderCurrentRoute();
 });
 
 async function navigateOwnLibrary(nextView){
@@ -6021,6 +6091,24 @@ collectionTabButton.addEventListener('click',function(event){event.preventDefaul
 wishlistTabButton.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();navigateOwnLibrary('wishlist');});
 viewedUserShelfButton.addEventListener('click',function(){navigateViewedLibrary('collection');});
 viewedUserWishlistButton.addEventListener('click',function(){navigateViewedLibrary('wishlist');});
+if(viewedUserFollowButton)viewedUserFollowButton.addEventListener('click',async function(event){
+    event.preventDefault();event.stopPropagation();
+    var targetUserId=viewedUserFollowButton.dataset.userId;
+    if(!targetUserId)return;
+    var wasFollowing=viewedUserFollowButton.dataset.following==='true';
+    viewedUserFollowButton.disabled=true;
+    var label=viewedUserFollowButton.querySelector('.viewed-action-label');
+    if(label)label.textContent=wasFollowing?'Unfollowing...':'Following...';
+    try{
+        if(wasFollowing)await window.groovyUnfollowUser(targetUserId);
+        else await window.groovyFollowUser(targetUserId);
+        setViewedUserFollowState(targetUserId,viewedUserFollowButton.dataset.username,!wasFollowing);
+    }catch(error){
+        console.error('Could not change follow status:',error);
+        setViewedUserFollowState(targetUserId,viewedUserFollowButton.dataset.username,wasFollowing);
+    }
+    viewedUserFollowButton.disabled=false;
+});
 
 emptyWishlistAddButton.addEventListener('click',function(){
     addAlbumButton.click();
@@ -6540,6 +6628,13 @@ async function loadOtherUserCollection(userId){
         username:profile&&profile.username?profile.username:'Unknown user',
         avatar_url:profile&&profile.avatar_url?profile.avatar_url:''
     };
+
+    if(viewedUserFollowButton){
+        var isFollowingViewed=false;
+        try{isFollowingViewed=await window.groovyIsFollowing(userId);}catch(error){isFollowingViewed=false;}
+        setViewedUserFollowState(userId,profile&&profile.username?profile.username:'collector',isFollowingViewed);
+        viewedUserFollowButton.style.display='inline-flex';
+    }
 
     if(window.libraryView==='wishlist'){
         await window.loadWishlist(userId);
@@ -8476,6 +8571,19 @@ async function renderCurrentRoute(){
     window.libraryView=GroovyRouteState.libraryViewFromSearch(window.location.search);
     await updateAuthUI();
     closeNotificationPanel();
+    var routeUser=await currentSessionUser();
+    if(!routeUser&&(window.location.pathname!=='/'||window.location.search||window.location.hash)){
+        history.replaceState({},'','/');
+        window.libraryView='collection';
+    }
+    if(!routeUser){
+        hideFollowingPage();
+        viewedUserId=null;
+        window.loginRequiredForViewedCollection=false;
+        window.profileNotFound=false;
+        await window.loadCollection();
+        return;
+    }
     if(/^\/following\/?$/.test(window.location.pathname)){
         await renderFollowingPage();
         return;
