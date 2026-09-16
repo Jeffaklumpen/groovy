@@ -46,12 +46,12 @@ body.logged-out-home .library-overview{display:none!important}
   .detail-info-card .detail-artist{flex:0 0 auto;margin:0!important;font-size:15px!important;font-weight:500!important;line-height:1.08!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .detail-info-card .detail-album{display:-webkit-box!important;flex:0 0 auto;margin:0!important;padding:0!important;font-size:clamp(18px,5.35vw,22px)!important;font-weight:760!important;line-height:1.02!important;letter-spacing:-.35px!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden!important}
 
-  /* Use the real genre text. The legacy mobile rule hides it and recreates it
-     through ::after, which can leave a misleading invisible spacing footprint. */
+  /* Mobile always shows the primary genre only. app.js already stores that
+     value in data-mobile-genre, while desktop keeps the full genre string. */
   .detail-info-card .detail-meta{display:flex!important;flex:0 0 auto;flex-wrap:nowrap!important;align-items:center!important;min-width:0;margin:0!important;gap:0!important;font-size:10px!important;line-height:1.15!important;white-space:nowrap;overflow:hidden}
   .detail-info-card .detail-meta>span{display:block!important;min-width:0;margin:0!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .detail-info-card .detail-meta #detailGenre{font-size:10px!important;line-height:1.15!important}
-  .detail-info-card .detail-meta #detailGenre:after{content:none!important;display:none!important}
+  .detail-info-card .detail-meta #detailGenre{font-size:0!important;line-height:1.15!important}
+  .detail-info-card .detail-meta #detailGenre:after{content:attr(data-mobile-genre)!important;display:inline!important;font-size:10px!important;line-height:1.15!important}
   .detail-info-card .detail-meta>span+span{position:relative!important;margin-left:5px!important;padding-left:6px!important}
   .detail-info-card .detail-meta>span+span:before{content:''!important;position:absolute!important;left:0!important;top:50%!important;width:1px!important;height:13px!important;margin:0!important;background:rgba(255,255,255,.18)!important;transform:translateY(-50%)!important}
 
@@ -116,7 +116,8 @@ body.logged-out-home .library-overview{display:none!important}
   .detail-info-card .detail-artist{font-size:13px!important}
   .detail-info-card .detail-album{font-size:clamp(15px,4.8vw,18px)!important;line-height:1.02!important;letter-spacing:-.2px!important}
   .detail-info-card .detail-meta{font-size:9px!important}
-  .detail-info-card .detail-meta #detailGenre{font-size:9px!important}
+  .detail-info-card .detail-meta #detailGenre{font-size:0!important}
+  .detail-info-card .detail-meta #detailGenre:after{font-size:9px!important}
   .detail-info-card .detail-meta>span+span{margin-left:4px!important;padding-left:5px!important}
   .detail-info-card .detail-meta>span+span:before{height:11px!important}
   .detail-shelf-status{padding:2px 6px!important;min-height:20px!important;max-height:22px!important}
