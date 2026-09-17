@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   node-tests:
@@ -15,29 +15,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 10
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply shelf view extraction
-        run: node scripts/apply-shelf-view-extraction.js
-      - name: Check JavaScript syntax
-        run: |
-          node --check js/app.js
-          node --check js/shelf-view.js
-      - name: Run targeted shelf regression tests
-        run: node --test tests/shelf-core.test.js tests/shelf-view.test.js tests/app-bootstrap-order.test.js tests/dom-contract.test.js
-      - name: Check patch whitespace
-        run: git diff --check
-      - name: Commit extraction
-        if: github.event_name == 'push'
-        run: |
-          git checkout da2788e68536830f114056ed1a7ade6446c22c97 -- .github/workflows/test.yml .github/workflows/e2e.yml
-          git rm scripts/apply-shelf-view-extraction.js
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Move shelf presentation into view module"
-          git push origin HEAD:notes
+      - name: Run regression tests
+        run: node --test tests/*.test.js

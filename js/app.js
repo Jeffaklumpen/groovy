@@ -749,6 +749,7 @@ var RatingCore=window.GroovyRatingCore;
 var MarketplaceCore=window.GroovyMarketplaceCore;
 var MarketplaceView=window.GroovyMarketplaceView;
 var ShelfCore=window.GroovyShelfCore;
+var ShelfView=window.GroovyShelfView;
 var LibraryCore=window.GroovyLibraryCore;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
@@ -758,6 +759,7 @@ if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
 if(!RatingCore)throw new Error('GroovyRatingCore must load before app.js');
 if(!MarketplaceCore)throw new Error('GroovyMarketplaceCore must load before app.js');
 if(!ShelfCore)throw new Error('GroovyShelfCore must load before app.js');
+if(!ShelfView)throw new Error('GroovyShelfView must load before app.js');
 if(!LibraryCore)throw new Error('GroovyLibraryCore must load before app.js');
 
 window.records = [];
@@ -1377,10 +1379,6 @@ var detailOpenRecordIndex=-1;
 var detailSocialRequestVersion=0;
 var detailSocialCache=new Map();
 
-var SHELF_ICON_OPTIONS=ShelfCore.ICON_OPTIONS;
-var SHELF_ICON_ALIASES=ShelfCore.ICON_ALIASES;
-var SHELF_ICON_PATHS=ShelfCore.ICON_PATHS;
-
 function normalizeShelfIcon(icon){
   return ShelfCore.normalizeIcon(icon);
 }
@@ -1391,10 +1389,7 @@ function shelfIconSvg(icon){
 
 
 function renderShelfIconChoices(){
-  if(!shelfIconChoices)return;
-  shelfIconChoices.innerHTML=SHELF_ICON_OPTIONS.map(function(item,index){
-    return '<button type="button" class="shelf-icon-choice '+(index===0?'selected':'')+'" role="radio" aria-checked="'+(index===0?'true':'false')+'" data-icon="'+item.id+'" aria-label="'+item.label+'" title="'+item.label+'">'+shelfIconSvg(item.id)+'</button>';
-  }).join('');
+  ShelfView.renderIconChoices(shelfIconChoices);
 }
 
 renderShelfIconChoices();
@@ -1536,21 +1531,14 @@ function renderShelfStrip(){
 
   if(activeShelfId!=='all'&&!shelfById(activeShelfId))activeShelfId='all';
 
-  var html='<button class="shelf-chip '+(activeShelfId==='all'?'active':'')+'" type="button" data-shelf-id="all">'+
-    '<span class="shelf-chip-icon" aria-hidden="true">'+shelfIconSvg('record')+'</span><span class="shelf-chip-copy"><strong>All Records</strong><small>'+shelfRecordCount('all')+' records</small></span></button>';
-
-  shelves.forEach(function(shelf){
-    html+='<button class="shelf-chip shelf-chip-custom '+(String(activeShelfId)===String(shelf.id)?'active':'')+'" type="button" data-shelf-id="'+esc(shelf.id)+'" style="'+shelfColorStyle(shelf)+'">'+
-      '<span class="shelf-chip-icon" aria-hidden="true">'+shelfIconSvg(shelf.icon)+'</span><span class="shelf-chip-copy"><strong>'+esc(shelf.name)+'</strong><small>'+shelfRecordCount(shelf.id)+' records</small></span></button>';
+  var html=ShelfView.stripMarkup({
+    shelves:shelves,
+    records:records,
+    activeShelfId:activeShelfId,
+    maxShelves:MAX_SHELVES,
+    showCreate:viewedUserId===null,
+    colors:SHELF_COLORS
   });
-
-  if(viewedUserId===null){
-    if(shelves.length<MAX_SHELVES){
-      html+='<button class="shelf-chip shelf-new-button" type="button"><span class="shelf-chip-icon" aria-hidden="true">+</span><span class="shelf-chip-copy"><strong>New Shelf</strong><small>'+shelves.length+' of '+MAX_SHELVES+'</small></span></button>';
-    }else{
-      html+='<button class="shelf-chip shelf-new-button shelf-limit-button" type="button" disabled><span class="shelf-chip-icon" aria-hidden="true">✓</span><span class="shelf-chip-copy"><strong>Shelf limit</strong><small>'+MAX_SHELVES+' of '+MAX_SHELVES+'</small></span></button>';
-    }
-  }
 
   var previousShelfScrollLeft=shelfStripScroll.scrollLeft;
   shelfStripScroll.innerHTML=html;
@@ -1608,26 +1596,13 @@ window.loadShelvesForUser=async function(userId){
 };
 
 function setShelfIconChoice(icon){
-  selectedShelfIcon=normalizeShelfIcon(icon);
-  if(!shelfIconChoices)return;
-  shelfIconChoices.querySelectorAll('.shelf-icon-choice').forEach(function(button){
-    var selected=button.getAttribute('data-icon')===selectedShelfIcon;
-    button.classList.toggle('selected',selected);
-    button.setAttribute('aria-checked',selected?'true':'false');
-  });
+  selectedShelfIcon=ShelfView.applyIconChoice(shelfIconChoices,icon);
 }
 
 function resetShelfIconChoice(){setShelfIconChoice('record');}
 
 function setShelfColorChoice(color){
-  selectedShelfColor=normalizeShelfColor(color);
-  if(createShelfModal)createShelfModal.style.setProperty('--shelf-choice-color',selectedShelfColor);
-  if(!shelfColorChoices)return;
-  shelfColorChoices.querySelectorAll('.shelf-color-choice').forEach(function(button){
-    var selected=normalizeShelfColor(button.getAttribute('data-color'))===selectedShelfColor;
-    button.classList.toggle('selected',selected);
-    button.setAttribute('aria-checked',selected?'true':'false');
-  });
+  selectedShelfColor=ShelfView.applyColorChoice(shelfColorChoices,createShelfModal,color,SHELF_COLORS);
 }
 
 function resetShelfColorChoice(){setShelfColorChoice(SHELF_COLORS[0]);}
@@ -1710,29 +1685,14 @@ function renderShelfPicker(index){
     ?'Choose a new shelf for “'+record[2]+'”.'
     :'Choose a shelf for “'+record[2]+'”.';
 
-  var options=shelves.slice();
-  shelfPickerList.innerHTML=options.map(function(shelf){
-    var id=String(shelf.id||'');
-    var selected=id===currentShelf;
-    return '<label class="shelf-picker-option shelf-colored '+(selected?'selected':'')+'" style="'+shelfColorStyle(shelf)+'">'+
-      '<input type="radio" name="recordShelf" value="'+esc(id)+'" '+(selected?'checked':'')+'>'+ 
-      '<span class="shelf-picker-icon" aria-hidden="true">'+shelfIconSvg(shelf.icon)+'</span>'+ 
-      '<span class="shelf-picker-name">'+esc(shelf.name)+'</span>'+ 
-      '<span class="shelf-choice-check" aria-hidden="true">✓</span>'+ 
-    '</label>';
-  }).join('');
-
-  if(!options.length){
-    shelfPickerList.innerHTML='<div class="shelf-picker-empty">No shelves yet. Create your first shelf below.</div>';
-  }
+  shelfPickerList.innerHTML=ShelfView.pickerMarkup({
+    shelves:shelves,
+    currentShelfId:currentShelf,
+    colors:SHELF_COLORS
+  });
 
   shelfPickerList.querySelectorAll('input[name="recordShelf"]').forEach(function(input){
-    input.addEventListener('change',function(){
-      shelfPickerList.querySelectorAll('.shelf-picker-option').forEach(function(option){
-        var radio=option.querySelector('input');
-        option.classList.toggle('selected',!!(radio&&radio.checked));
-      });
-    });
+    input.addEventListener('change',function(){ShelfView.syncPickerSelection(shelfPickerList);});
   });
 
   createShelfFromPickerButton.disabled=shelves.length>=MAX_SHELVES;
@@ -1752,24 +1712,13 @@ function openShelfPicker(index){
 
 function renderDetailShelfStatus(index){
   if(!detailShelfStatus)return;
-
   var record=records[index];
-  if(!record||window.libraryView==='wishlist'){
-    detailShelfStatus.hidden=true;
-    detailShelfStatus.innerHTML='';
-    detailShelfStatus.classList.remove('unshelved');
-    return;
-  }
-
-  var shelf=shelfById(record[13]);
-  var shelfName=shelf&&shelf.name?shelf.name:'no shelf';
-  var shelfIcon=shelf?shelfIconSvg(shelf.icon):'';
-
-  detailShelfStatus.hidden=false;
-  detailShelfStatus.classList.toggle('unshelved',!shelf);
-  detailShelfStatus.innerHTML=
-    (shelfIcon?'<span class="detail-shelf-status-icon" aria-hidden="true">'+shelfIcon+'</span>':'')+
-    '<strong title="'+esc(shelfName)+'">'+esc(shelfName)+'</strong>';
+  var shelf=record?shelfById(record[13]):null;
+  ShelfView.renderDetailStatus(detailShelfStatus,{
+    record:record,
+    shelf:shelf,
+    isWishlist:window.libraryView==='wishlist'
+  });
 }
 
 function renderDetailShelfActions(index){
@@ -1786,13 +1735,7 @@ function renderDetailShelfActions(index){
 
   var hasShelf=!!record[13];
   detailShelfActions.hidden=false;
-  detailShelfActions.innerHTML=
-    '<button class="detail-shelf-button primary" type="button" data-detail-shelf-action="pick">'+
-      (hasShelf?'Move to Shelf':'Add to Shelf')+
-    '</button>'+
-    (hasShelf
-      ?'<button class="detail-shelf-button secondary" type="button" data-detail-shelf-action="remove">Remove from Shelf</button>'
-      :'');
+  detailShelfActions.innerHTML=ShelfView.detailActionsMarkup(hasShelf);
 
   var pickButton=detailShelfActions.querySelector('[data-detail-shelf-action="pick"]');
   if(pickButton){
