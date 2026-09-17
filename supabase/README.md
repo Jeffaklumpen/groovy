@@ -4,9 +4,9 @@ This directory is the repository-side source of truth for Supabase changes used 
 
 ## Migrations
 
-New database changes must be made as migrations in `supabase/migrations/` and applied to the live project. The live managed migration sequence currently starts with the foundation migrations from `20260916205018` onward.
+New database changes must be made as migrations in `supabase/migrations/` and applied to the live project. The live managed migration sequence starts with the foundation migrations from `20260916205018` onward.
 
-Older SQL files in this directory predate the current managed migration history. They are retained because they document how existing features were introduced, but they should not be treated as a complete rebuild history for the live project.
+Legacy pre-foundation SQL files have been removed because they were not part of the managed live migration history and did not form a complete rebuild history.
 
 Do not edit an already-applied migration to change production behavior. Add a new migration instead.
 
