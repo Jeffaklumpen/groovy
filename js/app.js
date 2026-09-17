@@ -2279,11 +2279,7 @@ function marketplaceDisplayCurrency(){
 }
 
 function syncMarketplaceCurrencyControl(){
-  if(!marketplaceCurrencySelect)return;
-  var preference=marketplaceCurrencyPreference();
-  var autoOption=marketplaceCurrencySelect.querySelector('option[value="auto"]');
-  if(autoOption)autoOption.textContent='Auto · '+marketplaceRegionCurrency();
-  marketplaceCurrencySelect.value=Array.from(marketplaceCurrencySelect.options).some(function(option){return option.value===preference;})?preference:'auto';
+  MarketplaceView.syncCurrencyControl(marketplaceCurrencySelect,marketplaceCurrencyPreference(),marketplaceRegionCurrency());
 }
 
 function marketplaceFormatMoney(amount,currency){
@@ -2318,32 +2314,35 @@ var loadEbayListingData=MarketplaceCore.createListingLoader({
   filter:function(listing,record){return isRelevantTraderaListing(listing,record);}
 });
 
+function marketplacePriceElements(){
+  return {
+    summary:marketplacePriceSummary,
+    link:marketplaceLowestPriceLink,
+    price:marketplaceLowestPrice,
+    meta:marketplaceLowestMeta,
+    status:marketplacePriceStatus,
+    note:marketplacePriceNote
+  };
+}
+
+function applyMarketplacePriceSummaryState(state,result){
+  MarketplaceView.applyPriceSummaryState(marketplacePriceElements(),state,result);
+}
+
 function clearMarketplacePriceSummary(){
   marketplacePriceAlbumIndex=-1;
   marketplacePriceFinished={tradera:false,ebay:!ebayEnabled};
   marketplacePriceRenderVersion++;
   traderaListings=[];
   ebayListings=[];
-  if(!marketplacePriceSummary)return;
-  marketplacePriceSummary.classList.remove('loading','empty','partial','ready');
-  if(marketplaceLowestPriceLink){marketplaceLowestPriceLink.hidden=true;marketplaceLowestPriceLink.href='#';}
-  if(marketplaceLowestPrice)marketplaceLowestPrice.textContent='';
-  if(marketplaceLowestMeta)marketplaceLowestMeta.textContent='';
-  if(marketplacePriceStatus){marketplacePriceStatus.hidden=false;marketplacePriceStatus.textContent='Checking fixed prices…';}
-  if(marketplacePriceNote)marketplacePriceNote.textContent='Excl. shipping';
+  applyMarketplacePriceSummaryState('clear');
 }
 
 function resetMarketplacePriceSummary(index){
   marketplacePriceAlbumIndex=index;
   marketplacePriceFinished={tradera:false,ebay:!ebayEnabled};
   marketplacePriceRenderVersion++;
-  if(!marketplacePriceSummary)return;
-  marketplacePriceSummary.classList.add('loading');
-  marketplacePriceSummary.classList.remove('empty','partial','ready');
-  marketplaceLowestPriceLink.hidden=true;
-  marketplacePriceStatus.hidden=false;
-  marketplacePriceStatus.textContent='Checking fixed prices…';
-  marketplacePriceNote.textContent='Excl. shipping';
+  applyMarketplacePriceSummaryState('loading');
 }
 
 async function refreshMarketplaceBestPrice(index){
@@ -2352,7 +2351,7 @@ async function refreshMarketplaceBestPrice(index){
   var renderVersion=++marketplacePriceRenderVersion;
   var candidates=marketplaceBuyNowCandidates(traderaListings,'Tradera');
   if(ebayEnabled)candidates=candidates.concat(marketplaceBuyNowCandidates(ebayListings,'eBay'));
-  marketplacePriceSummary.classList.remove('loading','empty','partial','ready');
+  applyMarketplacePriceSummaryState('resolving');
 
   var locale=(navigator.languages&&navigator.languages[0])||navigator.language||undefined;
   var result=await MarketplaceCore.resolveBestPrice(
@@ -2363,32 +2362,7 @@ async function refreshMarketplaceBestPrice(index){
     function(){return renderVersion!==marketplacePriceRenderVersion||index!==marketplacePriceAlbumIndex;}
   );
   if(result.state==='cancelled')return;
-
-  if(result.state==='empty'){
-    marketplacePriceSummary.classList.add('empty');
-    marketplaceLowestPriceLink.hidden=true;
-    marketplacePriceStatus.hidden=false;
-    marketplacePriceStatus.textContent='No Buy Now prices found';
-    marketplacePriceNote.textContent='Auctions are not included';
-    return;
-  }
-
-  if(result.state==='partial'){
-    marketplacePriceSummary.classList.add('partial');
-    marketplaceLowestPriceLink.hidden=true;
-    marketplacePriceStatus.hidden=false;
-    marketplacePriceStatus.textContent=result.label;
-    marketplacePriceNote.textContent='Currency conversion unavailable';
-    return;
-  }
-
-  marketplacePriceSummary.classList.add('ready');
-  marketplacePriceStatus.hidden=true;
-  marketplaceLowestPrice.textContent=result.priceLabel;
-  marketplaceLowestMeta.textContent=result.metaLabel;
-  marketplaceLowestPriceLink.href=result.url;
-  marketplaceLowestPriceLink.hidden=false;
-  marketplacePriceNote.textContent='Excl. shipping';
+  applyMarketplacePriceSummaryState(result.state,result);
 }
 
 function setTraderaButtonState(state,count){
