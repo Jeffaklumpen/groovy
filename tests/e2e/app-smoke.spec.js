@@ -163,8 +163,17 @@ test('a rendered record card opens the album detail view',async({page})=>{
   await expect(page.locator('#albumOverlay')).toHaveClass(/visible/);
   await expect(page.locator('#detailArtist')).toHaveText('Playwright Artist');
   await expect(page.locator('#detailAlbum')).toHaveText('Playwright Album');
-  await expect(page.locator('#detailTracks')).toContainText('Browser Test Track');
-  await expect(page.locator('#detailTracks')).toContainText('3:21');
+  await expect(page.locator('#detailRating')).toContainText('Your rating');
+  await expect(page.locator('#detailRating .album-rating-star')).toHaveCount(5);
+
+  const track=page.locator('#detailTracks li').first();
+  await expect(track.locator('.track-title')).toHaveText('Browser Test Track');
+  await expect(track.locator('.track-duration')).toHaveText('3:21');
+  await expect(track.locator('button')).toHaveCount(0);
+  await expect(track.locator('input')).toHaveCount(0);
+
+  await page.locator('#albumClose').click();
+  await expect(page.locator('#albumOverlay')).not.toHaveClass(/visible/);
 
   expectNoPageErrors(pageErrors);
 });
