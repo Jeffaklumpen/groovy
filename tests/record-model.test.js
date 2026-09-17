@@ -145,3 +145,44 @@ test('app delegates local shelf ordering to record model',function(){
   assert.ok((app.match(/Record\.compactShelfOrder\(records,/g)||[]).length>=2);
   assert.equal(app.includes('Record.nextShelfOrder(records,normalizedShelfId,record)'),true);
 });
+
+
+test('record model builds collection tuples with tracks, pressing and shelf metadata',function(){
+  const Record=loadModel();
+  const pressing={country:'CA',catalogNumber:'SMAS-11163'};
+  const item={id:9,discogs_style:'Prog Rock',cover_url:'owned.jpg',shelf_id:'favorites',shelf_sort_order:4,albums:{id:42,title:'The Dark Side Of The Moon',release_year:1973,genre:'Rock',cover_url:'album.jpg',apple_collection_url:'https://music.apple.com/test',discogs_master_id:123,artists:{name:'Pink Floyd (2)'},tracks:[
+    {id:2,disc_side:'B',track_number:1,title:'B One',duration:'4:00'},
+    {id:1,disc_side:'A',track_number:1,title:'A One',duration:'3:00'}
+  ]}};
+  const record=Record.fromCollection(item,2,pressing);
+  assert.equal(Record.order(record),3);
+  assert.equal(Record.artist(record),'Pink Floyd');
+  assert.equal(Record.albumId(record),42);
+  assert.equal(Record.entryId(record),9);
+  assert.equal(Record.pressing(record),pressing);
+  assert.equal(Record.shelfId(record),'favorites');
+  assert.equal(Record.shelfSortOrder(record),4);
+  assert.equal(Record.sides(record).A[0].trackNumber,1);
+  assert.equal(Record.sides(record).A[0].duration,'3:00');
+});
+
+test('record model applies album rating metadata through named tuple fields',function(){
+  const Record=loadModel();
+  const record=Record.fromCollection({id:9,albums:{id:42,title:'Album',artists:{name:'Artist'},tracks:[]}},0,{});
+  assert.equal(Record.applyRatingMeta(record,{42:{ownRating:5,communityAverage:4.4,communityCount:12}}),record);
+  assert.equal(Record.ownRating(record),5);
+  assert.equal(Record.communityRating(record),4.4);
+  assert.equal(Record.communityCount(record),12);
+  Record.applyRatingMeta(record,{});
+  assert.equal(Record.ownRating(record),0);
+  assert.equal(Record.communityRating(record),0);
+  assert.equal(Record.communityCount(record),0);
+});
+
+test('app delegates owned collection tuple construction and rating mutation to record model',function(){
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  assert.equal(app.includes('function applyAlbumRatingMeta('),false);
+  assert.equal(app.includes('window.applyAlbumRatingMeta=Record.applyRatingMeta;'),true);
+  assert.equal(app.includes('Record.fromCollection(item,index,copyDetailsFromRow(item))'),true);
+  assert.equal(app.includes('Record.applyRatingMeta('),true);
+});

@@ -58,6 +58,58 @@ function fromWishlist(item,index){
   ];
 }
 
+function fromCollection(item,index,pressingDetails){
+  item=item||{};
+  var album=item.albums||{};
+  var sides=emptySides();
+  if(Array.isArray(album.tracks)){
+    album.tracks.sort(function(a,b){
+      var sideCompare=String(a.disc_side||'').localeCompare(String(b.disc_side||''));
+      return sideCompare||((a.track_number||0)-(b.track_number||0))||((a.id||0)-(b.id||0));
+    }).forEach(function(track){
+      var side=track.disc_side;
+      if(!sides[side])return;
+      sides[side].push({
+        id:track.id,
+        title:track.title||'Okänd låt',
+        trackNumber:track.track_number==null?null:track.track_number,
+        duration:track.duration||''
+      });
+    });
+  }
+  return [
+    (index||0)+1,
+    album.artists&&album.artists.name?album.artists.name.replace(/\s*\(\d+\)$/,''):'Okänd artist',
+    album.title||'Okänd titel',
+    album.release_year||'',
+    item.discogs_style||album.genre||'',
+    0,
+    item.cover_url||album.cover_url||'',
+    sides,
+    album.id,
+    item.id,
+    album.discogs_master_id||'',
+    pressingDetails||{},
+    album.apple_collection_url||'',
+    item.shelf_id||'',
+    item.shelf_sort_order==null?null:item.shelf_sort_order,
+    0,
+    0
+  ];
+}
+
+function applyRatingMeta(record,ratingMap){
+  if(!record)return record;
+  var albumId=value(record,'albumId');
+  var meta=ratingMap&&ratingMap[albumId]?ratingMap[albumId]:{};
+  return setRatings(
+    record,
+    meta&&meta.ownRating?meta.ownRating:0,
+    meta&&meta.communityAverage?meta.communityAverage:0,
+    meta&&meta.communityCount?meta.communityCount:0
+  );
+}
+
 function trackDurationCacheKey(record){
   var album=value(record,'albumId');
   if(!album)return '';
@@ -127,7 +179,7 @@ function nextShelfOrder(records,shelfId,excludedRecord){
   return highest+1;
 }
 
-var api={INDEX:INDEX,value:value,setRatings:setRatings,emptySides:emptySides,fromWishlist:fromWishlist,trackDurationCacheKey:trackDurationCacheKey,applyTrackDurations:applyTrackDurations,hasMissingTrackDurations:hasMissingTrackDurations,compactShelfOrder:compactShelfOrder,nextShelfOrder:nextShelfOrder};
+var api={INDEX:INDEX,value:value,setRatings:setRatings,emptySides:emptySides,fromWishlist:fromWishlist,fromCollection:fromCollection,applyRatingMeta:applyRatingMeta,trackDurationCacheKey:trackDurationCacheKey,applyTrackDurations:applyTrackDurations,hasMissingTrackDurations:hasMissingTrackDurations,compactShelfOrder:compactShelfOrder,nextShelfOrder:nextShelfOrder};
 Object.keys(INDEX).forEach(function(name){
   api[name]=function(record){return value(record,name);};
 });

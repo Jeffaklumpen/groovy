@@ -999,17 +999,8 @@ async function loadAlbumRatingData(albumIds,ownUserId){
   return map;
 }
 
-function applyAlbumRatingMeta(record,ratingMap){
-  if(!record)return record;
-  var meta=ratingMap&&ratingMap[record[8]]?ratingMap[record[8]]:{};
-  record[5]=meta&&meta.ownRating?meta.ownRating:0;
-  record[15]=meta&&meta.communityAverage?meta.communityAverage:0;
-  record[16]=meta&&meta.communityCount?meta.communityCount:0;
-  return record;
-}
-
 window.loadAlbumRatingData=loadAlbumRatingData;
-window.applyAlbumRatingMeta=applyAlbumRatingMeta;
+window.applyAlbumRatingMeta=Record.applyRatingMeta;
 
 function renderDetailRatingPanels(index){
   var record=records[index];
@@ -1162,58 +1153,12 @@ window.loadCollection=async function(){
   if(loadVersion!==window.collectionLoadVersion)return;
 
   records=collectionData
-    .filter(function(item){
-      return item.albums;
-    })
+    .filter(function(item){return item.albums;})
     .map(function(item,index){
-      var album=item.albums;
-      var artist=
-        album.artists&&album.artists.name
-          ?album.artists.name.replace(/\s*\(\d+\)$/,'')
-          :'Okänd artist';
-
-      var sides=window.emptyRecordSides();
-
-      if(Array.isArray(album.tracks)){
-        album.tracks
-          .sort(function(a,b){
-            var sideCompare=String(a.disc_side||'').localeCompare(String(b.disc_side||''));
-            return sideCompare||((a.track_number||0)-(b.track_number||0))||((a.id||0)-(b.id||0));
-          })
-          .forEach(function(track){
-            var side=track.disc_side;
-
-            if(!sides[side])return;
-
-            sides[side].push({
-              id:track.id,
-              title:track.title||'Okänd låt',
-              trackNumber:track.track_number==null?null:track.track_number,
-              duration:track.duration||''
-            });
-          });
-      }
-
-        return applyAlbumRatingMeta([
-          index+1,
-          artist,
-          album.title||'Okänd titel',
-          album.release_year||'',
-          item.discogs_style||album.genre||'',
-          0,
-          item.cover_url||album.cover_url||'',
-          sides,
-          album.id,
-          item.id,
-          album.discogs_master_id||'',
-          copyDetailsFromRow(item),
-          album.apple_collection_url||'',
-          item.shelf_id||'',
-          item.shelf_sort_order==null?null:item.shelf_sort_order,
-          0,
-          0
-        ],ratingMeta);
-
+      return Record.applyRatingMeta(
+        Record.fromCollection(item,index,copyDetailsFromRow(item)),
+        ratingMeta
+      );
     });
 
   document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';

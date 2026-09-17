@@ -92,7 +92,7 @@ test('viewed shelf rating helpers are available outside the collection module',f
   const path=require('node:path');
   const app=fs.readFileSync(path.resolve(__dirname,'..','js','app.js'),'utf8');
   assert.match(app,/window\.loadAlbumRatingData=loadAlbumRatingData/);
-  assert.match(app,/window\.applyAlbumRatingMeta=applyAlbumRatingMeta/);
+  assert.match(app,/window\.applyAlbumRatingMeta=Record\.applyRatingMeta/);
 });
 
 test('notification realtime channel is subscribed before the first awaited reload',function(){
