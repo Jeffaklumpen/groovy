@@ -547,6 +547,7 @@ var ShelfView=window.GroovyShelfView;
 var ShelfController=window.GroovyShelfController;
 var LibraryCore=window.GroovyLibraryCore;
 var LibraryActionsController=window.GroovyLibraryActionsController;
+var LibraryRenderController=window.GroovyLibraryRenderController;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
 if(!WikipediaAboutController)throw new Error('GroovyWikipediaAboutController must load before app.js');
@@ -563,6 +564,7 @@ if(!ShelfView)throw new Error('GroovyShelfView must load before app.js');
 if(!ShelfController)throw new Error('GroovyShelfController must load before app.js');
 if(!LibraryCore)throw new Error('GroovyLibraryCore must load before app.js');
 if(!LibraryActionsController)throw new Error('GroovyLibraryActionsController must load before app.js');
+if(!LibraryRenderController)throw new Error('GroovyLibraryRenderController must load before app.js');
 
 window.records = [];
 window.viewedUserId=null;
@@ -885,8 +887,6 @@ var selectedRating='all';
 var suppressAlbumClick=false;
 var libraryPage=1;
 var RECORDS_PER_PAGE=52;
-var libraryPaginationTop=document.getElementById('libraryPaginationTop');
-var libraryPaginationBottom=document.getElementById('libraryPaginationBottom');
 var librarySearchInput=document.getElementById('librarySearchInput');
 var librarySortButton=document.getElementById('librarySortButton');
 var librarySortMenu=document.getElementById('librarySortMenu');
@@ -1337,122 +1337,74 @@ function appleMusicAlbumLink(record){
   );
 }
 
-function recordDisplayNumber(record){
-  if(
-    window.libraryView!=='wishlist'&&
-    activeShelfId!=='all'&&
-    String(record&&Record.shelfId(record)||'')===String(activeShelfId)
-  ){
-    var shelfNumber=parseInt(record&&Record.shelfSortOrder(record),10);
-    if(!isNaN(shelfNumber)&&shelfNumber>0)return shelfNumber;
-  }
+var libraryRenderController=LibraryRenderController.create({
+  window:window,
+  document:document,
+  libraryCore:LibraryCore,
+  recordModel:Record,
+  pressingView:PressingView,
+  ratingRenderer:ratingController,
+  recordsPerPage:RECORDS_PER_PAGE,
+  elements:{
+    collection:collection,
+    paginationTop:document.getElementById('libraryPaginationTop'),
+    paginationBottom:document.getElementById('libraryPaginationBottom'),
+    searchInput:librarySearchInput,
+    mobileAddRecordButton:mobileAddRecordButton,
+    emptyCollection:document.getElementById('emptyCollection'),
+    loginToViewCollection:loginToViewCollection,
+    profileNotFound:document.getElementById('profileNotFound'),
+    emptyViewedCollection:emptyViewedCollection,
+    emptyWishlist:document.getElementById('emptyWishlist'),
+    emptyWishlistTitle:document.getElementById('emptyWishlistTitle'),
+    emptyWishlistText:document.getElementById('emptyWishlistText'),
+    emptyWishlistAddButton:document.getElementById('emptyWishlistAddButton'),
+    libraryTabs:document.getElementById('libraryTabs'),
+    libraryTitle:document.getElementById('libraryTitle'),
+    collectionTabButton:document.getElementById('collectionTabButton'),
+    wishlistTabButton:document.getElementById('wishlistTabButton'),
+    addAlbumButton:document.getElementById('addAlbumButton'),
+    filterButton:document.getElementById('filterButton'),
+    collectionCount:document.getElementById('collectionCount')
+  },
+  getState:function(){
+    return {
+      records:records,
+      viewedUserId:viewedUserId,
+      libraryView:window.libraryView,
+      loginRequiredForViewedCollection:window.loginRequiredForViewedCollection,
+      profileNotFound:window.profileNotFound,
+      hasAuthenticatedUser:window.hasAuthenticatedUser,
+      viewedUsername:window.groovyViewedStatisticsProfile&&window.groovyViewedStatisticsProfile.username,
+      activeShelfId:activeShelfId,
+      selectedRating:selectedRating,
+      searchQuery:librarySearchQuery,
+      sort:librarySort,
+      page:libraryPage
+    };
+  },
+  setPage:function(page){libraryPage=page;},
+  setSearchQuery:function(query){librarySearchQuery=query;},
+  shelfById:shelfById,
+  shelfIconSvg:shelfIconSvg,
+  escapeHtml:esc,
+  spotifyAlbumLink:spotifyAlbumLink,
+  appleMusicAlbumLink:appleMusicAlbumLink,
+  renderShelfStrip:function(){renderShelfStrip();},
+  updateLibraryTabLabels:updateLibraryTabLabels,
+  shouldShowLoggedOutLanding:shouldShowLoggedOutLanding,
+  renderLoggedOutLanding:renderLoggedOutLanding,
+  restoreEmptyCollectionMarkup:restoreEmptyCollectionMarkup,
+  attachWishlistRemoveControls:attachWishlistRemoveControls,
+  attachRecordActionMenus:attachRecordActionMenus,
+  attachAlbumClicks:attachAlbumClicks,
+  enableGridSorting:enableGridSorting
+});
 
-  var allRecordsNumber=parseInt(record&&Record.order(record),10);
-  return !isNaN(allRecordsNumber)&&allRecordsNumber>0?allRecordsNumber:'';
+function buildGrid(){
+  return libraryRenderController.render();
 }
-
-function recordArrayIndex(record){
-  return records.indexOf(record);
-}
-
-function recordHTML(record, className){
-  var smallSrc=Record.coverUrl(record);
-  var isWishlist=window.libraryView==='wishlist';
-  var recordIndex=recordArrayIndex(record);
-  var displayNumber=recordDisplayNumber(record);
-  var copy=Record.pressing(record)||{};
-  var condition=!isWishlist?PressingView.conditionMeta(copy.mediaCondition):null;
-  var showPressingPrompt=!isWishlist&&viewedUserId===null&&!condition&&!PressingView.hasCopyDetails(copy);
-  var cardShelf=!isWishlist?shelfById(Record.shelfId(record)):null;
-  var cardShelfName=cardShelf&&cardShelf.name?cardShelf.name:'';
-  var cardShelfIcon=cardShelf?shelfIconSvg(cardShelf.icon):'';
-  var cardShelfStatus=cardShelf
-    ?'<span class="record-shelf-status" title="'+esc(cardShelfName)+'">'+
-       (cardShelfIcon?'<span class="record-shelf-status-icon" aria-hidden="true">'+cardShelfIcon+'</span>':'')+
-       '<strong>'+esc(cardShelfName)+'</strong>'+
-     '</span>'
-    :'';
-  var removeButton=viewedUserId===null
-    ?(isWishlist
-      ?'<button class="wishlist-remove-button" type="button" aria-label="Remove from wishlist">×</button>'
-      :'<button class="record-menu-button" type="button" aria-label="Record menu" aria-expanded="false">•••</button>'+
-       '<div class="record-action-menu">'+
-         '<button class="record-action-item" type="button" data-action="view">View Record</button>'+
-         '<button class="record-action-item" type="button" data-action="shelf">'+(Record.shelfId(record)?'Move to Shelf':'Add to Shelf')+'</button>'+
-         (Record.shelfId(record)?'<button class="record-action-item" type="button" data-action="unshelf">Remove from Shelf</button>':'')+
-         '<button class="record-action-item danger" type="button" data-action="delete">Delete Record</button>'+
-       '</div>')
-    :'';
-
-  var html='<article class="record '+(isWishlist?'wishlist-record ':'')+(className||'')+'" draggable="false" data-index="'+recordIndex+'">'+
-    '<div class="record-card-topbar"><span class="number">'+displayNumber+'</span>'+cardShelfStatus+removeButton+'</div>'+
-    '<div class="cover-wrapper">'+
-      '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+esc(smallSrc)+'" alt="'+esc(Record.artist(record)+' - '+Record.title(record))+'">'+
-    '</div>'+
-    '<div class="info">'+
-      '<div class="record-heading-row"><div class="album">'+esc(Record.title(record))+'</div></div>'+
-      '<div class="artist">'+esc(Record.artist(record))+'</div>'+
-      '<div class="record-meta-row"><span class="year">'+esc(Record.year(record))+'</span>'+
-      (condition?'<span class="record-condition-badge condition-'+condition.className+'" title="Record condition: '+esc(condition.label)+'">'+esc(copy.mediaCondition)+'</span>':'')+
-      (showPressingPrompt?'<span class="pressing-prompt-badge" title="Add pressing details">Add pressing</span>':'')+
-      '<span class="cover-rating">';
-
-  if(isWishlist){
-    html+='<span class="wishlist-cover-label"><span class="wishlist-icon" aria-hidden="true"></span>Wishlisted</span>';
-  }else{
-    html+='<span class="cover-rating-inner">'+ratingController.renderStaticStarMeter(Record.communityRating(record)||0,'is-compact')+'<span class="cover-rating-number">'+esc(ratingController.formatCommunityRating(Record.communityRating(record)||0))+'</span></span>';
-  }
-
-  html+='</span></div></div>'+
-    (isWishlist&&viewedUserId===null
-      ?'<button class="move-to-collection-button" type="button"><span class="record-icon" aria-hidden="true"></span>Add to collection</button>'
-      :'')+
-    '<div class="record-card-footer">'+
-    
-        '<a class="streaming-link streaming-service apple-service" '+
-            'href="'+esc(appleMusicAlbumLink(record))+'" '+
-            'target="_blank" rel="noopener noreferrer" '+
-            'aria-label="Listen to '+esc(Record.title(record))+' by '+esc(Record.artist(record))+' on Apple Music">'+
-            '<img class="apple-music-small-badge" '+
-                'src="/assets/brands/apple-music-badge-small.svg" '+
-                'alt="Listen on Apple Music">'+
-        '</a>'+
-    
-        '<a class="streaming-link streaming-service spotify-service" '+
-            'href="'+esc(spotifyAlbumLink(record))+'" '+
-            'target="_blank" rel="noopener noreferrer" '+
-            'aria-label="Listen to '+esc(Record.title(record))+' by '+esc(Record.artist(record))+' on Spotify">'+
-            '<img class="spotify-service-logo" '+
-                'src="/assets/brands/spotify-full-logo-green.svg" '+
-                'alt="Spotify">'+
-        '</a>'+
-    
-    '</div>'+
-  '</article>';
-
-  return html;
-}
-
-function loadVisibleImages(){
-  var images=document.querySelectorAll('.cover');
-  var height=window.innerHeight||600;
-  var width=window.innerWidth||1024;
-  var verticalMargin=450;
-  var horizontalMargin=500;
-
-  for(var i=0;i<images.length;i++){
-    var img=images[i];
-    var dataSrc=img.getAttribute('data-src');
-    if(!dataSrc)continue;
-
-    var rect=img.getBoundingClientRect();
-    if(rect.top<height+verticalMargin&&rect.bottom>-verticalMargin&&
-       rect.left<width+horizontalMargin&&rect.right>-horizontalMargin){
-      img.src=dataSrc;
-      img.removeAttribute('data-src');
-    }
-  }
-}
+window.buildGrid=buildGrid;
 
 function openAlbum(index){
   var record=records[index];
@@ -2389,158 +2341,6 @@ async function flushGridOrderSaveQueue(){
   if(pendingGridOrderSaves.size)flushGridOrderSaveQueue();
 }
 
-function paginationItems(current,total){
-  if(total<=7)return Array.from({length:total},function(_,index){return index+1;});
-  var values=[1,total,current-1,current,current+1]
-    .filter(function(page){return page>=1&&page<=total;})
-    .sort(function(a,b){return a-b;});
-  var unique=values.filter(function(page,index){return !index||page!==values[index-1];});
-  var items=[];
-  unique.forEach(function(page,index){
-    if(index&&page-unique[index-1]>1)items.push('…');
-    items.push(page);
-  });
-  return items;
-}
-
-function renderLibraryPagination(totalItems){
-  var totalPages=Math.max(1,Math.ceil(totalItems/RECORDS_PER_PAGE));
-  libraryPage=Math.max(1,Math.min(libraryPage,totalPages));
-  var targets=[libraryPaginationTop,libraryPaginationBottom];
-
-  targets.forEach(function(target){
-    if(totalPages<=1){target.innerHTML='';target.hidden=true;return;}
-    target.hidden=false;
-    target.innerHTML='<button type="button" data-page="'+(libraryPage-1)+'" aria-label="Previous page"'+(libraryPage===1?' disabled':'')+'>‹</button>'+
-      paginationItems(libraryPage,totalPages).map(function(item){
-        if(item==='…')return '<span class="pagination-ellipsis" aria-hidden="true">…</span>';
-        return '<button type="button" data-page="'+item+'"'+(item===libraryPage?' class="active" aria-current="page"':'')+'>'+item+'</button>';
-      }).join('')+
-      '<button type="button" data-page="'+(libraryPage+1)+'" aria-label="Next page"'+(libraryPage===totalPages?' disabled':'')+'>›</button>';
-
-    target.querySelectorAll('button[data-page]').forEach(function(button){
-      button.addEventListener('click',function(){
-        var page=parseInt(button.getAttribute('data-page'),10);
-        if(isNaN(page)||page<1||page>totalPages||page===libraryPage)return;
-        libraryPage=page;
-        buildGrid();
-        window.scrollTo({top:0,behavior:'smooth'});
-      });
-    });
-  });
-}
-    
-window.buildGrid=function(){
-    
-  collection.className='collection grid';
-
-  var emptyCollection=document.getElementById('emptyCollection');
-  var profileNotFound=document.getElementById('profileNotFound');
-  var hasBlockingState=window.loginRequiredForViewedCollection||window.profileNotFound;
-  var isViewingProfile=viewedUserId!==null;
-  var isOwnCollection=!isViewingProfile&&!hasBlockingState;
-  var isWishlist=window.libraryView==='wishlist';
-  var canShowAddAlbumCard=isOwnCollection&&window.hasAuthenticatedUser&&records.length>0;
-  var emptyWishlist=document.getElementById('emptyWishlist');
-  var libraryTabs=document.getElementById('libraryTabs');
-  var libraryTitle=document.getElementById('libraryTitle');
-  var viewedUsername=window.groovyViewedStatisticsProfile&&window.groovyViewedStatisticsProfile.username;
-  var activeShelf=(!isWishlist&&activeShelfId!=='all')?shelfById(activeShelfId):null;
-  var showLoggedOutLanding=shouldShowLoggedOutLanding();
-
-  renderShelfStrip();
-
-  document.body.classList.toggle('logged-out-home',showLoggedOutLanding);
-  updateLibraryTabLabels();
-
-  libraryTitle.textContent=isWishlist
-    ?(isViewingProfile?((viewedUsername||'User')+"'s Wishlist"):'My Wishlist')
-    :(activeShelf?activeShelf.name:'All Records');
-  librarySearchInput.placeholder=showLoggedOutLanding?'Search for an album, artist, or label...':(isWishlist?'Search this wishlist...':'Search this shelf...');
-  librarySearchInput.readOnly=showLoggedOutLanding;
-  mobileAddRecordButton.style.display=isViewingProfile?'none':'';
-
-  if(showLoggedOutLanding){
-    librarySearchQuery='';
-    librarySearchInput.value='';
-    renderLoggedOutLanding();
-  }else{
-    restoreEmptyCollectionMarkup();
-  }
-
-  emptyCollection.style.display=((isOwnCollection&&!isWishlist&&records.length===0)||showLoggedOutLanding)?'flex':'none';
-  loginToViewCollection.style.display=window.loginRequiredForViewedCollection?'flex':'none';
-  profileNotFound.style.display=window.profileNotFound?'flex':'none';
-  emptyViewedCollection.style.display=(isViewingProfile&&!isWishlist&&records.length===0&&!hasBlockingState)?'flex':'none';
-  emptyWishlist.style.display=(isWishlist&&records.length===0&&!hasBlockingState)?'flex':'none';
-  document.getElementById('emptyWishlistTitle').textContent=isViewingProfile?'Wishlist is empty':'Your wishlist is empty';
-  document.getElementById('emptyWishlistText').textContent=isViewingProfile
-    ?"This user hasn't added any records yet."
-    :'Save records you want to add next.';
-  document.getElementById('emptyWishlistAddButton').style.display=isViewingProfile?'none':'';
-  libraryTabs.style.display=(window.hasAuthenticatedUser||showLoggedOutLanding)?'flex':'none';
-  document.getElementById('collectionTabButton').classList.toggle('active',showLoggedOutLanding||(isOwnCollection&&!isWishlist));
-  document.getElementById('wishlistTabButton').classList.toggle('active',window.hasAuthenticatedUser&&isOwnCollection&&isWishlist);
-  document.getElementById('collectionTabButton').setAttribute('aria-current',(showLoggedOutLanding||(isOwnCollection&&!isWishlist))?'page':'false');
-  document.getElementById('wishlistTabButton').setAttribute('aria-current',(window.hasAuthenticatedUser&&isOwnCollection&&isWishlist)?'page':'false');
-  document.getElementById('addAlbumButton').style.display=isViewingProfile?'none':'';
-  document.getElementById('filterButton').parentElement.style.display=(isWishlist||showLoggedOutLanding)?'none':'';
-
-  var shelfRecords=records.filter(function(record){
-    return isWishlist||activeShelfId==='all'||String(record[13]||'')===String(activeShelfId);
-  });
-
-  if(!isWishlist){
-    document.getElementById('collectionCount').textContent=activeShelf
-      ?shelfRecords.length+' RECORDS IN '+activeShelf.name.toLocaleUpperCase()
-      :records.length+' RECORDS IN COLLECTION';
-  }
-
-  var visibleRecords=LibraryCore.filterRecords(shelfRecords,{
-    query:librarySearchQuery,
-    selectedRating:selectedRating,
-    isWishlist:isWishlist
-  });
-  visibleRecords=LibraryCore.sortRecords(visibleRecords,{
-    sort:librarySort,
-    isWishlist:isWishlist,
-    activeShelfId:activeShelfId
-  });
-  renderLibraryPagination(visibleRecords.length);
-  var totalPages=Math.max(1,Math.ceil(visibleRecords.length/RECORDS_PER_PAGE));
-  var pageStart=(libraryPage-1)*RECORDS_PER_PAGE;
-  var pageRecords=visibleRecords.slice(pageStart,pageStart+RECORDS_PER_PAGE);
-  var html=pageRecords.map(function(record){return recordHTML(record,'');}).join('');
-
-  if(!pageRecords.length&&records.length){
-    html='<div class="library-no-results"><strong>'+(activeShelf&&shelfRecords.length===0?'This shelf is empty':'No records found')+'</strong><span>'+(activeShelf&&shelfRecords.length===0?'Use the record menu to add records to this shelf.':'Try another search or filter.')+'</span></div>';
-  }
-
-  if(canShowAddAlbumCard&&activeShelfId==='all'&&libraryPage===totalPages){
-    html+='<button class="add-album-card" type="button" aria-label="Add record">'+
-      '<span class="add-album-card-icon" aria-hidden="true">+</span>'+
-      '<span class="add-album-card-title">Add Record</span>'+
-      '<span class="add-album-card-text">'+(isWishlist?'The wishlist must grow':'The collection must grow')+'</span>'+
-    '</button>';
-  }
-
-  collection.innerHTML=html;
-
-  var addAlbumCard=collection.querySelector('.add-album-card');
-
-  if(addAlbumCard){
-    addAlbumCard.addEventListener('click',function(){
-      document.getElementById('addAlbumButton').click();
-    });
-  }
-
-  attachWishlistRemoveControls();
-  attachRecordActionMenus();
-  attachAlbumClicks();
-  enableGridSorting();
-  loadVisibleImages();
-}
-
 albumClose.onclick=function(){
   closeAlbum();
 };
@@ -2657,15 +2457,7 @@ document.addEventListener('click',function(){
   librarySortButton.setAttribute('aria-expanded','false');
 });
 
-var imageLoadScheduled=false;
-function scheduleImageLoad(){
-  if(imageLoadScheduled)return;
-  imageLoadScheduled=true;
-  var run=window.requestAnimationFrame||function(fn){return setTimeout(fn,50);};
-  run(function(){imageLoadScheduled=false;loadVisibleImages();});
-}
-
-window.onscroll=scheduleImageLoad;
+window.onscroll=libraryRenderController.scheduleImageLoad;
 
 })();
 

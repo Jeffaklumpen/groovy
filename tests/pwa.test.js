@@ -49,7 +49,8 @@ test('library controls and streaming links remain separate card actions',functio
   assert.match(html,/id="librarySortMenu"/);
   assert.match(html,/id="detailSpotifyLink"/);
   assert.match(app,/target\.closest\('\.streaming-link'\)/);
-  assert.match(app,/streaming-service spotify-service/);
+  const libraryRender=fs.readFileSync(path.join(root,'js','library-render-controller.js'),'utf8');
+  assert.match(libraryRender,/streaming-service spotify-service/);
   assert.match(statistics,/stats-release-service stats-release-spotify/);
 });
 
