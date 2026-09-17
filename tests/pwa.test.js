@@ -89,12 +89,14 @@ test('routing state stays pure and detail enhancements load directly',function()
 
 test('signup uses the auth trigger and collection membership checks are direct',function(){
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const detailSocial=fs.readFileSync(path.join(root,'js','detail-social-controller.js'),'utf8');
 
   assert.match(app,/handle_new_user creates the profile from signup metadata/);
   assert.doesNotMatch(app,/\.from\('profiles'\)[\s\S]{0,80}\.insert\(\{[\s\S]{0,80}id:data\.user\.id/);
-  assert.match(app,/ownQuery=supabaseClient\.from\('collections'\)[\s\S]{0,400}\.limit\(1\);[\s\S]{0,160}:ownQuery\.eq\('album_id',albumId\);/);
+  assert.match(detailSocial,/ownQuery=api\.from\('collections'\)[\s\S]{0,400}\.limit\(1\);[\s\S]{0,160}:ownQuery\.eq\('album_id',albumId\);/);
   assert.match(app,/\.eq\('album_id',record\[8\]\)\s*\.limit\(1\)/);
   assert.doesNotMatch(app,/\.limit\(500\)/);
+  assert.doesNotMatch(detailSocial,/\.limit\(500\)/);
 });
 
 test('document metadata is accessible and obsolete rating scripts are gone',function(){
