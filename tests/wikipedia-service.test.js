@@ -27,8 +27,8 @@ test('Wikipedia service owns album identity and candidate helpers',function(){
 test('Wikipedia service loads before app and extracted functions leave app.js',function(){
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
-  const recordPosition=html.indexOf('/js/record-model.js?v=1');
-  const wikipediaPosition=html.indexOf('/js/wikipedia-service.js?v=1');
+  const recordPosition=html.indexOf('/js/record-model.js?v=');
+  const wikipediaPosition=html.indexOf('/js/wikipedia-service.js?v=');
   const appPosition=html.indexOf('/js/app.js?v=');
   assert.ok(recordPosition>=0&&wikipediaPosition>recordPosition&&appPosition>wikipediaPosition);
   assert.equal(app.includes('var Wikipedia=window.GroovyWikipedia'),true);

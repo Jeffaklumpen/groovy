@@ -29,7 +29,7 @@ test('record model loads before consumers and separated modules use named access
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const detail=fs.readFileSync(path.join(root,'js','detail-enhancements-v2.js'),'utf8');
   const layout=fs.readFileSync(path.join(root,'js','album-rating-layout-v4.js'),'utf8');
-  const modelPosition=html.indexOf('/js/record-model.js?v=1');
+  const modelPosition=html.indexOf('/js/record-model.js?v=');
   const appPosition=html.indexOf('/js/app.js?v=');
   assert.ok(modelPosition>=0&&appPosition>modelPosition);
   assert.match(detail,/var Record=window.GroovyRecord/);
@@ -52,4 +52,53 @@ test('app record-card and Wikipedia identity rendering use named record accessor
   const wikiEnd=app.indexOf('async function fetchWikipediaAlbumCandidates',wikiStart);
   const wiki=app.slice(wikiStart,wikiEnd);
   ['record&&record[1]','record&&record[2]','record&&record[3]'].forEach(function(token){assert.equal(wiki.includes(token),false,token+' should not remain in Wikipedia identity');});
+});
+
+
+test('record model builds wishlist tuples and empty sides consistently',function(){
+  const Record=loadModel();
+  const item={id:77,discogs_style:'Prog Rock',cover_url:'wish.jpg',albums:{id:42,title:'The Wall',release_year:1979,genre:'Rock',cover_url:'album.jpg',apple_collection_url:'https://music.apple.com/test',discogs_master_id:123,artists:{name:'Pink Floyd (2)'},tracks:[
+    {id:2,disc_side:'B',track_number:1,title:'B One'},
+    {id:1,disc_side:'A',track_number:1,title:'A One'}
+  ]}};
+  const record=Record.fromWishlist(item,3);
+  assert.equal(record[0],4);
+  assert.equal(Record.artist(record),'Pink Floyd');
+  assert.equal(Record.title(record),'The Wall');
+  assert.equal(Record.albumId(record),42);
+  assert.equal(Record.discogsMasterId(record),123);
+  assert.deepEqual(Array.from(Record.sides(record).A,function(track){return track.title;}),['A One']);
+  assert.deepEqual(Array.from(Record.sides(record).B,function(track){return track.title;}),['B One']);
+  assert.deepEqual(Object.keys(Record.emptySides()),['A','B','C','D','E','F','G','H']);
+});
+
+test('record model owns track-duration identity and mutation rules',function(){
+  const Record=loadModel();
+  const record=[1,'Artist','Album',1973,'Rock',0,'',{A:[{trackNumber:1,title:'One',duration:''},{trackNumber:2,title:'Two',duration:'2:00'}],B:[]},42,9,123];
+  assert.equal(Record.trackDurationCacheKey(record),'groovy-track-durations:123');
+  assert.equal(Record.hasMissingTrackDurations(record),true);
+  assert.equal(Record.applyTrackDurations(record,[
+    {disc_side:'A',track_number:1,duration:'3:15'},
+    {disc_side:'A',track_number:2,duration:'4:20'}
+  ],false),true);
+  assert.equal(Record.sides(record).A[0].duration,'3:15');
+  assert.equal(Record.sides(record).A[1].duration,'2:00');
+  assert.equal(Record.hasMissingTrackDurations(record),false);
+  assert.equal(Record.applyTrackDurations(record,[{disc_side:'A',track_number:2,duration:'4:20'}],true),true);
+  assert.equal(Record.sides(record).A[1].duration,'4:20');
+});
+
+test('app delegates wishlist and track-duration tuple logic to record model',function(){
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const start=app.indexOf('window.emptyRecordSides=Record.emptySides;');
+  const end=app.indexOf('async function loadAlbumRatingData',start);
+  const section=app.slice(start,end);
+  assert.ok(start>=0&&end>start);
+  assert.equal(section.includes('function wishlistRecord('),false);
+  assert.equal(section.includes('function applyTrackDurationRows('),false);
+  assert.equal(section.includes('record[7]'),false);
+  assert.equal(section.includes('record[8]'),false);
+  assert.equal(section.includes('record[10]'),false);
+  assert.equal(section.includes('Record.applyTrackDurations'),true);
+  assert.equal(section.includes('Record.hasMissingTrackDurations'),true);
 });

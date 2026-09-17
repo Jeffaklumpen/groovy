@@ -55,8 +55,9 @@ test('library controls and streaming links remain separate card actions',functio
 
 test('record rendering supports four LP track sides',function(){
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const recordModel=fs.readFileSync(path.join(root,'js','record-model.js'),'utf8');
   const migration=fs.readFileSync(path.join(root,'supabase','migrations','20260913010000_add_four_lp_matrices.sql'),'utf8');
-  assert.match(app,/return \{A:\[\],B:\[\],C:\[\],D:\[\],E:\[\],F:\[\],G:\[\],H:\[\]\}/);
+  assert.match(recordModel,/return \{A:\[\],B:\[\],C:\[\],D:\[\],E:\[\],F:\[\],G:\[\],H:\[\]\}/);
   assert.match(app,/var sideNames=\['A','B','C','D','E','F','G','H'\]/);
   assert.match(app,/\^\[A-H\]/);
   assert.match(app,/matrixE:item\.matrix_runout_e/);
