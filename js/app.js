@@ -534,6 +534,7 @@ var Record=window.GroovyRecord;
 var Wikipedia=window.GroovyWikipedia;
 var WikipediaAboutController=window.GroovyWikipediaAboutController;
 var DetailTracklistController=window.GroovyDetailTracklistController;
+var DetailLayoutController=window.GroovyDetailLayoutController;
 var Streaming=window.GroovyStreaming;
 var NotificationCore=window.GroovyNotificationCore;
 var PressingCore=window.GroovyPressingCore;
@@ -548,6 +549,7 @@ if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
 if(!WikipediaAboutController)throw new Error('GroovyWikipediaAboutController must load before app.js');
 if(!DetailTracklistController)throw new Error('GroovyDetailTracklistController must load before app.js');
+if(!DetailLayoutController)throw new Error('GroovyDetailLayoutController must load before app.js');
 if(!Streaming)throw new Error('GroovyStreaming must load before app.js');
 if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
 if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
@@ -775,10 +777,6 @@ var collection=document.getElementById('collection');
 var filterButton=document.getElementById('filterButton');
 var filterMenu=document.getElementById('filterMenu');
 var albumOverlay=document.getElementById('albumOverlay');
-var albumDetailElement=albumOverlay?albumOverlay.querySelector('.album-detail'):null;
-var albumTracksPanel=albumOverlay?albumOverlay.querySelector('.album-tracks'):null;
-var marketplacePanelElement=albumOverlay?albumOverlay.querySelector('.marketplace-panel'):null;
-var albumDesktopRightColumn=null;
 var albumClose=document.getElementById('albumClose');
 var detailCover=document.getElementById('detailCover');
 var detailNumber=document.getElementById('detailNumber');
@@ -809,6 +807,18 @@ window.loadAlbumRatingData=ratingController.loadData;
 window.applyAlbumRatingMeta=Record.applyRatingMeta;
 var detailTracks=document.getElementById('detailTracks');
 var detailAboutAlbum=document.getElementById('detailAboutAlbum');
+var detailInfoCard=document.querySelector('.detail-info-card');
+var detailLayoutController=DetailLayoutController.create({
+  window:window,
+  document:document,
+  elements:{
+    detail:albumOverlay?albumOverlay.querySelector('.album-detail'):null,
+    tracksPanel:albumOverlay?albumOverlay.querySelector('.album-tracks'):null,
+    marketplacePanel:albumOverlay?albumOverlay.querySelector('.marketplace-panel'):null,
+    about:detailAboutAlbum,
+    infoCard:detailInfoCard
+  }
+});
 var wikipediaAboutController=WikipediaAboutController.create({
   service:Wikipedia,
   recordModel:Record,
@@ -828,58 +838,6 @@ var wikipediaAboutController=WikipediaAboutController.create({
   }
 });
 
-function syncAlbumDesktopColumns(){
-  if(!albumDetailElement||!albumTracksPanel||!marketplacePanelElement||!detailAboutAlbum)return;
-  var desktop=window.innerWidth>1120;
-
-  if(desktop){
-    if(!albumDesktopRightColumn){
-      albumDesktopRightColumn=document.createElement('div');
-      albumDesktopRightColumn.className='album-desktop-right';
-    }
-    if(!albumDesktopRightColumn.parentNode)albumDetailElement.appendChild(albumDesktopRightColumn);
-    if(albumTracksPanel.parentNode!==albumDesktopRightColumn)albumDesktopRightColumn.appendChild(albumTracksPanel);
-    if(marketplacePanelElement.parentNode!==albumDesktopRightColumn)albumDesktopRightColumn.appendChild(marketplacePanelElement);
-    return;
-  }
-
-  if(albumDesktopRightColumn&&albumTracksPanel.parentNode===albumDesktopRightColumn){
-    albumDetailElement.insertBefore(albumTracksPanel,detailAboutAlbum);
-  }
-  if(albumDesktopRightColumn&&marketplacePanelElement.parentNode===albumDesktopRightColumn){
-    if(detailAboutAlbum.nextSibling)albumDetailElement.insertBefore(marketplacePanelElement,detailAboutAlbum.nextSibling);
-    else albumDetailElement.appendChild(marketplacePanelElement);
-  }
-  if(albumDesktopRightColumn&&albumDesktopRightColumn.parentNode){
-    albumDesktopRightColumn.parentNode.removeChild(albumDesktopRightColumn);
-  }
-}
-
-syncAlbumDesktopColumns();
-
-function syncDesktopAlbumMiddleHeight(){
-  if(!albumDetailElement)return;
-  var main=albumDetailElement.querySelector('.album-detail-main');
-  var cover=albumDetailElement.querySelector('.album-detail-cover');
-  if(!main||!cover)return;
-
-  if(window.innerWidth<=1120){
-    main.style.height='';
-    main.style.maxHeight='';
-    return;
-  }
-
-  var coverHeight=Math.floor(cover.getBoundingClientRect().height||0);
-  if(coverHeight>0){
-    main.style.height=coverHeight+'px';
-    main.style.maxHeight=coverHeight+'px';
-  }
-}
-
-window.addEventListener('resize',function(){
-  syncAlbumDesktopColumns();
-  window.requestAnimationFrame(syncDesktopAlbumMiddleHeight);
-},{passive:true});
 var traderaButton=document.getElementById('traderaButton');
 var traderaButtonLabel=document.getElementById('traderaButtonLabel');
 var traderaModal=document.getElementById('traderaModal');
@@ -976,7 +934,6 @@ var shelfPickerTitle=document.getElementById('shelfPickerTitle');
 var detailShelfActions=document.getElementById('detailShelfActions');
 var detailShelfStatus=document.getElementById('detailShelfStatus');
 var detailSocialContext=document.getElementById('detailSocialContext');
-var detailInfoCard=document.querySelector('.detail-info-card');
 var detailOpenRecordIndex=-1;
 var detailTracklistController=DetailTracklistController.create({
   api:supabaseClient,
@@ -1015,21 +972,6 @@ function shelfIconSvg(icon){
 }
 
 
-function syncMobileDetailPairHeight(){
-  if(!detailInfoCard)return;
-  var cover=document.querySelector('.album-detail-cover');
-  var isMobile=window.matchMedia&&window.matchMedia('(max-width: 760px)').matches;
-
-  if(!isMobile||!cover){
-    detailInfoCard.style.height='';
-    return;
-  }
-
-  detailInfoCard.style.height='';
-  var height=Math.round(cover.getBoundingClientRect().height||0);
-  if(height>0)detailInfoCard.style.height=height+'px';
-}
-
 function shelfById(id){
   return ShelfCore.findById(shelves,id);
 }
@@ -1037,9 +979,6 @@ function shelfById(id){
 function shelfRecordCount(id){
   return ShelfCore.recordCount(records,id);
 }
-
-window.addEventListener('resize',syncMobileDetailPairHeight,{passive:true});
-if(window.visualViewport)window.visualViewport.addEventListener('resize',syncMobileDetailPairHeight,{passive:true});
 
 var recordMenuBackdrop=document.createElement('div');
 recordMenuBackdrop.className='record-menu-backdrop';
@@ -1701,14 +1640,7 @@ function openAlbum(index){
 
   albumOverlay.className='album-overlay visible';
   document.body.style.overflow='hidden';
-  requestAnimationFrame(function(){
-    syncDesktopAlbumMiddleHeight();
-    syncMobileDetailPairHeight();
-    requestAnimationFrame(function(){
-      syncDesktopAlbumMiddleHeight();
-      syncMobileDetailPairHeight();
-    });
-  });
+  detailLayoutController.syncOpen();
 }
 
 function closeAlbum(){
