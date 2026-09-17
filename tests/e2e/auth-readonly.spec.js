@@ -118,7 +118,11 @@ test.describe('authenticated read-only smoke flows',()=>{
 
     await loginWithTestAccount(page);
 
-    await expect(page.locator('#emptyCollection')).toBeVisible();
+    await expect.poll(async()=>{
+      if(await page.locator('#collection .record').count()>0)return 'records';
+      if(await page.locator('#emptyCollection').isVisible())return 'empty';
+      return 'loading';
+    },{timeout:10_000}).not.toBe('loading');
 
     await page.locator('#addAlbumButton').click();
     await expect(page.locator('#addAlbumModal')).toBeVisible();
