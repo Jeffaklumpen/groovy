@@ -2422,31 +2422,11 @@ function setTraderaButtonState(state,count){
 }
 
 function traderaPrice(listing){
-  var amount=Number(listing.buyNowPrice||listing.nextBid||listing.currentBid||listing.openingBid||0);
-  if(!isFinite(amount)||amount<=0)return '';
-
-  try{
-    return new Intl.NumberFormat('sv-SE',{
-      style:'currency',
-      currency:String(listing.currency||'SEK'),
-      maximumFractionDigits:0
-    }).format(amount);
-  }catch(error){
-    return Math.round(amount)+' kr';
-  }
+  return MarketplaceCore.listingPrice(listing,'sv-SE');
 }
 
 function traderaEndsText(value){
-  var date=new Date(value);
-  if(!value||isNaN(date.getTime()))return '';
-
-  return 'Ends '+date.toLocaleDateString('sv-SE',{
-    day:'numeric',
-    month:'short'
-  })+' · '+date.toLocaleTimeString('sv-SE',{
-    hour:'2-digit',
-    minute:'2-digit'
-  });
+  return MarketplaceCore.listingEndsText(value,'sv-SE');
 }
 
 function renderTraderaListings(){
