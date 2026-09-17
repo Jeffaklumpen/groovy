@@ -1,0 +1,202 @@
+name: Extract user search controller
+
+on:
+  push:
+    branches: [notes]
+    paths:
+      - '.github/workflows/extract-user-search.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out notes
+        uses: actions/checkout@v4
+        with:
+          ref: notes
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Guard verified inputs
+        shell: bash
+        run: |
+          test "$(git hash-object js/app.js)" = "f0068f67411779a658669300bf4cf6bd11ed14a9"
+          test "$(git hash-object index.html)" = "26bbc16053b17275cc991930e60fcd56981fa867"
+          test "$(git hash-object tests/app-bootstrap-order.test.js)" = "60465f05a7c02ec0e9c37c08092e25df0289be28"
+          test -f js/user-search-controller.js
+          test -f tests/user-search-controller.test.js
+
+      - name: Apply guarded user search extraction
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace_once(source,old,new,label):
+              count=source.count(old)
+              if count!=1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {count}')
+              return source.replace(old,new,1)
+
+          app_path=Path('js/app.js')
+          app=app_path.read_text()
+
+          app=replace_once(
+              app,
+              "var SocialController=window.GroovySocialController;\nif(!SocialController)throw new Error('GroovySocialController must load before app.js');\nvar AppleSearchCore=window.GroovyAppleSearchCore;",
+              "var SocialController=window.GroovySocialController;\nif(!SocialController)throw new Error('GroovySocialController must load before app.js');\nvar UserSearchController=window.GroovyUserSearchController;\nif(!UserSearchController)throw new Error('GroovyUserSearchController must load before app.js');\nvar AppleSearchCore=window.GroovyAppleSearchCore;",
+              'user search controller declaration'
+          )
+
+          create="""var userSearchController=UserSearchController.create({
+            elements:{
+              searchButton:document.getElementById('searchUserButton'),
+              modal:document.getElementById('searchUserModal'),
+              closeButton:document.getElementById('closeSearchUser'),
+              input:document.getElementById('userSearchInput'),
+              results:document.getElementById('userSearchResults'),
+              onlineUsersStatus:document.getElementById('onlineUsersStatus'),
+              onlineUsersCount:document.getElementById('onlineUsersCount'),
+              onlineUsersDesktopLabel:document.getElementById('onlineUsersDesktopLabel')
+            },
+            api:supabaseClient,
+            window:window,
+            document:document,
+            getCurrentUser:currentSessionUser,
+            socialController:socialController,
+            onNavigate:function(username){
+              history.pushState({},'','/shelf/'+encodeURIComponent(username));
+              renderCurrentRoute();
+            },
+            onLog:function(level,message,error){
+              if(level==='error')console.error(message,error||'');
+              else if(level==='warn')console.warn(message,error||'');
+              else console.log(message,error||'');
+            }
+          });
+
+          """
+          marker='var notificationController=NotificationController.create({'
+          app=replace_once(app,marker,create+marker,'user search controller creation')
+
+          app=replace_once(app,'    syncUserPresence(user);','    userSearchController.syncUser(user);','presence delegation')
+
+          pattern=(
+              r"const searchUserButton=document\.getElementById\('searchUserButton'\);[\s\S]*?"
+              r"(?=const myCollectionButton=document\.getElementById\('myCollectionButton'\);)"
+          )
+          app,count=re.subn(pattern,'',app,count=1)
+          if count!=1:
+              raise SystemExit(f'legacy user search block: expected one replacement, found {count}')
+
+          required={
+              'controller declaration':'var UserSearchController=window.GroovyUserSearchController;',
+              'controller guard':'GroovyUserSearchController must load before app.js',
+              'controller create':'UserSearchController.create({',
+              'presence delegate':'userSearchController.syncUser(user);',
+              'route callback':"history.pushState({},'','/shelf/'+encodeURIComponent(username));"
+          }
+          for label,value in required.items():
+              if value not in app:
+                  raise SystemExit(f'{label} is missing after extraction')
+
+          forbidden=[
+              "const searchUserButton=document.getElementById('searchUserButton')",
+              'let userSearchTimer=null',
+              'var userPresenceChannel=null',
+              'var presenceUserId=',
+              'var presenceSyncPromise=',
+              'var onlineUserIds=',
+              'var anonymousPresenceKey=',
+              'function refreshOnlineUserCount(',
+              'function refreshUserPresenceDots(',
+              'function addUserPresenceDot(',
+              'function syncUserPresence(',
+              'async function performUserPresenceSync(',
+              'function appendUserSearchFollowButton(',
+              'async function loadTopUsers(',
+              'async function searchUsers(',
+              "userSearchInput.addEventListener('input'",
+              "searchUserButton.addEventListener('click'",
+              "closeSearchUser.addEventListener('click'",
+              "searchUserModal.addEventListener('click'",
+              "supabaseClient.channel('groovy-online-users'"
+          ]
+          leftovers=[value for value in forbidden if value in app]
+          if leftovers:
+              raise SystemExit('Legacy user-search symbols remain in app.js: '+', '.join(leftovers))
+          if len(app)>=162774:
+              raise SystemExit('app.js did not shrink after user search extraction')
+          app_path.write_text(app)
+
+          index_path=Path('index.html')
+          html=index_path.read_text()
+          html=replace_once(html,'/js/app.js?v=150','/js/app.js?v=151','app cache version')
+          index_path.write_text(html)
+
+          test_path=Path('tests/app-bootstrap-order.test.js')
+          tests=test_path.read_text()
+          marker="test('marketplace scripts load core, view and controller in order before app.js',()=>{"
+          addition="""test('user search controller initializes before app integration',()=>{
+            const source=fs.readFileSync('js/app.js','utf8');
+            const declaration=source.indexOf('var UserSearchController=window.GroovyUserSearchController;');
+            const create=source.indexOf('UserSearchController.create({');
+            assert.ok(declaration>=0&&create>declaration);
+            assert.match(source,/GroovyUserSearchController must load before app\\.js/);
+            assert.match(source,/userSearchController\\.syncUser\\(user\\)/);
+            assert.doesNotMatch(source,/let userSearchTimer|var userPresenceChannel|function syncUserPresence|function performUserPresenceSync|function loadTopUsers|async function searchUsers|groovy-online-users/);
+          });
+
+          """
+          if addition.strip() in tests:
+              raise SystemExit('user search integration test already exists')
+          tests=replace_once(tests,marker,addition+marker,'user search integration test')
+          test_path.write_text(tests)
+          PY
+
+      - name: Syntax checks
+        run: |
+          node --check js/app.js
+          node --check js/user-search-controller.js
+          node --check tests/app-bootstrap-order.test.js
+
+      - name: Run full Node regression suite
+        run: node --test tests/*.test.js
+
+      - name: Verify diff scope
+        shell: bash
+        run: |
+          git diff --check
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' index.html js/app.js tests/app-bootstrap-order.test.js | sort)"
+          test "$changed" = "$expected"
+
+      - name: Install browser test dependency
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser smoke tests
+        env:
+          GROOVY_E2E_EMAIL: ${{ secrets.GROOVY_E2E_EMAIL }}
+          GROOVY_E2E_PASSWORD: ${{ secrets.GROOVY_E2E_PASSWORD }}
+        run: npm run test:e2e
+
+      - name: Commit user search extraction
+        shell: bash
+        run: |
+          git config user.name "Groovyshelf"
+          git config user.email "150244154+Jeffaklumpen@users.noreply.github.com"
+          git add index.html js/app.js tests/app-bootstrap-order.test.js
+          git diff --cached --quiet && exit 0
+          git commit -m "Move user search and presence into controller"
+          git push origin HEAD:notes
