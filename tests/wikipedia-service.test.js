@@ -1,17 +1,22 @@
-const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const Wikipedia=require('../js/wikipedia-service.js');
-
+const test=require('node:test');
+const vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 
+function loadWikipedia(){
+  const source=fs.readFileSync(path.join(root,'js','wikipedia-service.js'),'utf8');
+  const windowObject={GroovyRecord:{artist:function(record){return record[1];},title:function(record){return record[2];},year:function(record){return record[3];}}};
+  const context={window:windowObject};
+  vm.runInNewContext(source,context);
+  return windowObject.GroovyWikipedia;
+}
+
 test('Wikipedia service owns album identity and candidate helpers',function(){
-  const record=[];
-  record[1]='Beyoncé';
-  record[2]='Renaissance (Deluxe Edition)';
-  record[3]='2022';
-  record[10]=123;
+  const Wikipedia=loadWikipedia();
+  const record=[1,'Beyoncé','Renaissance (Deluxe Edition)',2022];
+  assert.equal(Wikipedia.normalizeIdentity('Beyoncé & Jay-Z'),'beyonce and jay z');
   assert.equal(Wikipedia.cacheKey(record),'groovy-wikipedia-about-v5:beyonce|renaissance deluxe edition');
   assert.equal(typeof Wikipedia.candidateScore,'function');
   assert.equal(typeof Wikipedia.searchCandidates,'function');
