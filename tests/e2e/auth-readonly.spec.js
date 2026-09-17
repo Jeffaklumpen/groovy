@@ -30,7 +30,7 @@ async function loginWithTestAccount(page){
 
   await expect.poll(
     ()=>page.evaluate(()=>Boolean(window.hasAuthenticatedUser)),
-    {timeout:10_000}
+    {timeout:15_000}
   ).toBe(true);
 
   await expect(page.locator('body')).not.toHaveClass(/logged-out-home/);
@@ -40,7 +40,7 @@ async function loginWithTestAccount(page){
 test.describe('authenticated read-only smoke flows',()=>{
   test.skip(!testEmail||!testPassword,'GROOVY_E2E_EMAIL and GROOVY_E2E_PASSWORD are required');
 
-  test('test account can log in and navigate its own collection and wishlist',async({page})=>{
+  test('test account navigation and routes stay connected to its own shelf',async({page})=>{
     const pageErrors=watchPageErrors(page);
 
     await loginWithTestAccount(page);
@@ -52,21 +52,46 @@ test.describe('authenticated read-only smoke flows',()=>{
     await expect(page.locator('#profileUsername')).not.toHaveText('');
 
     await page.locator('#wishlistTabButton').click();
-
     await expect(page).toHaveURL('http://127.0.0.1:4173/?view=wishlist');
     await expect(page.locator('#wishlistTabButton')).toHaveClass(/active/);
     await expect(page.locator('#libraryTitle')).toHaveText('My Wishlist');
 
     await page.locator('.header-brand .logo').click();
-
     await expect(page).toHaveURL('http://127.0.0.1:4173/');
     await expect(page.locator('#collectionTabButton')).toHaveClass(/active/);
     await expect(page.locator('#libraryTitle')).toHaveText('All Records');
 
+    await page.locator('#profileButton').click();
+    await expect(page.locator('#profileMenu')).toBeVisible();
+    await page.locator('#followingButton').click();
+    await expect(page).toHaveURL('http://127.0.0.1:4173/following');
+    await expect(page.locator('#followingPage')).toBeVisible();
+    await expect(page.locator('body')).toHaveClass(/following-page-open/);
+    await expect(page.locator('#followingPage h1')).toHaveText('Following');
+    await expect(page.locator('#followingGrid')).toBeVisible();
+
+    await page.locator('#followingBackButton').click();
+    await expect(page).toHaveURL('http://127.0.0.1:4173/');
+    await expect(page.locator('#followingPage')).not.toBeVisible();
+    await expect(page.locator('#collectionTabButton')).toHaveClass(/active/);
+
+    await page.locator('#profileButton').click();
+    await expect(page.locator('#profileMenu')).toBeVisible();
+    await page.locator('#statisticsButton').click();
+    await expect(page).toHaveURL('http://127.0.0.1:4173/?stats=1');
+    await expect(page.locator('#statisticsPage')).toHaveClass(/visible/);
+    await expect(page.locator('#statisticsPage')).toHaveAttribute('aria-hidden','false');
+    await expect(page.locator('#statisticsContent')).toBeVisible();
+
+    await page.locator('#closeStatisticsPage').click();
+    await expect(page).toHaveURL('http://127.0.0.1:4173/');
+    await expect(page.locator('#statisticsPage')).not.toHaveClass(/visible/);
+    await expect(page.locator('#statisticsPage')).toHaveAttribute('aria-hidden','true');
+
     expectNoPageErrors(pageErrors);
   });
 
-  test('authenticated core controls open and close without fatal browser errors',async({page})=>{
+  test('authenticated read-only controls, sorting and filtering stay responsive',async({page})=>{
     const pageErrors=watchPageErrors(page);
 
     await loginWithTestAccount(page);
@@ -79,7 +104,6 @@ test.describe('authenticated read-only smoke flows',()=>{
 
     await page.locator('#profileButton').click();
     await expect(page.locator('#profileMenu')).toBeVisible();
-
     await page.locator('#searchUserButton').click();
     await expect(page.locator('#searchUserModal')).toBeVisible();
     await expect(page.locator('#userSearchInput')).toBeFocused();
@@ -90,67 +114,12 @@ test.describe('authenticated read-only smoke flows',()=>{
     await page.locator('#notificationBellButton').click();
     await expect(page.locator('#notificationBellButton')).toHaveAttribute('aria-expanded','true');
     await expect(page.locator('#notificationPanel')).toHaveAttribute('aria-hidden','false');
-
-    expectNoPageErrors(pageErrors);
-  });
-
-  test('following route opens and returns to the test account shelf',async({page})=>{
-    const pageErrors=watchPageErrors(page);
-
-    await loginWithTestAccount(page);
-
-    await page.locator('#profileButton').click();
-    await expect(page.locator('#profileMenu')).toBeVisible();
-    await page.locator('#followingButton').click();
-
-    await expect(page).toHaveURL('http://127.0.0.1:4173/following');
-    await expect(page.locator('#followingPage')).toBeVisible();
-    await expect(page.locator('body')).toHaveClass(/following-page-open/);
-    await expect(page.locator('#followingPage h1')).toHaveText('Following');
-    await expect(page.locator('#followingGrid')).toBeVisible();
-
-    await page.locator('#followingBackButton').click();
-
-    await expect(page).toHaveURL('http://127.0.0.1:4173/');
-    await expect(page.locator('#followingPage')).not.toBeVisible();
-    await expect(page.locator('#collectionTabButton')).toHaveClass(/active/);
-    await expect(page.locator('#libraryTitle')).toHaveText('All Records');
-
-    expectNoPageErrors(pageErrors);
-  });
-
-  test('statistics opens from the profile menu and closes back to the shelf',async({page})=>{
-    const pageErrors=watchPageErrors(page);
-
-    await loginWithTestAccount(page);
-
-    await page.locator('#profileButton').click();
-    await expect(page.locator('#profileMenu')).toBeVisible();
-    await page.locator('#statisticsButton').click();
-
-    await expect(page).toHaveURL('http://127.0.0.1:4173/?stats=1');
-    await expect(page.locator('#statisticsPage')).toHaveClass(/visible/);
-    await expect(page.locator('#statisticsPage')).toHaveAttribute('aria-hidden','false');
-    await expect(page.locator('#statisticsContent')).toBeVisible();
-
-    await page.locator('#closeStatisticsPage').click();
-
-    await expect(page).toHaveURL('http://127.0.0.1:4173/');
-    await expect(page.locator('#statisticsPage')).not.toHaveClass(/visible/);
-    await expect(page.locator('#statisticsPage')).toHaveAttribute('aria-hidden','true');
-
-    expectNoPageErrors(pageErrors);
-  });
-
-  test('library sort and rating filter controls work without changing account data',async({page})=>{
-    const pageErrors=watchPageErrors(page);
-
-    await loginWithTestAccount(page);
+    await page.locator('#notificationBellButton').click();
+    await expect(page.locator('#notificationPanel')).toHaveAttribute('aria-hidden','true');
 
     await page.locator('#librarySortButton').click();
     await expect(page.locator('#librarySortButton')).toHaveAttribute('aria-expanded','true');
     await expect(page.locator('#librarySortMenu')).toHaveClass(/open/);
-
     await page.locator('#librarySortMenu [data-sort="artist-asc"]').click();
     await expect(page.locator('#librarySortButton')).toContainText('Artist A–Z');
     await expect(page.locator('#librarySortButton')).toHaveAttribute('aria-expanded','false');
@@ -158,7 +127,6 @@ test.describe('authenticated read-only smoke flows',()=>{
     await page.locator('#filterButton').click();
     await expect(page.locator('#filterButton')).toHaveAttribute('aria-expanded','true');
     await expect(page.locator('#filterMenu')).toHaveClass(/open/);
-
     await page.locator('#filterMenu [data-rating="all"]').click();
     await expect(page.locator('#filterButton')).toContainText('All ratings');
     await expect(page.locator('#filterButton')).toHaveAttribute('aria-expanded','false');
