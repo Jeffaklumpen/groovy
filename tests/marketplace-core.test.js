@@ -50,3 +50,17 @@ test('isRelevantListing filters unrelated self-titled listings',()=>{
   assert.equal(Marketplace.isRelevantListing({title:'ABBA Arrival LP'},'ABBA','ABBA'),false);
 });
 
+test('regionCurrency preserves locale mapping and timezone fallback',()=>{
+  assert.equal(Marketplace.regionCurrency('sv-SE','Europe/London'),'SEK');
+  assert.equal(Marketplace.regionCurrency('en-GB','Europe/Stockholm'),'GBP');
+  assert.equal(Marketplace.regionCurrency('en','Europe/Stockholm'),'SEK');
+  assert.equal(Marketplace.regionCurrency('en','Europe/Berlin'),'EUR');
+  assert.equal(Marketplace.regionCurrency('en','America/Chicago'),'EUR');
+});
+
+test('formatMoney keeps marketplace formatting behavior',()=>{
+  assert.equal(Marketplace.formatMoney(0,'SEK','sv-SE'),'');
+  assert.equal(Marketplace.formatMoney(-1,'SEK','sv-SE'),'');
+  assert.match(Marketplace.formatMoney(149.5,'USD','en-US'),/149\.5/);
+  assert.doesNotMatch(Marketplace.formatMoney(1234.56,'JPY','en-US'),/\.56/);
+});

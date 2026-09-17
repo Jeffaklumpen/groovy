@@ -47,11 +47,45 @@
     return !remainder;
   }
 
+  function regionCurrency(locale,timezone){
+    var region='';
+    try{
+      if(typeof Intl!=='undefined'&&typeof Intl.Locale==='function')region=(new Intl.Locale(locale||'')).region||'';
+      if(!region){var match=String(locale||'').match(/[-_]([A-Z]{2})\b/i);region=match?match[1].toUpperCase():'';}
+    }catch(error){}
+
+    var byRegion={SE:'SEK',NO:'NOK',DK:'DKK',GB:'GBP',US:'USD',CA:'CAD',AU:'AUD',NZ:'NZD',CH:'CHF',JP:'JPY',PL:'PLN',CZ:'CZK',AT:'EUR',BE:'EUR',CY:'EUR',DE:'EUR',EE:'EUR',ES:'EUR',FI:'EUR',FR:'EUR',GR:'EUR',HR:'EUR',IE:'EUR',IT:'EUR',LT:'EUR',LU:'EUR',LV:'EUR',MT:'EUR',NL:'EUR',PT:'EUR',SI:'EUR',SK:'EUR'};
+    if(byRegion[region])return byRegion[region];
+
+    timezone=String(timezone||'');
+    if(timezone==='Europe/Stockholm')return 'SEK';
+    if(timezone==='Europe/Oslo')return 'NOK';
+    if(timezone==='Europe/Copenhagen')return 'DKK';
+    if(timezone==='Europe/London')return 'GBP';
+    if(timezone==='Europe/Zurich')return 'CHF';
+    if(timezone==='Europe/Warsaw')return 'PLN';
+    if(timezone==='Europe/Prague')return 'CZK';
+    if(/^Europe\//.test(timezone))return 'EUR';
+    return 'EUR';
+  }
+
+  function formatMoney(amount,currency,locale){
+    if(!isFinite(amount)||amount<=0)return '';
+    var code=String(currency||'EUR').toUpperCase();
+    try{
+      return new Intl.NumberFormat(locale||undefined,{style:'currency',currency:code,currencyDisplay:'narrowSymbol',minimumFractionDigits:0,maximumFractionDigits:code==='JPY'?0:2}).format(amount);
+    }catch(error){
+      return Math.round(amount*100)/100+' '+code;
+    }
+  }
+
   return Object.freeze({
     safeExternalUrl:safeExternalUrl,
     buyNowCandidates:buyNowCandidates,
     cacheKey:cacheKey,
     normalizeIdentity:normalizeIdentity,
-    isRelevantListing:isRelevantListing
+    isRelevantListing:isRelevantListing,
+    regionCurrency:regionCurrency,
+    formatMoney:formatMoney
   });
 });
