@@ -1,0 +1,81 @@
+name: Repair user search bootstrap
+
+on:
+  push:
+    branches: [notes]
+    paths:
+      - '.github/workflows/repair-user-search-bootstrap.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out notes
+        uses: actions/checkout@v4
+        with:
+          ref: notes
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Guard branch state
+        shell: bash
+        run: |
+          test "$(git hash-object js/app.js)" = "f0068f67411779a658669300bf4cf6bd11ed14a9"
+          test -f js/user-search-controller.js
+          test -f tests/user-search-controller.test.js
+          grep -Fq "user search controller loads after social controller and before app.js" tests/app-bootstrap-order.test.js
+
+      - name: Restore verified index and add one script
+        shell: bash
+        run: |
+          git checkout ca05c227559f9ef5901ea631eeaf0302ce9066af -- index.html
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('index.html')
+          source=path.read_text()
+          old='<script src="/js/social-controller.js?v=1"></script>\n'
+          new=old+'<script src="/js/user-search-controller.js?v=1"></script>\n'
+          if source.count(old)!=1:
+              raise SystemExit(f'Expected one social controller script, found {source.count(old)}')
+          if '/js/user-search-controller.js?v=' in source:
+              raise SystemExit('User search controller script already exists in restored checkpoint')
+          path.write_text(source.replace(old,new,1))
+          PY
+
+      - name: Verify repair scope
+        shell: bash
+        run: |
+          python - <<'PY'
+          import subprocess
+          diff=subprocess.check_output(['git','diff','--','index.html'],text=True)
+          added=[line for line in diff.splitlines() if line.startswith('+') and not line.startswith('+++')]
+          removed=[line for line in diff.splitlines() if line.startswith('-') and not line.startswith('---')]
+          expected='+<script src="/js/user-search-controller.js?v=1"></script>'
+          if added != [expected] or removed:
+              raise SystemExit('index.html repair diff is not exactly the expected one-line insertion:\n'+diff)
+          PY
+          git diff --check
+          test "$(git hash-object js/app.js)" = "f0068f67411779a658669300bf4cf6bd11ed14a9"
+
+      - name: Syntax check controller
+        run: node --check js/user-search-controller.js
+
+      - name: Run full Node regression suite
+        run: node --test tests/*.test.js
+
+      - name: Commit repaired bootstrap
+        shell: bash
+        run: |
+          git config user.name "Groovyshelf"
+          git config user.email "150244154+Jeffaklumpen@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Repair user search controller bootstrap"
+          git push origin HEAD:notes
