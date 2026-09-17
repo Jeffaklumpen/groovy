@@ -93,4 +93,52 @@ test.describe('authenticated read-only smoke flows',()=>{
 
     expectNoPageErrors(pageErrors);
   });
+
+  test('following route opens and returns to the test account shelf',async({page})=>{
+    const pageErrors=watchPageErrors(page);
+
+    await loginWithTestAccount(page);
+
+    await page.locator('#profileButton').click();
+    await expect(page.locator('#profileMenu')).toBeVisible();
+    await page.locator('#followingButton').click();
+
+    await expect(page).toHaveURL('http://127.0.0.1:4173/following');
+    await expect(page.locator('#followingPage')).toBeVisible();
+    await expect(page.locator('body')).toHaveClass(/following-page-open/);
+    await expect(page.locator('#followingPage h1')).toHaveText('Following');
+    await expect(page.locator('#followingGrid')).toBeVisible();
+
+    await page.locator('#followingBackButton').click();
+
+    await expect(page).toHaveURL('http://127.0.0.1:4173/');
+    await expect(page.locator('#followingPage')).not.toBeVisible();
+    await expect(page.locator('#collectionTabButton')).toHaveClass(/active/);
+    await expect(page.locator('#libraryTitle')).toHaveText('All Records');
+
+    expectNoPageErrors(pageErrors);
+  });
+
+  test('statistics opens from the profile menu and closes back to the shelf',async({page})=>{
+    const pageErrors=watchPageErrors(page);
+
+    await loginWithTestAccount(page);
+
+    await page.locator('#profileButton').click();
+    await expect(page.locator('#profileMenu')).toBeVisible();
+    await page.locator('#statisticsButton').click();
+
+    await expect(page).toHaveURL('http://127.0.0.1:4173/?stats=1');
+    await expect(page.locator('#statisticsPage')).toHaveClass(/visible/);
+    await expect(page.locator('#statisticsPage')).toHaveAttribute('aria-hidden','false');
+    await expect(page.locator('#statisticsContent')).toBeVisible();
+
+    await page.locator('#closeStatisticsPage').click();
+
+    await expect(page).toHaveURL('http://127.0.0.1:4173/');
+    await expect(page.locator('#statisticsPage')).not.toHaveClass(/visible/);
+    await expect(page.locator('#statisticsPage')).toHaveAttribute('aria-hidden','true');
+
+    expectNoPageErrors(pageErrors);
+  });
 });
