@@ -27,7 +27,15 @@ jobs:
           node --check js/pressing-picker.js
           node --check js/pressing-view.js
       - name: Run regression tests
-        run: node --test tests/*.test.js
+        run: node --test tests/*.test.js 2>&1 | tee /tmp/node-test-output.txt
+      - name: Upload Node failure output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-test-output
+          path: /tmp/node-test-output.txt
+          if-no-files-found: error
+          retention-days: 1
       - name: Install browser test dependencies
         run: npm install --no-audit --no-fund --package-lock=false
       - name: Install Chromium
