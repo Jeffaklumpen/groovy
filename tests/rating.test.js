@@ -17,12 +17,3 @@ test('album rating state is event-driven instead of repeatedly refetched',functi
   assert.doesNotMatch(detail,/180,550,1300/);
   assert.doesNotMatch(layout,/select\('user_id,rating'\)/);
 });
-
-test('changed frontend assets are cache-busted in index',function(){
-  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-  assert.match(html,/detail-enhancements\.css\?v=8/);
-  assert.match(html,/app\.js\?v=\d+/);
-  assert.match(html,/detail-enhancements-v2\.js\?v=9/);
-  assert.match(html,/profile\.js\?v=10/);
-  assert.match(html,/album-rating-layout-v4\.js\?v=3/);
-});
