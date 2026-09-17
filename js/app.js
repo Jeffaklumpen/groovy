@@ -2302,6 +2302,22 @@ var marketplaceFxRate=MarketplaceCore.createFxRateLoader({
   request:function(url,options){return fetch(url,options);}
 });
 
+var loadTraderaListingData=MarketplaceCore.createListingLoader({
+  cache:traderaListingCache,
+  request:function(record){
+    return supabaseClient.functions.invoke('tradera-search',{body:{artist:record[1],album:record[2]}});
+  },
+  filter:function(listing,record){return isRelevantTraderaListing(listing,record);}
+});
+
+var loadEbayListingData=MarketplaceCore.createListingLoader({
+  cache:ebayListingCache,
+  request:function(record){
+    return supabaseClient.functions.invoke('ebay-search',{body:{artist:record[1],album:record[2]}});
+  },
+  filter:function(listing,record){return isRelevantTraderaListing(listing,record);}
+});
+
 function clearMarketplacePriceSummary(){
   marketplacePriceAlbumIndex=-1;
   marketplacePriceFinished={tradera:false,ebay:!ebayEnabled};
@@ -2410,45 +2426,22 @@ async function loadTraderaListings(record,index){
   traderaAlbumIndex=index;
   traderaListings=[];
   var requestVersion=++traderaRequestVersion;
-  var key=traderaCacheKey(record);
-  var cached=traderaListingCache.get(key);
+  var result=loadTraderaListingData({
+    key:traderaCacheKey(record),
+    record:record,
+    isCancelled:function(){return requestVersion!==traderaRequestVersion;},
+    onLoading:function(){setTraderaButtonState('loading',0);}
+  });
+  if(result&&typeof result.then==='function')result=await result;
+  if(!result||result.state==='cancelled')return;
 
-  if(cached&&Date.now()-cached.savedAt<5*60*1000){
-    traderaListings=cached.listings;
-    setTraderaButtonState(traderaListings.length?'ready':'empty',traderaListings.length);
-    marketplacePriceFinished.tradera=true;
-    refreshMarketplaceBestPrice(index);
-    return;
-  }
-
-  setTraderaButtonState('loading',0);
-
-  try{
-    var response=await supabaseClient.functions.invoke('tradera-search',{
-      body:{artist:record[1],album:record[2]}
-    });
-
-    if(requestVersion!==traderaRequestVersion)return;
-    if(response.error)throw response.error;
-
-    traderaListings=response.data&&Array.isArray(response.data.listings)
-      ?response.data.listings.filter(function(listing){return isRelevantTraderaListing(listing,record);})
-      :[];
-    traderaListingCache.set(key,{savedAt:Date.now(),listings:traderaListings});
-    setTraderaButtonState(traderaListings.length?'ready':'empty',traderaListings.length);
-  }catch(error){
-    if(requestVersion!==traderaRequestVersion)return;
-    console.error('Could not load Tradera listings:',error);
-    traderaListings=[];
-    setTraderaButtonState('unavailable',0);
-  }
-
+  traderaListings=result.listings||[];
+  if(result.state==='unavailable')console.error('Could not load Tradera listings:',result.error);
+  setTraderaButtonState(result.state,traderaListings.length);
   marketplacePriceFinished.tradera=true;
   refreshMarketplaceBestPrice(index);
 
-  if(traderaModal.classList.contains('visible')&&traderaAlbumIndex===index){
-    openTraderaModal();
-  }
+  if(traderaModal.classList.contains('visible')&&traderaAlbumIndex===index)openTraderaModal();
 }
 
 function setEbayButtonState(state,count){
@@ -2486,45 +2479,22 @@ async function loadEbayListings(record,index){
   ebayAlbumIndex=index;
   ebayListings=[];
   var requestVersion=++ebayRequestVersion;
-  var key=traderaCacheKey(record);
-  var cached=ebayListingCache.get(key);
+  var result=loadEbayListingData({
+    key:traderaCacheKey(record),
+    record:record,
+    isCancelled:function(){return requestVersion!==ebayRequestVersion;},
+    onLoading:function(){setEbayButtonState('loading',0);}
+  });
+  if(result&&typeof result.then==='function')result=await result;
+  if(!result||result.state==='cancelled')return;
 
-  if(cached&&Date.now()-cached.savedAt<5*60*1000){
-    ebayListings=cached.listings;
-    setEbayButtonState(ebayListings.length?'ready':'empty',ebayListings.length);
-    marketplacePriceFinished.ebay=true;
-    refreshMarketplaceBestPrice(index);
-    return;
-  }
-
-  setEbayButtonState('loading',0);
-
-  try{
-    var response=await supabaseClient.functions.invoke('ebay-search',{
-      body:{artist:record[1],album:record[2]}
-    });
-
-    if(requestVersion!==ebayRequestVersion)return;
-    if(response.error)throw response.error;
-
-    ebayListings=response.data&&Array.isArray(response.data.listings)
-      ?response.data.listings.filter(function(listing){return isRelevantTraderaListing(listing,record);})
-      :[];
-    ebayListingCache.set(key,{savedAt:Date.now(),listings:ebayListings});
-    setEbayButtonState(ebayListings.length?'ready':'empty',ebayListings.length);
-  }catch(error){
-    if(requestVersion!==ebayRequestVersion)return;
-    console.error('Could not load eBay listings:',error);
-    ebayListings=[];
-    setEbayButtonState('unavailable',0);
-  }
-
+  ebayListings=result.listings||[];
+  if(result.state==='unavailable')console.error('Could not load eBay listings:',result.error);
+  setEbayButtonState(result.state,ebayListings.length);
   marketplacePriceFinished.ebay=true;
   refreshMarketplaceBestPrice(index);
 
-  if(ebayModal.classList.contains('visible')&&ebayAlbumIndex===index){
-    openEbayModal();
-  }
+  if(ebayModal.classList.contains('visible')&&ebayAlbumIndex===index)openEbayModal();
 }
 
 function hasCopyDetails(details){

@@ -176,3 +176,50 @@ test('listingEndsText handles invalid and valid dates',()=>{
   assert.match(Marketplace.listingEndsText('2026-09-17T12:34:00Z','sv-SE'),/^Ends /);
   assert.match(Marketplace.listingEndsText('2026-09-17T12:34:00Z','sv-SE'),/ · /);
 });
+
+
+test('createListingLoader keeps fresh cache results synchronous',async()=>{
+  const cache=new Map([['album',{savedAt:900,listings:[{title:'Cached'}]}]]);
+  let calls=0;
+  const load=Marketplace.createListingLoader({cache,now:()=>1000,request:async()=>{calls++;return {data:{listings:[]}};}});
+  const result=load({key:'album',record:{}});
+  assert.equal(typeof result.then,'undefined');
+  assert.equal(result.state,'ready');
+  assert.equal(result.cached,true);
+  assert.equal(result.listings[0].title,'Cached');
+  assert.equal(calls,0);
+});
+
+test('createListingLoader requests filters and caches marketplace listings',async()=>{
+  const cache=new Map();
+  let loading=0;
+  let calls=0;
+  const record={artist:'Pink Floyd'};
+  const load=Marketplace.createListingLoader({
+    cache,
+    now:()=>5000,
+    request:async input=>{calls++;assert.equal(input,record);return {data:{listings:[{title:'Keep'},{title:'Skip'}]}};},
+    filter:listing=>listing.title!=='Skip'
+  });
+  const pending=load({key:'pink floyd|animals',record,onLoading:()=>loading++});
+  assert.equal(typeof pending.then,'function');
+  const result=await pending;
+  assert.equal(result.state,'ready');
+  assert.deepEqual(result.listings,[{title:'Keep'}]);
+  assert.equal(result.cached,false);
+  assert.equal(loading,1);
+  assert.equal(calls,1);
+  assert.deepEqual(cache.get('pink floyd|animals').listings,[{title:'Keep'}]);
+});
+
+test('createListingLoader preserves unavailable and cancelled states',async()=>{
+  const failed=Marketplace.createListingLoader({request:async()=>({error:new Error('offline')})});
+  const failedResult=await failed({key:'x',record:{}});
+  assert.equal(failedResult.state,'unavailable');
+  assert.match(failedResult.error.message,/offline/);
+
+  const cancelled=Marketplace.createListingLoader({request:async()=>({data:{listings:[{title:'Late'}]}})});
+  const cancelledResult=await cancelled({key:'y',record:{},isCancelled:()=>true});
+  assert.equal(cancelledResult.state,'cancelled');
+  assert.deepEqual(cancelledResult.listings,[]);
+});

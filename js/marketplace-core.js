@@ -126,6 +126,48 @@
     };
   }
 
+  function createListingLoader(options){
+    options=options||{};
+    var cache=options.cache&&typeof options.cache.get==='function'&&typeof options.cache.set==='function'?options.cache:new Map();
+    var request=typeof options.request==='function'?options.request:null;
+    var filter=typeof options.filter==='function'?options.filter:function(){return true;};
+    var now=typeof options.now==='function'?options.now:Date.now;
+    var ttl=Number(options.ttlMs)||5*60*1000;
+
+    return function(input){
+      input=input||{};
+      var key=String(input.key||'');
+      var cached=cache.get(key);
+      var currentTime=now();
+      if(cached&&currentTime-Number(cached.savedAt)<ttl){
+        var cachedListings=Array.isArray(cached.listings)?cached.listings:[];
+        return {state:cachedListings.length?'ready':'empty',listings:cachedListings,cached:true};
+      }
+
+      if(typeof input.onLoading==='function')input.onLoading();
+      var pending;
+      try{
+        if(!request)throw new Error('Marketplace request unavailable');
+        pending=request(input.record);
+      }catch(error){
+        if(input.isCancelled&&input.isCancelled())return {state:'cancelled',listings:[]};
+        return {state:'unavailable',listings:[],cached:false,error:error};
+      }
+
+      return Promise.resolve(pending).then(function(response){
+        if(input.isCancelled&&input.isCancelled())return {state:'cancelled',listings:[]};
+        if(response&&response.error)throw response.error;
+        var rows=response&&response.data&&Array.isArray(response.data.listings)?response.data.listings:[];
+        var listings=rows.filter(function(listing){return filter(listing,input.record);});
+        cache.set(key,{savedAt:now(),listings:listings});
+        return {state:listings.length?'ready':'empty',listings:listings,cached:false};
+      }).catch(function(error){
+        if(input.isCancelled&&input.isCancelled())return {state:'cancelled',listings:[]};
+        return {state:'unavailable',listings:[],cached:false,error:error};
+      });
+    };
+  }
+
   async function resolveBestPrice(candidates,target,getRate,locale,shouldCancel){
     candidates=(candidates||[]).slice();
     if(!candidates.length)return {state:'empty'};
@@ -206,6 +248,7 @@
     displayCurrency:displayCurrency,
     formatMoney:formatMoney,
     createFxRateLoader:createFxRateLoader,
+    createListingLoader:createListingLoader,
     resolveBestPrice:resolveBestPrice,
     listingPrice:listingPrice,
     listingEndsText:listingEndsText
