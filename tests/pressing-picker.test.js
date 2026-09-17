@@ -140,3 +140,25 @@ test('picker reports a missing master without opening the modal',async()=>{
   assert.equal(missing,7);
   assert.equal(modal.style.display,undefined);
 });
+
+const fs=require('node:fs');
+const path=require('node:path');
+
+test('pressing picker loads before app and owns the extracted flow',()=>{
+  const root=path.resolve(__dirname,'..');
+  const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const pickerIndex=index.indexOf('/js/pressing-picker.js');
+  const appIndex=index.indexOf('/js/app.js');
+  assert.ok(pickerIndex>=0&&appIndex>pickerIndex);
+  assert.match(app,/var PressingPicker=window\.GroovyPressingPicker;/);
+  assert.match(app,/PressingPicker\?PressingPicker\.create/);
+  assert.match(app,/fetchVersions:fetchPressingVersions/);
+  assert.match(app,/fetchRelease:fetchPressingRelease/);
+  assert.match(app,/onSave:savePressingSelection/);
+  assert.doesNotMatch(app,/function renderPressingMatches\(/);
+  assert.doesNotMatch(app,/function searchPressingsByMatrix\(/);
+  assert.doesNotMatch(app,/function refreshPressingFields\(/);
+  assert.doesNotMatch(app,/function preparePressingConfirmation\(/);
+  assert.doesNotMatch(app,/var pressingVersions=/);
+});

@@ -5,6 +5,7 @@ if(!AppleSearchCore)throw new Error('GroovyAppleSearchCore must load before app.
 var PressingCore=window.GroovyPressingCore;
 if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
 var PressingView=window.GroovyPressingView;
+var PressingPicker=window.GroovyPressingPicker;
 
 const profileButton=document.getElementById('profileButton');
 const profileMenu=document.getElementById('profileMenu');
@@ -1298,11 +1299,6 @@ var startY=0;
 var startScroll=0;
 var scrollTimer=null;
 var suppressAlbumClick=false;
-var pressingAlbumIndex=-1;
-var pressingVersions=[];
-var pressingPages=1;
-var pressingReleaseCache=new Map();
-var pressingMatrixMatches=null;
 var copyDetailsExpanded=false;
 var copyDetailsRecordKey='';
 var traderaAlbumIndex=-1;
@@ -2546,301 +2542,58 @@ async function saveConditionDetails(index){
   copyDetailsSaved.textContent='Saved';
 }
 
-var cleanVersionValue=PressingCore.cleanVersionValue;
-var normalizeVersion=PressingCore.normalizeVersion;
-var uniqueVersionValues=PressingCore.uniqueVersionValues;
-var pressingChoiceMatches=PressingCore.pressingChoiceMatches;
-var pressingYearMatches=PressingCore.pressingYearMatches;
-var pressingCatalogMatches=PressingCore.pressingCatalogMatches;
-var normalizedMatrix=PressingCore.normalizedMatrix;
-var matrixValues=PressingCore.matrixValues;
-var matrixChoices=PressingCore.matrixChoices;
-var vinylDiscCount=PressingCore.vinylDiscCount;
-
-function setPressingOptions(select,values,placeholder,current){
-  PressingView.setOptions(select,values,placeholder,current);
-}
-
-function updatePressingProgress(){
-  PressingView.updateProgress(pressingForm,[pressingCountry.value,pressingYear.value,pressingLabel.value,pressingCatalogNumber.value]);
-}
-
-function currentPressingMatches(){
-  return PressingCore.filterVersions(pressingVersions,{
-    country:pressingCountry.value,
-    year:pressingYear.value,
-    label:pressingLabel.value,
-    catalogNumber:pressingCatalogNumber.value
+async function fetchPressingVersions(masterId,page){
+  var response=await supabaseClient.functions.invoke('discogs-search',{
+    body:{action:'versions',masterId:masterId,page:page}
   });
+  if(response.error)throw response.error;
+  return response.data||{};
 }
 
-function renderPressingMatches(){
-  var allMatches=pressingMatrixMatches===null?currentPressingMatches():pressingMatrixMatches;
-
-  if(!pressingCatalogNumber.value){
-    pressingMatches.innerHTML='';
-    pressingMatrixSearch.hidden=true;
-    return;
-  }
-
-  pressingMatrixSearch.hidden=false;
-  var matches=pressingMatrixMatches===null?allMatches.slice(0,5):allMatches;
-  var moreCount=pressingMatrixMatches===null?Math.max(0,allMatches.length-matches.length):0;
-
-  pressingMatches.innerHTML=matches.map(function(version){
-    return '<button class="pressing-match" type="button" data-release-id="'+esc(version.id)+'">'+
-      '<span class="pressing-match-title">'+esc(version.label+' · '+version.catalogNumber)+'</span>'+
-      '<span class="pressing-match-meta">'+esc([version.country,version.year||'Year not listed',version.format].filter(Boolean).join(' · '))+'</span>'+
-      (version.matrixMatch?'<span class="pressing-match-matrix">'+esc(version.matrixMatch)+'</span>':'')+
-    '</button>';
-  }).join('')+
-    (moreCount?'<p class="pressing-help">'+moreCount+' more possible pressings. Enter your matrix above to find the right one.</p>':'');
-
-  if(!matches.length){
-    pressingMatches.innerHTML='<div class="pressing-error">'+(pressingMatrixMatches===null
-      ?'No pressings match these choices.'
-      :'No pressing contains that matrix. Try a shorter section of the runout text.')+'</div>';
-  }
-
-  pressingMatches.querySelectorAll('.pressing-match').forEach(function(button){
-    button.addEventListener('click',function(){
-      preparePressingConfirmation(this.getAttribute('data-release-id'));
-    });
+async function fetchPressingRelease(releaseId){
+  var response=await supabaseClient.functions.invoke('discogs-search',{
+    body:{action:'release',releaseId:releaseId}
   });
+  if(response.error)throw response.error;
+  return response.data||{};
 }
 
-async function searchPressingsByMatrix(){
-  var query=normalizedMatrix(pressingMatrixQuery.value);
-  if(query.length<5){
-    pressingMatches.innerHTML='<div class="pressing-error">Enter at least five letters or numbers from one side of the matrix.</div>';
-    return;
-  }
-
-  var candidates=currentPressingMatches();
-  if(!candidates.length){
-    pressingMatches.innerHTML='<div class="pressing-error">No pressings match the choices above.</div>';
-    return;
-  }
-
-  pressingMatrixSearchButton.disabled=true;
-  pressingMatrixSearchButton.textContent='Checking 0 of '+candidates.length+'…';
-  pressingMatches.innerHTML='<div class="pressing-loading">Comparing Discogs matrix data…</div>';
-  var nextIndex=0;
-  var completed=0;
-  var found=[];
-
-  async function checkNext(){
-    while(nextIndex<candidates.length){
-      var version=candidates[nextIndex++];
-      var release=pressingReleaseCache.get(String(version.id));
-      try{
-        if(!release){
-          var response=await supabaseClient.functions.invoke('discogs-search',{body:{action:'release',releaseId:version.id}});
-          if(response.error)throw response.error;
-          release=response.data||{};
-          pressingReleaseCache.set(String(version.id),release);
-        }
-        var match=matrixValues(release).find(function(value){return normalizedMatrix(value).indexOf(query)!==-1;});
-        if(match)found.push(Object.assign({},version,{matrixMatch:match}));
-      }catch(error){
-        console.warn('Could not compare Discogs release '+version.id+':',error);
-      }
-      completed++;
-      pressingMatrixSearchButton.textContent='Checking '+completed+' of '+candidates.length+'…';
-    }
-  }
-
-  var workers=[];
-  for(var i=0;i<Math.min(3,candidates.length);i++)workers.push(checkNext());
-  await Promise.all(workers);
-
-  pressingMatrixMatches=PressingCore.dedupeMatrixMatches(found);
-  pressingMatrixSearchButton.disabled=false;
-  pressingMatrixSearchButton.textContent='Find matrix';
-  renderPressingMatches();
-}
-
-function refreshPressingFields(changedField){
-  pressingMatrixMatches=null;
-  pressingMatrixQuery.value='';
-  var country=pressingCountry.value;
-  var year=changedField==='country'?'':pressingYear.value;
-  var label=(changedField==='country'||changedField==='year')?'':pressingLabel.value;
-  var catalog=(changedField!=='catalog')?'':pressingCatalogNumber.value;
-
-  if(changedField==='country'){
-    setPressingOptions(pressingYear,uniqueVersionValues(pressingVersions.filter(function(v){return v.country===country;}),'year'),'Choose year',year);
-    setPressingOptions(pressingLabel,[],'Choose label','');
-    setPressingOptions(pressingCatalogNumber,[],'Choose catalog number','');
-  }else if(changedField==='year'){
-    setPressingOptions(pressingLabel,uniqueVersionValues(pressingVersions.filter(function(v){return v.country===country&&pressingYearMatches(v.year,year); }),'label'),'Choose label',label);
-    setPressingOptions(pressingCatalogNumber,[],'Choose catalog number','');
-  }else if(changedField==='label'){
-    setPressingOptions(pressingCatalogNumber,uniqueVersionValues(pressingVersions.filter(function(v){return v.country===country&&pressingYearMatches(v.year,year)&&v.label===label;}),'catalogNumber'),'Choose catalog number',catalog);
-  }
-
-  renderPressingMatches();
-  updatePressingProgress();
-}
-
-async function loadPressingPage(page){
-  var record=records[pressingAlbumIndex];
-  var {data,error}=await supabaseClient.functions.invoke('discogs-search',{
-    body:{action:'versions',masterId:record&&record[10],page:page}
-  });
-  if(error)throw error;
-
-  var newVersions=(data&&Array.isArray(data.versions)?data.versions:[]).map(normalizeVersion).filter(function(version){return version.id;});
-  newVersions.forEach(function(version){
-    if(!pressingVersions.some(function(existing){return String(existing.id)===String(version.id);}))pressingVersions.push(version);
-  });
-  pressingPages=data&&data.pagination&&data.pagination.pages?data.pagination.pages:page;
-}
-
-async function loadAllPressingPages(){
-  await loadPressingPage(1);
-  var totalPages=Math.min(pressingPages,100);
-  if(totalPages<=1)return;
-
-  var nextPage=2;
-  var loadedPages=1;
-  var workerCount=Math.min(3,totalPages-1);
-
-  async function loadNext(){
-    while(nextPage<=totalPages){
-      var page=nextPage++;
-      await loadPressingPage(page);
-      loadedPages++;
-      pressingLoading.textContent='Finding vinyl pressings… '+loadedPages+' of '+totalPages;
-    }
-  }
-
-  var workers=[];
-  for(var i=0;i<workerCount;i++)workers.push(loadNext());
-  await Promise.all(workers);
-}
-
-async function openPressingPicker(index){
+async function savePressingSelection(context){
+  context=context||{};
+  var selected=context.selected||{};
+  var matrices=context.matrices||{};
+  var button=context.button;
+  var index=context.albumIndex;
   var record=records[index];
-  if(!record||!record[10]){
-    copyDetailsSaved.textContent='No Discogs master found';
-    return;
-  }
-
-  pressingAlbumIndex=index;
-  pressingVersions=[];
-  pressingPages=1;
-  pressingMatrixMatches=null;
-  pressingMatrixQuery.value='';
-  pressingMatrixSearch.hidden=true;
-  pressingModal.style.display='flex';
-  pressingLoading.hidden=false;
-  pressingForm.hidden=true;
-  pressingError.hidden=true;
-  pressingMatches.innerHTML='';
-  document.body.style.overflow='hidden';
-
-  try{
-    pressingLoading.textContent='Finding vinyl pressings…';
-    await loadAllPressingPages();
-    setPressingOptions(pressingCountry,uniqueVersionValues(pressingVersions,'country'),'Choose country','');
-    setPressingOptions(pressingYear,[],'Choose year','');
-    setPressingOptions(pressingLabel,[],'Choose label','');
-    setPressingOptions(pressingCatalogNumber,[],'Choose catalog number','');
-    pressingLoading.hidden=true;
-    pressingForm.hidden=false;
-    updatePressingProgress();
-  }catch(error){
-    console.error('Kunde inte hämta pressningar:',error);
-    pressingLoading.hidden=true;
-    pressingError.hidden=false;
-    pressingError.textContent='Could not load Discogs pressings. Please try again in a moment.';
-  }
-}
-
-function simpleOptions(values){
-  return '<option value="">Not set</option>'+values.map(function(value){return '<option value="'+esc(value)+'">'+esc(value)+'</option>';}).join('');
-}
-
-async function preparePressingConfirmation(releaseId){
-  pressingMatches.innerHTML='<div class="pressing-loading">Loading pressing details…</div>';
-  try{
-    var data=pressingReleaseCache.get(String(releaseId));
-    if(!data){
-      var response=await supabaseClient.functions.invoke('discogs-search',{body:{action:'release',releaseId:releaseId}});
-      if(response.error)throw response.error;
-      data=response.data||{};
-      pressingReleaseCache.set(String(releaseId),data);
-    }
-    var version=pressingVersions.find(function(item){return String(item.id)===String(releaseId);})||{};
-    var selected=PressingCore.selectReleaseDetails(releaseId,data,version);
-    var matrices=matrixChoices(data||{});
-    var matrixSideNames=PressingCore.matrixSideNames(data||{});
-    var hasMatrixChoices=matrixSideNames.some(function(side){return matrices[side].length;});
-    var matrixFields=matrixSideNames.map(function(side){
-      var upper=side.toUpperCase();
-      return '<label class="pressing-field"><span>Matrix / Runout '+upper+'</span><select id="pressingMatrix'+upper+'">'+simpleOptions(matrices[side])+'</select></label>';
-    }).join('');
-
-    pressingMatches.innerHTML='<div class="pressing-match selected">'+
-      '<span class="pressing-match-title">Likely match</span>'+
-      '<span class="pressing-match-meta">'+esc([selected.country,selected.year,selected.label,selected.catalogNumber].filter(Boolean).join(' · '))+'</span>'+
-    '</div>'+
-    '<section class="advanced-pressing pressing-advanced"><div class="advanced-pressing-title">Advanced pressing</div>'+
-      (hasMatrixChoices?'<div class="matrix-list">'+matrixFields+'</div>':'<p class="pressing-help">Discogs has no matrix information for this pressing.</p>')+
-    '</section>'+
-    '<button id="savePressingButton" class="copy-action-button primary" type="button">Save this pressing</button>';
-
-    document.getElementById('savePressingButton').addEventListener('click',function(){
-      saveSelectedPressing(selected,this);
-    });
-  }catch(error){
-    console.error('Kunde inte hämta pressningsdetaljer:',error);
-    pressingMatches.innerHTML='<div class="pressing-error">Could not load this pressing. Choose another match or try again.</div>';
-  }
-}
-
-async function saveSelectedPressing(selected,button){
-  var record=records[pressingAlbumIndex];
   if(!record)return;
-  var matrixA=document.getElementById('pressingMatrixA');
-  var matrixB=document.getElementById('pressingMatrixB');
-  var matrixC=document.getElementById('pressingMatrixC');
-  var matrixD=document.getElementById('pressingMatrixD');
-  var matrixE=document.getElementById('pressingMatrixE');
-  var matrixF=document.getElementById('pressingMatrixF');
-  var matrixG=document.getElementById('pressingMatrixG');
-  var matrixH=document.getElementById('pressingMatrixH');
-  button.disabled=true;
-  button.textContent='Saving…';
 
-  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
+  if(button){button.disabled=true;button.textContent='Saving…';}
+  var userResult=await supabaseClient.auth.getUser();
+  var user=userResult&&userResult.data&&userResult.data.user;
   var payload={
     discogs_release_id:parseInt(selected.id,10),
     pressing_country:selected.country||null,
     pressing_year:parseInt(selected.year,10)||null,
     pressing_label:selected.label||null,
     catalog_number:selected.catalogNumber||null,
-    matrix_runout_a:matrixA&&matrixA.value?matrixA.value:null,
-    matrix_runout_b:matrixB&&matrixB.value?matrixB.value:null,
-    matrix_runout_c:matrixC&&matrixC.value?matrixC.value:null,
-    matrix_runout_d:matrixD&&matrixD.value?matrixD.value:null,
-    matrix_runout_e:matrixE&&matrixE.value?matrixE.value:null,
-    matrix_runout_f:matrixF&&matrixF.value?matrixF.value:null,
-    matrix_runout_g:matrixG&&matrixG.value?matrixG.value:null,
-    matrix_runout_h:matrixH&&matrixH.value?matrixH.value:null,
+    matrix_runout_a:matrices.A||null,
+    matrix_runout_b:matrices.B||null,
+    matrix_runout_c:matrices.C||null,
+    matrix_runout_d:matrices.D||null,
+    matrix_runout_e:matrices.E||null,
+    matrix_runout_f:matrices.F||null,
+    matrix_runout_g:matrices.G||null,
+    matrix_runout_h:matrices.H||null,
     pressing_match_status:'discogs'
   };
-  var result=(userError||!user)?{error:userError||new Error('Du måste vara inloggad.')}:await supabaseClient.from('collections').update(payload)
+  var result=(userResult.error||!user)?{error:userResult.error||new Error('Du måste vara inloggad.')}:await supabaseClient.from('collections').update(payload)
     .eq('id',record[9]).eq('user_id',user.id).select('id');
 
   if(result.error||!result.data||!result.data.length){
     console.error('Kunde inte spara pressningen:',result.error);
-    button.disabled=false;
-    button.textContent='Try saving again';
+    if(button){button.disabled=false;button.textContent='Try saving again';}
     return;
   }
-
 
   record[11]=record[11]||{};
   record[11].discogsReleaseId=payload.discogs_release_id;
@@ -2857,30 +2610,48 @@ async function saveSelectedPressing(selected,button){
   record[11].matrixG=payload.matrix_runout_g||'';
   record[11].matrixH=payload.matrix_runout_h||'';
   record[11].matchStatus='discogs';
-  closePressingPicker();
+  if(pressingPicker)pressingPicker.close();
   buildGrid();
-  renderCopyDetails(pressingAlbumIndex);
+  renderCopyDetails(index);
   copyDetailsSaved.textContent='Saved';
 }
 
-function closePressingPicker(){
-  pressingModal.style.display='none';
-  if(albumOverlay.className.indexOf('visible')===-1)document.body.style.overflow='';
+var pressingPicker=PressingPicker?PressingPicker.create({
+  elements:{
+    modal:pressingModal,
+    closeButton:closePressingModalButton,
+    loading:pressingLoading,
+    form:pressingForm,
+    error:pressingError,
+    country:pressingCountry,
+    year:pressingYear,
+    label:pressingLabel,
+    catalogNumber:pressingCatalogNumber,
+    matrixSearch:pressingMatrixSearch,
+    matrixQuery:pressingMatrixQuery,
+    matrixSearchButton:pressingMatrixSearchButton,
+    matches:pressingMatches
+  },
+  getRecord:function(index){return records[index]||null;},
+  getMasterId:function(record){return record&&record[10];},
+  fetchVersions:fetchPressingVersions,
+  fetchRelease:fetchPressingRelease,
+  onSave:savePressingSelection,
+  onMissingMaster:function(){copyDetailsSaved.textContent='No Discogs master found';},
+  onWarning:function(message,error){console.warn(message+':',error);},
+  onError:function(message,error){console.error(message+':',error);},
+  lockBody:function(){document.body.style.overflow='hidden';},
+  unlockBody:function(){if(albumOverlay.className.indexOf('visible')===-1)document.body.style.overflow='';}
+}):null;
+
+function openPressingPicker(index){
+  if(!pressingPicker){copyDetailsSaved.textContent='Pressing picker unavailable';return false;}
+  return pressingPicker.open(index);
 }
 
-pressingCountry.addEventListener('change',function(){refreshPressingFields('country');});
-pressingYear.addEventListener('change',function(){refreshPressingFields('year');});
-pressingLabel.addEventListener('change',function(){refreshPressingFields('label');});
-pressingCatalogNumber.addEventListener('change',function(){refreshPressingFields('catalog');});
-pressingMatrixSearchButton.addEventListener('click',searchPressingsByMatrix);
-pressingMatrixQuery.addEventListener('keydown',function(event){
-  if(event.key==='Enter'){
-    event.preventDefault();
-    searchPressingsByMatrix();
-  }
-});
-closePressingModalButton.addEventListener('click',closePressingPicker);
-pressingModal.addEventListener('click',function(event){if(event.target===pressingModal)closePressingPicker();});
+function closePressingPicker(){
+  if(pressingPicker)pressingPicker.close();
+}
 
 function spotifyAlbumLink(record){
   return Streaming.spotifySearchUrl(
