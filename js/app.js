@@ -740,12 +740,14 @@ var Streaming=window.GroovyStreaming;
 var NotificationCore=window.GroovyNotificationCore;
 var PressingCore=window.GroovyPressingCore;
 var RatingCore=window.GroovyRatingCore;
+var MarketplaceCore=window.GroovyMarketplaceCore;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
 if(!Streaming)throw new Error('GroovyStreaming must load before app.js');
 if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
 if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
 if(!RatingCore)throw new Error('GroovyRatingCore must load before app.js');
+if(!MarketplaceCore)throw new Error('GroovyMarketplaceCore must load before app.js');
 
 window.records = [];
 window.viewedUserId=null;
@@ -2462,12 +2464,7 @@ async function refreshLibraryStyles(rows,loadVersion){
 window.refreshLibraryStyles=refreshLibraryStyles;
 
 function safeExternalUrl(value){
-  try{
-    var url=new URL(String(value||''));
-    return url.protocol==='https:'||url.protocol==='http:'?url.href:'';
-  }catch(error){
-    return '';
-  }
+  return MarketplaceCore.safeExternalUrl(value);
 }
 
 function traderaCacheKey(record){
@@ -2548,11 +2545,7 @@ function marketplaceFormatMoney(amount,currency){
 }
 
 function marketplaceBuyNowCandidates(listings,marketplace){
-  return (listings||[]).map(function(listing){
-    var amount=Number(listing&&listing.buyNowPrice||0);
-    if(!isFinite(amount)||amount<=0)return null;
-    return {amount:amount,currency:String(listing.currency||'EUR').toUpperCase(),marketplace:marketplace,url:safeExternalUrl(listing.url),listing:listing};
-  }).filter(Boolean);
+  return MarketplaceCore.buyNowCandidates(listings,marketplace);
 }
 
 async function marketplaceFxRate(from,to){

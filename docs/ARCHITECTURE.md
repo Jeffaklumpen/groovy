@@ -13,6 +13,7 @@ GroovyShelves remains a vanilla JavaScript application. The cleanup is intention
 - `js/streaming-links.js` — pure Spotify and Apple Music URL construction shared by feature code.
 - `js/pressing-core.js` — pure Discogs pressing normalization, matching, matrix/runout and vinyl-format helpers.
 - `js/rating-core.js` — pure 0–5 rating normalization and display formatting helpers.
+- `js/marketplace-core.js` — pure external-listing URL validation and buy-now candidate normalization.
 - `js/notification-core.js` — pure notification escaping, relative-time formatting and notification message copy.
 - `js/detail-enhancements-v2.js` — active album-detail compatibility/enhancement layer. This should shrink as its behavior is moved into the actual detail implementation.
 - `js/album-rating-layout-v4.js` — active rating presentation layer. Older rating layout generations have been removed.
