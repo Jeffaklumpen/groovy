@@ -15,10 +15,18 @@ test('dependency scripts load before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const app=html.indexOf('/js/app.js?v=');
   assert.ok(app>=0,'app.js script is missing');
-  ['/js/notification-core.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v='].forEach((script)=>{
+  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v='].forEach((script)=>{
     const pos=html.indexOf(script);assert.ok(pos>=0,script+' script is missing');assert.ok(pos<app,script+' must load before app.js');
   });
   assert.match(html,/\/js\/app\.js\?v=\d+/);
+});
+
+test('notification scripts load core then controller before app.js',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const core=html.indexOf('/js/notification-core.js?v=');
+  const controller=html.indexOf('/js/notification-controller.js?v=');
+  const app=html.indexOf('/js/app.js?v=');
+  assert.ok(core>=0&&controller>core&&app>controller);
 });
 
 test('marketplace scripts load core, view and controller in order before app.js',()=>{
