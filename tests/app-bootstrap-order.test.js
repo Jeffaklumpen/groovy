@@ -23,6 +23,25 @@ test('pure dependency scripts load before app.js',()=>{
   assert.match(html,/\/js\/app\.js\?v=\d+/);
 });
 
+test('marketplace UI loads after its core and before app.js',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const core=html.indexOf('/js/marketplace-core.js?v=');
+  const ui=html.indexOf('/js/marketplace-ui.js?v=');
+  const app=html.indexOf('/js/app.js?v=');
+  assert.ok(core>=0,'marketplace-core.js script is missing');
+  assert.ok(ui>=0,'marketplace-ui.js script is missing');
+  assert.ok(app>=0,'app.js script is missing');
+  assert.ok(core<ui,'marketplace-core.js must load before marketplace-ui.js');
+  assert.ok(ui<app,'marketplace-ui.js must load before app.js');
+
+  const source=fs.readFileSync('js/app.js','utf8');
+  const declaration=source.indexOf('var MarketplaceUI=window.GroovyMarketplaceUI;');
+  const firstUse=source.indexOf('MarketplaceUI.prepareAlbum');
+  assert.ok(declaration>=0,'MarketplaceUI bootstrap declaration is missing');
+  assert.ok(firstUse>=0,'MarketplaceUI first use is missing');
+  assert.ok(declaration<firstUse,'MarketplaceUI must be initialized before it is used');
+});
+
 test('Apple search core is initialized before first use in app.js',()=>{
   const source=fs.readFileSync('js/app.js','utf8');
   const declaration=source.indexOf('var AppleSearchCore=window.GroovyAppleSearchCore;');
