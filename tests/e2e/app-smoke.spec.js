@@ -1,21 +1,97 @@
 const { test, expect } = require('@playwright/test');
 
-test('Groovy boots without fatal browser errors', async ({ page }) => {
-  const pageErrors = [];
-  page.on('pageerror', error => {
+function watchPageErrors(page){
+  const pageErrors=[];
+  page.on('pageerror',error=>{
     pageErrors.push(`${error.name}: ${error.message}`);
   });
+  return pageErrors;
+}
 
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+function expectNoPageErrors(pageErrors){
+  expect(pageErrors,`Fatal browser errors:\n${pageErrors.join('\n')}`).toEqual([]);
+}
+
+test('Groovy boots without fatal browser errors',async({page})=>{
+  const pageErrors=watchPageErrors(page);
+
+  await page.goto('/',{waitUntil:'domcontentloaded'});
 
   await expect(page).toHaveTitle(/GroovyShelves/);
   await expect(page.locator('header.header')).toBeVisible();
-  await expect(page.locator('.header-brand .logo')).toHaveAttribute('alt', 'Groovy');
+  await expect(page.locator('.header-brand .logo')).toHaveAttribute('alt','Groovy');
   await expect(page.locator('#collection')).toBeAttached();
   await expect(page.locator('#addAlbumButton')).toBeAttached();
 
   await page.waitForLoadState('load');
   await page.waitForTimeout(500);
 
-  expect(pageErrors, `Fatal browser errors:\n${pageErrors.join('\n')}`).toEqual([]);
+  expectNoPageErrors(pageErrors);
+});
+
+test('logged-out visitors see the public landing instead of a library',async({page})=>{
+  const pageErrors=watchPageErrors(page);
+
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+
+  await expect(page.locator('body')).toHaveClass(/logged-out-home/);
+  await expect(page.locator('.landing-title')).toHaveText('Track every record you own');
+  await expect(page.locator('.landing-primary')).toHaveText('Create account');
+  await expect(page.locator('.landing-secondary')).toHaveText('Log in');
+  await expect(page.locator('#collectionTabButton')).toContainText('My Collection');
+  await expect(page.locator('#wishlistTabButton')).toContainText('My Wishlist');
+  await expect(page.locator('#collection')).toBeHidden();
+
+  expectNoPageErrors(pageErrors);
+});
+
+test('landing login and registration buttons open the correct auth mode',async({page})=>{
+  const pageErrors=watchPageErrors(page);
+
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+  await expect(page.locator('.landing-title')).toBeVisible();
+
+  await page.locator('.landing-primary').click();
+  await expect(page.locator('#loginPanel')).toHaveClass(/open/);
+  await expect(page.locator('#authTitle')).toHaveText('Create your account');
+  await expect(page.locator('#registerUsername')).toBeVisible();
+  await expect(page.locator('#registerButton')).toBeVisible();
+
+  await page.locator('#loginClose').click();
+  await expect(page.locator('#loginPanel')).not.toHaveClass(/open/);
+
+  await page.locator('.landing-secondary').click();
+  await expect(page.locator('#loginPanel')).toHaveClass(/open/);
+  await expect(page.locator('#authTitle')).toHaveText('Welcome back');
+  await expect(page.locator('#loginEmail')).toBeVisible();
+  await expect(page.locator('#loginButton')).toBeVisible();
+
+  expectNoPageErrors(pageErrors);
+});
+
+test('logged-out library tabs require login without changing the route',async({page})=>{
+  const pageErrors=watchPageErrors(page);
+
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+  await expect(page.locator('body')).toHaveClass(/logged-out-home/);
+
+  await page.locator('#wishlistTabButton').click();
+  await expect(page.locator('#loginPanel')).toHaveClass(/open/);
+  await expect(page.locator('#authTitle')).toHaveText('Welcome back');
+  await expect(page).toHaveURL('http://127.0.0.1:4173/');
+
+  expectNoPageErrors(pageErrors);
+});
+
+test('logged-out visitors cannot open another collector shelf directly',async({page})=>{
+  const pageErrors=watchPageErrors(page);
+
+  await page.goto('/shelf/playwright-protected-route',{waitUntil:'domcontentloaded'});
+
+  await expect(page.locator('#loginToViewCollection')).toBeVisible();
+  await expect(page.locator('#loginToViewCollection .empty-collection-title')).toHaveText('Log in to view this collection');
+  await expect(page.locator('#loginToViewCollectionButton')).toBeVisible();
+  await expect(page.locator('body')).not.toHaveClass(/logged-out-home/);
+
+  expectNoPageErrors(pageErrors);
 });
