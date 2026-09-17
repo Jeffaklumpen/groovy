@@ -174,13 +174,14 @@ test('record model finds the next shelf order while excluding a moving record',f
   assert.equal(Record.nextShelfOrder([other],'target',null),1);
 });
 
-test('app and shelf controller delegate local shelf ordering to record model',function(){
+test('app controllers delegate local shelf ordering to record model',function(){
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
   const shelfController=fs.readFileSync(path.join(root,'js','shelf-controller.js'),'utf8');
+  const libraryActions=fs.readFileSync(path.join(root,'js','library-actions-controller.js'),'utf8');
   assert.equal(app.includes('function compactLocalShelfOrder('),false);
   assert.equal(app.includes('function nextLocalShelfOrder('),false);
-  const combined=app+'\n'+shelfController;
-  assert.ok((combined.match(/Record\.compactShelfOrder\(records,/g)||[]).length>=2);
+  assert.match(shelfController,/Record\.compactShelfOrder\(records,/);
+  assert.match(libraryActions,/recordModel\.compactShelfOrder\(records,deletedShelfId\)/);
   assert.equal(shelfController.includes('Record.nextShelfOrder(records,normalized,record)'),true);
 });
 
