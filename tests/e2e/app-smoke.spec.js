@@ -83,15 +83,15 @@ test('logged-out library tabs require login without changing the route',async({p
   expectNoPageErrors(pageErrors);
 });
 
-test('logged-out visitors cannot open another collector shelf directly',async({page})=>{
+test('logged-out visitors are returned to the public landing from protected routes',async({page})=>{
   const pageErrors=watchPageErrors(page);
 
   await page.goto('/shelf/playwright-protected-route',{waitUntil:'domcontentloaded'});
 
-  await expect(page.locator('#loginToViewCollection')).toBeVisible();
-  await expect(page.locator('#loginToViewCollection .empty-collection-title')).toHaveText('Log in to view this collection');
-  await expect(page.locator('#loginToViewCollectionButton')).toBeVisible();
-  await expect(page.locator('body')).not.toHaveClass(/logged-out-home/);
+  await expect(page).toHaveURL('http://127.0.0.1:4173/');
+  await expect(page.locator('body')).toHaveClass(/logged-out-home/);
+  await expect(page.locator('.landing-title')).toHaveText('Track every record you own');
+  await expect(page.locator('#collection')).toBeHidden();
 
   expectNoPageErrors(pageErrors);
 });
