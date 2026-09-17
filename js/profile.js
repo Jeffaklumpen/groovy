@@ -81,7 +81,7 @@
   settingsPage.innerHTML=
     '<div class="profile-settings-shell">'+
       '<div class="profile-settings-toolbar">'+
-        '<div class="profile-settings-toolbar-brand"><img class="profile-settings-toolbar-logo" src="/logo.png" alt="GroovyShelves"><strong id="profileSettingsTitle">Edit profile</strong></div>'+
+        '<div class="profile-settings-toolbar-brand"><img class="profile-settings-toolbar-logo" src="/assets/images/logo.png" alt="GroovyShelves"><strong id="profileSettingsTitle">Edit profile</strong></div>'+
         '<button id="closeProfileSettings" type="button" aria-label="Close profile settings">×</button>'+
       '</div>'+
       '<div class="profile-settings-body">'+
@@ -216,8 +216,8 @@
     var apple=item.appleUrl||appleFallbackUrl(item.artist,item.title);
     var spotify=spotifyAlbumUrl(item.artist,item.title);
     return '<div class="'+classPrefix+'-streaming-row">'+
-      '<a class="'+classPrefix+'-streaming-service '+classPrefix+'-apple-service" href="'+escapeHtml(apple)+'" target="_blank" rel="noopener noreferrer" aria-label="Listen to '+escapeHtml(item.title)+' on Apple Music"><img src="/apple_wide.svg" alt="Listen on Apple Music"></a>'+
-      '<a class="'+classPrefix+'-streaming-service '+classPrefix+'-spotify-service" href="'+escapeHtml(spotify)+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(item.title)+' on Spotify"><img src="/spotify_logo.svg" alt="Spotify"></a>'+
+      '<a class="'+classPrefix+'-streaming-service '+classPrefix+'-apple-service" href="'+escapeHtml(apple)+'" target="_blank" rel="noopener noreferrer" aria-label="Listen to '+escapeHtml(item.title)+' on Apple Music"><img src="/assets/brands/apple-music-listen.svg" alt="Listen on Apple Music"></a>'+
+      '<a class="'+classPrefix+'-streaming-service '+classPrefix+'-spotify-service" href="'+escapeHtml(spotify)+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(item.title)+' on Spotify"><img src="/assets/brands/spotify-logo.svg" alt="Spotify"></a>'+
     '</div>';
   }
 

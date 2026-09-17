@@ -59,8 +59,8 @@
 
   function releaseStreaming(release){
     return '<div class="stats-release-streaming">'+
-      '<a class="stats-release-service stats-release-apple" href="'+escapeHtml(window.GroovyStatistics.appleSearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Listen to '+escapeHtml(release.title)+' on Apple Music"><img src="/apple_wide.svg" alt="Listen on Apple Music"></a>'+
-      '<a class="stats-release-service stats-release-spotify" href="'+escapeHtml(window.GroovyStatistics.spotifySearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(release.title)+' on Spotify"><img src="/spotify_logo.svg" alt="Spotify"></a>'+
+      '<a class="stats-release-service stats-release-apple" href="'+escapeHtml(window.GroovyStatistics.appleSearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Listen to '+escapeHtml(release.title)+' on Apple Music"><img src="/assets/brands/apple-music-listen.svg" alt="Listen on Apple Music"></a>'+
+      '<a class="stats-release-service stats-release-spotify" href="'+escapeHtml(window.GroovyStatistics.spotifySearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(release.title)+' on Spotify"><img src="/assets/brands/spotify-logo.svg" alt="Spotify"></a>'+
     '</div>';
   }
 
