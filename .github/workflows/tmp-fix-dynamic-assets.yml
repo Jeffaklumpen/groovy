@@ -1,0 +1,61 @@
+name: Temporary dynamic asset fix
+
+on:
+  push:
+    branches:
+      - tmp/fix-dynamic-assets
+
+permissions:
+  contents: write
+
+jobs:
+  patch-paths:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: tmp/fix-dynamic-assets
+      - name: Update dynamic asset paths
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          replacements = {
+              '/Apple_Music_Listen_on_Badge_Small.svg': '/assets/brands/apple-music-badge-small.svg',
+              '/Full_Logo_Green_RGB.svg': '/assets/brands/spotify-full-logo-green.svg',
+              '/avatar_placeholder.png': '/assets/images/avatar-placeholder.png',
+          }
+          changed=[]
+          for p in Path('.').rglob('*'):
+              if not p.is_file() or '.git' in p.parts or p.suffix.lower() not in {'.js','.html','.css','.md','.json','.webmanifest'}:
+                  continue
+              try:
+                  s=p.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              old=s
+              for a,b in replacements.items():
+                  s=s.replace(a,b)
+              if s!=old:
+                  p.write_text(s,encoding='utf-8')
+                  changed.append(str(p))
+          print('Changed:', ', '.join(changed))
+          for old in replacements:
+              hits=[]
+              for p in Path('.').rglob('*'):
+                  if not p.is_file() or '.git' in p.parts or p.suffix.lower() not in {'.js','.html','.css','.md','.json','.webmanifest'}:
+                      continue
+                  try:
+                      if old in p.read_text(encoding='utf-8'):
+                          hits.append(str(p))
+                  except UnicodeDecodeError:
+                      pass
+              if hits:
+                  raise SystemExit(f'Old asset path still present: {old} in {hits}')
+          PY
+          git config user.name "Groovyshelf"
+          git config user.email "150244154+Jeffaklumpen@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Fix dynamic asset paths"
+            git push
+          fi
