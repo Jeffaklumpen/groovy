@@ -79,6 +79,33 @@
     }
   }
 
+  function listingPrice(listing,locale){
+    var amount=Number(listing&&(listing.buyNowPrice||listing.nextBid||listing.currentBid||listing.openingBid)||0);
+    if(!isFinite(amount)||amount<=0)return '';
+    try{
+      return new Intl.NumberFormat(locale||'sv-SE',{
+        style:'currency',
+        currency:String(listing&&listing.currency||'SEK'),
+        maximumFractionDigits:0
+      }).format(amount);
+    }catch(error){
+      return Math.round(amount)+' kr';
+    }
+  }
+
+  function listingEndsText(value,locale){
+    var date=new Date(value);
+    if(!value||isNaN(date.getTime()))return '';
+    var resolvedLocale=locale||'sv-SE';
+    return 'Ends '+date.toLocaleDateString(resolvedLocale,{
+      day:'numeric',
+      month:'short'
+    })+' · '+date.toLocaleTimeString(resolvedLocale,{
+      hour:'2-digit',
+      minute:'2-digit'
+    });
+  }
+
   return Object.freeze({
     safeExternalUrl:safeExternalUrl,
     buyNowCandidates:buyNowCandidates,
@@ -86,6 +113,8 @@
     normalizeIdentity:normalizeIdentity,
     isRelevantListing:isRelevantListing,
     regionCurrency:regionCurrency,
-    formatMoney:formatMoney
+    formatMoney:formatMoney,
+    listingPrice:listingPrice,
+    listingEndsText:listingEndsText
   });
 });

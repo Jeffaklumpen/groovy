@@ -64,3 +64,16 @@ test('formatMoney keeps marketplace formatting behavior',()=>{
   assert.match(Marketplace.formatMoney(149.5,'USD','en-US'),/149\.5/);
   assert.doesNotMatch(Marketplace.formatMoney(1234.56,'JPY','en-US'),/\.56/);
 });
+
+test('listingPrice preserves marketplace listing price precedence and formatting',()=>{
+  assert.equal(Marketplace.listingPrice({buyNowPrice:0,nextBid:0,currentBid:0,openingBid:0,currency:'SEK'},'sv-SE'),'');
+  assert.match(Marketplace.listingPrice({buyNowPrice:149.5,currency:'SEK'},'sv-SE'),/150/);
+  assert.match(Marketplace.listingPrice({nextBid:99,currency:'SEK'},'sv-SE'),/99/);
+});
+
+test('listingEndsText handles invalid and valid dates',()=>{
+  assert.equal(Marketplace.listingEndsText('', 'sv-SE'),'');
+  assert.equal(Marketplace.listingEndsText('not-a-date','sv-SE'),'');
+  assert.match(Marketplace.listingEndsText('2026-09-17T12:34:00Z','sv-SE'),/^Ends /);
+  assert.match(Marketplace.listingEndsText('2026-09-17T12:34:00Z','sv-SE'),/ · /);
+});
