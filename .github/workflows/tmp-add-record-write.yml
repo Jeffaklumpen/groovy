@@ -1,0 +1,22 @@
+name: Temporary Add Record write smoke
+
+on:
+  push:
+    branches:
+      - tmp/add-record-write-smoke
+
+jobs:
+  write-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GROOVY_E2E_EMAIL: ${{ secrets.GROOVY_E2E_EMAIL }}
+      GROOVY_E2E_PASSWORD: ${{ secrets.GROOVY_E2E_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test tests/e2e/tmp-add-record-write.spec.js --project=chromium --retries=0
