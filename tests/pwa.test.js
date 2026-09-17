@@ -92,7 +92,7 @@ test('signup uses the auth trigger and collection membership checks are direct',
 
   assert.match(app,/handle_new_user creates the profile from signup metadata/);
   assert.doesNotMatch(app,/\.from\('profiles'\)[\s\S]{0,80}\.insert\(\{[\s\S]{0,80}id:data\.user\.id/);
-  assert.match(app,/\.eq\('album_id',albumId\)\s*\.limit\(1\)/);
+  assert.match(app,/ownQuery=supabaseClient\.from\('collections'\)[\s\S]{0,400}\.limit\(1\);[\s\S]{0,160}:ownQuery\.eq\('album_id',albumId\);/);
   assert.match(app,/\.eq\('album_id',record\[8\]\)\s*\.limit\(1\)/);
   assert.doesNotMatch(app,/\.limit\(500\)/);
 });
