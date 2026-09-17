@@ -745,6 +745,7 @@ var NotificationCore=window.GroovyNotificationCore;
 var PressingCore=window.GroovyPressingCore;
 var RatingCore=window.GroovyRatingCore;
 var MarketplaceCore=window.GroovyMarketplaceCore;
+var MarketplaceView=window.GroovyMarketplaceView;
 var ShelfCore=window.GroovyShelfCore;
 var LibraryCore=window.GroovyLibraryCore;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
@@ -2375,90 +2376,34 @@ async function refreshMarketplaceBestPrice(index){
 }
 
 function setTraderaButtonState(state,count){
-  traderaButton.classList.remove('loading','empty','unavailable');
-  traderaButton.disabled=false;
-
-  if(state==='loading'){
-    traderaButton.classList.add('loading');
-    traderaButtonLabel.textContent='Tradera · Checking…';
-  }else if(state==='ready'){
-    traderaButtonLabel.textContent='Tradera · '+count+' '+(count===1?'listing':'listings');
-  }else if(state==='empty'){
-    traderaButton.classList.add('empty');
-    traderaButtonLabel.textContent='Tradera · No listings';
-  }else{
-    traderaButton.classList.add('unavailable');
-    traderaButtonLabel.textContent='Tradera · Unavailable';
-  }
-}
-
-function traderaPrice(listing){
-  return MarketplaceCore.listingPrice(listing,'sv-SE');
-}
-
-function traderaEndsText(value){
-  return MarketplaceCore.listingEndsText(value,'sv-SE');
+  MarketplaceView.applyButtonState(traderaButton,traderaButtonLabel,'Tradera',state,count);
 }
 
 function renderTraderaListings(){
-  if(!traderaListings.length){
-    traderaListingsGrid.innerHTML='';
-    return;
-  }
-
-  traderaListingsGrid.innerHTML=traderaListings.map(function(listing){
-    var href=safeExternalUrl(listing.url);
-    var imageUrl=safeExternalUrl(listing.imageUrl);
-    var price=traderaPrice(listing);
-    var ends=traderaEndsText(listing.endDate);
-    var bids=Number(listing.bidCount||0);
-
-    return '<article class="tradera-listing-card">'+
-      '<a class="tradera-listing-image" href="'+esc(href||'#')+'" target="_blank" rel="noopener noreferrer" aria-label="View listing on Tradera">'+
-        (imageUrl?'<img src="'+esc(imageUrl)+'" alt="" loading="lazy">':'<span class="record-icon" aria-hidden="true"></span>')+
-      '</a>'+
-      '<div class="tradera-listing-body">'+
-        '<h3>'+esc(listing.title||'Vinyl record')+'</h3>'+
-        '<div class="tradera-listing-price-row">'+
-          '<strong>'+esc(price||'See price')+'</strong>'+
-          (bids?'<span>'+bids+' '+(bids===1?'bid':'bids')+'</span>':'')+
-        '</div>'+
-        (ends?'<div class="tradera-listing-end">'+esc(ends)+'</div>':'')+
-        (href?'<a class="tradera-listing-link" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">View on Tradera <span aria-hidden="true">↗</span></a>':'')+
-      '</div>'+
-    '</article>';
-  }).join('');
+  MarketplaceView.renderListings(traderaListingsGrid,traderaListings,'Tradera','sv-SE');
 }
 
 function openTraderaModal(){
   var record=records[traderaAlbumIndex];
   if(!record)return;
-
-  traderaModalSubtitle.textContent=record[1]+' · '+record[2];
-  renderTraderaListings();
-
-  if(traderaButton.classList.contains('loading')){
-    traderaListingsStatus.className='tradera-listings-status loading';
-    traderaListingsStatus.textContent='Finding active listings…';
-  }else if(traderaListings.length){
-    traderaListingsStatus.className='tradera-listings-status';
-    traderaListingsStatus.textContent=traderaListings.length+' active '+(traderaListings.length===1?'listing':'listings');
-  }else if(traderaButton.classList.contains('unavailable')){
-    traderaListingsStatus.className='tradera-listings-status error';
-    traderaListingsStatus.textContent='Tradera is temporarily unavailable. Please try again shortly.';
-  }else{
-    traderaListingsStatus.className='tradera-listings-status empty';
-    traderaListingsStatus.textContent='No active listings found for this album right now.';
-  }
-
-  traderaModal.classList.add('visible');
-  traderaModal.setAttribute('aria-hidden','false');
-  closeTraderaModalButton.focus();
+  MarketplaceView.openListingsModal({
+    modal:traderaModal,
+    closeButton:closeTraderaModalButton,
+    subtitle:traderaModalSubtitle,
+    status:traderaListingsStatus,
+    grid:traderaListingsGrid,
+    listings:traderaListings,
+    button:traderaButton,
+    marketplace:'Tradera',
+    artist:record[1],
+    album:record[2],
+    locale:'sv-SE',
+    emptyText:'No active listings found for this album right now.'
+  });
 }
 
 function closeTraderaModal(){
-  traderaModal.classList.remove('visible');
-  traderaModal.setAttribute('aria-hidden','true');
+  MarketplaceView.closeListingsModal(traderaModal);
 }
 
 async function loadTraderaListings(record,index){
@@ -2507,82 +2452,34 @@ async function loadTraderaListings(record,index){
 }
 
 function setEbayButtonState(state,count){
-  ebayButton.classList.remove('loading','empty','unavailable');
-  ebayButton.disabled=false;
-
-  if(state==='loading'){
-    ebayButton.classList.add('loading');
-    ebayButtonLabel.textContent='eBay · Checking…';
-  }else if(state==='ready'){
-    ebayButtonLabel.textContent='eBay · '+count+' '+(count===1?'listing':'listings');
-  }else if(state==='empty'){
-    ebayButton.classList.add('empty');
-    ebayButtonLabel.textContent='eBay · No listings';
-  }else{
-    ebayButton.classList.add('unavailable');
-    ebayButtonLabel.textContent='eBay · Unavailable';
-  }
+  MarketplaceView.applyButtonState(ebayButton,ebayButtonLabel,'eBay',state,count);
 }
 
 function renderEbayListings(){
-  if(!ebayListings.length){
-    ebayListingsGrid.innerHTML='';
-    return;
-  }
-
-  ebayListingsGrid.innerHTML=ebayListings.map(function(listing){
-    var href=safeExternalUrl(listing.url);
-    var imageUrl=safeExternalUrl(listing.imageUrl);
-    var price=traderaPrice(listing);
-    var ends=traderaEndsText(listing.endDate);
-    var bids=Number(listing.bidCount||0);
-
-    return '<article class="tradera-listing-card">'+
-      '<a class="tradera-listing-image" href="'+esc(href||'#')+'" target="_blank" rel="noopener noreferrer" aria-label="View listing on eBay">'+
-        (imageUrl?'<img src="'+esc(imageUrl)+'" alt="" loading="lazy">':'<span class="record-icon" aria-hidden="true"></span>')+
-      '</a>'+
-      '<div class="tradera-listing-body">'+
-        '<h3>'+esc(listing.title||'Vinyl record')+'</h3>'+
-        '<div class="tradera-listing-price-row">'+
-          '<strong>'+esc(price||'See price')+'</strong>'+
-          (bids?'<span>'+bids+' '+(bids===1?'bid':'bids')+'</span>':'')+
-        '</div>'+
-        (ends?'<div class="tradera-listing-end">'+esc(ends)+'</div>':'')+
-        (href?'<a class="tradera-listing-link" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">View on eBay <span aria-hidden="true">↗</span></a>':'')+
-      '</div>'+
-    '</article>';
-  }).join('');
+  MarketplaceView.renderListings(ebayListingsGrid,ebayListings,'eBay','sv-SE');
 }
 
 function openEbayModal(){
   var record=records[ebayAlbumIndex];
   if(!record)return;
-
-  ebayModalSubtitle.textContent=record[1]+' · '+record[2];
-  renderEbayListings();
-
-  if(ebayButton.classList.contains('loading')){
-    ebayListingsStatus.className='tradera-listings-status loading';
-    ebayListingsStatus.textContent='Finding active listings…';
-  }else if(ebayListings.length){
-    ebayListingsStatus.className='tradera-listings-status';
-    ebayListingsStatus.textContent=ebayListings.length+' active '+(ebayListings.length===1?'listing':'listings');
-  }else if(ebayButton.classList.contains('unavailable')){
-    ebayListingsStatus.className='tradera-listings-status error';
-    ebayListingsStatus.textContent='eBay is temporarily unavailable. Please try again shortly.';
-  }else{
-    ebayListingsStatus.className='tradera-listings-status empty';
-    ebayListingsStatus.textContent='No active vinyl LP listings found for this album right now.';
-  }
-
-  ebayModal.classList.add('visible');
-  ebayModal.setAttribute('aria-hidden','false');
-  closeEbayModalButton.focus();
+  MarketplaceView.openListingsModal({
+    modal:ebayModal,
+    closeButton:closeEbayModalButton,
+    subtitle:ebayModalSubtitle,
+    status:ebayListingsStatus,
+    grid:ebayListingsGrid,
+    listings:ebayListings,
+    button:ebayButton,
+    marketplace:'eBay',
+    artist:record[1],
+    album:record[2],
+    locale:'sv-SE',
+    emptyText:'No active vinyl LP listings found for this album right now.'
+  });
 }
 
 function closeEbayModal(){
-  ebayModal.classList.remove('visible');
-  ebayModal.setAttribute('aria-hidden','true');
+  MarketplaceView.closeListingsModal(ebayModal);
 }
 
 async function loadEbayListings(record,index){
