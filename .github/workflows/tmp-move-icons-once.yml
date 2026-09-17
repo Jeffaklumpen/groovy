@@ -1,0 +1,29 @@
+name: One-time move icons into assets
+on:
+  push:
+    branches: [notes]
+jobs:
+  move-icons:
+    if: github.event.head_commit.message == 'Add one-time icon mover'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: notes
+      - name: Move icons, update paths and remove workflow
+        run: |
+          mkdir -p assets/icons
+          git mv icons/app-icon-192.png assets/icons/app-icon-192.png
+          git mv icons/app-icon-512.png assets/icons/app-icon-512.png
+          git mv icons/apple-touch-icon.png assets/icons/apple-touch-icon.png
+          git mv icons/favicon.png assets/icons/favicon.png
+          sed -i 's#/icons/#/assets/icons/#g' index.html manifest.webmanifest
+          sed -i 's#/manifest.webmanifest?v=2#/manifest.webmanifest?v=3#' index.html
+          rm .github/workflows/tmp-move-icons-once.yml
+          git config user.name 'Groovyshelf'
+          git config user.email '150244154+Jeffaklumpen@users.noreply.github.com'
+          git add -A
+          git commit -m 'Move icons into assets'
+          git push origin HEAD:notes
