@@ -91,7 +91,7 @@ test('viewed shelf rating helpers are available outside the collection module',f
   const fs=require('node:fs');
   const path=require('node:path');
   const app=fs.readFileSync(path.resolve(__dirname,'..','js','app.js'),'utf8');
-  assert.match(app,/window\.loadAlbumRatingData=loadAlbumRatingData/);
+  assert.match(app,/window\.loadAlbumRatingData=ratingController\.loadData/);
   assert.match(app,/window\.applyAlbumRatingMeta=Record\.applyRatingMeta/);
 });
 
