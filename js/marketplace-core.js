@@ -83,6 +83,92 @@
     }
   }
 
+  function createFxRateLoader(options){
+    options=options||{};
+    var cache=options.cache&&typeof options.cache.get==='function'&&typeof options.cache.set==='function'?options.cache:new Map();
+    var getStored=typeof options.getStored==='function'?options.getStored:function(){return null;};
+    var setStored=typeof options.setStored==='function'?options.setStored:function(){};
+    var request=typeof options.request==='function'?options.request:null;
+    var now=typeof options.now==='function'?options.now:Date.now;
+    var ttl=Number(options.ttlMs)||12*60*60*1000;
+
+    return async function(from,to){
+      from=String(from||'').toUpperCase();
+      to=String(to||'').toUpperCase();
+      if(!from||!to)throw new Error('Missing currency');
+      if(from===to)return 1;
+
+      var key=from+'-'+to;
+      var currentTime=now();
+      var memory=cache.get(key);
+      if(memory&&Number(memory.rate)>0&&currentTime-Number(memory.savedAt)<ttl)return Number(memory.rate);
+
+      var storageKey='groovy-fx-v1-'+key;
+      try{
+        var stored=JSON.parse(getStored(storageKey)||'null');
+        if(stored&&Number(stored.rate)>0&&currentTime-Number(stored.savedAt)<ttl){
+          cache.set(key,stored);
+          return Number(stored.rate);
+        }
+      }catch(error){}
+
+      if(!request)throw new Error('FX rate unavailable');
+      var response=await request('https://api.frankfurter.dev/v2/rate/'+encodeURIComponent(from.toLowerCase())+'/'+encodeURIComponent(to.toLowerCase()),{headers:{Accept:'application/json'}});
+      if(!response||!response.ok)throw new Error('FX rate unavailable');
+      var data=await response.json();
+      var rate=Number(data&&data.rate);
+      if(!isFinite(rate)||rate<=0)throw new Error('Invalid FX rate');
+
+      var cached={rate:rate,savedAt:now()};
+      cache.set(key,cached);
+      try{setStored(storageKey,JSON.stringify(cached));}catch(error){}
+      return rate;
+    };
+  }
+
+  async function resolveBestPrice(candidates,target,getRate,locale,shouldCancel){
+    candidates=(candidates||[]).slice();
+    if(!candidates.length)return {state:'empty'};
+
+    var converted=[];
+    for(var i=0;i<candidates.length;i++){
+      try{
+        var rate=await getRate(candidates[i].currency,target);
+        converted.push(Object.assign({},candidates[i],{converted:candidates[i].amount*rate}));
+      }catch(error){
+        converted.push(Object.assign({},candidates[i],{converted:null}));
+      }
+      if(shouldCancel&&shouldCancel())return {state:'cancelled'};
+    }
+
+    var comparable=converted.filter(function(item){return isFinite(item.converted)&&item.converted>0;});
+    if(candidates.length>1&&comparable.length!==candidates.length){
+      return {
+        state:'partial',
+        label:converted.map(function(item){return item.marketplace+' '+formatMoney(item.amount,item.currency,locale);}).join(' · ')
+      };
+    }
+
+    var best=(comparable.length?comparable:converted).slice().sort(function(a,b){
+      var av=isFinite(a.converted)?a.converted:a.amount;
+      var bv=isFinite(b.converted)?b.converted:b.amount;
+      return av-bv;
+    })[0];
+    var shownAmount=isFinite(best.converted)?best.converted:best.amount;
+    var shownCurrency=isFinite(best.converted)?target:best.currency;
+    var original=formatMoney(best.amount,best.currency,locale);
+
+    return {
+      state:'ready',
+      priceLabel:formatMoney(shownAmount,shownCurrency,locale),
+      metaLabel:best.marketplace+(best.currency!==shownCurrency?' · '+original:''),
+      url:best.url||'#',
+      best:best,
+      shownAmount:shownAmount,
+      shownCurrency:shownCurrency
+    };
+  }
+
   function listingPrice(listing,locale){
     var amount=Number(listing&&(listing.buyNowPrice||listing.nextBid||listing.currentBid||listing.openingBid)||0);
     if(!isFinite(amount)||amount<=0)return '';
@@ -119,6 +205,8 @@
     regionCurrency:regionCurrency,
     displayCurrency:displayCurrency,
     formatMoney:formatMoney,
+    createFxRateLoader:createFxRateLoader,
+    resolveBestPrice:resolveBestPrice,
     listingPrice:listingPrice,
     listingEndsText:listingEndsText
   });

@@ -71,6 +71,97 @@ test('formatMoney keeps marketplace formatting behavior',()=>{
   assert.doesNotMatch(Marketplace.formatMoney(1234.56,'JPY','en-US'),/\.56/);
 });
 
+test('createFxRateLoader caches fetched rates and persists them',async()=>{
+  const cache=new Map();
+  const writes=new Map();
+  let calls=0;
+  let now=1000;
+  const getRate=Marketplace.createFxRateLoader({
+    cache,
+    now:()=>now,
+    getStored:key=>writes.get(key)||null,
+    setStored:(key,value)=>writes.set(key,value),
+    request:async(url,options)=>{
+      calls++;
+      assert.match(url,/\/sek\/eur$/);
+      assert.equal(options.headers.Accept,'application/json');
+      return {ok:true,json:async()=>({rate:0.087})};
+    }
+  });
+
+  assert.equal(await getRate('sek','eur'),0.087);
+  assert.equal(calls,1);
+  assert.ok(writes.has('groovy-fx-v1-SEK-EUR'));
+  now+=1000;
+  assert.equal(await getRate('SEK','EUR'),0.087);
+  assert.equal(calls,1);
+  assert.equal(await getRate('EUR','EUR'),1);
+});
+
+test('createFxRateLoader restores a fresh persisted rate without a request',async()=>{
+  let calls=0;
+  const getRate=Marketplace.createFxRateLoader({
+    now:()=>5000,
+    getStored:key=>key==='groovy-fx-v1-USD-SEK'?JSON.stringify({rate:10.4,savedAt:4500}):null,
+    request:async()=>{calls++;return {ok:true,json:async()=>({rate:99})};}
+  });
+  assert.equal(await getRate('USD','SEK'),10.4);
+  assert.equal(calls,0);
+});
+
+test('resolveBestPrice converts candidates and picks the cheapest Buy Now offer',async()=>{
+  const result=await Marketplace.resolveBestPrice([
+    {amount:100,currency:'SEK',marketplace:'Tradera',url:'https://example.com/tradera'},
+    {amount:20,currency:'EUR',marketplace:'eBay',url:'https://example.com/ebay'}
+  ],'EUR',async(from,to)=>from===to?1:0.08,'en-US');
+
+  assert.equal(result.state,'ready');
+  assert.equal(result.best.marketplace,'Tradera');
+  assert.equal(result.shownAmount,8);
+  assert.equal(result.shownCurrency,'EUR');
+  assert.equal(result.url,'https://example.com/tradera');
+  assert.match(result.metaLabel,/Tradera/);
+});
+
+test('resolveBestPrice reports partial data when one of several conversions fails',async()=>{
+  const result=await Marketplace.resolveBestPrice([
+    {amount:100,currency:'SEK',marketplace:'Tradera',url:'https://example.com/tradera'},
+    {amount:20,currency:'USD',marketplace:'eBay',url:'https://example.com/ebay'}
+  ],'EUR',async from=>{
+    if(from==='USD')throw new Error('no rate');
+    return 0.08;
+  },'en-US');
+
+  assert.equal(result.state,'partial');
+  assert.match(result.label,/Tradera/);
+  assert.match(result.label,/eBay/);
+});
+
+test('resolveBestPrice keeps the original currency when one conversion fails',async()=>{
+  const result=await Marketplace.resolveBestPrice([
+    {amount:149,currency:'SEK',marketplace:'Tradera',url:'https://example.com/tradera'}
+  ],'EUR',async()=>{throw new Error('no rate');},'sv-SE');
+
+  assert.equal(result.state,'ready');
+  assert.equal(result.shownAmount,149);
+  assert.equal(result.shownCurrency,'SEK');
+  assert.equal(result.metaLabel,'Tradera');
+});
+
+test('resolveBestPrice supports cancellation between asynchronous conversions',async()=>{
+  let cancelled=false;
+  const result=await Marketplace.resolveBestPrice([
+    {amount:100,currency:'SEK',marketplace:'Tradera',url:'https://example.com/tradera'},
+    {amount:20,currency:'EUR',marketplace:'eBay',url:'https://example.com/ebay'}
+  ],'EUR',async()=>{cancelled=true;return 0.08;},'en-US',()=>cancelled);
+  assert.equal(result.state,'cancelled');
+});
+
+test('resolveBestPrice returns an empty state with no candidates',async()=>{
+  const result=await Marketplace.resolveBestPrice([], 'SEK', async()=>1, 'sv-SE');
+  assert.deepEqual(result,{state:'empty'});
+});
+
 test('listingPrice preserves marketplace listing price precedence and formatting',()=>{
   assert.equal(Marketplace.listingPrice({buyNowPrice:0,nextBid:0,currentBid:0,openingBid:0,currency:'SEK'},'sv-SE'),'');
   assert.match(Marketplace.listingPrice({buyNowPrice:149.5,currency:'SEK'},'sv-SE'),/150/);
