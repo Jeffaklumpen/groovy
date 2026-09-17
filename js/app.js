@@ -4,6 +4,8 @@ var NotificationController=window.GroovyNotificationController;
 if(!NotificationController)throw new Error('GroovyNotificationController must load before app.js');
 var SocialController=window.GroovySocialController;
 if(!SocialController)throw new Error('GroovySocialController must load before app.js');
+var UserSearchController=window.GroovyUserSearchController;
+if(!UserSearchController)throw new Error('GroovyUserSearchController must load before app.js');
 var AppleSearchCore=window.GroovyAppleSearchCore;
 if(!AppleSearchCore)throw new Error('GroovyAppleSearchCore must load before app.js');
 var AlbumSearch=window.GroovyAlbumSearch;
@@ -149,6 +151,33 @@ var socialController=SocialController.create({
   }
 });
 
+var userSearchController=UserSearchController.create({
+  elements:{
+    searchButton:document.getElementById('searchUserButton'),
+    modal:document.getElementById('searchUserModal'),
+    closeButton:document.getElementById('closeSearchUser'),
+    input:document.getElementById('userSearchInput'),
+    results:document.getElementById('userSearchResults'),
+    onlineUsersStatus:document.getElementById('onlineUsersStatus'),
+    onlineUsersCount:document.getElementById('onlineUsersCount'),
+    onlineUsersDesktopLabel:document.getElementById('onlineUsersDesktopLabel')
+  },
+  api:supabaseClient,
+  window:window,
+  document:document,
+  getCurrentUser:currentSessionUser,
+  socialController:socialController,
+  onNavigate:function(username){
+    history.pushState({},'','/shelf/'+encodeURIComponent(username));
+    renderCurrentRoute();
+  },
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
+
 var notificationController=NotificationController.create({
   elements:{
     box:document.getElementById('notificationBox'),
@@ -226,7 +255,7 @@ authSwitchButton.addEventListener('click',function(){
 async function updateAuthUI(){
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
-    syncUserPresence(user);
+    userSearchController.syncUser(user);
 
     if(user){
         profileButton.style.display='flex';
@@ -3706,358 +3735,6 @@ const addAlbumModal=document.getElementById('addAlbumModal');
 const closeAddAlbum=document.getElementById('closeAddAlbum');
 const albumSearchInput=document.getElementById('albumSearchInput');
 const albumSearchResults=document.getElementById('albumSearchResults');
-
-const searchUserButton=document.getElementById('searchUserButton');
-const searchUserModal=document.getElementById('searchUserModal');
-const closeSearchUser=document.getElementById('closeSearchUser');
-
-const userSearchInput=document.getElementById('userSearchInput');
-const userSearchResults=document.getElementById('userSearchResults');
-
-let userSearchTimer=null;
-var userPresenceChannel=null;
-var presenceUserId='';
-var presenceSyncPromise=Promise.resolve();
-var onlineUserIds=new Set();
-var anonymousPresenceKey='viewer-'+Math.random().toString(36).slice(2)+'-'+Date.now().toString(36);
-const onlineUsersStatus=document.getElementById('onlineUsersStatus');
-const onlineUsersCount=document.getElementById('onlineUsersCount');
-const onlineUsersDesktopLabel=document.getElementById('onlineUsersDesktopLabel');
-
-function refreshOnlineUserCount(){
-    const count=onlineUserIds.size;
-    if(!onlineUsersStatus||!onlineUsersCount)return;
-    onlineUsersCount.textContent=String(count);
-    if(onlineUsersDesktopLabel)onlineUsersDesktopLabel.textContent=count===1?'user online':'users online';
-    onlineUsersStatus.classList.toggle('has-users',count>0);
-    onlineUsersStatus.setAttribute('aria-label',count+' '+(count===1?'user online':'users online'));
-}
-
-function refreshUserPresenceDots(){
-    document.querySelectorAll('.user-presence-dot[data-user-id]').forEach(function(dot){
-        const isOnline=onlineUserIds.has(dot.dataset.userId);
-        dot.classList.toggle('online',isOnline);
-        dot.setAttribute('aria-label',isOnline?'Online':'Offline');
-        dot.title=isOnline?'Online now':'';
-    });
-    refreshOnlineUserCount();
-}
-
-function addUserPresenceDot(avatar,userId){
-    const dot=document.createElement('span');
-    dot.className='user-presence-dot';
-    dot.dataset.userId=String(userId||'');
-    avatar.appendChild(dot);
-    refreshUserPresenceDots();
-}
-
-function syncUserPresence(user){
-    presenceSyncPromise=presenceSyncPromise.then(function(){
-        return performUserPresenceSync(user);
-    }).catch(function(error){
-        console.warn('Could not sync online status:',error);
-    });
-    return presenceSyncPromise;
-}
-
-async function performUserPresenceSync(user){
-    const nextUserId=user&&user.id?String(user.id):'';
-    const nextPresenceIdentity=nextUserId||'__viewer__';
-    if(nextPresenceIdentity===presenceUserId&&userPresenceChannel)return;
-
-    const previousChannel=userPresenceChannel;
-    userPresenceChannel=null;
-    presenceUserId=nextPresenceIdentity;
-    onlineUserIds=new Set();
-    refreshUserPresenceDots();
-
-    if(previousChannel){
-        try{await previousChannel.untrack();}catch(error){}
-        try{await supabaseClient.removeChannel(previousChannel);}catch(error){}
-    }
-
-    const channel=supabaseClient.channel('groovy-online-users',{
-        config:{presence:{key:nextUserId||anonymousPresenceKey}}
-    });
-    userPresenceChannel=channel;
-
-    channel.on('presence',{event:'sync'},function(){
-        if(channel!==userPresenceChannel)return;
-        const presenceState=channel.presenceState();
-        onlineUserIds=new Set(
-            Object.keys(presenceState||{}).filter(function(key){return key.indexOf('viewer-')!==0;})
-        );
-        refreshUserPresenceDots();
-    });
-
-    channel.subscribe(async function(status){
-        if(channel!==userPresenceChannel)return;
-        if(status==='SUBSCRIBED'&&nextUserId){
-            try{
-                await channel.track({user_id:nextUserId,online_at:new Date().toISOString()});
-            }catch(error){
-                console.warn('Could not update online status:',error);
-            }
-            return;
-        }
-        if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
-            onlineUserIds=new Set();
-            refreshUserPresenceDots();
-        }
-    });
-}
-
-userSearchInput.addEventListener('input',function(){
-    const query=userSearchInput.value.trim();
-
-    clearTimeout(userSearchTimer);
-
-    if(query.length<2){
-        loadTopUsers();
-        return;
-    }
-
-    userSearchResults.innerHTML='<p>Searching...</p>';
-
-    userSearchTimer=setTimeout(function(){
-        searchUsers(query);
-    },250);
-});
-
-function appendUserSearchFollowButton(container,user,sessionUser,followingSet){
-    if(!container||!user||!sessionUser||user.id===sessionUser.id)return;
-    var button=document.createElement('button');
-    button.type='button';
-    button.className='user-search-follow-button';
-    button.dataset.username=user.username||'collector';
-    socialController.setFollowButtonState(button,user.id,followingSet&&followingSet.has(user.id));
-    button.addEventListener('click',async function(event){
-        event.preventDefault();
-        event.stopPropagation();
-        var wasFollowing=button.dataset.following==='true';
-        button.disabled=true;
-        button.textContent=wasFollowing?'Unfollowing...':'Following...';
-        try{
-            if(wasFollowing)await window.groovyUnfollowUser(user.id);
-            else await window.groovyFollowUser(user.id);
-            socialController.setFollowButtonState(button,user.id,!wasFollowing);
-        }catch(error){
-            console.error('Could not change follow status:',error);
-            socialController.setFollowButtonState(button,user.id,wasFollowing);
-        }
-        button.disabled=false;
-    });
-    container.appendChild(button);
-}
-
-async function loadTopUsers(){
-    const {data:users,error}=await supabaseClient
-        .from('profiles')
-        .select('id,username,avatar_url');
-
-    if(error){
-        console.error('Top users error:',error);
-        userSearchResults.innerHTML='<p>Could not load users.</p>';
-        return;
-    }
-
-    if(!users||!users.length){
-        userSearchResults.innerHTML='<p>No users found.</p>';
-        return;
-    }
-
-    const sessionUser=await currentSessionUser();
-    const followingSet=sessionUser?await socialController.followingIds(users.map(function(user){return user.id;})):new Set();
-
-    const userCollectionCounts=await Promise.all(
-        users.map(async function(user){
-            const {count,error}=await supabaseClient
-                .from('collections')
-                .select('id',{count:'exact',head:true})
-                .eq('user_id',user.id);
-
-            return {
-                id:user.id,
-                count:error?0:(count||0)
-            };
-        })
-    );
-
-    userCollectionCounts.sort(function(a,b){
-        return b.count-a.count;
-    });
-
-    const topUsers=userCollectionCounts.slice(0,10);
-
-    userSearchResults.innerHTML='';
-
-    topUsers.forEach(function(item){
-        const user=users.find(function(user){
-            return user.id===item.id;
-        });
-
-        if(!user)return;
-
-        const div=document.createElement('div');
-
-        div.className='user-search-result';
-        div.dataset.userId=user.id;
-        div.style.cursor='pointer';
-
-        const avatar=document.createElement('div');
-        avatar.className='user-search-avatar';
-
-        avatar.style.backgroundImage='url("'+
-            (user.avatar_url||'/assets/images/avatar-placeholder.png')+
-            '")';
-
-        avatar.style.backgroundSize='cover';
-        avatar.style.backgroundPosition='center';
-        addUserPresenceDot(avatar,user.id);
-
-        const userInfo=document.createElement('div');
-        userInfo.className='user-search-info';
-
-        const username=document.createElement('span');
-        username.className='user-search-username';
-        username.textContent=user.username;
-
-        const collectionCount=document.createElement('span');
-        collectionCount.className='user-search-count';
-        collectionCount.textContent=item.count+' collected records';
-
-        userInfo.appendChild(username);
-        userInfo.appendChild(collectionCount);
-
-        div.appendChild(avatar);
-        div.appendChild(userInfo);
-        appendUserSearchFollowButton(div,user,sessionUser,followingSet);
-
-        userSearchResults.appendChild(div);
-
-        div.addEventListener('click',function(){
-            searchUserModal.style.display='none';
-            history.pushState({},'','/shelf/'+encodeURIComponent(user.username));
-            renderCurrentRoute();
-        });
-    });
-}
-
-async function searchUsers(query){
-    const {data,error}=await supabaseClient
-        .from('profiles')
-        .select('id,username,avatar_url')
-        .ilike('username','%'+query+'%')
-        .limit(10);
-
-    if(error){
-        console.error('User search error:',error);
-        userSearchResults.innerHTML='<p>Could not search users.</p>';
-        return;
-    }
-
-    userSearchResults.innerHTML='';
-
-    if(!data||!data.length){
-        userSearchResults.innerHTML='<p>No users found.</p>';
-        return;
-    }
-
-    const sessionUser=await currentSessionUser();
-    const followingSet=sessionUser?await socialController.followingIds(data.map(function(user){return user.id;})):new Set();
-
-    const userCollectionCounts=await Promise.all(
-        data.map(async function(user){
-            const {count,error}=await supabaseClient
-                .from('collections')
-                .select('id',{count:'exact',head:true})
-                .eq('user_id',user.id);
-    
-            return {
-                id:user.id,
-                count:error?0:(count||0)
-            };
-        })
-    );
-    
-    const collectionCountMap={};
-    
-    userCollectionCounts.forEach(function(item){
-        collectionCountMap[item.id]=item.count;
-    });
-
-    data.forEach(function(user){
-        const div=document.createElement('div');
-
-        div.className='user-search-result';
-        div.dataset.userId=user.id;
-        div.style.cursor='pointer';
-        
-        const avatar=document.createElement('div');
-        avatar.className='user-search-avatar';
-    
-        avatar.style.backgroundImage='url("'+
-            (user.avatar_url||'/assets/images/avatar-placeholder.png')+
-            '")';
-    
-        avatar.style.backgroundSize='cover';
-        avatar.style.backgroundPosition='center';
-        addUserPresenceDot(avatar,user.id);
-    
-        const userInfo=document.createElement('div');
-        userInfo.className='user-search-info';
-        
-        const username=document.createElement('span');
-        username.className='user-search-username';
-        username.textContent=user.username;
-        
-        const collectionCount=document.createElement('span');
-        collectionCount.className='user-search-count';
-        collectionCount.textContent=(collectionCountMap[user.id]||0)+' collected records';
-        
-        userInfo.appendChild(username);
-        userInfo.appendChild(collectionCount);
-        
-        div.appendChild(avatar);
-        div.appendChild(userInfo);
-        appendUserSearchFollowButton(div,user,sessionUser,followingSet);
-    
-        userSearchResults.appendChild(div);
-
-        div.addEventListener('click',function(){
-            searchUserModal.style.display='none';
-            history.pushState({},'','/shelf/'+encodeURIComponent(user.username));
-            renderCurrentRoute();
-        });
-    });
-}
-
-
-
-searchUserButton.addEventListener('click',async function(event){
-    event.preventDefault();
-    event.stopPropagation();
-
-    const {data:{session}}=await supabaseClient.auth.getSession();
-    const user=session&&session.user;
-
-    if(!user)return;
-
-    searchUserModal.style.display='flex';
-    userSearchInput.value='';
-    loadTopUsers();
-    userSearchInput.focus();
-});
-
-closeSearchUser.addEventListener('click',function(){
-    searchUserModal.style.display='none';
-});
-
-searchUserModal.addEventListener('click',function(event){
-    if(event.target===searchUserModal){
-        searchUserModal.style.display='none';
-    }
-});
 
 const myCollectionButton=document.getElementById('myCollectionButton');
 const collectionTabButton=document.getElementById('collectionTabButton');

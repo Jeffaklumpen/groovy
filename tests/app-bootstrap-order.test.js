@@ -62,6 +62,16 @@ test('user search controller loads after social controller and before app.js',()
   assert.ok(social>=0&&userSearch>social&&app>userSearch);
 });
 
+test('user search controller initializes before app integration',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  const declaration=source.indexOf('var UserSearchController=window.GroovyUserSearchController;');
+  const create=source.indexOf('UserSearchController.create({');
+  assert.ok(declaration>=0&&create>declaration);
+  assert.match(source,/GroovyUserSearchController must load before app\.js/);
+  assert.match(source,/userSearchController\.syncUser\(user\)/);
+  assert.doesNotMatch(source,/let userSearchTimer|var userPresenceChannel|function syncUserPresence|function performUserPresenceSync|function loadTopUsers|async function searchUsers|groovy-online-users/);
+});
+
 test('marketplace scripts load core, view and controller in order before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const core=html.indexOf('/js/marketplace-core.js?v=');
