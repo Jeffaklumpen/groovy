@@ -433,10 +433,10 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 .search-modal-box .mb-add-button:active{transform:scale(.96)}
 .search-modal-box .mb-add-button.mb-added{background:#29292d;color:#9a9aa0;box-shadow:none}
 .mb-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
-.search-modal-box .mb-wishlist-button{display:flex;align-items:center;gap:6px;min-width:92px;justify-content:center;padding:8px 11px;border:1px solid #4a4a50;border-radius:9px;background:#19191c;color:#ddd;font-family:inherit;font-size:12px;font-weight:650;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease}
-.search-modal-box .mb-wishlist-button:hover{background:#252529;border-color:#666;color:#fff}
-.search-modal-box .mb-wishlist-button:active{transform:scale(.96)}
-.search-modal-box .mb-wishlist-button.mb-wishlisted{background:#29292d;border-color:#29292d;color:#9a9aa0;cursor:default}
+#addAlbumModal .mb-wishlist-button,.search-modal-box .mb-wishlist-button{display:flex;align-items:center;gap:6px;min-width:92px;justify-content:center;padding:8px 11px;border:1px solid #4a4a50;border-radius:9px;background:#19191c;color:#ddd;font-family:inherit;font-size:12px;font-weight:650;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+#addAlbumModal .mb-wishlist-button:hover,.search-modal-box .mb-wishlist-button:hover{background:#252529;border-color:#666;color:#fff}
+#addAlbumModal .mb-wishlist-button:active,.search-modal-box .mb-wishlist-button:active{transform:scale(.96)}
+#addAlbumModal .mb-wishlist-button.mb-wishlisted,.search-modal-box .mb-wishlist-button.mb-wishlisted{background:#29292d;border-color:#29292d;color:#9a9aa0;cursor:default}
 .search-modal-box .user-search-result{min-height:66px;margin-bottom:7px;padding:10px 12px;border:1px solid #29292d;border-radius:13px;background:rgba(255,255,255,.035);gap:13px;transition:background .15s ease,border-color .15s ease,transform .15s ease}
 .search-modal-box .user-search-result:last-child{margin-bottom:0}
 .search-modal-box .user-search-result:hover{background:#212124;border-color:#3a3a3f;transform:translateY(-1px)}
@@ -469,7 +469,7 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 .search-modal-box .mb-cover{width:50px;height:50px}
 .search-modal-box .mb-add-button{min-width:56px;padding:8px 11px}
 .mb-actions{flex-direction:column;align-items:stretch;gap:5px}
-.search-modal-box .mb-wishlist-button{min-width:88px;padding:7px 9px;font-size:11px}
+#addAlbumModal .mb-wishlist-button,.search-modal-box .mb-wishlist-button{min-width:88px;padding:7px 9px;font-size:11px}
 .search-modal-box .user-search-result{min-height:62px;padding:8px 10px}
 .search-modal-box .user-search-avatar{width:44px;height:44px}
 @keyframes modal-sheet-in{from{opacity:.6;transform:translateY(45px)}to{opacity:1;transform:translateY(0)}}
