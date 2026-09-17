@@ -57,9 +57,10 @@ test('record rendering supports four LP track sides',function(){
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
   const recordModel=fs.readFileSync(path.join(root,'js','record-model.js'),'utf8');
   const tracklist=fs.readFileSync(path.join(root,'js','detail-tracklist-controller.js'),'utf8');
+  const pressingCore=fs.readFileSync(path.join(root,'js','pressing-core.js'),'utf8');
   assert.match(recordModel,/return \{A:\[\],B:\[\],C:\[\],D:\[\],E:\[\],F:\[\],G:\[\],H:\[\]\}/);
   assert.match(tracklist,/var sideNames=\['A','B','C','D','E','F','G','H'\]/);
-  assert.match(tracklist,/\^\[A-H\]/);
+  assert.match(pressingCore,/\^\[A-H\]\\s\*\\d/);
   assert.match(app,/matrixE:item\.matrix_runout_e/);
 });
 
