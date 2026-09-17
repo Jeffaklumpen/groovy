@@ -141,4 +141,66 @@ test.describe('authenticated read-only smoke flows',()=>{
 
     expectNoPageErrors(pageErrors);
   });
+
+  test('library sort and rating filter controls work without changing account data',async({page})=>{
+    const pageErrors=watchPageErrors(page);
+
+    await loginWithTestAccount(page);
+
+    await page.locator('#librarySortButton').click();
+    await expect(page.locator('#librarySortButton')).toHaveAttribute('aria-expanded','true');
+    await expect(page.locator('#librarySortMenu')).toHaveClass(/open/);
+
+    await page.locator('#librarySortMenu [data-sort="artist-asc"]').click();
+    await expect(page.locator('#librarySortButton')).toContainText('Artist A–Z');
+    await expect(page.locator('#librarySortButton')).toHaveAttribute('aria-expanded','false');
+
+    await page.locator('#filterButton').click();
+    await expect(page.locator('#filterButton')).toHaveAttribute('aria-expanded','true');
+    await expect(page.locator('#filterMenu')).toHaveClass(/open/);
+
+    await page.locator('#filterMenu [data-rating="all"]').click();
+    await expect(page.locator('#filterButton')).toContainText('All ratings');
+    await expect(page.locator('#filterButton')).toHaveAttribute('aria-expanded','false');
+
+    expectNoPageErrors(pageErrors);
+  });
+
+  test('a real collected record opens its authenticated album detail view',async({page})=>{
+    const pageErrors=watchPageErrors(page);
+
+    await loginWithTestAccount(page);
+
+    const records=page.locator('#collection .record');
+    await expect.poll(async()=>{
+      if(await records.count()>0)return 'records';
+      if(await page.locator('#emptyCollection').isVisible())return 'empty';
+      return 'loading';
+    },{timeout:10_000}).not.toBe('loading');
+
+    if(await records.count()===0){
+      test.skip(true,'Dedicated test account has no collected records for a real detail-view check');
+    }
+
+    await records.first().click();
+
+    await expect(page.locator('#albumOverlay')).toHaveClass(/visible/);
+    await expect(page.locator('#detailArtist')).not.toHaveText('');
+    await expect(page.locator('#detailAlbum')).not.toHaveText('');
+    await expect(page.locator('#detailRating')).toBeVisible();
+    await expect(page.locator('#detailTracks')).toBeVisible();
+
+    const firstTrack=page.locator('#detailTracks li').first();
+    if(await firstTrack.count()>0){
+      await expect(firstTrack.locator('.track-title')).not.toHaveText('');
+      await expect(firstTrack.locator('.track-duration')).toBeVisible();
+      await expect(firstTrack.locator('button')).toHaveCount(0);
+      await expect(firstTrack.locator('input')).toHaveCount(0);
+    }
+
+    await page.locator('#albumClose').click();
+    await expect(page.locator('#albumOverlay')).not.toHaveClass(/visible/);
+
+    expectNoPageErrors(pageErrors);
+  });
 });
