@@ -116,25 +116,59 @@ function trackDurationCacheKey(record){
   return 'groovy-track-durations:'+String(value(record,'discogsMasterId')||album);
 }
 
+function normalizedTrackTitle(value){
+  return String(value||'')
+    .normalize('NFKC')
+    .toLocaleLowerCase()
+    .replace(/[’‘]/g,"'")
+    .replace(/&/g,' and ')
+    .replace(/[^a-z0-9]+/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
 function applyTrackDurations(record,incomingTracks,overwriteExisting){
   var sides=value(record,'sides');
   if(!record||!sides||!Array.isArray(incomingTracks))return false;
   var changed=false;
   var byKey={};
+  var bySideTitle={};
+  var byTitle={};
+
   incomingTracks.forEach(function(track,index){
     var side=String(track.disc_side||'').toUpperCase();
     var number=track.track_number==null?'':String(track.track_number);
-    byKey[side+'|'+number]=Object.assign({__index:index},track);
+    var titleKey=normalizedTrackTitle(track.title);
+    var indexed=Object.assign({__index:index},track);
+
+    byKey[side+'|'+number]=indexed;
+    if(titleKey){
+      var sideTitleKey=side+'|'+titleKey;
+      if(!bySideTitle[sideTitleKey])bySideTitle[sideTitleKey]=[];
+      bySideTitle[sideTitleKey].push(indexed);
+      if(!byTitle[titleKey])byTitle[titleKey]=[];
+      byTitle[titleKey].push(indexed);
+    }
   });
+
   Object.keys(sides).forEach(function(side){
     var tracks=sides[side];
     if(!Array.isArray(tracks))return;
     tracks.forEach(function(track,idx){
-      var key=String(side).toUpperCase()+'|'+String(track.trackNumber==null?'':track.trackNumber);
+      var sideKey=String(side).toUpperCase();
+      var key=sideKey+'|'+String(track.trackNumber==null?'':track.trackNumber);
+      var titleKey=normalizedTrackTitle(track.title);
+      var sameSideTitle=titleKey?bySideTitle[sideKey+'|'+titleKey]:null;
+      var globalTitle=titleKey?byTitle[titleKey]:null;
       var match=byKey[key]||incomingTracks.find(function(candidate){
-        return String(candidate.disc_side||'').toUpperCase()===String(side).toUpperCase()&&Number(candidate.track_number||idx+1)===Number(track.trackNumber||idx+1);
+        return String(candidate.disc_side||'').toUpperCase()===sideKey&&
+          Number(candidate.track_number||idx+1)===Number(track.trackNumber||idx+1);
       });
+
+      if(!match&&sameSideTitle&&sameSideTitle.length===1)match=sameSideTitle[0];
+      if(!match&&globalTitle&&globalTitle.length===1)match=globalTitle[0];
       if(!match)return;
+
       if(overwriteExisting||!track.duration){
         var nextDuration=String(match.duration||'').trim();
         if(nextDuration&&track.duration!==nextDuration){

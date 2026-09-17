@@ -88,6 +88,44 @@ test('record model owns track-duration identity and mutation rules',function(){
   assert.equal(Record.sides(record).A[1].duration,'4:20');
 });
 
+test('track-duration matching falls back to normalized title when side numbering differs',function(){
+  const Record=loadModel();
+  const record=[
+    1,'Artist','Album',2016,'Rock',0,'',
+    {
+      A:[{trackNumber:1,title:'First Song',duration:''}],
+      B:[{trackNumber:6,title:'A Savior in the Square',duration:''}],
+      C:[{trackNumber:10,title:'Brother, Can You Hear Me?',duration:''}]
+    },
+    42,9,123
+  ];
+
+  assert.equal(Record.applyTrackDurations(record,[
+    {disc_side:'A',track_number:1,title:'First Song',duration:'1:00'},
+    {disc_side:'B',track_number:1,title:'A Savior In The Square',duration:'2:00'},
+    {disc_side:'C',track_number:3,title:'Brother, Can You Hear Me?',duration:'3:00'}
+  ],false),true);
+
+  assert.equal(Record.sides(record).A[0].duration,'1:00');
+  assert.equal(Record.sides(record).B[0].duration,'2:00');
+  assert.equal(Record.sides(record).C[0].duration,'3:00');
+});
+
+test('track-duration title fallback does not guess when duplicate titles are ambiguous',function(){
+  const Record=loadModel();
+  const record=[
+    1,'Artist','Album',1979,'Rock',0,'',
+    {A:[{trackNumber:9,title:'Repeated',duration:''}]},
+    42,9,123
+  ];
+
+  assert.equal(Record.applyTrackDurations(record,[
+    {disc_side:'B',track_number:1,title:'Repeated',duration:'1:00'},
+    {disc_side:'C',track_number:1,title:'Repeated',duration:'2:00'}
+  ],false),false);
+  assert.equal(Record.sides(record).A[0].duration,'');
+});
+
 test('track-duration controller delegates tuple mutation rules to record model',function(){
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
   const controller=fs.readFileSync(path.join(root,'js','detail-tracklist-controller.js'),'utf8');

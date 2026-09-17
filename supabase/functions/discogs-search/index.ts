@@ -100,27 +100,66 @@ export default {
 
         if (!versions.length) return Response.json({ release: null, tracklist: [] })
 
-        const selectedVersion = versions.find((version: Record<string, unknown>) => {
+        function isVinylVersion(version: Record<string, unknown>) {
           const format = Array.isArray(version.format)
             ? version.format.join(' ').toLowerCase()
             : String(version.format || '').toLowerCase()
           return format.includes('vinyl') || format.includes('lp') ||
             format.includes('12"') || format.includes('10"') || format.includes('7"')
-        }) || versions[0]
+        }
 
-        const selectedReleaseId = selectedVersion.id || selectedVersion.release_id
-        if (!selectedReleaseId) return Response.json({ release: null, tracklist: [] })
+        function flattenTracklist(tracklist: unknown[]) {
+          const rows: Record<string, unknown>[] = []
+          ;(Array.isArray(tracklist) ? tracklist : []).forEach((track: any) => {
+            if (track && (track.type_ === 'track' || (!track.type_ && track.title))) rows.push(track)
+            if (track && Array.isArray(track.sub_tracks)) {
+              track.sub_tracks.forEach((subTrack: any) => {
+                if (subTrack && (subTrack.type_ === 'track' || (!subTrack.type_ && subTrack.title))) {
+                  rows.push(subTrack)
+                }
+              })
+            }
+          })
+          return rows
+        }
 
-        const releaseResult = await discogsJson(
-          'https://api.discogs.com/releases/' + encodeURIComponent(selectedReleaseId)
-        )
-        if (releaseResult.response) return releaseResult.response
+        function tracklistScore(tracklist: unknown[]) {
+          const rows = flattenTracklist(tracklist)
+          const durationCount = rows.filter((track: any) => String(track.duration || '').trim()).length
+          const sidedCount = rows.filter((track: any) => /^[A-H]\s*\d/i.test(String(track.position || ''))).length
+          return durationCount * 10000 + sidedCount * 100 + rows.length
+        }
+
+        const candidateIds = versions
+          .filter(isVinylVersion)
+          .map((version: Record<string, unknown>) => String(version.id || version.release_id || '').trim())
+          .filter(Boolean)
+          .slice(0, 8)
+
+        if (!candidateIds.length) return Response.json({ release: null, tracklist: [] })
+
+        const candidateResults = await Promise.all(candidateIds.map(async (candidateId) => {
+          const result = await discogsJson(
+            'https://api.discogs.com/releases/' + encodeURIComponent(candidateId)
+          )
+          if (result.response || !result.data) return null
+          const tracklist = Array.isArray(result.data.tracklist) ? result.data.tracklist : []
+          return {
+            release: result.data,
+            tracklist,
+            score: tracklistScore(tracklist)
+          }
+        }))
+
+        const best = candidateResults
+          .filter(Boolean)
+          .sort((a: any, b: any) => b.score - a.score)[0] || null
+
+        if (!best) return Response.json({ release: null, tracklist: [] })
 
         return Response.json({
-          release: releaseResult.data,
-          tracklist: Array.isArray(releaseResult.data?.tracklist)
-            ? releaseResult.data.tracklist
-            : []
+          release: best.release,
+          tracklist: best.tracklist
         })
       }
 
