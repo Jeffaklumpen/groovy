@@ -2263,28 +2263,10 @@ function isRelevantTraderaListing(listing,record){
 }
 
 function marketplaceRegionCurrency(){
-  var region='';
-  try{
-    var locale=(navigator.languages&&navigator.languages[0])||navigator.language||'';
-    if(typeof Intl.Locale==='function')region=(new Intl.Locale(locale)).region||'';
-    if(!region){var match=String(locale).match(/[-_]([A-Z]{2})\b/i);region=match?match[1].toUpperCase():'';}
-  }catch(error){}
-
-  var byRegion={SE:'SEK',NO:'NOK',DK:'DKK',GB:'GBP',US:'USD',CA:'CAD',AU:'AUD',NZ:'NZD',CH:'CHF',JP:'JPY',PL:'PLN',CZ:'CZK',AT:'EUR',BE:'EUR',CY:'EUR',DE:'EUR',EE:'EUR',ES:'EUR',FI:'EUR',FR:'EUR',GR:'EUR',HR:'EUR',IE:'EUR',IT:'EUR',LT:'EUR',LU:'EUR',LV:'EUR',MT:'EUR',NL:'EUR',PT:'EUR',SI:'EUR',SK:'EUR'};
-  if(byRegion[region])return byRegion[region];
-
-  try{
-    var timezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'';
-    if(timezone==='Europe/Stockholm')return 'SEK';
-    if(timezone==='Europe/Oslo')return 'NOK';
-    if(timezone==='Europe/Copenhagen')return 'DKK';
-    if(timezone==='Europe/London')return 'GBP';
-    if(timezone==='Europe/Zurich')return 'CHF';
-    if(timezone==='Europe/Warsaw')return 'PLN';
-    if(timezone==='Europe/Prague')return 'CZK';
-    if(/^Europe\//.test(timezone))return 'EUR';
-  }catch(error){}
-  return 'EUR';
+  var locale=(navigator.languages&&navigator.languages[0])||navigator.language||'';
+  var timezone='';
+  try{timezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(error){}
+  return MarketplaceCore.regionCurrency(locale,timezone);
 }
 
 function marketplaceCurrencyPreference(){
@@ -2305,10 +2287,8 @@ function syncMarketplaceCurrencyControl(){
 }
 
 function marketplaceFormatMoney(amount,currency){
-  if(!isFinite(amount)||amount<=0)return '';
-  try{
-    return new Intl.NumberFormat((navigator.languages&&navigator.languages[0])||navigator.language||undefined,{style:'currency',currency:String(currency||'EUR').toUpperCase(),currencyDisplay:'narrowSymbol',minimumFractionDigits:0,maximumFractionDigits:String(currency||'').toUpperCase()==='JPY'?0:2}).format(amount);
-  }catch(error){return Math.round(amount*100)/100+' '+String(currency||'').toUpperCase();}
+  var locale=(navigator.languages&&navigator.languages[0])||navigator.language||undefined;
+  return MarketplaceCore.formatMoney(amount,currency,locale);
 }
 
 function marketplaceBuyNowCandidates(listings,marketplace){

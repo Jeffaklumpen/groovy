@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   node-tests:
@@ -19,22 +19,5 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply marketplace helper extraction
-        run: node scripts/apply-marketplace-helper-extraction.js
-      - name: Check JavaScript syntax
-        run: |
-          node --check js/app.js
-          node --check js/marketplace-core.js
       - name: Run regression tests
         run: node --test tests/*.test.js
-      - name: Commit extraction
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No transformed changes to commit."
-            exit 0
-          fi
-          git commit -m "Move marketplace currency helpers into core"
-          git push origin HEAD:notes
