@@ -148,6 +148,68 @@ function matrixSideNames(release){
   return ['a','b','c','d','e','f','g','h'].slice(0,count);
 }
 
+function discogsStyleLabel(data){
+  var values=data&&Array.isArray(data.styles)&&data.styles.length
+    ?data.styles
+    :(data&&Array.isArray(data.genres)?data.genres:[]);
+  var seen={};
+  return values.map(function(value){return String(value||'').trim();})
+    .filter(function(value){
+      var key=value.toLocaleLowerCase();
+      if(!value||seen[key])return false;
+      seen[key]=true;
+      return true;
+    })
+    .slice(0,2)
+    .join(' · ');
+}
+
+function discogsTrackRows(albumId,tracklist,includeDuration){
+  var rawTracks=[];
+
+  (Array.isArray(tracklist)?tracklist:[]).forEach(function(track){
+    if(track&&track.type_==='track')rawTracks.push(track);
+
+    if(track&&Array.isArray(track.sub_tracks)){
+      track.sub_tracks.forEach(function(subTrack){
+        if(subTrack&&(
+          subTrack.type_==='track'||
+          (!subTrack.type_&&subTrack.title)
+        ))rawTracks.push(subTrack);
+      });
+    }
+  });
+
+  var hasDiscSides=rawTracks.some(function(track){
+    return /^[A-H]\s*\d/.test(String(track.position||'').toUpperCase());
+  });
+
+  return rawTracks.map(function(track,index){
+    var position=String(track.position||'').toUpperCase();
+    var discSide='';
+    var trackNumber=null;
+
+    if(hasDiscSides){
+      discSide=position.charAt(0);
+      trackNumber=parseInt(position.substring(1),10);
+    }else{
+      var middle=Math.ceil(rawTracks.length/2);
+      discSide=index<middle?'A':'B';
+      trackNumber=index<middle?index+1:index-middle+1;
+    }
+
+    var row={
+      album_id:albumId,
+      disc_side:discSide,
+      track_number:Number.isNaN(trackNumber)?null:trackNumber,
+      title:track.title||'Okänd låt'
+    };
+
+    if(includeDuration)row.duration=String(track.duration||'').trim();
+    return row;
+  });
+}
+
   return Object.freeze({
     cleanVersionValue:cleanVersionValue,
     normalizeVersion:normalizeVersion,
@@ -162,6 +224,8 @@ function matrixSideNames(release){
     filterVersions:filterVersions,
     dedupeMatrixMatches:dedupeMatrixMatches,
     selectReleaseDetails:selectReleaseDetails,
-    matrixSideNames:matrixSideNames
+    matrixSideNames:matrixSideNames,
+    discogsStyleLabel:discogsStyleLabel,
+    discogsTrackRows:discogsTrackRows
   });
 });

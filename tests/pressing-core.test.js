@@ -69,3 +69,39 @@ test('builds selected pressing details and matrix sides without UI dependencies'
   assert.deepEqual(Pressing.matrixSideNames({formats:[{name:'Vinyl',qty:'2'}]}),['a','b','c','d']);
   assert.deepEqual(Pressing.matrixSideNames({formats:[{name:'Vinyl',qty:'5'}]}),['a','b','c','d','e','f','g','h']);
 });
+
+
+test('formats Discogs style labels without UI dependencies',()=>{
+  assert.equal(Pressing.discogsStyleLabel({styles:[' Prog Rock ','prog rock','Psychedelic Rock']}),'Prog Rock · Psychedelic Rock');
+  assert.equal(Pressing.discogsStyleLabel({genres:['Rock','Electronic','Pop']}),'Rock · Electronic');
+  assert.equal(Pressing.discogsStyleLabel({}), '');
+});
+
+test('normalizes Discogs tracklists into album track rows',()=>{
+  const tracks=[
+    {type_:'track',position:'A1',title:'One',duration:' 3:45 '},
+    {type_:'index',title:'Suite',sub_tracks:[
+      {type_:'track',position:'A2',title:'Two',duration:'4:10'},
+      {position:'B1',title:'Three',duration:'5:00'}
+    ]}
+  ];
+  assert.deepEqual(Pressing.discogsTrackRows(42,tracks,true),[
+    {album_id:42,disc_side:'A',track_number:1,title:'One',duration:'3:45'},
+    {album_id:42,disc_side:'A',track_number:2,title:'Two',duration:'4:10'},
+    {album_id:42,disc_side:'B',track_number:1,title:'Three',duration:'5:00'}
+  ]);
+});
+
+test('keeps legacy A/B fallback when Discogs positions lack vinyl sides',()=>{
+  const rows=Pressing.discogsTrackRows(7,[
+    {type_:'track',position:'1',title:'One'},
+    {type_:'track',position:'2',title:'Two'},
+    {type_:'track',position:'3',title:'Three'}
+  ],false);
+  assert.deepEqual(rows,[
+    {album_id:7,disc_side:'A',track_number:1,title:'One'},
+    {album_id:7,disc_side:'A',track_number:2,title:'Two'},
+    {album_id:7,disc_side:'B',track_number:1,title:'Three'}
+  ]);
+  assert.equal(Object.prototype.hasOwnProperty.call(rows[0],'duration'),false);
+});

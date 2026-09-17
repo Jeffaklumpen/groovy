@@ -11,7 +11,7 @@ GroovyShelves remains a vanilla JavaScript application. The cleanup is intention
 - `js/route-state.js` — pure URL/state helpers only. It must not fetch data, patch browser APIs or inject assets.
 - `js/app.js` — legacy application core. It still owns most library, auth, search, shelves, marketplace and album-detail behavior and is the main target for gradual extraction.
 - `js/streaming-links.js` — pure Spotify and Apple Music URL construction shared by feature code.
-- `js/pressing-core.js` — pure Discogs pressing normalization, filtering, release selection, matrix/runout and vinyl-format helpers.
+- `js/pressing-core.js` — pure Discogs pressing normalization, filtering, release selection, matrix/runout, vinyl-format, style and tracklist helpers.
 - `js/rating-core.js` — pure 0–5 rating normalization and display formatting helpers.
 - `js/marketplace-core.js` — pure external-listing URL validation, buy-now normalization, marketplace cache keys and listing relevance matching.
 - `js/apple-search-core.js` — pure Apple/iTunes text normalization, artist/album matching, edition filtering and artwork helpers.
