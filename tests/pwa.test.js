@@ -114,10 +114,11 @@ test('document metadata is accessible and obsolete rating scripts are gone',func
 
 test('pressing matrices A-H use one schema path without compatibility hydration',function(){
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const pressingController=fs.readFileSync(path.join(root,'js','pressing-controller.js'),'utf8');
   assert.doesNotMatch(app,/hydrateExtendedMatrices|extendedMatricesSaved|extendedPayload|database update needed for E–H/);
   assert.ok((app.match(/matrix_runout_h,/g)||[]).length>=2);
-  assert.match(app,/matrix_runout_h:matrices\.H\|\|null/);
-  assert.match(app,/record\[11\]\.matrixH=payload\.matrix_runout_h\|\|''/);
+  assert.match(pressingController,/matrix_runout_h:matrices\.H\|\|null/);
+  assert.match(pressingController,/details\.matrixH=payload\.matrix_runout_h\|\|''/);
 });
 
 test('album rating presentation lives in CSS instead of runtime style injection',function(){

@@ -92,22 +92,24 @@ test('pressing select and progress helpers preserve legacy UI behavior',()=>{
   assert.equal(bars[3].classList.has('active'),false);
 });
 
-test('pressing view loads before picker and app delegates copy rendering after extraction',()=>{
+test('pressing view loads before picker/controller and copy rendering is delegated to the controller',()=>{
   const root=path.resolve(__dirname,'..');
   const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
   const picker=fs.readFileSync(path.join(root,'js','pressing-picker.js'),'utf8');
+  const controller=fs.readFileSync(path.join(root,'js','pressing-controller.js'),'utf8');
   const viewIndex=index.indexOf('/js/pressing-view.js');
   const pickerIndex=index.indexOf('/js/pressing-picker.js');
+  const controllerIndex=index.indexOf('/js/pressing-controller.js');
   const appIndex=index.indexOf('/js/app.js');
-  assert.ok(viewIndex>=0&&pickerIndex>viewIndex&&appIndex>pickerIndex);
+  assert.ok(viewIndex>=0&&pickerIndex>viewIndex&&controllerIndex>pickerIndex&&appIndex>controllerIndex);
   assert.match(app,/var PressingView=window\.GroovyPressingView;/);
-  assert.match(app,/PressingView\.renderCopyDetails/);
+  assert.match(controller,/View\.renderCopyDetails/);
   assert.match(picker,/View\.setOptions/);
   assert.match(picker,/View\.updateProgress/);
   assert.doesNotMatch(app,/PressingView\.setOptions/);
   assert.doesNotMatch(app,/PressingView\.updateProgress/);
-  assert.match(app,/function recordConditionMeta\(value\)\{return PressingView\.conditionMeta\(value\);\}/);
-  assert.match(app,/function hasCopyDetails\(details\)\{return PressingView\.hasCopyDetails\(details\);\}/);
+  assert.match(app,/PressingView\.conditionMeta\(copy\.mediaCondition\)/);
+  assert.match(app,/PressingView\.hasCopyDetails\(copy\)/);
   assert.doesNotMatch(app,/function conditionOptions\(/);
 });

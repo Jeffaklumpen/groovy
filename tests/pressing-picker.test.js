@@ -144,18 +144,21 @@ test('picker reports a missing master without opening the modal',async()=>{
 const fs=require('node:fs');
 const path=require('node:path');
 
-test('pressing picker loads before app and owns the extracted flow',()=>{
+test('pressing picker loads before controller and the controller owns picker integration',()=>{
   const root=path.resolve(__dirname,'..');
   const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const controller=fs.readFileSync(path.join(root,'js','pressing-controller.js'),'utf8');
   const pickerIndex=index.indexOf('/js/pressing-picker.js');
+  const controllerIndex=index.indexOf('/js/pressing-controller.js');
   const appIndex=index.indexOf('/js/app.js');
-  assert.ok(pickerIndex>=0&&appIndex>pickerIndex);
-  assert.match(app,/var PressingPicker=window\.GroovyPressingPicker;/);
-  assert.match(app,/PressingPicker\?PressingPicker\.create/);
-  assert.match(app,/fetchVersions:fetchPressingVersions/);
-  assert.match(app,/fetchRelease:fetchPressingRelease/);
-  assert.match(app,/onSave:savePressingSelection/);
+  assert.ok(pickerIndex>=0&&controllerIndex>pickerIndex&&appIndex>controllerIndex);
+  assert.match(app,/var PressingController=window\.GroovyPressingController;/);
+  assert.doesNotMatch(app,/GroovyPressingPicker/);
+  assert.match(controller,/Picker\?Picker\.create/);
+  assert.match(controller,/fetchVersions:fetchVersions/);
+  assert.match(controller,/fetchRelease:fetchRelease/);
+  assert.match(controller,/onSave:saveSelection/);
   assert.doesNotMatch(app,/function renderPressingMatches\(/);
   assert.doesNotMatch(app,/function searchPressingsByMatrix\(/);
   assert.doesNotMatch(app,/function refreshPressingFields\(/);
