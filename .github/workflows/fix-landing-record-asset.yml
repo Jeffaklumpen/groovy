@@ -1,0 +1,75 @@
+name: Fix logged out landing record asset
+
+on:
+  push:
+    branches: [notes]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out notes
+        uses: actions/checkout@v4
+        with:
+          ref: notes
+          fetch-depth: 2
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Guard verified inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "5ead82b90ff647cc3bab78f2f8489c2a21366f85"
+          test "$(git hash-object js/app.js)" = "1f503be620c98cd2905a4b6a99c647ca2f8aef56"
+          test -f assets/images/avatar-placeholder.png
+      - name: Fix landing image path and add regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('js/app.js')
+          source=path.read_text(encoding='utf-8')
+          old='<img class="landing-record-art" src="/record.png" alt="Vinyl record">'
+          new='<img class="landing-record-art" src="/assets/images/avatar-placeholder.png" alt="Vinyl record">'
+          if source.count(old)!=1:
+              raise SystemExit(f'Expected exactly one landing record path, found {source.count(old)}')
+          path.write_text(source.replace(old,new),encoding='utf-8')
+          PY
+          cat > tests/landing-asset.test.js <<'EOF'
+          const test=require('node:test');
+          const assert=require('node:assert/strict');
+          const fs=require('fs');
+
+          test('logged-out landing uses an existing record image asset',()=>{
+            const source=fs.readFileSync('js/app.js','utf8');
+            const asset='/assets/images/avatar-placeholder.png';
+            assert.match(source,/class="landing-record-art" src="\/assets\/images\/avatar-placeholder\.png"/);
+            assert.ok(fs.existsSync(asset.slice(1)),'landing record image asset is missing');
+            assert.doesNotMatch(source,/class="landing-record-art" src="\/record\.png"/);
+          });
+          EOF
+      - name: Verify and test
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check js/app.js
+          node --test tests/*.test.js
+          git diff --check
+          test "$(git diff --name-only | sort | tr '\n' ' ')" = "js/app.js tests/landing-asset.test.js "
+      - name: Commit fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Groovyshelf"
+          git config user.email "150244154+Jeffaklumpen@users.noreply.github.com"
+          git add js/app.js tests/landing-asset.test.js
+          git commit -m "Fix logged out landing record image"
+          git push origin HEAD:notes
