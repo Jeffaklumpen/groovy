@@ -14,7 +14,7 @@
   }
 
   function coverUrl(value){
-    return value||'/avatar_placeholder.png';
+    return value||'/assets/images/avatar-placeholder.png';
   }
 
   function hideStatistics(){
@@ -66,7 +66,7 @@
 
   function releaseCard(label,release){
     if(!release)return '<article class="stats-release stats-release-empty"><span>'+label+'</span><strong>No dated records yet</strong></article>';
-    return '<article class="stats-release"><img src="'+escapeHtml(coverUrl(release.cover))+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'"><div class="stats-release-copy"><span>'+label+'</span><strong>'+escapeHtml(release.title)+'</strong><small>'+escapeHtml(release.artist)+' · '+release.year+'</small>'+releaseStreaming(release)+'</div></article>';
+    return '<article class="stats-release"><img src="'+escapeHtml(coverUrl(release.cover))+'" alt="" onerror="this.src=\'/assets/images/avatar-placeholder.png\'"><div class="stats-release-copy"><span>'+label+'</span><strong>'+escapeHtml(release.title)+'</strong><small>'+escapeHtml(release.artist)+' · '+release.year+'</small>'+releaseStreaming(release)+'</div></article>';
   }
 
   function followingComparisonCard(label,item,type){
@@ -77,7 +77,7 @@
     var valueLabel=type==='taste'?'genre match':'records in common';
     var note=type==='taste'?'Closest music taste among collectors you follow':'Most shared collected albums among collectors you follow';
     return '<article class="stats-community-card'+(type==='taste'?' stats-community-card-accent':'')+'">'+
-      '<img class="stats-community-avatar" src="'+escapeHtml(item.avatar_url||'/avatar_placeholder.png')+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'">'+
+      '<img class="stats-community-avatar" src="'+escapeHtml(item.avatar_url||'/assets/images/avatar-placeholder.png')+'" alt="" onerror="this.src=\'/assets/images/avatar-placeholder.png\'">'+
       '<div class="stats-community-copy"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(item.username||'Collector')+'</strong><small>'+escapeHtml(note)+'</small></div>'+
       '<div class="stats-community-value"><strong>'+escapeHtml(value)+'</strong><span>'+escapeHtml(valueLabel)+'</span></div>'+
     '</article>';
@@ -122,7 +122,7 @@
     var topDecade=stats.topDecades[0];
     var topCountry=stats.topCountries[0];
     var rating=stats.averageAlbumRating?stats.averageAlbumRating.toFixed(1):'—';
-    var avatar=profile.avatar_url||'/avatar_placeholder.png';
+    var avatar=profile.avatar_url||'/assets/images/avatar-placeholder.png';
 
     content.innerHTML=
       '<section class="stats-hero"><div class="stats-hero-profile"><img src="'+escapeHtml(avatar)+'" alt=""><div><span class="stats-kicker">Collection insights</span><h1>'+escapeHtml(profile.username||'Groovy listener')+'</h1><p>A snapshot of the records, eras and sounds that shape this collection.</p></div></div><div class="stats-hero-groove" aria-hidden="true"></div></section>'+

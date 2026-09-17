@@ -230,7 +230,7 @@
 
     grailSelected.innerHTML=
       '<article class="profile-grail-card">'+
-        '<img class="profile-grail-cover" src="'+escapeHtml(item.coverUrl||'/avatar_placeholder.png')+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'">'+
+        '<img class="profile-grail-cover" src="'+escapeHtml(item.coverUrl||'/assets/images/avatar-placeholder.png')+'" alt="" onerror="this.src=\'/assets/images/avatar-placeholder.png\'">'+
         '<div class="profile-grail-copy">'+
           '<span class="profile-grail-label">GRAIL RECORD</span>'+
           '<strong>'+escapeHtml(item.title)+'</strong>'+
@@ -320,7 +320,7 @@
 
     grailResults.innerHTML=items.slice(0,8).map(function(item,index){
       return '<button class="profile-grail-result" type="button" data-grail-index="'+index+'">'+
-        '<img src="'+escapeHtml(item.coverUrl||'/avatar_placeholder.png')+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'">'+
+        '<img src="'+escapeHtml(item.coverUrl||'/assets/images/avatar-placeholder.png')+'" alt="" onerror="this.src=\'/assets/images/avatar-placeholder.png\'">'+
         '<span><strong>'+escapeHtml(item.title)+'</strong><small>'+escapeHtml(item.artist)+(item.year?' · '+escapeHtml(item.year):'')+'</small></span>'+
         '<i aria-hidden="true">›</i>'+
       '</button>';
@@ -386,7 +386,7 @@
     statusBox.className='profile-settings-status'+(type?' '+type:'');
   }
 
-  function setAvatar(url){avatarButton.style.backgroundImage='url("'+(url||'/avatar_placeholder.png').replace(/"/g,'%22')+'")';}
+  function setAvatar(url){avatarButton.style.backgroundImage='url("'+(url||'/assets/images/avatar-placeholder.png').replace(/"/g,'%22')+'")';}
   function updateBioCount(){bioCount.textContent=bioInput.value.length+' / 500';}
   function updateDeleteState(){deleteButton.disabled=!state.profile||deleteConfirmInput.value.trim()!==safeText(state.profile.username);}
 
@@ -426,7 +426,7 @@
     return '<section class="collector-profile-card collector-profile-grail">'+
       '<span class="collector-profile-section-kicker">GRAIL RECORD</span>'+
       '<div class="collector-grail-layout">'+
-        '<img class="collector-grail-cover" src="'+escapeHtml(item.coverUrl||'/avatar_placeholder.png')+'" alt="" onerror="this.src=\'/avatar_placeholder.png\'">'+
+        '<img class="collector-grail-cover" src="'+escapeHtml(item.coverUrl||'/assets/images/avatar-placeholder.png')+'" alt="" onerror="this.src=\'/assets/images/avatar-placeholder.png\'">'+
         '<div class="collector-grail-copy"><h2>'+escapeHtml(item.title)+'</h2><p>'+escapeHtml(item.artist)+(item.year?' · '+escapeHtml(item.year):'')+'</p>'+profileStreamingButtons(item,'collector-grail')+'</div>'+
       '</div>'+
     '</section>';
@@ -483,7 +483,7 @@
 
       publicContent.innerHTML=
         '<section class="collector-profile-hero">'+
-          '<div class="collector-profile-avatar" style="background-image:url(&quot;'+escapeHtml(profile.avatar_url||'/avatar_placeholder.png')+'&quot;)"></div>'+
+          '<div class="collector-profile-avatar" style="background-image:url(&quot;'+escapeHtml(profile.avatar_url||'/assets/images/avatar-placeholder.png')+'&quot;)"></div>'+
           '<div class="collector-profile-hero-copy">'+
             '<span class="collector-profile-kicker">VINYL COLLECTOR</span>'+
             '<h1>'+escapeHtml(profile.username)+'</h1>'+

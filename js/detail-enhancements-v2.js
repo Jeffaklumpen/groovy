@@ -288,10 +288,10 @@ function syncMobileStreaming(){
 
   box.innerHTML=
     '<a class="groovy-mobile-streaming-link groovy-mobile-apple" href="'+esc(apple.href)+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(apple.getAttribute('aria-label')||'Listen on Apple Music')+'">'+
-      '<img src="/Apple_Music_Listen_on_Badge_Small.svg" alt="Listen on Apple Music">'+
+      '<img src="/assets/brands/apple-music-badge-small.svg" alt="Listen on Apple Music">'+
     '</a>'+ 
     '<a class="groovy-mobile-streaming-link groovy-mobile-spotify" href="'+esc(spotify.href)+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(spotify.getAttribute('aria-label')||'Listen on Spotify')+'">'+
-      '<img src="/Full_Logo_Green_RGB.svg" alt="Spotify">'+
+      '<img src="/assets/brands/spotify-full-logo-green.svg" alt="Spotify">'+
     '</a>';
 }
 
@@ -318,7 +318,7 @@ function renderCollectedBy(profiles){
 
   function person(profile,extraClass){
     var username=esc(profile.username||'Collector');
-    var avatar=esc(profile.avatar_url||'/avatar_placeholder.png');
+    var avatar=esc(profile.avatar_url||'/assets/images/avatar-placeholder.png');
     return '<button class="detail-social-person'+(extraClass?' '+extraClass:'')+'" type="button" data-detail-social-username="'+username+'" data-tooltip="'+username+'" aria-label="View '+username+'">'+
       '<span class="detail-social-avatar" style="background-image:url(&quot;'+avatar+'&quot;)"></span>'+
       '<span class="detail-social-person-name">'+username+'</span>'+
