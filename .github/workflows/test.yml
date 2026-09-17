@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   node-tests:
@@ -21,3 +21,15 @@ jobs:
           node-version: '22'
       - name: Run regression tests
         run: node --test tests/*.test.js
+      - name: Apply prepared marketplace extraction
+        if: github.event_name == 'push' && github.ref == 'refs/heads/notes' && hashFiles('scripts/apply-marketplace-extraction.js') != ''
+        run: |
+          node scripts/apply-marketplace-extraction.js
+          node --check js/app.js
+          node --check js/marketplace-ui.js
+          node --test tests/marketplace-ui.test.js tests/app-bootstrap-order.test.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Extract marketplace UI from app"
+          git push
