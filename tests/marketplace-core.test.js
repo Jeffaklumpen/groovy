@@ -58,6 +58,12 @@ test('regionCurrency preserves locale mapping and timezone fallback',()=>{
   assert.equal(Marketplace.regionCurrency('en','America/Chicago'),'EUR');
 });
 
+test('displayCurrency resolves auto and preserves explicit choices',()=>{
+  assert.equal(Marketplace.displayCurrency('auto','SEK'),'SEK');
+  assert.equal(Marketplace.displayCurrency('EUR','SEK'),'EUR');
+  assert.equal(Marketplace.displayCurrency('USD','SEK'),'USD');
+});
+
 test('formatMoney keeps marketplace formatting behavior',()=>{
   assert.equal(Marketplace.formatMoney(0,'SEK','sv-SE'),'');
   assert.equal(Marketplace.formatMoney(-1,'SEK','sv-SE'),'');

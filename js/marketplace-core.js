@@ -69,6 +69,10 @@
     return 'EUR';
   }
 
+  function displayCurrency(preference,regionalCurrency){
+    return preference==='auto'?regionalCurrency:preference;
+  }
+
   function formatMoney(amount,currency,locale){
     if(!isFinite(amount)||amount<=0)return '';
     var code=String(currency||'EUR').toUpperCase();
@@ -113,6 +117,7 @@
     normalizeIdentity:normalizeIdentity,
     isRelevantListing:isRelevantListing,
     regionCurrency:regionCurrency,
+    displayCurrency:displayCurrency,
     formatMoney:formatMoney,
     listingPrice:listingPrice,
     listingEndsText:listingEndsText
