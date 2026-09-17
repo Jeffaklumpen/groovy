@@ -45,7 +45,7 @@ test('builds grouped wishlist match copy',function(){
 test('notification core loads before app and app delegates pure formatting',function(){
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
-  const corePosition=html.indexOf('/js/notification-core.js?v=1');
+  const corePosition=html.search(/\/js\/notification-core\.js\?v=\d+/);
   const appPosition=html.indexOf('/js/app.js?v=');
   assert.ok(corePosition>=0&&appPosition>corePosition);
   assert.match(app,/var NotificationCore=window\.GroovyNotificationCore/);
