@@ -1,3 +1,6 @@
+var NotificationCore=window.GroovyNotificationCore;
+if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
+
 const profileButton=document.getElementById('profileButton');
 const profileMenu=document.getElementById('profileMenu');
 const profileUsername=document.getElementById('profileUsername');
