@@ -1,98 +1,126 @@
-const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
+const test=require('node:test');
 const vm=require('node:vm');
-
 const root=path.resolve(__dirname,'..');
 
 function loadModel(){
   const source=fs.readFileSync(path.join(root,'js','record-model.js'),'utf8');
-  const sandbox={window:{}};
-  vm.runInNewContext(source,sandbox,{filename:'record-model.js'});
-  return sandbox.window.GroovyRecord;
+  const context={window:{}};
+  vm.runInNewContext(source,context);
+  return context.window.GroovyRecord;
 }
 
-test('record model exposes named accessors for the legacy tuple',function(){
+test('record model names legacy tuple fields without changing storage',function(){
   const Record=loadModel();
-  const record=new Array(17).fill('');
-  record[1]='Pink Floyd';
-  record[2]='The Dark Side Of The Moon';
-  record[8]=42;
-  record[13]='favorites';
+  const record=[1,'Pink Floyd','The Wall',1979,'Rock',4,'cover.jpg',{},42,99,123,{},'',null,null,4.5,10];
   assert.equal(Record.artist(record),'Pink Floyd');
-  assert.equal(Record.title(record),'The Dark Side Of The Moon');
+  assert.equal(Record.title(record),'The Wall');
   assert.equal(Record.albumId(record),42);
-  assert.equal(Record.shelfId(record),'favorites');
+  assert.equal(Record.communityRating(record),4.5);
+  Record.setRatings(record,5,4.6,11);
+  assert.equal(record[5],5);
+  assert.equal(record[15],4.6);
+  assert.equal(record[16],11);
 });
 
-test('record model updates rating fields without changing tuple shape',function(){
-  const Record=loadModel();
-  const record=new Array(17).fill('');
-  const result=Record.setRatings(record,4,3.5,12);
-  assert.equal(result,record);
-  assert.equal(record.length,17);
-  assert.equal(Record.ownRating(record),4);
-  assert.equal(Record.communityRating(record),3.5);
-  assert.equal(Record.communityCount(record),12);
+test('record model loads before consumers and separated modules use named accessors',function(){
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const detail=fs.readFileSync(path.join(root,'js','detail-enhancements-v2.js'),'utf8');
+  const layout=fs.readFileSync(path.join(root,'js','album-rating-layout-v4.js'),'utf8');
+  const modelPosition=html.indexOf('/js/record-model.js?v=');
+  const appPosition=html.indexOf('/js/app.js?v=');
+  assert.ok(modelPosition>=0&&appPosition>modelPosition);
+  assert.match(detail,/var Record=window.GroovyRecord/);
+  assert.match(layout,/var Record=window.GroovyRecord/);
+  ['record[1]','record[2]','record[4]','record[5]','record[6]','record[8]','record[9]','record[10]','record[15]','record[16]','current[1]','current[2]','item[8]'].forEach(function(token){assert.equal(detail.includes(token),false,token+' should not remain in detail module');});
+  ['record[1]','record[2]','record[5]','record[8]','record[15]','record[16]'].forEach(function(token){assert.equal(layout.includes(token),false,token+' should not remain in rating module');});
 });
 
-test('record model creates independent empty track sides A-H',function(){
-  const Record=loadModel();
-  const sides=Record.emptySides();
-  assert.deepEqual(Object.keys(sides),['A','B','C','D','E','F','G','H']);
-  sides.A.push('one');
-  assert.equal(sides.B.length,0);
+test('app record-card and Wikipedia identity rendering use named record accessors',function(){
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  assert.match(app,/var Record=window.GroovyRecord/);
+  const cardStart=app.indexOf('function spotifyAlbumLink(record){');
+  const cardEnd=app.indexOf('function loadVisibleImages(){',cardStart);
+  const card=app.slice(cardStart,cardEnd);
+  ['record[0]','record[1]','record[2]','record[3]','record[6]','record[11]','record[12]','record[13]','record[14]','record[15]'].forEach(function(token){assert.equal(card.includes(token),false,token+' should not remain in card rendering');});
+  assert.equal(card.includes('Record.artist(record)'),true);
+  assert.equal(card.includes('Record.title(record)'),true);
+  assert.equal(card.includes('Record.communityRating(record)'),true);
+  const wikiStart=app.indexOf('function wikipediaCacheKey(record){');
+  const wikiEnd=app.indexOf('async function fetchWikipediaAlbumCandidates',wikiStart);
+  const wiki=app.slice(wikiStart,wikiEnd);
+  ['record&&record[1]','record&&record[2]','record&&record[3]'].forEach(function(token){assert.equal(wiki.includes(token),false,token+' should not remain in Wikipedia identity');});
 });
 
-test('record model builds wishlist tuples without app-level tuple assembly',function(){
+
+test('record model builds wishlist tuples and empty sides consistently',function(){
   const Record=loadModel();
-  const item={id:7,album_id:42,discogs_style:'Rock',albums:{id:42,title:'Wish',release_year:1973,genre:'Prog',cover_url:'cover.jpg',apple_collection_url:'https://music.apple.com/test',discogs_master_id:123,artists:{name:'Pink Floyd (2)'},tracks:[{disc_side:'A',track_number:1,title:'One',duration:'3:00'}]}};
-  const record=Record.fromWishlist(item,0);
+  const item={id:77,discogs_style:'Prog Rock',cover_url:'wish.jpg',albums:{id:42,title:'The Wall',release_year:1979,genre:'Rock',cover_url:'album.jpg',apple_collection_url:'https://music.apple.com/test',discogs_master_id:123,artists:{name:'Pink Floyd (2)'},tracks:[
+    {id:2,disc_side:'B',track_number:1,title:'B One'},
+    {id:1,disc_side:'A',track_number:1,title:'A One'}
+  ]}};
+  const record=Record.fromWishlist(item,3);
+  assert.equal(record[0],4);
   assert.equal(Record.artist(record),'Pink Floyd');
-  assert.equal(Record.title(record),'Wish');
+  assert.equal(Record.title(record),'The Wall');
   assert.equal(Record.albumId(record),42);
   assert.equal(Record.discogsMasterId(record),123);
-  assert.equal(record[7].A[0].title,'One');
+  assert.deepEqual(Array.from(Record.sides(record).A,function(track){return track.title;}),['A One']);
+  assert.deepEqual(Array.from(Record.sides(record).B,function(track){return track.title;}),['B One']);
+  assert.deepEqual(Object.keys(Record.emptySides()),['A','B','C','D','E','F','G','H']);
 });
 
-test('record model applies rating metadata to matching album records',function(){
+test('record model owns track-duration identity and mutation rules',function(){
   const Record=loadModel();
-  const a=new Array(17).fill('');a[8]=1;
-  const b=new Array(17).fill('');b[8]=2;
-  const own=new Map([[1,4]]);
-  const community=new Map([[1,{average:3.25,count:8}],[2,{average:5,count:1}]]);
-  Record.applyRatingMeta([a,b],own,community);
-  assert.equal(Record.ownRating(a),4);
-  assert.equal(Record.communityRating(a),3.25);
-  assert.equal(Record.communityCount(a),8);
-  assert.equal(Record.ownRating(b),0);
-  assert.equal(Record.communityRating(b),5);
-});
-
-test('record model track duration cache and updates use album identity',function(){
-  const Record=loadModel();
-  const record=new Array(17).fill('');record[8]=42;record[7]={A:[{title:'One',duration:''}],B:[],C:[],D:[],E:[],F:[],G:[],H:[]};
-  assert.equal(Record.trackDurationCacheKey(record),'album:42');
+  const record=[1,'Artist','Album',1973,'Rock',0,'',{A:[{trackNumber:1,title:'One',duration:''},{trackNumber:2,title:'Two',duration:'2:00'}],B:[]},42,9,123];
+  assert.equal(Record.trackDurationCacheKey(record),'groovy-track-durations:123');
   assert.equal(Record.hasMissingTrackDurations(record),true);
-  assert.equal(Record.applyTrackDurations(record,{A:[{duration:'3:00'}]}),true);
-  assert.equal(record[7].A[0].duration,'3:00');
+  assert.equal(Record.applyTrackDurations(record,[
+    {disc_side:'A',track_number:1,duration:'3:15'},
+    {disc_side:'A',track_number:2,duration:'4:20'}
+  ],false),true);
+  assert.equal(Record.sides(record).A[0].duration,'3:15');
+  assert.equal(Record.sides(record).A[1].duration,'2:00');
   assert.equal(Record.hasMissingTrackDurations(record),false);
+  assert.equal(Record.applyTrackDurations(record,[{disc_side:'A',track_number:2,duration:'4:20'}],true),true);
+  assert.equal(Record.sides(record).A[1].duration,'4:20');
 });
 
-test('record model compacts local shelf ordering',function(){
+test('app delegates wishlist and track-duration tuple logic to record model',function(){
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const start=app.indexOf('window.emptyRecordSides=Record.emptySides;');
+  const end=app.indexOf('async function loadAlbumRatingData',start);
+  const section=app.slice(start,end);
+  assert.ok(start>=0&&end>start);
+  assert.equal(section.includes('function wishlistRecord('),false);
+  assert.equal(section.includes('function applyTrackDurationRows('),false);
+  assert.equal(section.includes('record[7]'),false);
+  assert.equal(section.includes('record[8]'),false);
+  assert.equal(section.includes('record[10]'),false);
+  assert.equal(section.includes('Record.applyTrackDurations'),true);
+  assert.equal(section.includes('Record.hasMissingTrackDurations'),true);
+});
+
+
+test('record model compacts shelf order without changing other shelves',function(){
   const Record=loadModel();
-  function item(id,shelfId,shelfOrder){
+  function item(order,shelfId,shelfOrder){
     const record=new Array(15).fill('');
-    record[9]=id;record[13]=shelfId;record[14]=shelfOrder;
+    record[0]=order;record[13]=shelfId;record[14]=shelfOrder;
     return record;
   }
-  const records=[item('a','target',8),item('b','other',4),item('c','target',2),item('d','target',null)];
-  Record.compactShelfOrder(records,'target');
-  assert.equal(records[2][14],1);
-  assert.equal(records[0][14],2);
-  assert.equal(records[3][14],3);
-  assert.equal(records[1][14],4);
+  const first=item(4,'target',3);
+  const second=item(2,'target',1);
+  const missing=item(1,'target',null);
+  const other=item(3,'other',9);
+  const records=[first,second,missing,other];
+  assert.equal(Record.compactShelfOrder(records,'target'),records);
+  assert.equal(Record.shelfSortOrder(second),1);
+  assert.equal(Record.shelfSortOrder(first),2);
+  assert.equal(Record.shelfSortOrder(missing),3);
+  assert.equal(Record.shelfSortOrder(other),9);
 });
 
 test('record model finds the next shelf order while excluding a moving record',function(){
@@ -132,11 +160,31 @@ test('record model builds collection tuples with tracks, pressing and shelf meta
   assert.equal(Record.order(record),3);
   assert.equal(Record.artist(record),'Pink Floyd');
   assert.equal(Record.albumId(record),42);
+  assert.equal(Record.entryId(record),9);
+  assert.equal(Record.pressing(record),pressing);
   assert.equal(Record.shelfId(record),'favorites');
   assert.equal(Record.shelfSortOrder(record),4);
-  assert.equal(Record.genre(record),'Prog Rock');
-  assert.equal(Record.coverUrl(record),'owned.jpg');
-  assert.deepEqual(JSON.parse(JSON.stringify(Record.pressing(record))),pressing);
-  assert.equal(record[7].A[0].title,'A One');
-  assert.equal(record[7].B[0].duration,'4:00');
+  assert.equal(Record.sides(record).A[0].trackNumber,1);
+  assert.equal(Record.sides(record).A[0].duration,'3:00');
+});
+
+test('record model applies album rating metadata through named tuple fields',function(){
+  const Record=loadModel();
+  const record=Record.fromCollection({id:9,albums:{id:42,title:'Album',artists:{name:'Artist'},tracks:[]}},0,{});
+  assert.equal(Record.applyRatingMeta(record,{42:{ownRating:5,communityAverage:4.4,communityCount:12}}),record);
+  assert.equal(Record.ownRating(record),5);
+  assert.equal(Record.communityRating(record),4.4);
+  assert.equal(Record.communityCount(record),12);
+  Record.applyRatingMeta(record,{});
+  assert.equal(Record.ownRating(record),0);
+  assert.equal(Record.communityRating(record),0);
+  assert.equal(Record.communityCount(record),0);
+});
+
+test('app delegates owned collection tuple construction and rating mutation to record model',function(){
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  assert.equal(app.includes('function applyAlbumRatingMeta('),false);
+  assert.equal(app.includes('window.applyAlbumRatingMeta=Record.applyRatingMeta;'),true);
+  assert.equal(app.includes('Record.fromCollection(item,index,copyDetailsFromRow(item))'),true);
+  assert.equal(app.includes('Record.applyRatingMeta('),true);
 });
