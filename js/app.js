@@ -5366,6 +5366,7 @@ const userSearchResults=document.getElementById('userSearchResults');
 let userSearchTimer=null;
 var userPresenceChannel=null;
 var presenceUserId='';
+var presenceSyncPromise=Promise.resolve();
 var onlineUserIds=new Set();
 var anonymousPresenceKey='viewer-'+Math.random().toString(36).slice(2)+'-'+Date.now().toString(36);
 const onlineUsersStatus=document.getElementById('onlineUsersStatus');
@@ -5399,7 +5400,16 @@ function addUserPresenceDot(avatar,userId){
     refreshUserPresenceDots();
 }
 
-async function syncUserPresence(user){
+function syncUserPresence(user){
+    presenceSyncPromise=presenceSyncPromise.then(function(){
+        return performUserPresenceSync(user);
+    }).catch(function(error){
+        console.warn('Could not sync online status:',error);
+    });
+    return presenceSyncPromise;
+}
+
+async function performUserPresenceSync(user){
     const nextUserId=user&&user.id?String(user.id):'';
     const nextPresenceIdentity=nextUserId||'__viewer__';
     if(nextPresenceIdentity===presenceUserId&&userPresenceChannel)return;

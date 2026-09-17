@@ -26,6 +26,9 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run browser smoke tests
+        env:
+          GROOVY_E2E_EMAIL: ${{ secrets.GROOVY_E2E_EMAIL }}
+          GROOVY_E2E_PASSWORD: ${{ secrets.GROOVY_E2E_PASSWORD }}
         run: npm run test:e2e
       - name: Upload Playwright report on failure
         if: failure()

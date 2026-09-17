@@ -1,0 +1,68 @@
+const { test, expect } = require('@playwright/test');
+
+const testEmail=process.env.GROOVY_E2E_EMAIL;
+const testPassword=process.env.GROOVY_E2E_PASSWORD;
+
+test.use({trace:'off'});
+
+function watchPageErrors(page){
+  const pageErrors=[];
+  page.on('pageerror',error=>{
+    pageErrors.push(`${error.name}: ${error.message}`);
+  });
+  return pageErrors;
+}
+
+function expectNoPageErrors(pageErrors){
+  expect(pageErrors,`Fatal browser errors:\n${pageErrors.join('\n')}`).toEqual([]);
+}
+
+async function loginWithTestAccount(page){
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+  await expect(page.locator('.landing-secondary')).toBeVisible();
+
+  await page.locator('.landing-secondary').click();
+  await expect(page.locator('#loginPanel')).toHaveClass(/open/);
+
+  await page.locator('#loginEmail').fill(testEmail);
+  await page.locator('#loginPassword').fill(testPassword);
+  await page.locator('#loginButton').click();
+
+  await expect.poll(
+    ()=>page.evaluate(()=>Boolean(window.hasAuthenticatedUser)),
+    {timeout:10_000}
+  ).toBe(true);
+
+  await expect(page.locator('body')).not.toHaveClass(/logged-out-home/);
+  await expect(page.locator('#loginPanel')).not.toHaveClass(/open/);
+}
+
+test.describe('authenticated read-only smoke flows',()=>{
+  test.skip(!testEmail||!testPassword,'GROOVY_E2E_EMAIL and GROOVY_E2E_PASSWORD are required');
+
+  test('test account can log in and navigate its own collection and wishlist',async({page})=>{
+    const pageErrors=watchPageErrors(page);
+
+    await loginWithTestAccount(page);
+
+    await expect(page).toHaveURL('http://127.0.0.1:4173/');
+    await expect(page.locator('#collectionTabButton')).toContainText('My Shelf');
+    await expect(page.locator('#collectionTabButton')).toHaveClass(/active/);
+    await expect(page.locator('#libraryTitle')).toHaveText('All Records');
+    await expect(page.locator('#profileUsername')).not.toHaveText('');
+
+    await page.locator('#wishlistTabButton').click();
+
+    await expect(page).toHaveURL('http://127.0.0.1:4173/?view=wishlist');
+    await expect(page.locator('#wishlistTabButton')).toHaveClass(/active/);
+    await expect(page.locator('#libraryTitle')).toHaveText('My Wishlist');
+
+    await page.locator('.header-brand .logo').click();
+
+    await expect(page).toHaveURL('http://127.0.0.1:4173/');
+    await expect(page.locator('#collectionTabButton')).toHaveClass(/active/);
+    await expect(page.locator('#libraryTitle')).toHaveText('All Records');
+
+    expectNoPageErrors(pageErrors);
+  });
+});
