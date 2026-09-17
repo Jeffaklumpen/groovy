@@ -15,7 +15,8 @@ if(!AlbumSearch)throw new Error('GroovyAlbumSearch must load before app.js');
 var PressingCore=window.GroovyPressingCore;
 if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
 var PressingView=window.GroovyPressingView;
-var PressingPicker=window.GroovyPressingPicker;
+var PressingController=window.GroovyPressingController;
+if(!PressingController)throw new Error('GroovyPressingController must load before app.js');
 
 const profileButton=document.getElementById('profileButton');
 const profileMenu=document.getElementById('profileMenu');
@@ -880,8 +881,6 @@ var pressingMatches=document.getElementById('pressingMatches');
 
 var selectedRating='all';
 var suppressAlbumClick=false;
-var copyDetailsExpanded=false;
-var copyDetailsRecordKey='';
 var libraryPage=1;
 var RECORDS_PER_PAGE=52;
 var libraryPaginationTop=document.getElementById('libraryPaginationTop');
@@ -1284,190 +1283,41 @@ var marketplaceController=MarketplaceController.create({
   }
 });
 
-function hasCopyDetails(details){return PressingView.hasCopyDetails(details);}
-function recordConditionMeta(value){return PressingView.conditionMeta(value);}
-
-function setCopyDetailsExpanded(expanded){
-  copyDetailsExpanded=!!expanded;
-  PressingView.setExpanded({root:copyDetails,toggle:copyDetailsToggle,content:copyDetailsContent},copyDetailsExpanded);
-}
-
-copyDetailsToggle.addEventListener('click',function(){
-  setCopyDetailsExpanded(!copyDetailsExpanded);
-});
-
-function renderCopyDetails(index){
-  var record=records[index];
-  var result=PressingView.renderCopyDetails({
-    hasRecord:!!record,
-    isWishlist:window.libraryView==='wishlist',
-    isOwner:viewedUserId===null,
-    details:record&&record[11]?record[11]:{},
-    recordKey:record?String(record[9]||('record-'+index)):'',
-    previousRecordKey:copyDetailsRecordKey,
-    expanded:copyDetailsExpanded,
-    elements:{
-      root:copyDetails,
-      content:copyDetailsContent,
-      toggle:copyDetailsToggle,
-      summary:copyDetailsSummary,
-      saved:copyDetailsSaved
-    },
-    onIdentifyPressing:function(){openPressingPicker(index);},
-    onConditionChange:function(){saveConditionDetails(index);}
-  });
-  copyDetailsExpanded=result.expanded;
-  copyDetailsRecordKey=result.recordKey;
-}
-
-async function saveConditionDetails(index){
-  var record=records[index];
-  if(!record||viewedUserId!==null)return;
-
-  var mediaSelect=document.getElementById('mediaConditionSelect');
-  var sleeveSelect=document.getElementById('sleeveConditionSelect');
-  if(!mediaSelect||!sleeveSelect)return;
-
-  var media=mediaSelect.value||null;
-  var sleeve=sleeveSelect.value||null;
-  mediaSelect.disabled=true;
-  sleeveSelect.disabled=true;
-  copyDetailsSaved.textContent='Saving…';
-
-  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
-  var result=(userError||!user)?{error:userError||new Error('Du måste vara inloggad.')}:await supabaseClient
-    .from('collections')
-    .update({media_condition:media,sleeve_condition:sleeve})
-    .eq('id',record[9])
-    .eq('user_id',user.id)
-    .select('id');
-
-  if(result.error||!result.data||!result.data.length){
-    console.error('Kunde inte spara skicket:',result.error);
-    copyDetailsSaved.textContent='Could not save';
-    mediaSelect.disabled=false;
-    sleeveSelect.disabled=false;
-    return;
-  }
-
-  record[11]=record[11]||{};
-  record[11].mediaCondition=media||'';
-  record[11].sleeveCondition=sleeve||'';
-  buildGrid();
-  renderCopyDetails(index);
-  copyDetailsSaved.textContent='Saved';
-}
-
-async function fetchPressingVersions(masterId,page){
-  var response=await supabaseClient.functions.invoke('discogs-search',{
-    body:{action:'versions',masterId:masterId,page:page}
-  });
-  if(response.error)throw response.error;
-  return response.data||{};
-}
-
-async function fetchPressingRelease(releaseId){
-  var response=await supabaseClient.functions.invoke('discogs-search',{
-    body:{action:'release',releaseId:releaseId}
-  });
-  if(response.error)throw response.error;
-  return response.data||{};
-}
-
-async function savePressingSelection(context){
-  context=context||{};
-  var selected=context.selected||{};
-  var matrices=context.matrices||{};
-  var button=context.button;
-  var index=context.albumIndex;
-  var record=records[index];
-  if(!record)return;
-
-  if(button){button.disabled=true;button.textContent='Saving…';}
-  var userResult=await supabaseClient.auth.getUser();
-  var user=userResult&&userResult.data&&userResult.data.user;
-  var payload={
-    discogs_release_id:parseInt(selected.id,10),
-    pressing_country:selected.country||null,
-    pressing_year:parseInt(selected.year,10)||null,
-    pressing_label:selected.label||null,
-    catalog_number:selected.catalogNumber||null,
-    matrix_runout_a:matrices.A||null,
-    matrix_runout_b:matrices.B||null,
-    matrix_runout_c:matrices.C||null,
-    matrix_runout_d:matrices.D||null,
-    matrix_runout_e:matrices.E||null,
-    matrix_runout_f:matrices.F||null,
-    matrix_runout_g:matrices.G||null,
-    matrix_runout_h:matrices.H||null,
-    pressing_match_status:'discogs'
-  };
-  var result=(userResult.error||!user)?{error:userResult.error||new Error('Du måste vara inloggad.')}:await supabaseClient.from('collections').update(payload)
-    .eq('id',record[9]).eq('user_id',user.id).select('id');
-
-  if(result.error||!result.data||!result.data.length){
-    console.error('Kunde inte spara pressningen:',result.error);
-    if(button){button.disabled=false;button.textContent='Try saving again';}
-    return;
-  }
-
-  record[11]=record[11]||{};
-  record[11].discogsReleaseId=payload.discogs_release_id;
-  record[11].country=payload.pressing_country||'';
-  record[11].year=payload.pressing_year||'';
-  record[11].label=payload.pressing_label||'';
-  record[11].catalogNumber=payload.catalog_number||'';
-  record[11].matrixA=payload.matrix_runout_a||'';
-  record[11].matrixB=payload.matrix_runout_b||'';
-  record[11].matrixC=payload.matrix_runout_c||'';
-  record[11].matrixD=payload.matrix_runout_d||'';
-  record[11].matrixE=payload.matrix_runout_e||'';
-  record[11].matrixF=payload.matrix_runout_f||'';
-  record[11].matrixG=payload.matrix_runout_g||'';
-  record[11].matrixH=payload.matrix_runout_h||'';
-  record[11].matchStatus='discogs';
-  if(pressingPicker)pressingPicker.close();
-  buildGrid();
-  renderCopyDetails(index);
-  copyDetailsSaved.textContent='Saved';
-}
-
-var pressingPicker=PressingPicker?PressingPicker.create({
+var pressingController=PressingController.create({
+  api:supabaseClient,
+  recordModel:Record,
+  document:document,
   elements:{
-    modal:pressingModal,
-    closeButton:closePressingModalButton,
-    loading:pressingLoading,
-    form:pressingForm,
-    error:pressingError,
-    country:pressingCountry,
-    year:pressingYear,
-    label:pressingLabel,
-    catalogNumber:pressingCatalogNumber,
-    matrixSearch:pressingMatrixSearch,
-    matrixQuery:pressingMatrixQuery,
-    matrixSearchButton:pressingMatrixSearchButton,
-    matches:pressingMatches
+    root:copyDetails,
+    content:copyDetailsContent,
+    toggle:copyDetailsToggle,
+    summary:copyDetailsSummary,
+    saved:copyDetailsSaved,
+    albumOverlay:albumOverlay,
+    pressingModal:pressingModal,
+    closePressingModalButton:closePressingModalButton,
+    pressingLoading:pressingLoading,
+    pressingForm:pressingForm,
+    pressingError:pressingError,
+    pressingCountry:pressingCountry,
+    pressingYear:pressingYear,
+    pressingLabel:pressingLabel,
+    pressingCatalogNumber:pressingCatalogNumber,
+    pressingMatrixSearch:pressingMatrixSearch,
+    pressingMatrixQuery:pressingMatrixQuery,
+    pressingMatrixSearchButton:pressingMatrixSearchButton,
+    pressingMatches:pressingMatches
   },
-  getRecord:function(index){return records[index]||null;},
-  getMasterId:function(record){return record&&record[10];},
-  fetchVersions:fetchPressingVersions,
-  fetchRelease:fetchPressingRelease,
-  onSave:savePressingSelection,
-  onMissingMaster:function(){copyDetailsSaved.textContent='No Discogs master found';},
-  onWarning:function(message,error){console.warn(message+':',error);},
-  onError:function(message,error){console.error(message+':',error);},
-  lockBody:function(){document.body.style.overflow='hidden';},
-  unlockBody:function(){if(albumOverlay.className.indexOf('visible')===-1)document.body.style.overflow='';}
-}):null;
-
-function openPressingPicker(index){
-  if(!pressingPicker){copyDetailsSaved.textContent='Pressing picker unavailable';return false;}
-  return pressingPicker.open(index);
-}
-
-function closePressingPicker(){
-  if(pressingPicker)pressingPicker.close();
-}
+  getRecords:function(){return records;},
+  getViewedUserId:function(){return viewedUserId;},
+  getLibraryView:function(){return window.libraryView;},
+  renderGrid:function(){buildGrid();},
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
 
 function spotifyAlbumLink(record){
   return Streaming.spotifySearchUrl(
@@ -1509,8 +1359,8 @@ function recordHTML(record, className){
   var recordIndex=recordArrayIndex(record);
   var displayNumber=recordDisplayNumber(record);
   var copy=Record.pressing(record)||{};
-  var condition=!isWishlist?recordConditionMeta(copy.mediaCondition):null;
-  var showPressingPrompt=!isWishlist&&viewedUserId===null&&!condition&&!hasCopyDetails(copy);
+  var condition=!isWishlist?PressingView.conditionMeta(copy.mediaCondition):null;
+  var showPressingPrompt=!isWishlist&&viewedUserId===null&&!condition&&!PressingView.hasCopyDetails(copy);
   var cardShelf=!isWishlist?shelfById(Record.shelfId(record)):null;
   var cardShelfName=cardShelf&&cardShelf.name?cardShelf.name:'';
   var cardShelfIcon=cardShelf?shelfIconSvg(cardShelf.icon):'';
@@ -1608,7 +1458,7 @@ function openAlbum(index){
 
   detailOpenRecordIndex=index;
   marketplaceController.openForRecord(index);
-  copyDetailsRecordKey='';
+  pressingController.resetRecord();
   var isWishlist=window.libraryView==='wishlist';
   detailNumber.hidden=!isWishlist;
   detailNumber.textContent=isWishlist?'Wishlisted':'';
@@ -1618,7 +1468,7 @@ function openAlbum(index){
   var genreLabel=record[4]||'Genre saknas';
   detailGenre.textContent=genreLabel;
   detailGenre.setAttribute('data-mobile-genre',genreLabel.split(' · ')[0]||genreLabel);
-  renderCopyDetails(index);
+  pressingController.render(index);
 
   detailCover.src=record[6];
   detailCover.alt=record[1]+' - '+record[2];
@@ -1648,8 +1498,7 @@ function closeAlbum(){
   marketplaceController.close();
   albumOverlay.className='album-overlay';
   document.body.style.overflow='';
-  setCopyDetailsExpanded(false);
-  copyDetailsRecordKey='';
+  pressingController.closeDetails();
   detailOpenRecordIndex=-1;
   if(detailShelfActions){detailShelfActions.hidden=true;detailShelfActions.innerHTML='';}
   if(detailShelfStatus){detailShelfStatus.hidden=true;detailShelfStatus.innerHTML='';detailShelfStatus.classList.remove('unshelved');}
