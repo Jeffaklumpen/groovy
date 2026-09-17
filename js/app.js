@@ -2274,8 +2274,7 @@ function marketplaceCurrencyPreference(){
 }
 
 function marketplaceDisplayCurrency(){
-  var preference=marketplaceCurrencyPreference();
-  return preference==='auto'?marketplaceRegionCurrency():preference;
+  return MarketplaceCore.displayCurrency(marketplaceCurrencyPreference(),marketplaceRegionCurrency());
 }
 
 function syncMarketplaceCurrencyControl(){
