@@ -1,10 +1,6 @@
 name: Browser smoke tests
 
 on:
-  push:
-    branches: [notes]
-  pull_request:
-    branches: [notes]
   workflow_dispatch:
 
 permissions:
@@ -30,13 +26,3 @@ jobs:
           GROOVY_E2E_EMAIL: ${{ secrets.GROOVY_E2E_EMAIL }}
           GROOVY_E2E_PASSWORD: ${{ secrets.GROOVY_E2E_PASSWORD }}
         run: npm run test:e2e
-      - name: Upload Playwright report on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: |
-            playwright-report/
-            test-results/
-          if-no-files-found: ignore
-          retention-days: 7

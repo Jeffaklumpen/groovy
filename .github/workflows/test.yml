@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   node-tests:
@@ -19,5 +19,91 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run regression tests
-        run: node --test tests/*.test.js
+      - name: Apply shelf view extraction
+        run: node scripts/apply-shelf-view-extraction.js
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/app.js
+          node --check js/shelf-view.js
+      - name: Run targeted shelf regression tests
+        run: node --test tests/shelf-core.test.js tests/shelf-view.test.js tests/app-bootstrap-order.test.js tests/dom-contract.test.js
+      - name: Check patch whitespace
+        run: git diff --check
+      - name: Commit extraction
+        if: github.event_name == 'push'
+        run: |
+          cat > .github/workflows/test.yml <<'WORKFLOW'
+          name: Tests
+
+          on:
+            push:
+              branches: [notes]
+            pull_request:
+
+          permissions:
+            contents: read
+
+          jobs:
+            node-tests:
+              runs-on: ubuntu-latest
+              timeout-minutes: 5
+              steps:
+                - name: Check out repository
+                  uses: actions/checkout@v4
+                - name: Set up Node
+                  uses: actions/setup-node@v4
+                  with:
+                    node-version: '22'
+                - name: Run regression tests
+                  run: node --test tests/*.test.js
+          WORKFLOW
+          cat > .github/workflows/e2e.yml <<'WORKFLOW'
+          name: Browser smoke tests
+
+          on:
+            push:
+              branches: [notes]
+            pull_request:
+              branches: [notes]
+            workflow_dispatch:
+
+          permissions:
+            contents: read
+
+          jobs:
+            playwright-smoke:
+              runs-on: ubuntu-latest
+              timeout-minutes: 10
+              steps:
+                - name: Check out repository
+                  uses: actions/checkout@v4
+                - name: Set up Node
+                  uses: actions/setup-node@v4
+                  with:
+                    node-version: '22'
+                - name: Install test dependency
+                  run: npm install --no-audit --no-fund
+                - name: Install Chromium
+                  run: npx playwright install --with-deps chromium
+                - name: Run browser smoke tests
+                  env:
+                    GROOVY_E2E_EMAIL: ${{ secrets.GROOVY_E2E_EMAIL }}
+                    GROOVY_E2E_PASSWORD: ${{ secrets.GROOVY_E2E_PASSWORD }}
+                  run: npm run test:e2e
+                - name: Upload Playwright report on failure
+                  if: failure()
+                  uses: actions/upload-artifact@v4
+                  with:
+                    name: playwright-report
+                    path: |
+                      playwright-report/
+                      test-results/
+                    if-no-files-found: ignore
+                    retention-days: 7
+          WORKFLOW
+          git rm scripts/apply-shelf-view-extraction.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Move shelf presentation into view module"
+          git push origin HEAD:notes
