@@ -133,7 +133,13 @@ test('Discogs hydration falls back to a vinyl release when master positions lack
     }}},
     pressingCore:{discogsTrackRows(albumId,tracks){
       normalizedTracklist=tracks;
-      return [{album_id:albumId,disc_side:'A',track_number:1,duration:'4:00'}];
+      const first=tracks[0]||{};
+      return [{
+        album_id:albumId,
+        disc_side:String(first.position||'').charAt(0)==='A'?'A':'A',
+        track_number:1,
+        duration:String(first.duration||'')
+      }];
     }}
   });
 
