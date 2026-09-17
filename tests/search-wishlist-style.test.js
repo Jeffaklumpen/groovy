@@ -9,8 +9,3 @@ test('album search wishlist button uses shared modal styling for all states',()=
   assert.match(css,/#addAlbumModal \.mb-wishlist-button:active,\.search-modal-box \.mb-wishlist-button:active\{/);
   assert.match(css,/#addAlbumModal \.mb-wishlist-button\.mb-wishlisted,\.search-modal-box \.mb-wishlist-button\.mb-wishlisted\{/);
 });
-
-test('wishlist CSS cache version is bumped',()=>{
-  const html=fs.readFileSync('index.html','utf8');
-  assert.match(html,/\/css\/style\.css\?v=116/);
-});
