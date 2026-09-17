@@ -103,6 +103,51 @@ function vinylDiscCount(release){
   return Math.max(qty,multiplier?parseInt(multiplier[1],10):1);
 }
 
+
+function filterVersions(versions,filters){
+  filters=filters||{};
+  return (Array.isArray(versions)?versions:[]).filter(function(version){
+    return (!filters.country||pressingChoiceMatches(version.country,filters.country))&&
+      pressingYearMatches(version.year,filters.year)&&
+      (!filters.label||pressingChoiceMatches(version.label,filters.label))&&
+      (!filters.catalogNumber||pressingCatalogMatches(version.catalogNumber,filters.catalogNumber));
+  });
+}
+
+function dedupeMatrixMatches(versions){
+  var seen={};
+  return (Array.isArray(versions)?versions:[]).filter(function(version){
+    var key=[
+      normalizedMatrix(version&&version.matrixMatch),
+      cleanVersionValue(version&&version.country,'').toLocaleLowerCase(),
+      cleanVersionValue(version&&version.label,'').toLocaleLowerCase(),
+      normalizedMatrix(version&&version.catalogNumber)
+    ].join('|');
+    if(seen[key])return false;
+    seen[key]=true;
+    return true;
+  });
+}
+
+function selectReleaseDetails(releaseId,data,version){
+  data=data||{};
+  version=version||{};
+  var label=Array.isArray(data.labels)&&data.labels.length?data.labels[0]:{};
+  return {
+    id:releaseId,
+    country:data.country||version.country||'',
+    year:String(data.released||data.year||version.year||'').slice(0,4),
+    label:label.name||version.label||'',
+    catalogNumber:label.catno||version.catalogNumber||'',
+    format:version.format||'Vinyl'
+  };
+}
+
+function matrixSideNames(release){
+  var count=Math.min(8,Math.max(2,vinylDiscCount(release||{})*2));
+  return ['a','b','c','d','e','f','g','h'].slice(0,count);
+}
+
   return Object.freeze({
     cleanVersionValue:cleanVersionValue,
     normalizeVersion:normalizeVersion,
@@ -113,6 +158,10 @@ function vinylDiscCount(release){
     normalizedMatrix:normalizedMatrix,
     matrixValues:matrixValues,
     matrixChoices:matrixChoices,
-    vinylDiscCount:vinylDiscCount
+    vinylDiscCount:vinylDiscCount,
+    filterVersions:filterVersions,
+    dedupeMatrixMatches:dedupeMatrixMatches,
+    selectReleaseDetails:selectReleaseDetails,
+    matrixSideNames:matrixSideNames
   });
 });

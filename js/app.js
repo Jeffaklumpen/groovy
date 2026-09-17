@@ -3096,11 +3096,11 @@ function updatePressingProgress(){
 }
 
 function currentPressingMatches(){
-  return pressingVersions.filter(function(version){
-    return (!pressingCountry.value||pressingChoiceMatches(version.country,pressingCountry.value))&&
-      pressingYearMatches(version.year,pressingYear.value)&&
-      (!pressingLabel.value||pressingChoiceMatches(version.label,pressingLabel.value))&&
-      (!pressingCatalogNumber.value||pressingCatalogMatches(version.catalogNumber,pressingCatalogNumber.value));
+  return PressingCore.filterVersions(pressingVersions,{
+    country:pressingCountry.value,
+    year:pressingYear.value,
+    label:pressingLabel.value,
+    catalogNumber:pressingCatalogNumber.value
   });
 }
 
@@ -3184,13 +3184,7 @@ async function searchPressingsByMatrix(){
   for(var i=0;i<Math.min(3,candidates.length);i++)workers.push(checkNext());
   await Promise.all(workers);
 
-  var seen={};
-  pressingMatrixMatches=found.filter(function(version){
-    var key=[normalizedMatrix(version.matrixMatch),version.country.toLocaleLowerCase(),version.label.toLocaleLowerCase(),normalizedMatrix(version.catalogNumber)].join('|');
-    if(seen[key])return false;
-    seen[key]=true;
-    return true;
-  });
+  pressingMatrixMatches=PressingCore.dedupeMatrixMatches(found);
   pressingMatrixSearchButton.disabled=false;
   pressingMatrixSearchButton.textContent='Find matrix';
   renderPressingMatches();
@@ -3309,18 +3303,9 @@ async function preparePressingConfirmation(releaseId){
       pressingReleaseCache.set(String(releaseId),data);
     }
     var version=pressingVersions.find(function(item){return String(item.id)===String(releaseId);})||{};
-    var label=data&&Array.isArray(data.labels)&&data.labels.length?data.labels[0]:{};
-    var selected={
-      id:releaseId,
-      country:data.country||version.country||'',
-      year:String(data.released||data.year||version.year||'').slice(0,4),
-      label:label.name||version.label||'',
-      catalogNumber:label.catno||version.catalogNumber||'',
-      format:version.format||'Vinyl'
-    };
+    var selected=PressingCore.selectReleaseDetails(releaseId,data,version);
     var matrices=matrixChoices(data||{});
-    var matrixSideCount=Math.min(8,Math.max(2,vinylDiscCount(data||{})*2));
-    var matrixSideNames=['a','b','c','d','e','f','g','h'].slice(0,matrixSideCount);
+    var matrixSideNames=PressingCore.matrixSideNames(data||{});
     var hasMatrixChoices=matrixSideNames.some(function(side){return matrices[side].length;});
     var matrixFields=matrixSideNames.map(function(side){
       var upper=side.toUpperCase();
