@@ -98,6 +98,7 @@ test('pressing view loads before picker/controller and copy rendering is delegat
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
   const picker=fs.readFileSync(path.join(root,'js','pressing-picker.js'),'utf8');
   const controller=fs.readFileSync(path.join(root,'js','pressing-controller.js'),'utf8');
+  const libraryRender=fs.readFileSync(path.join(root,'js','library-render-controller.js'),'utf8');
   const viewIndex=index.indexOf('/js/pressing-view.js');
   const pickerIndex=index.indexOf('/js/pressing-picker.js');
   const controllerIndex=index.indexOf('/js/pressing-controller.js');
@@ -109,7 +110,7 @@ test('pressing view loads before picker/controller and copy rendering is delegat
   assert.match(picker,/View\.updateProgress/);
   assert.doesNotMatch(app,/PressingView\.setOptions/);
   assert.doesNotMatch(app,/PressingView\.updateProgress/);
-  assert.match(app,/PressingView\.conditionMeta\(copy\.mediaCondition\)/);
-  assert.match(app,/PressingView\.hasCopyDetails\(copy\)/);
+  assert.match(libraryRender,/pressingView\.conditionMeta\(copy\.mediaCondition\)/);
+  assert.match(libraryRender,/pressingView\.hasCopyDetails\(copy\)/);
   assert.doesNotMatch(app,/function conditionOptions\(/);
 });

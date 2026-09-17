@@ -173,11 +173,15 @@ test('shelf modules initialize before controller integration in app.js',()=>{
   assert.match(source,/GroovyShelfController must load before app\.js/);
 });
 
-test('library core is initialized before library filtering in app.js',()=>{
-  const source=fs.readFileSync('js/app.js','utf8');
-  const declaration=source.indexOf('var LibraryCore=window.GroovyLibraryCore;');
-  const firstUse=source.indexOf('LibraryCore.filterRecords');
-  assert.ok(declaration>=0,'LibraryCore bootstrap declaration is missing');assert.ok(firstUse>=0,'LibraryCore first use is missing');assert.ok(declaration<firstUse,'LibraryCore must be initialized before library helpers are used');
+test('library core is initialized before the library render controller consumes it',()=>{
+  const app=fs.readFileSync('js/app.js','utf8');
+  const render=fs.readFileSync('js/library-render-controller.js','utf8');
+  const declaration=app.indexOf('var LibraryCore=window.GroovyLibraryCore;');
+  const create=app.indexOf('libraryCore:LibraryCore');
+  assert.ok(declaration>=0,'LibraryCore bootstrap declaration is missing');
+  assert.ok(create>declaration,'LibraryCore must be initialized before it is injected into the renderer');
+  assert.match(render,/core\.filterRecords\(/);
+  assert.match(render,/core\.sortRecords\(/);
 });
 
 
