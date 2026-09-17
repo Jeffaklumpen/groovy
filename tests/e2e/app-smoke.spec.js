@@ -95,3 +95,76 @@ test('logged-out visitors are returned to the public landing from protected rout
 
   expectNoPageErrors(pageErrors);
 });
+
+test('Add Record requires login for logged-out visitors',async({page})=>{
+  const pageErrors=watchPageErrors(page);
+
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+  await expect(page.locator('body')).toHaveClass(/logged-out-home/);
+  await expect(page.locator('#addAlbumButton')).toBeVisible();
+
+  await page.locator('#addAlbumButton').click();
+
+  await expect(page.locator('#loginPanel')).toHaveClass(/open/);
+  await expect(page.locator('#authTitle')).toHaveText('Welcome back');
+  await expect(page.locator('#addAlbumModal')).toBeHidden();
+
+  expectNoPageErrors(pageErrors);
+});
+
+test('a rendered record card opens the album detail view',async({page})=>{
+  const pageErrors=watchPageErrors(page);
+
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+  await expect(page.locator('.landing-title')).toBeVisible();
+
+  await page.route(/^https:\/\//,route=>route.abort());
+
+  await page.evaluate(()=>{
+    window.hasAuthenticatedUser=true;
+    window.loginRequiredForViewedCollection=false;
+    window.profileNotFound=false;
+    window.viewedUserId=null;
+    window.libraryView='collection';
+    document.body.classList.remove('logged-out-home');
+
+    window.records=[[
+      1,
+      'Playwright Artist',
+      'Playwright Album',
+      '2026',
+      'Rock',
+      0,
+      'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',
+      {
+        A:[{id:'playwright-track',title:'Browser Test Track',trackNumber:1,duration:'3:21'}],
+        B:[],C:[],D:[],E:[],F:[],G:[],H:[]
+      },
+      'playwright-album',
+      'playwright-entry',
+      '',
+      {},
+      '',
+      '',
+      null,
+      0,
+      0
+    ]];
+
+    window.buildGrid();
+  });
+
+  const card=page.locator('#collection .record').first();
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Playwright Album');
+
+  await card.click();
+
+  await expect(page.locator('#albumOverlay')).toHaveClass(/visible/);
+  await expect(page.locator('#detailArtist')).toHaveText('Playwright Artist');
+  await expect(page.locator('#detailAlbum')).toHaveText('Playwright Album');
+  await expect(page.locator('#detailTracks')).toContainText('Browser Test Track');
+  await expect(page.locator('#detailTracks')).toContainText('3:21');
+
+  expectNoPageErrors(pageErrors);
+});
