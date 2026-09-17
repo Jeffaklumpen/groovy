@@ -1,0 +1,74 @@
+name: Fix app bootstrap ordering
+
+on:
+  push:
+    branches: [tmp/fix-app-bootstrap]
+    paths:
+      - '.github/workflows/fix-app-bootstrap.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/fix-app-bootstrap
+          fetch-depth: 0
+
+      - name: Repair bootstrap ordering
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+
+          function replaceExactly(path,from,to,label){
+            const text=fs.readFileSync(path,'utf8');
+            const matches=text.split(from).length-1;
+            if(matches!==1)throw new Error(label+' expected exactly once, found '+matches);
+            fs.writeFileSync(path,text.replace(from,to));
+          }
+
+          const app=fs.readFileSync('js/app.js','utf8');
+          const bootstrap="var NotificationCore=window.GroovyNotificationCore;\nif(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');\n\n";
+          if(app.startsWith(bootstrap))throw new Error('bootstrap already present');
+          fs.writeFileSync('js/app.js',bootstrap+app);
+
+          replaceExactly('index.html','<script src="/js/app.js?v=130"></script>','<script src="/js/app.js?v=131"></script>','app cache version');
+
+          fs.writeFileSync('tests/app-bootstrap-order.test.js',String.raw`const test=require('node:test');
+          const assert=require('node:assert/strict');
+          const fs=require('fs');
+
+          test('notification core is initialized before first use in app.js',()=>{
+            const source=fs.readFileSync('js/app.js','utf8');
+            const declaration=source.indexOf('var NotificationCore=window.GroovyNotificationCore;');
+            const firstUse=source.indexOf('NotificationCore.escapeHtml');
+            assert.ok(declaration>=0,'NotificationCore bootstrap declaration is missing');
+            assert.ok(firstUse>=0,'NotificationCore first use is missing');
+            assert.ok(declaration<firstUse,'NotificationCore must be initialized before it is used');
+          });
+
+          test('index cache-busts the repaired app bundle',()=>{
+            const html=fs.readFileSync('index.html','utf8');
+            assert.match(html,/\/js\/app\.js\?v=131/);
+          });
+          `);
+          NODE
+
+      - name: Validate syntax and regression suite
+        run: |
+          node --check js/app.js
+          node --test tests/*.test.js
+
+      - name: Commit repair
+        run: |
+          rm .github/workflows/fix-app-bootstrap.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix app dependency bootstrap ordering"
+          git push origin HEAD:tmp/fix-app-bootstrap
