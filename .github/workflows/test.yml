@@ -28,10 +28,13 @@ jobs:
       - name: Run regression tests
         run: node --test tests/*.test.js
       - name: Install browser test dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run browser smoke tests on transformed app
+        env:
+          GROOVY_E2E_EMAIL: ${{ secrets.GROOVY_E2E_EMAIL }}
+          GROOVY_E2E_PASSWORD: ${{ secrets.GROOVY_E2E_PASSWORD }}
         run: npm run test:e2e
       - name: Commit extraction
         if: github.event_name == 'push'
