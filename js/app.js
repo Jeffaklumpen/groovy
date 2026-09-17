@@ -6,6 +6,8 @@ var SocialController=window.GroovySocialController;
 if(!SocialController)throw new Error('GroovySocialController must load before app.js');
 var UserSearchController=window.GroovyUserSearchController;
 if(!UserSearchController)throw new Error('GroovyUserSearchController must load before app.js');
+var DetailSocialController=window.GroovyDetailSocialController;
+if(!DetailSocialController)throw new Error('GroovyDetailSocialController must load before app.js');
 var AppleSearchCore=window.GroovyAppleSearchCore;
 if(!AppleSearchCore)throw new Error('GroovyAppleSearchCore must load before app.js');
 var AlbumSearch=window.GroovyAlbumSearch;
@@ -1145,8 +1147,23 @@ var detailShelfStatus=document.getElementById('detailShelfStatus');
 var detailSocialContext=document.getElementById('detailSocialContext');
 var detailInfoCard=document.querySelector('.detail-info-card');
 var detailOpenRecordIndex=-1;
-var detailSocialRequestVersion=0;
-var detailSocialCache=new Map();
+var detailSocialController=DetailSocialController.create({
+  api:supabaseClient,
+  window:window,
+  document:document,
+  element:detailSocialContext,
+  getCurrentUser:currentSessionUser,
+  getViewedUserId:function(){return viewedUserId;},
+  getLibraryView:function(){return window.libraryView;},
+  getOpenRecordIndex:function(){return detailOpenRecordIndex;},
+  escapeHtml:function(value){return esc(value==null?'':String(value));},
+  onNavigate:function(username){closeAlbum();openCollectorRoute(username,'profile');},
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
 
 function shelfIconSvg(icon){
   return ShelfCore.iconSvg(icon);
@@ -1946,211 +1963,6 @@ if(detailAboutAlbumToggle){
 }
 
 
-function detailSocialEscape(value){
-  return esc(value==null?'':String(value));
-}
-
-function detailSocialCacheGet(key){
-  var item=detailSocialCache.get(key);
-  if(!item)return null;
-  if(Date.now()-item.time>120000){detailSocialCache.delete(key);return null;}
-  return item.value;
-}
-
-function detailSocialCacheSet(key,value){
-  detailSocialCache.set(key,{time:Date.now(),value:value});
-  if(detailSocialCache.size>120){
-    var first=detailSocialCache.keys().next();
-    if(!first.done)detailSocialCache.delete(first.value);
-  }
-}
-
-function hideDetailSocialContext(){
-  if(!detailSocialContext)return;
-  detailSocialContext.hidden=true;
-  detailSocialContext.innerHTML='';
-  detailSocialContext.classList.remove('own-match');
-}
-
-function renderFollowedCollectorsForAlbum(profiles){
-  if(!detailSocialContext||!profiles||!profiles.length){hideDetailSocialContext();return;}
-  detailSocialContext.classList.remove('own-match');
-  detailSocialContext.hidden=false;
-
-  var compact=window.matchMedia&&window.matchMedia('(max-width:760px)').matches;
-  var slotLimit=compact?4:10;
-  var hasMore=profiles.length>slotLimit;
-  var visibleLimit=hasMore?slotLimit-1:slotLimit;
-  var visibleProfiles=profiles.slice(0,visibleLimit);
-  var extraProfiles=profiles.slice(visibleLimit);
-
-  function personButton(profile,extraClass){
-    var username=profile.username||'Collector';
-    return '<button class="detail-social-person'+(extraClass?' '+extraClass:'')+'" type="button" data-detail-social-username="'+detailSocialEscape(username)+'" data-tooltip="'+detailSocialEscape(username)+'" aria-label="View '+detailSocialEscape(username)+'">'+
-      '<span class="detail-social-avatar" style="background-image:url(&quot;'+detailSocialEscape(profile.avatar_url||'/assets/images/avatar-placeholder.png')+'&quot;)"></span>'+
-      '<span class="detail-social-person-name">'+detailSocialEscape(username)+'</span>'+
-    '</button>';
-  }
-
-  detailSocialContext.innerHTML=
-    '<div class="detail-social-heading"><strong>Also collected by</strong><small>Collectors you follow</small></div>'+
-    '<div class="detail-social-people">'+
-      visibleProfiles.map(function(profile){return personButton(profile,'');}).join('')+
-      (hasMore?'<button class="detail-social-more" type="button" data-detail-social-more aria-expanded="false" aria-label="Show more collectors">…</button>':'')+
-    '</div>'+
-    (hasMore?'<div class="detail-social-menu" data-detail-social-menu hidden><div class="detail-social-menu-title">More collectors</div><div class="detail-social-menu-list">'+extraProfiles.map(function(profile){return personButton(profile,'detail-social-menu-person');}).join('')+'</div></div>':'');
-}
-
-function renderOwnCollectionMatch(){
-  if(!detailSocialContext)return;
-  detailSocialContext.classList.add('own-match');
-  detailSocialContext.hidden=false;
-  detailSocialContext.innerHTML=
-    '<span class="detail-social-check" aria-hidden="true">✓</span>'+
-    '<div class="detail-own-match-copy"><span>COLLECTION MATCH</span><strong>This record is also in your collection</strong></div>';
-}
-
-async function loadDetailSocialContext(record,index){
-  var requestVersion=++detailSocialRequestVersion;
-  hideDetailSocialContext();
-  if(!record||!record[8])return;
-
-  var sessionResult=await supabaseClient.auth.getSession();
-  if(requestVersion!==detailSocialRequestVersion||detailOpenRecordIndex!==index)return;
-  var sessionUser=sessionResult.data&&sessionResult.data.session&&sessionResult.data.session.user;
-  if(!sessionUser)return;
-
-  var albumId=record[8];
-  var masterId=String(record[10]||'').trim();
-  var matchKey=masterId?'master:'+masterId:'album:'+albumId;
-
-  try{
-    if(viewedUserId!==null){
-      var ownKey='own:'+sessionUser.id+':'+matchKey;
-      var ownMatch=detailSocialCacheGet(ownKey);
-      if(ownMatch===null){
-        var ownQuery=supabaseClient.from('collections')
-          .select(masterId?'id,albums!inner(discogs_master_id)':'id')
-          .eq('user_id',sessionUser.id)
-          .limit(1);
-        ownQuery=masterId
-          ?ownQuery.eq('albums.discogs_master_id',masterId)
-          :ownQuery.eq('album_id',albumId);
-        var ownResult=await ownQuery;
-        if(ownResult.error)throw ownResult.error;
-        ownMatch=!!(ownResult.data&&ownResult.data.length);
-        detailSocialCacheSet(ownKey,ownMatch);
-      }
-      if(requestVersion!==detailSocialRequestVersion||detailOpenRecordIndex!==index)return;
-      if(ownMatch)renderOwnCollectionMatch();
-      return;
-    }
-
-    if(window.libraryView==='wishlist')return;
-
-    var followedKey='followed:'+sessionUser.id+':'+matchKey;
-    var cachedProfiles=detailSocialCacheGet(followedKey);
-    if(cachedProfiles!==null){
-      if(requestVersion===detailSocialRequestVersion&&detailOpenRecordIndex===index)renderFollowedCollectorsForAlbum(cachedProfiles);
-      return;
-    }
-
-    var followResult=await supabaseClient.from('user_follows')
-      .select('followed_id')
-      .eq('follower_id',sessionUser.id);
-    if(followResult.error)throw followResult.error;
-    var followedIds=(followResult.data||[]).map(function(row){return row.followed_id;}).filter(Boolean);
-    if(!followedIds.length){detailSocialCacheSet(followedKey,[]);return;}
-
-    var collectionQuery=supabaseClient.from('collections')
-      .select(masterId?'user_id,albums!inner(discogs_master_id)':'user_id')
-      .in('user_id',followedIds);
-    collectionQuery=masterId
-      ?collectionQuery.eq('albums.discogs_master_id',masterId)
-      :collectionQuery.eq('album_id',albumId);
-    var collectionResult=await collectionQuery;
-    if(collectionResult.error)throw collectionResult.error;
-    var matchingIds=Array.from(new Set((collectionResult.data||[]).map(function(row){return row.user_id;}).filter(Boolean)));
-    if(!matchingIds.length){detailSocialCacheSet(followedKey,[]);return;}
-
-    var profileResult=await supabaseClient.from('profiles')
-      .select('id,username,avatar_url')
-      .in('id',matchingIds);
-    if(profileResult.error)throw profileResult.error;
-
-    var order=new Map(matchingIds.map(function(id,pos){return [id,pos];}));
-    var profiles=(profileResult.data||[]).slice().sort(function(a,b){
-      return (order.get(a.id)||0)-(order.get(b.id)||0);
-    });
-    detailSocialCacheSet(followedKey,profiles);
-    if(requestVersion!==detailSocialRequestVersion||detailOpenRecordIndex!==index)return;
-    renderFollowedCollectorsForAlbum(profiles);
-  }catch(error){
-    console.warn('Could not load album collection matches:',error);
-    if(requestVersion===detailSocialRequestVersion&&detailOpenRecordIndex===index)hideDetailSocialContext();
-  }
-}
-
-window.addEventListener('groovy-follow-changed',function(){detailSocialCache.clear();});
-
-function positionDetailSocialMenu(menu){
-  if(!menu)return;
-  menu.style.top='';
-  menu.style.bottom='';
-  menu.style.maxHeight='';
-  if(!window.matchMedia||!window.matchMedia('(min-width:761px)').matches)return;
-  var cover=document.querySelector('.album-detail-cover');
-  if(!cover)return;
-  var coverRect=cover.getBoundingClientRect();
-  var contextRect=detailSocialContext.getBoundingClientRect();
-  var gap=6;
-  var below=Math.floor(coverRect.bottom-contextRect.bottom-gap);
-  var above=Math.floor(contextRect.top-coverRect.top-gap);
-  if(below>=96||below>=above){
-    menu.style.top='calc(100% + '+gap+'px)';
-    menu.style.bottom='auto';
-    menu.style.maxHeight=Math.max(72,Math.min(260,below))+'px';
-  }else{
-    menu.style.top='auto';
-    menu.style.bottom='calc(100% + '+gap+'px)';
-    menu.style.maxHeight=Math.max(72,Math.min(260,above))+'px';
-  }
-}
-
-if(detailSocialContext){
-  detailSocialContext.addEventListener('click',function(event){
-    var moreButton=event.target.closest('[data-detail-social-more]');
-    if(moreButton){
-      event.preventDefault();
-      event.stopPropagation();
-      var menu=detailSocialContext.querySelector('[data-detail-social-menu]');
-      if(!menu)return;
-      var opening=menu.hidden;
-      menu.hidden=!opening;
-      moreButton.setAttribute('aria-expanded',opening?'true':'false');
-      detailSocialContext.classList.toggle('menu-open',opening);
-      if(opening)window.requestAnimationFrame(function(){positionDetailSocialMenu(menu);});
-      return;
-    }
-
-    var button=event.target.closest('[data-detail-social-username]');
-    if(!button)return;
-    var username=button.getAttribute('data-detail-social-username');
-    if(!username)return;
-    closeAlbum();
-    openCollectorRoute(username,'profile');
-  });
-}
-
-document.addEventListener('click',function(event){
-  if(!detailSocialContext||detailSocialContext.hidden||detailSocialContext.contains(event.target))return;
-  var menu=detailSocialContext.querySelector('[data-detail-social-menu]');
-  var moreButton=detailSocialContext.querySelector('[data-detail-social-more]');
-  if(menu)menu.hidden=true;
-  if(moreButton)moreButton.setAttribute('aria-expanded','false');
-  detailSocialContext.classList.remove('menu-open');
-});
-
 function openAlbum(index){
   var record=records[index];
   if(!record)return;
@@ -2184,7 +1996,7 @@ function openAlbum(index){
   renderDetailRatingPanels(index);
   renderDetailShelfStatus(index);
   renderDetailShelfActions(index);
-  loadDetailSocialContext(record,index);
+  detailSocialController.openForRecord(record,index);
   renderDetailTracklist(record);
   ensureDetailTrackDurations(record,index);
 
@@ -2275,10 +2087,9 @@ function closeAlbum(){
   setCopyDetailsExpanded(false);
   copyDetailsRecordKey='';
   detailOpenRecordIndex=-1;
-  detailSocialRequestVersion++;
   if(detailShelfActions){detailShelfActions.hidden=true;detailShelfActions.innerHTML='';}
   if(detailShelfStatus){detailShelfStatus.hidden=true;detailShelfStatus.innerHTML='';detailShelfStatus.classList.remove('unshelved');}
-  hideDetailSocialContext();
+  detailSocialController.close();
   if(detailInfoCard)detailInfoCard.style.height='';
   albumOverlay.scrollTop=0;
   var tracksPanel=albumOverlay.querySelector('.album-tracks');

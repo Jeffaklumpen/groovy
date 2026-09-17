@@ -15,7 +15,7 @@ test('dependency scripts load before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const app=html.indexOf('/js/app.js?v=');
   assert.ok(app>=0,'app.js script is missing');
-  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v='].forEach((script)=>{
+  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v='].forEach((script)=>{
     const pos=html.indexOf(script);assert.ok(pos>=0,script+' script is missing');assert.ok(pos<app,script+' must load before app.js');
   });
   assert.match(html,/\/js\/app\.js\?v=\d+/);
@@ -70,6 +70,25 @@ test('user search controller initializes before app integration',()=>{
   assert.match(source,/GroovyUserSearchController must load before app\.js/);
   assert.match(source,/userSearchController\.syncUser\(user\)/);
   assert.doesNotMatch(source,/let userSearchTimer|var userPresenceChannel|function syncUserPresence|function performUserPresenceSync|function loadTopUsers|async function searchUsers|groovy-online-users/);
+});
+
+test('detail social controller loads after user search controller and before app.js',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const userSearch=html.indexOf('/js/user-search-controller.js?v=');
+  const detailSocial=html.indexOf('/js/detail-social-controller.js?v=');
+  const app=html.indexOf('/js/app.js?v=');
+  assert.ok(userSearch>=0&&detailSocial>userSearch&&app>detailSocial);
+});
+
+test('detail social controller initializes before app integration',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  const declaration=source.indexOf('var DetailSocialController=window.GroovyDetailSocialController;');
+  const create=source.indexOf('DetailSocialController.create({');
+  assert.ok(declaration>=0&&create>declaration);
+  assert.match(source,/GroovyDetailSocialController must load before app\.js/);
+  assert.match(source,/detailSocialController\.openForRecord\(record,index\)/);
+  assert.match(source,/detailSocialController\.close\(\)/);
+  assert.doesNotMatch(source,/detailSocialRequestVersion|detailSocialCache|function detailSocialEscape|function loadDetailSocialContext|function renderFollowedCollectorsForAlbum|function renderOwnCollectionMatch|function positionDetailSocialMenu/);
 });
 
 test('marketplace scripts load core, view and controller in order before app.js',()=>{
