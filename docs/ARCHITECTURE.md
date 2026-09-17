@@ -14,6 +14,7 @@ GroovyShelves remains a vanilla JavaScript application. The cleanup is intention
 - `js/pressing-core.js` — pure Discogs pressing normalization, matching, matrix/runout and vinyl-format helpers.
 - `js/rating-core.js` — pure 0–5 rating normalization and display formatting helpers.
 - `js/marketplace-core.js` — pure external-listing URL validation, buy-now normalization, marketplace cache keys and listing relevance matching.
+- `js/apple-search-core.js` — pure Apple/iTunes text normalization, artist/album matching, edition filtering and artwork helpers.
 - `js/shelf-core.js` — pure shelf color formatting, shelf lookup and record-count helpers.
 - `js/notification-core.js` — pure notification escaping, relative-time formatting and notification message copy.
 - `js/detail-enhancements-v2.js` — active album-detail compatibility/enhancement layer. This should shrink as its behavior is moved into the actual detail implementation.
