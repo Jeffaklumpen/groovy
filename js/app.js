@@ -108,11 +108,7 @@ function updateLibraryTabLabels(){
     wishlistTabButton.innerHTML='<span class="wishlist-icon" aria-hidden="true"></span>My Wishlist';
 }
 
-function escapeSocialHtml(value){
-    return String(value==null?'':value).replace(/[&<>"']/g,function(character){
-        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character];
-    });
-}
+var escapeSocialHtml=NotificationCore.escapeHtml;
 
 async function currentSessionUser(){
     const {data:{session}}=await supabaseClient.auth.getSession();
@@ -182,19 +178,7 @@ function setViewedUserFollowState(targetUserId,username,isFollowing){
     if(icon)icon.textContent=isFollowing?'✓':'+';
 }
 
-function relativeNotificationTime(value){
-    var time=new Date(value).getTime();
-    if(!time)return '';
-    var seconds=Math.max(0,Math.floor((Date.now()-time)/1000));
-    if(seconds<60)return 'now';
-    var minutes=Math.floor(seconds/60);
-    if(minutes<60)return minutes+'m';
-    var hours=Math.floor(minutes/60);
-    if(hours<24)return hours+'h';
-    var days=Math.floor(hours/24);
-    if(days<7)return days+'d';
-    return new Date(value).toLocaleDateString(undefined,{month:'short',day:'numeric'});
-}
+var relativeNotificationTime=NotificationCore.relativeTime;
 
 function closeNotificationPanel(){
     if(!notificationPanel||!notificationBellButton)return;
@@ -211,32 +195,7 @@ function updateNotificationBadge(){
     if(notificationBellButton)notificationBellButton.classList.toggle('has-unread',unread>0);
 }
 
-function notificationCopy(item){
-    var actor=item.actor&&item.actor.username?item.actor.username:'A collector';
-    var payload=item.payload||{};
-    if(item.notification_type==='new_follower')return '<strong>'+escapeSocialHtml(actor)+'</strong> started following you.';
-    if(item.notification_type==='collection_activity'){
-        var count=Math.max(1,parseInt(item.item_count,10)||1);
-        var sharedCount=Math.max(0,parseInt(payload.shared_count,10)||0);
-        if(count===1&&payload.album_title){
-            var single='<strong>'+escapeSocialHtml(actor)+'</strong> added <em>'+escapeSocialHtml(payload.album_title)+'</em> to their collection.';
-            if(sharedCount>0)single+=' <b class="notification-shared">You have this too</b>';
-            return single;
-        }
-        var grouped='<strong>'+escapeSocialHtml(actor)+'</strong> added '+count+' records to their collection.';
-        if(sharedCount===1)grouped+=' <b class="notification-shared">1 is also in your collection</b>';
-        if(sharedCount>1)grouped+=' <b class="notification-shared">'+sharedCount+' are also in your collection</b>';
-        return grouped;
-    }
-    if(item.notification_type==='wishlist_match'){
-        var wishlistCount=Math.max(1,parseInt(item.item_count,10)||1);
-        if(wishlistCount===1&&payload.album_title){
-            return '<strong>'+escapeSocialHtml(actor)+'</strong> added <em>'+escapeSocialHtml(payload.album_title)+'</em> to their wishlist. <b class="notification-shared">It is in your collection</b>';
-        }
-        return '<strong>'+escapeSocialHtml(actor)+'</strong> added '+wishlistCount+' records to their wishlist that you already own. <b class="notification-shared">Collection match</b>';
-    }
-    return '<strong>'+escapeSocialHtml(actor)+'</strong> has new activity.';
-}
+var notificationCopy=NotificationCore.copy;
 
 function renderNotifications(){
     if(!notificationList)return;
@@ -775,9 +734,11 @@ function copyDetailsFromRow(item){
 var Record=window.GroovyRecord;
 var Wikipedia=window.GroovyWikipedia;
 var Streaming=window.GroovyStreaming;
+var NotificationCore=window.GroovyNotificationCore;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
 if(!Streaming)throw new Error('GroovyStreaming must load before app.js');
+if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
 
 window.records = [];
 window.viewedUserId=null;
