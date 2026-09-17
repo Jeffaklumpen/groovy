@@ -546,6 +546,7 @@ var ShelfCore=window.GroovyShelfCore;
 var ShelfView=window.GroovyShelfView;
 var ShelfController=window.GroovyShelfController;
 var LibraryCore=window.GroovyLibraryCore;
+var LibraryActionsController=window.GroovyLibraryActionsController;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
 if(!WikipediaAboutController)throw new Error('GroovyWikipediaAboutController must load before app.js');
@@ -561,6 +562,7 @@ if(!ShelfCore)throw new Error('GroovyShelfCore must load before app.js');
 if(!ShelfView)throw new Error('GroovyShelfView must load before app.js');
 if(!ShelfController)throw new Error('GroovyShelfController must load before app.js');
 if(!LibraryCore)throw new Error('GroovyLibraryCore must load before app.js');
+if(!LibraryActionsController)throw new Error('GroovyLibraryActionsController must load before app.js');
 
 window.records = [];
 window.viewedUserId=null;
@@ -1515,139 +1517,24 @@ function closeAlbum(){
   },350);
 }
 
-async function deleteCollectionAlbum(index){
-  if(viewedUserId!==null)return;
-  var record=records[index];
-
-  if(!record)return;
-
-  var {data:{session}}=await supabaseClient.auth.getSession();
-  var user=session&&session.user;
-
-  if(!user){
-    alert('Du måste vara inloggad.');
-    return;
+var libraryActionsController=LibraryActionsController.create({
+  api:supabaseClient,
+  recordModel:Record,
+  getRecords:function(){return records;},
+  getViewedUserId:function(){return viewedUserId;},
+  getLibraryView:function(){return window.libraryView;},
+  invalidateSearchState:function(){invalidateSearchLibraryState();},
+  loadCollection:function(){return window.loadCollection();},
+  resetPage:function(){libraryPage=1;},
+  renderShelfStrip:function(){renderShelfStrip();},
+  renderGrid:function(){buildGrid();},
+  onAlert:function(message){alert(message);},
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
   }
-
-  var {error}=await supabaseClient.rpc('delete_collection_record',{
-    p_collection_id:String(record[9])
-  });
-
-  if(error){
-    console.error('Kunde inte ta bort albumet:',error);
-    alert('Kunde inte ta bort albumet.');
-    return;
-  }
-
-  invalidateSearchLibraryState();
-
-  var deletedShelfId=record[13]||'';
-  records.splice(index,1);
-  records
-    .slice()
-    .sort(function(a,b){return (parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);})
-    .forEach(function(item,position){item[0]=position+1;});
-
-  if(deletedShelfId)Record.compactShelfOrder(records,deletedShelfId);
-
-  libraryPage=1;
-  renderShelfStrip();
-  buildGrid();
-}
-
-async function deleteWishlistAlbum(index){
-  if(viewedUserId!==null||window.libraryView!=='wishlist')return;
-  var record=records[index];
-  if(!record)return;
-
-  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
-  if(userError||!user){
-    alert('Du måste vara inloggad.');
-    return;
-  }
-
-  var {data:deletedRows,error}=await supabaseClient
-    .from('wishlists')
-    .delete()
-    .eq('id',record[9])
-    .eq('user_id',user.id)
-    .select('id');
-
-  if(error||!deletedRows||!deletedRows.length){
-    console.error('Kunde inte ta bort albumet från önskelistan:',error);
-    alert('Kunde inte ta bort albumet från önskelistan.');
-    return;
-  }
-
-  invalidateSearchLibraryState();
-  await window.loadCollection();
-}
-
-async function moveWishlistAlbumToCollection(index,button){
-  if(viewedUserId!==null||window.libraryView!=='wishlist')return false;
-  var record=records[index];
-  if(!record)return false;
-
-  var originalText=button.textContent;
-  button.textContent='Moving...';
-  button.disabled=true;
-
-  try{
-    var {data:{user},error:userError}=await supabaseClient.auth.getUser();
-    if(userError||!user)throw new Error('Du måste vara inloggad.');
-
-    var {data:existingCollection,error:existingError}=await supabaseClient
-      .from('collections')
-      .select('id')
-      .eq('user_id',user.id)
-      .eq('album_id',record[8])
-      .limit(1);
-    if(existingError)throw existingError;
-
-    var alreadyCollected=!!(existingCollection&&existingCollection.length);
-
-    if(!alreadyCollected){
-      var {data:lastCollection,error:lastError}=await supabaseClient
-        .from('collections')
-        .select('sort_order')
-        .eq('user_id',user.id)
-        .order('sort_order',{ascending:false})
-        .limit(1);
-      if(lastError)throw lastError;
-
-      var nextSortOrder=lastCollection&&lastCollection.length
-        ?lastCollection[0].sort_order+1
-        :1;
-      var {error:insertError}=await supabaseClient
-        .from('collections')
-        .insert({
-          user_id:user.id,
-          album_id:record[8],
-          cover_url:record[6]||null,
-          discogs_style:record[4]||null,
-          sort_order:nextSortOrder
-        });
-      if(insertError)throw insertError;
-    }
-
-    var {error:deleteError}=await supabaseClient
-      .from('wishlists')
-      .delete()
-      .eq('id',record[9])
-      .eq('user_id',user.id);
-    if(deleteError)throw deleteError;
-
-    invalidateSearchLibraryState();
-    await window.loadCollection();
-    return true;
-  }catch(error){
-    console.error('Kunde inte flytta albumet till samlingen:',error);
-    button.textContent=originalText;
-    button.disabled=false;
-    alert('Kunde inte flytta albumet till samlingen.\n\n'+(error.message||error));
-    return false;
-  }
-}
+});
 
 function attachAlbumClicks(){
   if(collection._albumClickAttached)return;
@@ -1705,7 +1592,7 @@ function attachAlbumClicks(){
       if(!moveRecordElement)return;
       var moveIndex=parseInt(moveRecordElement.getAttribute('data-index'),10);
       if(isNaN(moveIndex))return;
-      await moveWishlistAlbumToCollection(moveIndex,moveButton);
+      await libraryActionsController.moveWishlistToCollection(moveIndex,moveButton);
       return;
     }
 
@@ -1787,9 +1674,9 @@ confirmRemoveAlbum.addEventListener('click',async function(){
     removeAlbumIndex=null;
 
     if(window.libraryView==='wishlist'){
-      await deleteWishlistAlbum(index);
+      await libraryActionsController.deleteWishlist(index);
     }else{
-      await deleteCollectionAlbum(index);
+      await libraryActionsController.deleteCollection(index);
     }
 });
 

@@ -15,7 +15,7 @@ test('dependency scripts load before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const app=html.indexOf('/js/app.js?v=');
   assert.ok(app>=0,'app.js script is missing');
-  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/pressing-view.js?v=','/js/pressing-picker.js?v=','/js/pressing-controller.js?v=','/js/detail-tracklist-controller.js?v=','/js/detail-layout-controller.js?v=','/js/rating-core.js?v=','/js/album-rating-controller.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
+  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/pressing-view.js?v=','/js/pressing-picker.js?v=','/js/pressing-controller.js?v=','/js/detail-tracklist-controller.js?v=','/js/detail-layout-controller.js?v=','/js/rating-core.js?v=','/js/album-rating-controller.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/library-actions-controller.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
     const pos=html.indexOf(script);assert.ok(pos>=0,script+' script is missing');assert.ok(pos<app,script+' must load before app.js');
   });
   assert.match(html,/\/js\/app\.js\?v=\d+/);
@@ -238,4 +238,25 @@ test('pressing controller owns copy-details persistence and picker integration',
   assert.match(source,/pressingController\.render\(index\)/);
   assert.match(source,/pressingController\.closeDetails\(\)/);
   assert.doesNotMatch(source,/copyDetailsExpanded|copyDetailsRecordKey|function renderCopyDetails|function saveConditionDetails|function fetchPressingVersions|function fetchPressingRelease|function savePressingSelection|function openPressingPicker|function closePressingPicker|GroovyPressingPicker/);
+});
+
+
+test('library actions controller loads after library core and before app.js',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const core=html.indexOf('/js/library-core.js?v=');
+  const controller=html.indexOf('/js/library-actions-controller.js?v=');
+  const app=html.indexOf('/js/app.js?v=');
+  assert.ok(core>=0&&controller>core&&app>controller);
+});
+
+test('library actions controller owns collection and wishlist mutations',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  const declaration=source.indexOf('var LibraryActionsController=window.GroovyLibraryActionsController;');
+  const create=source.indexOf('LibraryActionsController.create({');
+  assert.ok(declaration>=0&&create>declaration);
+  assert.match(source,/GroovyLibraryActionsController must load before app\.js/);
+  assert.match(source,/libraryActionsController\.moveWishlistToCollection\(moveIndex,moveButton\)/);
+  assert.match(source,/libraryActionsController\.deleteWishlist\(index\)/);
+  assert.match(source,/libraryActionsController\.deleteCollection\(index\)/);
+  assert.doesNotMatch(source,/function deleteCollectionAlbum|function deleteWishlistAlbum|function moveWishlistAlbumToCollection/);
 });
