@@ -2465,31 +2465,15 @@ function safeExternalUrl(value){
 }
 
 function traderaCacheKey(record){
-  return String(Record.artist(record)||'').trim().toLowerCase()+'|'+
-    String(Record.title(record)||'').trim().toLowerCase();
+  return MarketplaceCore.cacheKey(Record.artist(record),Record.title(record));
 }
 
 function normalizeTraderaIdentity(value){
-  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim();
+  return MarketplaceCore.normalizeIdentity(value);
 }
 
 function isRelevantTraderaListing(listing,record){
-  var artist=normalizeTraderaIdentity(record&&record[1]);
-  var album=normalizeTraderaIdentity(record&&record[2]);
-  if(!artist||artist!==album)return true;
-
-  var title=normalizeTraderaIdentity(listing&&listing.title);
-  var escaped=artist.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+');
-  var remainder=title
-    .replace(new RegExp('\\b'+escaped+'\\b'),' ')
-    .replace(new RegExp('\\b'+escaped+'\\b'),' ')
-    .replace(/\b(?:self titled|debut|album|vinyl|skiva|gatefold|lp|\d+x?lp|(?:180|200)g)\b/g,' ')
-    .replace(/\b(?:19|20)\d{2}\b/g,' ')
-    .replace(/\b(?:sweden|swedish|sverige|germany|german|canada|canadian|uk|us|usa|eu|press|pressing|first|1st|original|mono|stereo|sealed|new|ny)\b/g,' ')
-    .replace(/\s+/g,' ')
-    .trim();
-  return !remainder;
+  return MarketplaceCore.isRelevantListing(listing,record&&record[1],record&&record[2]);
 }
 
 function marketplaceRegionCurrency(){

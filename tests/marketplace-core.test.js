@@ -32,3 +32,21 @@ test('buyNowCandidates defaults missing currency and strips unsafe URL',()=>{
   assert.equal(rows[0].currency,'EUR');
   assert.equal(rows[0].url,'');
 });
+
+test('cacheKey normalizes surrounding whitespace and case',()=>{
+  assert.equal(Marketplace.cacheKey('  Pink Floyd ',' The Dark Side Of The Moon  '),'pink floyd|the dark side of the moon');
+});
+
+test('normalizeIdentity removes accents punctuation and expands ampersands',()=>{
+  assert.equal(Marketplace.normalizeIdentity('Beyoncé & JAY-Z'),'beyonce and jay z');
+});
+
+test('isRelevantListing keeps ordinary artist album combinations',()=>{
+  assert.equal(Marketplace.isRelevantListing({title:'Pink Floyd Animals LP'},'Pink Floyd','Animals'),true);
+});
+
+test('isRelevantListing filters unrelated self-titled listings',()=>{
+  assert.equal(Marketplace.isRelevantListing({title:'ABBA LP 1975 Swedish pressing'},'ABBA','ABBA'),true);
+  assert.equal(Marketplace.isRelevantListing({title:'ABBA Arrival LP'},'ABBA','ABBA'),false);
+});
+
