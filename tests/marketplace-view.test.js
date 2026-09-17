@@ -139,15 +139,21 @@ test('listingStatus preserves loading ready unavailable and empty copy',()=>{
   });
 });
 
-test('marketplace view loads before app without becoming a bootstrap requirement',()=>{
+test('marketplace view stays behind controller and app delegates marketplace orchestration',()=>{
   const root=path.resolve(__dirname,'..');
   const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const controllerSource=fs.readFileSync(path.join(root,'js','marketplace-controller.js'),'utf8');
+  const coreIndex=index.indexOf('/js/marketplace-core.js');
   const viewIndex=index.indexOf('/js/marketplace-view.js');
+  const controllerIndex=index.indexOf('/js/marketplace-controller.js');
   const appIndex=index.indexOf('/js/app.js');
-  assert.ok(viewIndex>=0&&appIndex>viewIndex);
-  assert.match(app,/var MarketplaceView=window\.GroovyMarketplaceView;/);
-  assert.doesNotMatch(app,/if\(!MarketplaceView\)throw/);
-  assert.match(app,/MarketplaceView\.openListingsModal/);
-  assert.match(app,/MarketplaceView\.applyButtonState/);
+  assert.ok(coreIndex>=0&&viewIndex>coreIndex&&controllerIndex>viewIndex&&appIndex>controllerIndex);
+  assert.match(controllerSource,/View\.openListingsModal/);
+  assert.match(controllerSource,/View\.applyButtonState/);
+  assert.match(app,/var MarketplaceController=window\.GroovyMarketplaceController;/);
+  assert.match(app,/MarketplaceController\.create\(\{/);
+  assert.doesNotMatch(app,/MarketplaceView\./);
+  assert.doesNotMatch(app,/MarketplaceCore\./);
+  assert.doesNotMatch(app,/function loadTraderaListings|function loadEbayListings/);
 });

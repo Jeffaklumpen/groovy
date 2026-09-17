@@ -30,6 +30,15 @@ test('marketplace scripts load core, view and controller in order before app.js'
   assert.ok(core>=0&&view>core&&controller>view&&app>controller);
 });
 
+test('marketplace controller initializes before app integration',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  const declaration=source.indexOf('var MarketplaceController=window.GroovyMarketplaceController;');
+  const create=source.indexOf('MarketplaceController.create({');
+  assert.ok(declaration>=0&&create>declaration);
+  assert.match(source,/GroovyMarketplaceController must load before app\.js/);
+  assert.doesNotMatch(source,/function loadTraderaListings|function loadEbayListings|MARKETPLACE_CURRENCY_STORAGE_KEY/);
+});
+
 test('Apple search core is passed into the album search feature',()=>{
   const app=fs.readFileSync('js/app.js','utf8');
   const feature=fs.readFileSync('js/album-search.js','utf8');
