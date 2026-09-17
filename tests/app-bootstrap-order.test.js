@@ -29,6 +29,15 @@ test('notification scripts load core then controller before app.js',()=>{
   assert.ok(core>=0&&controller>core&&app>controller);
 });
 
+test('notification controller initializes before app integration',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  const declaration=source.indexOf('var NotificationController=window.GroovyNotificationController;');
+  const create=source.indexOf('NotificationController.create({');
+  assert.ok(declaration>=0&&create>declaration);
+  assert.match(source,/GroovyNotificationController must load before app\.js/);
+  assert.doesNotMatch(source,/function renderNotifications|function loadNotifications|notificationChannel|notificationsCache|syncNotificationSubscription/);
+});
+
 test('marketplace scripts load core, view and controller in order before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const core=html.indexOf('/js/marketplace-core.js?v=');

@@ -42,17 +42,19 @@ test('builds grouped wishlist match copy',function(){
   );
 });
 
-test('notification core loads before app and app delegates pure formatting',function(){
+test('notification core and controller load before app and keep responsibilities separated',function(){
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const controller=fs.readFileSync(path.join(root,'js','notification-controller.js'),'utf8');
   const corePosition=html.search(/\/js\/notification-core\.js\?v=\d+/);
+  const controllerPosition=html.search(/\/js\/notification-controller\.js\?v=\d+/);
   const appPosition=html.indexOf('/js/app.js?v=');
-  assert.ok(corePosition>=0&&appPosition>corePosition);
+  assert.ok(corePosition>=0&&controllerPosition>corePosition&&appPosition>controllerPosition);
   assert.match(app,/var NotificationCore=window\.GroovyNotificationCore/);
   assert.match(app,/var escapeSocialHtml=NotificationCore\.escapeHtml/);
-  assert.match(app,/var relativeNotificationTime=NotificationCore\.relativeTime/);
-  assert.match(app,/var notificationCopy=NotificationCore\.copy/);
-  assert.doesNotMatch(app,/function escapeSocialHtml\(/);
-  assert.doesNotMatch(app,/function relativeNotificationTime\(/);
-  assert.doesNotMatch(app,/function notificationCopy\(/);
+  assert.match(app,/var NotificationController=window\.GroovyNotificationController/);
+  assert.match(controller,/Core\.escapeHtml/);
+  assert.match(controller,/Core\.relativeTime/);
+  assert.match(controller,/Core\.copy/);
+  assert.doesNotMatch(app,/relativeNotificationTime|notificationCopy|function renderNotifications|function loadNotifications|syncNotificationSubscription/);
 });

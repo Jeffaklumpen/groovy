@@ -98,12 +98,12 @@ test('viewed shelf rating helpers are available outside the collection module',f
 test('notification realtime channel is subscribed before the first awaited reload',function(){
   const fs=require('node:fs');
   const path=require('node:path');
-  const app=fs.readFileSync(path.resolve(__dirname,'..','js','app.js'),'utf8');
-  const start=app.indexOf('async function syncNotificationSubscription(user)');
-  const end=app.indexOf('function openCollectorRoute',start);
+  const controller=fs.readFileSync(path.resolve(__dirname,'..','js','notification-controller.js'),'utf8');
+  const start=controller.indexOf('async function syncUser(user)');
+  const end=controller.indexOf('async function togglePanel()',start);
   assert.ok(start>=0&&end>start);
-  const block=app.slice(start,end);
+  const block=controller.slice(start,end);
   const subscribe=block.indexOf('.subscribe();');
-  const initialLoad=block.lastIndexOf('await loadNotifications();');
+  const initialLoad=block.lastIndexOf('await load();');
   assert.ok(subscribe>=0&&initialLoad>subscribe,'channel must exist before an awaited notification load can race');
 });

@@ -1,5 +1,7 @@
 var NotificationCore=window.GroovyNotificationCore;
 if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
+var NotificationController=window.GroovyNotificationController;
+if(!NotificationController)throw new Error('GroovyNotificationController must load before app.js');
 var AppleSearchCore=window.GroovyAppleSearchCore;
 if(!AppleSearchCore)throw new Error('GroovyAppleSearchCore must load before app.js');
 var AlbumSearch=window.GroovyAlbumSearch;
@@ -48,18 +50,8 @@ const registerFields=document.getElementById('registerFields');
 const registerUsername=document.getElementById('registerUsername');
 const registerButton=document.getElementById('registerButton');
 const authSwitchButton=document.getElementById('authSwitchButton');
-const notificationBox=document.getElementById('notificationBox');
-const notificationBellButton=document.getElementById('notificationBellButton');
-const notificationBadge=document.getElementById('notificationBadge');
-const notificationPanel=document.getElementById('notificationPanel');
-const notificationList=document.getElementById('notificationList');
-const markAllNotificationsRead=document.getElementById('markAllNotificationsRead');
-const clearNotificationsButton=document.getElementById('clearNotificationsButton');
 const followingButton=document.getElementById('followingButton');
 const viewedUserFollowButton=document.getElementById('viewedUserFollowButton');
-let notificationChannel=null;
-let notificationUserId=null;
-let notificationsCache=[];
 
 // A blurred header becomes a containing block for fixed descendants in mobile
 // browsers. Put the dialog at body level after capturing its controls, so it
@@ -189,84 +181,6 @@ function setViewedUserFollowState(targetUserId,username,isFollowing){
     if(icon)icon.textContent=isFollowing?'✓':'+';
 }
 
-var relativeNotificationTime=NotificationCore.relativeTime;
-
-function closeNotificationPanel(){
-    if(!notificationPanel||!notificationBellButton)return;
-    notificationPanel.classList.remove('open');
-    notificationPanel.setAttribute('aria-hidden','true');
-    notificationBellButton.setAttribute('aria-expanded','false');
-}
-
-function updateNotificationBadge(){
-    if(!notificationBadge)return;
-    var unread=notificationsCache.filter(function(item){return !item.read_at;}).length;
-    notificationBadge.textContent=unread>99?'99+':String(unread);
-    notificationBadge.hidden=unread===0;
-    if(notificationBellButton)notificationBellButton.classList.toggle('has-unread',unread>0);
-}
-
-var notificationCopy=NotificationCore.copy;
-
-function renderNotifications(){
-    if(!notificationList)return;
-    updateNotificationBadge();
-    if(!notificationsCache.length){
-        notificationList.innerHTML='<div class="notification-empty"><span>All caught up</span><p>Updates from collectors you follow will appear here.</p></div>';
-        return;
-    }
-    notificationList.innerHTML=notificationsCache.map(function(item){
-        var actor=item.actor||{};
-        return '<button class="notification-item'+(item.read_at?'':' unread')+'" type="button" data-notification-id="'+item.id+'" data-username="'+escapeSocialHtml(actor.username||'')+'" data-type="'+escapeSocialHtml(item.notification_type||'')+'">'+
-          '<span class="notification-avatar" style="background-image:url(&quot;'+escapeSocialHtml(actor.avatar_url||'/assets/images/avatar-placeholder.png')+'&quot;)"></span>'+
-          '<span class="notification-item-copy"><span>'+notificationCopy(item)+'</span><small>'+escapeSocialHtml(relativeNotificationTime(item.updated_at||item.created_at))+'</small></span>'+
-          '<i aria-hidden="true"></i>'+
-        '</button>';
-    }).join('');
-}
-
-async function loadNotifications(){
-    var user=await currentSessionUser();
-    if(!user){notificationsCache=[];renderNotifications();return;}
-    var {data,error}=await supabaseClient.from('notifications')
-      .select('id,notification_type,item_count,payload,created_at,updated_at,read_at,actor:profiles!notifications_actor_id_fkey(id,username,avatar_url)')
-      .eq('recipient_id',user.id)
-      .order('updated_at',{ascending:false})
-      .limit(30);
-    if(error){console.warn('Could not load notifications:',error);return;}
-    notificationsCache=data||[];
-    renderNotifications();
-}
-
-async function markNotificationRead(id){
-    var item=notificationsCache.find(function(entry){return String(entry.id)===String(id);});
-    if(item&&!item.read_at)item.read_at=new Date().toISOString();
-    renderNotifications();
-    var user=await currentSessionUser();
-    if(!user)return;
-    await supabaseClient.from('notifications').update({read_at:new Date().toISOString()}).eq('id',id).eq('recipient_id',user.id).is('read_at',null);
-}
-
-async function syncNotificationSubscription(user){
-    if(!notificationBox)return;
-    if(!user){
-        notificationBox.hidden=true;
-        notificationUserId=null;
-        notificationsCache=[];
-        renderNotifications();
-        if(notificationChannel){try{await supabaseClient.removeChannel(notificationChannel);}catch(error){}notificationChannel=null;}
-        return;
-    }
-    notificationBox.hidden=false;
-    if(notificationUserId===user.id&&notificationChannel){await loadNotifications();return;}
-    if(notificationChannel){try{await supabaseClient.removeChannel(notificationChannel);}catch(error){}notificationChannel=null;}
-    notificationUserId=user.id;
-    notificationChannel=supabaseClient.channel('groovy-notifications-'+user.id)
-      .on('postgres_changes',{event:'*',schema:'public',table:'notifications',filter:'recipient_id=eq.'+user.id},function(){loadNotifications();})
-      .subscribe();
-    await loadNotifications();
-}
-
 function openCollectorRoute(username,view){
     if(!username)return;
     var url=view==='profile'?'/profile/'+encodeURIComponent(username):'/shelf/'+encodeURIComponent(username);
@@ -274,6 +188,27 @@ function openCollectorRoute(username,view){
     history.pushState({},'',url);
     renderCurrentRoute();
 }
+
+var notificationController=NotificationController.create({
+  elements:{
+    box:document.getElementById('notificationBox'),
+    bellButton:document.getElementById('notificationBellButton'),
+    badge:document.getElementById('notificationBadge'),
+    panel:document.getElementById('notificationPanel'),
+    list:document.getElementById('notificationList'),
+    markAllButton:document.getElementById('markAllNotificationsRead'),
+    clearButton:document.getElementById('clearNotificationsButton')
+  },
+  api:supabaseClient,
+  getCurrentUser:currentSessionUser,
+  onNavigate:function(username,view){openCollectorRoute(username,view);},
+  onBeforeOpen:function(){profileMenu.classList.remove('open');},
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
 
 function ensureFollowingPage(){
     var page=document.getElementById('followingPage');
@@ -358,54 +293,6 @@ async function renderFollowingPage(){
     }).join('');
 }
 
-if(notificationBox)notificationBox.addEventListener('click',function(event){event.stopPropagation();});
-if(notificationBellButton)notificationBellButton.addEventListener('click',async function(event){
-    event.preventDefault();event.stopPropagation();
-    profileMenu.classList.remove('open');
-    var open=!notificationPanel.classList.contains('open');
-    notificationPanel.classList.toggle('open',open);
-    notificationPanel.setAttribute('aria-hidden',open?'false':'true');
-    notificationBellButton.setAttribute('aria-expanded',open?'true':'false');
-    if(open)await loadNotifications();
-});
-if(markAllNotificationsRead)markAllNotificationsRead.addEventListener('click',async function(event){
-    event.preventDefault();event.stopPropagation();
-    var user=await currentSessionUser();
-    if(!user)return;
-    var now=new Date().toISOString();
-    notificationsCache.forEach(function(item){if(!item.read_at)item.read_at=now;});
-    renderNotifications();
-    var {error}=await supabaseClient.from('notifications').update({read_at:now}).eq('recipient_id',user.id).is('read_at',null);
-    if(error)console.warn('Could not mark notifications read:',error);
-});
-if(clearNotificationsButton)clearNotificationsButton.addEventListener('click',async function(event){
-    event.preventDefault();event.stopPropagation();
-    var user=await currentSessionUser();
-    if(!user)return;
-    clearNotificationsButton.disabled=true;
-    var previous=notificationsCache.slice();
-    notificationsCache=[];
-    renderNotifications();
-    var {error}=await supabaseClient.from('notifications').delete().eq('recipient_id',user.id);
-    if(error){
-        console.warn('Could not clear notifications:',error);
-        notificationsCache=previous;
-        renderNotifications();
-    }
-    clearNotificationsButton.disabled=false;
-});
-if(notificationList)notificationList.addEventListener('click',async function(event){
-    var itemButton=event.target.closest('.notification-item');
-    if(!itemButton)return;
-    event.preventDefault();event.stopPropagation();
-    await markNotificationRead(itemButton.getAttribute('data-notification-id'));
-    closeNotificationPanel();
-    var username=itemButton.getAttribute('data-username');
-    if(username){
-        var type=itemButton.getAttribute('data-type');
-        openCollectorRoute(username,type==='new_follower'?'profile':(type==='wishlist_match'?'wishlist':'shelf'));
-    }
-});
 if(followingButton)followingButton.addEventListener('click',function(event){
     event.preventDefault();event.stopPropagation();
     profileMenu.classList.remove('open');
@@ -419,7 +306,7 @@ loginClose.addEventListener('click',function(){
 
 profileButton.addEventListener('click',async function(event){
     event.stopPropagation();
-    closeNotificationPanel();
+    notificationController.closePanel();
 
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
@@ -448,7 +335,7 @@ profileMenu.addEventListener('click',function(event){
 document.addEventListener('click',function(){
     profileMenu.classList.remove('open');
     loginPanel.classList.remove('open');
-    closeNotificationPanel();
+    notificationController.closePanel();
 });
 
 authSwitchButton.addEventListener('click',function(){
@@ -516,7 +403,7 @@ async function updateAuthUI(){
         loginEmail.value='';
         loginPassword.value='';
         registerUsername.value='';
-        syncNotificationSubscription(user);
+        notificationController.syncUser(user);
     }else{
         profileButton.style.display='flex';
         profileMenu.classList.remove('open');
@@ -529,7 +416,7 @@ async function updateAuthUI(){
         profileImageMenu.style.backgroundImage='url("/assets/images/avatar-placeholder.png")';
         profileImageMenu.style.backgroundSize='cover';
         profileImageMenu.style.backgroundPosition='center';
-        syncNotificationSubscription(null);
+        notificationController.syncUser(null);
     }
 }
 
@@ -706,7 +593,7 @@ logoutButton.addEventListener('click',async function(){
     }
 
     profileMenu.classList.remove('open');
-    closeNotificationPanel();
+    notificationController.closePanel();
     records=[];
     collection.innerHTML='';
     history.replaceState({},'','/');
@@ -4818,7 +4705,7 @@ async function renderCurrentRoute(){
     window.dispatchEvent(new Event('groovy-route-change'));
     window.libraryView=GroovyRouteState.libraryViewFromSearch(window.location.search);
     await updateAuthUI();
-    closeNotificationPanel();
+    notificationController.closePanel();
     var routeUser=await currentSessionUser();
     if(!routeUser&&(window.location.pathname!=='/'||window.location.search||window.location.hash)){
         history.replaceState({},'','/');
