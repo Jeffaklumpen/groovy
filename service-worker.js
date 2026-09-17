@@ -18,9 +18,19 @@ self.addEventListener('activate',function(event){
   );
 });
 
-// Groovy deliberately remains network-first. The service worker enables the
-// installed app experience without keeping old HTML, CSS or JavaScript around.
+// Groovy is network-only. For navigations and frontend code, explicitly bypass
+// the browser HTTP cache as well so mobile/PWA sessions cannot stay on stale
+// HTML, CSS or JavaScript after a deploy.
 self.addEventListener('fetch',function(event){
   if(event.request.method!=='GET')return;
+
+  var destination=event.request.destination||'';
+  var mustBeFresh=event.request.mode==='navigate'||destination==='document'||destination==='script'||destination==='style';
+
+  if(mustBeFresh){
+    event.respondWith(fetch(new Request(event.request,{cache:'no-store'})));
+    return;
+  }
+
   event.respondWith(fetch(event.request));
 });

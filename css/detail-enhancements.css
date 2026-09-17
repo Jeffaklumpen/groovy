@@ -1,0 +1,150 @@
+/* Groovy album-detail enhancements */
+
+/* Logged-out landing owns the area below the main header. */
+body.logged-out-home .library-overview{display:none!important}
+.detail-social-context[hidden]{display:none!important}
+
+/* Match the vertical rhythm between My Pressing -> Tracklist and Tracklist -> Marketplace. */
+.album-tracks .copy-details{margin-bottom:0!important}
+.album-tracks .tracks-title{margin-top:14px!important}
+
+/* COLLECTION MATCH belongs in the same social-context slot as Also collected by. */
+@media screen and (min-width:1121px){
+  .detail-social-context.own-match{grid-column:1/-1!important;grid-row:8!important;margin:8px 0 0!important}
+}
+
+/* Rating removal action and balanced community stars. */
+.groovy-remove-rating{display:inline-flex;align-items:center;justify-content:center;min-height:25px;padding:0;border:0;background:transparent;color:#d07a4d;font-family:inherit;font-size:9px;font-weight:700;line-height:1;cursor:pointer;text-decoration:none}
+.groovy-remove-rating:hover{color:#ff7a1a;text-decoration:underline}
+.groovy-remove-rating:disabled{opacity:.55;cursor:wait;text-decoration:none}
+.detail-rating .groovy-star-meter.is-community{font-size:22px!important;letter-spacing:.075em!important}
+
+/* Give Your Rating the same numeric treatment as Community Rating. The filled
+   star classes are already updated by app.js, so CSS can derive the value. */
+.rating-panel-your .rating-panel-stars{align-items:center!important}
+.rating-panel-your .rating-panel-stars:after{content:'—';display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;margin-left:7px;color:#f5f5f5;font-size:23px;font-weight:800;line-height:1}
+.rating-panel-your .rating-panel-stars:has(.album-rating-star[data-rating="1"].filled):after{content:'1'}
+.rating-panel-your .rating-panel-stars:has(.album-rating-star[data-rating="2"].filled):after{content:'2'}
+.rating-panel-your .rating-panel-stars:has(.album-rating-star[data-rating="3"].filled):after{content:'3'}
+.rating-panel-your .rating-panel-stars:has(.album-rating-star[data-rating="4"].filled):after{content:'4'}
+.rating-panel-your .rating-panel-stars:has(.album-rating-star[data-rating="5"].filled):after{content:'5'}
+
+/* Wishlist detail action uses the same location as shelf actions. */
+.detail-shelf-actions.wishlist-detail-actions{display:flex!important}
+.detail-shelf-actions.wishlist-detail-actions .detail-move-to-collection{min-height:34px;padding:0 13px}
+@media screen and (min-width:761px){
+  .detail-shelf-actions.wishlist-detail-actions{grid-column:1/-1!important;grid-row:5!important;justify-self:stretch!important;width:100%;margin:10px 0 0!important}
+  .detail-shelf-actions.wishlist-detail-actions .detail-move-to-collection{width:100%;justify-content:center}
+
+  /* Desktop streaming spacing used to be injected by route-runtime.js. */
+  .detail-streaming-row{margin-top:28px!important}
+  .detail-streaming-row:after{content:""!important;position:absolute!important;left:4px!important;right:4px!important;top:-14px!important;height:1px!important;background:rgba(255,255,255,.09)!important;pointer-events:none!important}
+  .detail-shelf-actions:not([hidden]) + .detail-streaming-row:after{top:-14px!important}
+}
+
+@media screen and (max-width:760px){
+  /* app.js writes this card the exact same height as the square cover. Every
+     visible row shares the available height; no auto-margin can create a large
+     dead zone above the artist or below the shelf pill. A two-line title simply
+     consumes more of the same space and the inter-row gaps contract naturally. */
+  .detail-info-card{box-sizing:border-box;min-height:0!important;align-self:stretch!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;padding:9px 10px!important;overflow:hidden!important}
+  .detail-info-card .detail-artist{flex:0 0 auto;margin:0!important;font-size:15px!important;font-weight:500!important;line-height:1.08!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .detail-info-card .detail-album{display:-webkit-box!important;flex:0 0 auto;margin:0!important;padding:0!important;font-size:clamp(18px,5.35vw,22px)!important;font-weight:760!important;line-height:1.02!important;letter-spacing:-.35px!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden!important}
+
+  /* Mobile always shows the primary genre only. app.js already stores that
+     value in data-mobile-genre, while desktop keeps the full genre string. */
+  .detail-info-card .detail-meta{display:flex!important;flex:0 0 auto;flex-wrap:nowrap!important;align-items:center!important;min-width:0;margin:0!important;gap:0!important;font-size:10px!important;line-height:1.15!important;white-space:nowrap;overflow:hidden}
+  .detail-info-card .detail-meta>span{display:block!important;min-width:0;margin:0!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .detail-info-card .detail-meta #detailGenre{font-size:0!important;line-height:1.15!important}
+  .detail-info-card .detail-meta #detailGenre:after{content:attr(data-mobile-genre)!important;display:inline!important;font-size:10px!important;line-height:1.15!important}
+  .detail-info-card .detail-meta>span+span{position:relative!important;margin-left:5px!important;padding-left:6px!important}
+  .detail-info-card .detail-meta>span+span:before{content:''!important;position:absolute!important;left:0!important;top:50%!important;width:1px!important;height:13px!important;margin:0!important;background:rgba(255,255,255,.18)!important;transform:translateY(-50%)!important}
+
+  .detail-shelf-status{flex:0 0 auto!important;align-self:flex-start!important;min-height:22px!important;max-height:24px!important;margin:0!important;padding:3px 8px!important;gap:4px!important;font-size:9px!important;line-height:1!important}
+  .detail-shelf-status-icon{width:14px!important;height:14px!important;flex-basis:14px!important}
+  .detail-shelf-status strong{max-width:min(27vw,100px)!important;font-size:9px!important;line-height:1!important}
+
+  /* Mobile streaming exactly follows the compact service treatment used by
+     Groovy elsewhere: Apple is only its self-contained badge; Spotify gets the
+     slim black bordered service button. */
+  .detail-streaming-row{display:none!important}
+  .groovy-mobile-streaming{display:flex;flex:0 0 auto;align-items:center;justify-content:flex-start;gap:8px;width:100%;min-height:39px;margin:0!important;padding:7px 0 0!important;border-top:1px solid rgba(255,255,255,.09);overflow:hidden}
+  .groovy-mobile-streaming-link{display:flex;flex:0 0 auto;align-items:center;justify-content:center;min-width:0;height:31px;text-decoration:none;-webkit-tap-highlight-color:transparent}
+  .groovy-mobile-streaming-link:active{transform:scale(.97)}
+  .groovy-mobile-apple{padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;overflow:visible!important}
+  .groovy-mobile-apple img{display:block;width:auto!important;height:31px!important;max-width:100%!important;max-height:31px!important;object-fit:contain}
+  .groovy-mobile-spotify{height:31px!important;padding:0 8px!important;border:1px solid #343438!important;border-radius:7px!important;background:#09090a!important;overflow:hidden!important}
+  .groovy-mobile-spotify img{display:block;width:68px!important;height:auto!important;max-width:68px!important;max-height:none!important;object-fit:contain}
+
+  /* Rating is a full-width row below cover + album info. */
+  .album-detail>.detail-rating{grid-column:1/-1!important;grid-row:2!important;width:100%;margin:12px 0 0!important}
+  .album-detail>.detail-rating .rating-panels{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px!important}
+  .album-detail>.detail-rating .rating-panel{min-width:0;padding:10px 11px!important;border-radius:8px!important}
+  .album-detail>.detail-rating .rating-panel-label{gap:5px!important;font-size:9px!important;line-height:1.1}
+  .album-detail>.detail-rating .rating-panel-icon{display:none!important}
+  .album-detail>.detail-rating .rating-panel-stars{display:flex!important;min-height:22px!important;margin-top:6px!important;gap:1px!important;flex-wrap:nowrap!important}
+  .album-detail>.detail-rating .rating-panel .album-rating-star{padding:0 1px!important;font-size:19px!important;line-height:1!important}
+  .album-detail>.detail-rating .rating-panel-your .rating-panel-stars:after{margin-left:6px;font-size:20px!important}
+  .album-detail>.detail-rating .rating-panel-community-main{min-height:22px!important;margin-top:6px!important;gap:7px!important;white-space:nowrap;overflow:hidden}
+  .album-detail>.detail-rating .groovy-star-meter.is-community{font-size:17px!important;letter-spacing:.055em!important;flex:0 1 auto;min-width:0}
+  .album-detail>.detail-rating .rating-panel-community-main strong{font-size:20px!important;line-height:1!important;flex:0 0 auto}
+  .album-detail>.detail-rating .rating-panel-footer{display:flex;align-items:center;min-height:24px!important;margin-top:5px!important}
+  .album-detail>.detail-rating .rating-panel-meta,.album-detail>.detail-rating .rating-panel-empty-note{font-size:8px!important}
+  .album-detail>.detail-rating .groovy-remove-rating{min-height:24px;font-size:8px}
+
+  /* Mobile collector labels hug avatar + username rather than stretching. */
+  .detail-social-context:not(.own-match) .detail-social-people{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:flex-start!important;gap:6px!important}
+  .detail-social-context:not(.own-match) .detail-social-people>.detail-social-person{width:auto!important;min-width:0!important;max-width:160px!important;flex:0 0 auto!important;padding:3px 9px 3px 4px!important}
+  .detail-social-context:not(.own-match) .detail-social-people>.detail-social-person .detail-social-person-name{display:block!important;min-width:0!important;max-width:116px!important;flex:0 1 auto!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+  .detail-social-context:not(.own-match) .detail-social-more{width:30px!important;min-width:30px!important;flex:0 0 30px!important}
+
+  /* Grid cards: stars stay inside the card; rating number is desktop-only. */
+  .cover-rating{min-width:0!important;max-width:72px!important;flex:0 1 72px!important;overflow:hidden!important}
+  .cover-rating-inner{min-width:0!important;max-width:100%!important;gap:0!important;overflow:hidden!important}
+  .cover-rating-number{display:none!important}
+  .cover-rating .groovy-star-meter.is-compact{font-size:11px!important;letter-spacing:.045em!important;max-width:100%!important;overflow:hidden!important}
+
+  .detail-shelf-actions{grid-row:3!important}
+  .detail-social-context,.detail-social-context:not(.own-match),.detail-social-context.own-match{grid-row:4!important}
+  .album-tracks{grid-row:5!important}
+  .album-about{grid-row:6!important}
+  .marketplace-panel{grid-row:7!important}
+
+  .detail-shelf-actions.wishlist-detail-actions{grid-column:1/-1!important;width:100%;margin:10px 0 0!important}
+  .detail-shelf-actions.wishlist-detail-actions .detail-move-to-collection{width:100%;min-height:42px;justify-content:center;font-size:12px}
+  .album-tracks .copy-details{margin-bottom:0!important}
+  .album-tracks .tracks-title{margin-top:12px!important}
+}
+
+@media screen and (max-width:380px){
+  .detail-info-card{padding:7px 8px!important}
+  .detail-info-card .detail-artist{font-size:13px!important}
+  .detail-info-card .detail-album{font-size:clamp(15px,4.8vw,18px)!important;line-height:1.02!important;letter-spacing:-.2px!important}
+  .detail-info-card .detail-meta{font-size:9px!important}
+  .detail-info-card .detail-meta #detailGenre{font-size:0!important}
+  .detail-info-card .detail-meta #detailGenre:after{font-size:9px!important}
+  .detail-info-card .detail-meta>span+span{margin-left:4px!important;padding-left:5px!important}
+  .detail-info-card .detail-meta>span+span:before{height:11px!important}
+  .detail-shelf-status{padding:2px 6px!important;min-height:20px!important;max-height:22px!important}
+  .detail-shelf-status-icon{width:12px!important;height:12px!important;flex-basis:12px!important}
+  .detail-shelf-status strong{font-size:8px!important;max-width:82px!important}
+  .groovy-mobile-streaming{gap:7px;min-height:35px;padding-top:5px!important}
+  .groovy-mobile-streaming-link{height:28px}
+  .groovy-mobile-apple img{height:28px!important;max-height:28px!important}
+  .groovy-mobile-spotify{height:28px!important;padding:0 6px!important}
+  .groovy-mobile-spotify img{width:64px!important;max-width:64px!important}
+
+  .album-detail>.detail-rating .rating-panels{gap:6px!important}
+  .album-detail>.detail-rating .rating-panel{padding:9px 8px!important}
+  .album-detail>.detail-rating .rating-panel .album-rating-star{font-size:17px!important}
+  .album-detail>.detail-rating .rating-panel-your .rating-panel-stars:after{margin-left:4px;font-size:18px!important}
+  .album-detail>.detail-rating .groovy-star-meter.is-community{font-size:15px!important;letter-spacing:.035em!important}
+  .album-detail>.detail-rating .rating-panel-community-main strong{font-size:18px!important}
+  .detail-social-context:not(.own-match) .detail-social-people>.detail-social-person{max-width:145px!important;padding-right:8px!important}
+  .detail-social-context:not(.own-match) .detail-social-people>.detail-social-person .detail-social-person-name{max-width:104px!important}
+  .cover-rating{max-width:66px!important;flex-basis:66px!important}
+  .cover-rating .groovy-star-meter.is-compact{font-size:10px!important;letter-spacing:.035em!important}
+}
+
+/* Album rating layout (moved from album-rating-layout-v4.js) */
+html body .detail-rating .groovy-rating-section-heading{margin:0 0 8px!important;padding:0!important}html body .detail-rating .groovy-rating-section-heading strong{font-size:15px!important;line-height:1.05!important;color:#f7f7f8!important;font-weight:800!important}html body .detail-rating .rating-panels,html body .detail-rating .rating-panels.has-viewed-user{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important}html body .detail-rating .rating-panel{min-width:0!important;padding:9px 10px!important;border:1px solid rgba(255,255,255,.13)!important;border-radius:9px!important;background:linear-gradient(180deg,rgba(20,20,23,.98),rgba(13,13,16,.98))!important;box-shadow:0 5px 16px rgba(0,0,0,.12)!important}html body .detail-rating .rating-panel-viewed-user{grid-column:1/-1!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;min-height:44px!important;padding:7px 10px!important}html body .detail-rating .rating-panel-label{display:flex!important;align-items:center!important;gap:7px!important;color:#f5f5f5!important;font-size:10.5px!important;font-weight:750!important;line-height:1.1!important}html body .detail-rating .rating-panel-icon{box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;width:26px!important;height:26px!important;flex:0 0 26px!important;padding:5px!important;border:1px solid rgba(255,255,255,.23)!important;border-radius:50%!important;background:#101012!important;color:rgba(255,255,255,.68)!important}html body .detail-rating .rating-panel-icon svg{display:block!important;width:100%!important;height:100%!important}html body .detail-rating .groovy-rating-helper{display:none!important}html body .detail-rating .groovy-rating-value-row,html body .detail-rating .rating-panel-community-main{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:5px!important;width:100%!important;min-height:22px!important;margin-top:7px!important;white-space:nowrap!important}html body .detail-rating .rating-panel-stars{display:flex!important;align-items:center!important;gap:0!important;min-height:0!important;margin:0!important;white-space:nowrap!important}html body .detail-rating .rating-panel-stars:after{display:none!important;content:none!important}html body .detail-rating .album-rating-star{font-size:18px!important;line-height:1!important;padding:0!important}html body .detail-rating .groovy-rating-stars{position:relative;display:inline-block;flex:0 0 auto;line-height:1;white-space:nowrap;font-size:18px;letter-spacing:0}html body .detail-rating .groovy-rating-stars-base{color:rgba(255,255,255,.18)}html body .detail-rating .groovy-rating-stars-fill{position:absolute;left:0;top:0;width:var(--rating-fill);overflow:hidden;color:#ff6500;white-space:nowrap}html body .detail-rating .groovy-rating-score{display:inline-flex!important;align-items:baseline!important;gap:1px!important;flex:0 0 auto!important;margin:0!important;color:#f7f7f8!important;font-weight:800!important;line-height:1!important}html body .detail-rating .groovy-score-main{font-size:17px!important;color:#f7f7f8!important}html body .detail-rating .groovy-score-max{font-size:10px!important;color:rgba(255,255,255,.42)!important;font-weight:650!important}html body .detail-rating .rating-panel-footer{display:flex!important;align-items:center!important;min-height:14px!important;margin-top:6px!important}html body .detail-rating .rating-panel-meta{font-size:8.5px!important;color:rgba(255,255,255,.52)!important}html body .detail-rating .groovy-remove-rating{display:inline-flex!important;align-items:center!important;gap:5px!important;min-height:15px!important;padding:0!important;border:0!important;background:transparent!important;color:rgba(255,255,255,.58)!important;font:inherit!important;font-size:8.5px!important;font-weight:600!important;cursor:pointer!important}html body .detail-rating .groovy-remove-rating:hover{color:#ff720f!important}html body .detail-rating .groovy-remove-rating-icon{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}html body .detail-rating .groovy-rating-user{display:flex;align-items:center;gap:8px;min-width:0}html body .detail-rating .groovy-rating-user strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f5f5f5;font-size:10.5px;line-height:1.1;font-weight:750}html body .detail-rating .groovy-rating-viewed-value{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0;white-space:nowrap}html body .detail-rating .groovy-rating-avatar{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 28px;border:1px solid #d65a16;border-radius:50%;background-position:center;background-size:cover;background-repeat:no-repeat;overflow:hidden}html body .groovy-initial-avatar{position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;background-image:none!important;background:#15110f!important;border:1px solid #c95716!important;color:#f5f5f5!important;font-weight:700!important;overflow:hidden!important}html body .groovy-initial-avatar-letter{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:13px;line-height:1;text-transform:uppercase;pointer-events:none}@media screen and (min-width:761px){html body .detail-info-card>.detail-rating{width:auto!important;margin-top:10px!important}html body .detail-info-card>.detail-rating .rating-panel{min-height:76px!important}html body .detail-info-card>.detail-rating .rating-panel-viewed-user{min-height:44px!important}}@media screen and (max-width:760px){html body .album-detail>.detail-rating{grid-column:1/-1!important;grid-row:2!important;width:100%!important;margin:12px 0 0!important}html body .detail-rating .groovy-rating-section-heading{margin-bottom:8px!important}html body .detail-rating .groovy-rating-section-heading strong{font-size:14px!important}html body .detail-rating .rating-panels,html body .detail-rating .rating-panels.has-viewed-user{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:7px!important}html body .detail-rating .rating-panel{padding:9px!important;border-radius:9px!important;min-height:84px!important}html body .detail-rating .rating-panel-viewed-user{grid-column:1/-1!important;min-height:45px!important;padding:8px 9px!important}html body .detail-rating .rating-panel-label{font-size:9px!important;gap:5px!important}html body .detail-rating .rating-panel-icon{width:24px!important;height:24px!important;flex-basis:24px!important;padding:4px!important}html body .detail-rating .album-rating-star,html body .detail-rating .groovy-rating-stars{font-size:17px!important;letter-spacing:0!important}html body .detail-rating .groovy-score-main{font-size:17px!important}html body .detail-rating .groovy-score-max{font-size:9px!important}html body .detail-rating .groovy-rating-user{gap:7px!important}html body .detail-rating .groovy-rating-user strong{font-size:9px!important}html body .detail-rating .groovy-rating-avatar{width:26px!important;height:26px!important;flex-basis:26px!important}html body .detail-rating .groovy-rating-viewed-value{gap:5px!important}html body .detail-rating .rating-panel-meta,html body .detail-rating .groovy-remove-rating{font-size:7px!important}}@media screen and (max-width:380px){html body .detail-rating .rating-panel{padding:8px!important}html body .detail-rating .album-rating-star,html body .detail-rating .groovy-rating-stars{font-size:15px!important}html body .detail-rating .groovy-score-main{font-size:15px!important}html body .detail-rating .groovy-score-max{font-size:8px!important}}

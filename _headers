@@ -1,3 +1,21 @@
+/
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/shelf/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/user/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/profile/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/following*
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /service-worker.js
   Cache-Control: no-cache
 
@@ -8,4 +26,10 @@
   Cache-Control: no-cache
 
 /groovy/manifest.webmanifest
+  Cache-Control: no-cache
+
+/js/*
+  Cache-Control: no-cache
+
+/css/*
   Cache-Control: no-cache

@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 
-<html lang="sv">
+<html lang="en">
 <head>
 
   <script>
   (function(){
     var redirect=sessionStorage.redirect;
     delete sessionStorage.redirect;
-  
+
     if(redirect&&redirect!==location.href){
       history.replaceState(null,null,redirect);
     }
   })();
   </script>
-  
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Groovy">
@@ -23,10 +23,12 @@
   <meta name="application-name" content="Groovy">
   <meta name="theme-color" content="#121214">
   <title>GroovyShelves – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/groovy/css/style.css?v=93">
-  <link rel="icon" type="image/png" href="/groovy/favicon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/groovy/icons/apple-touch-icon.png">
-  <link rel="manifest" href="/groovy/manifest.webmanifest">
+  <link rel="stylesheet" href="/css/style.css?v=116">
+  <link rel="stylesheet" href="/css/detail-enhancements.css?v=8">
+  <link rel="stylesheet" href="/css/profile.css?v=9">
+  <link rel="icon" type="image/png" href="/assets/icons/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest?v=3">
 </head>
 
 <body>
@@ -34,8 +36,8 @@
 <header class="header">
   <div class="header-main">
     <div class="header-brand">
-      <img class="logo" src="/groovy/logo.png" alt="Groovy">
-      <span class="header-tagline">TRACK YOUR COLLECTION</span>
+      <img class="logo" src="/assets/images/logo.png" alt="Groovy">
+      <span class="header-tagline">EVERY RECORD COUNTS</span>
     </div>
 
     <nav id="libraryTabs" class="library-tabs" aria-label="My library" style="display:none;">
@@ -44,10 +46,6 @@
     </nav>
 
     <div class="header-tools">
-      <label class="library-search" for="librarySearchInput">
-        <span aria-hidden="true"></span>
-        <input id="librarySearchInput" type="search" placeholder="Search your collection..." autocomplete="off">
-      </label>
       <div class="header-controls">
         <button id="addAlbumButton" class="add-album-button" type="button">Add Record</button>
 
@@ -55,7 +53,22 @@
 
       </div>
 
+      <div id="onlineUsersStatus" class="online-users-pill" role="status" aria-live="polite" aria-label="0 users online">
+        <span class="online-users-dot" aria-hidden="true"></span>
+        <span class="online-users-copy"><strong id="onlineUsersCount">0</strong><span id="onlineUsersDesktopLabel" class="online-users-desktop">users online</span><span class="online-users-mobile">online</span></span>
+      </div>
+
       <div id="authBox">
+        <div id="notificationBox" class="notification-box" hidden>
+          <button id="notificationBellButton" class="notification-bell-button" type="button" aria-label="Notifications" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+            <span id="notificationBadge" class="notification-badge" hidden>0</span>
+          </button>
+          <div id="notificationPanel" class="notification-panel" aria-hidden="true">
+            <div class="notification-panel-head"><div><span>ACTIVITY</span><strong>Notifications</strong></div><div class="notification-panel-actions"><button id="markAllNotificationsRead" type="button">Mark all read</button><button id="clearNotificationsButton" type="button">Clear</button></div></div>
+            <div id="notificationList" class="notification-list"><div class="notification-empty">No notifications yet.</div></div>
+          </div>
+        </div>
         <button id="profileButton" type="button" aria-label="Profil"><span id="profileImage"></span></button>
         <div id="profileMenu">
           <div class="profile-header"><button id="profileAvatarButton" class="profile-avatar" type="button" aria-label="Byt profilbild"><span id="profileImageMenu"></span></button><span id="profileUsername"></span></div>
@@ -63,6 +76,7 @@
           <button id="myCollectionButton" class="menu-button" type="button">My Collection</button>
           <button id="statisticsButton" class="menu-button" type="button">Statistics</button>
           <button id="searchUserButton" class="menu-button" type="button">Search User</button>
+          <button id="followingButton" class="menu-button" type="button">Following</button>
           <button id="installAppMenuButton" class="menu-button" type="button">Install Groovy</button>
           <div class="profile-divider"></div><button id="logoutButton" type="button">Logout</button>
         </div>
@@ -96,14 +110,20 @@
       <div class="viewed-user-avatar" id="viewedUserAvatar"></div>
       <div class="viewed-user-copy"><span id="viewedUserContext">Collection</span><strong class="viewed-user-name" id="viewedUserName"></strong></div>
     </div>
+    <button class="viewed-user-follow" id="viewedUserFollowButton" type="button" aria-label="Follow collector" data-following="false"><span class="viewed-follow-icon" aria-hidden="true">+</span><span class="viewed-action-label">Follow</span></button>
     <div class="viewed-user-actions" role="navigation" aria-label="Viewed user library">
       <button class="viewed-user-nav" id="viewedUserShelfButton" type="button" aria-label="View shelf"><span class="record-icon" aria-hidden="true"></span><span class="viewed-action-label">Shelf</span></button>
       <button class="viewed-user-nav" id="viewedUserWishlistButton" type="button" aria-label="View wishlist"><span class="wishlist-icon" aria-hidden="true"></span><span class="viewed-action-label">Wishlist</span></button>
       <button class="viewed-user-stats" id="viewedUserStatsButton" type="button" aria-label="View statistics"><span aria-hidden="true">▥</span><span class="viewed-action-label">Statistics</span></button>
     </div>
+    <div class="viewed-user-search-row">
+      <label class="banner-library-search" for="librarySearchInput">
+        <span class="banner-search-icon" aria-hidden="true"></span>
+        <input id="librarySearchInput" type="search" placeholder="Search this shelf..." autocomplete="off">
+      </label>
+    </div>
   </div>
   <span id="copyProfileLinkButton" hidden aria-hidden="true"><span class="viewed-action-label"></span></span>
-
   <section id="shelfStrip" class="shelf-strip" aria-label="Shelves" hidden>
     <button id="shelfScrollLeft" class="shelf-scroll-arrow shelf-scroll-left" type="button" aria-label="Previous shelves">‹</button>
     <div id="shelfStripViewport" class="shelf-strip-viewport">
@@ -159,7 +179,6 @@
 <nav id="libraryPaginationTop" class="library-pagination library-pagination-top" aria-label="Collection pages"></nav>
 <main id="collection" class="collection"></main>
 <nav id="libraryPaginationBottom" class="library-pagination library-pagination-bottom" aria-label="Collection pages"></nav>
-
 <div id="emptyCollection" class="empty-collection">
   <div class="empty-collection-title">Track your collection</div>
   <div class="empty-collection-text">Add your first record and build your collection.</div>
@@ -212,15 +231,15 @@
     <div class="detail-rating" id="detailRating"></div>
   </div>
   <div id="detailShelfActions" class="detail-shelf-actions" hidden></div>
-  <div class="detail-streaming-row" aria-label="Streaming links">
-    <a id="detailAppleMusicLink" class="detail-streaming-link detail-apple-service" href="https://music.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Listen on Apple Music">
-      <img class="detail-apple-music-badge" src="/groovy/apple_wide.svg" alt="Listen on Apple Music">
+  <div class="detail-streaming-row" aria-label="Streaming links">    <a id="detailAppleMusicLink" class="detail-streaming-link detail-apple-service" href="https://music.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Listen on Apple Music">
+      <img class="detail-apple-music-badge" src="/assets/brands/apple-music-listen.svg" alt="Listen on Apple Music">
     </a>
     <a id="detailSpotifyLink" class="detail-streaming-link detail-spotify-service" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer" aria-label="Listen on Spotify">
-      <img class="detail-spotify-service-logo" src="/groovy/spotify_logo.svg" alt="" aria-hidden="true">
+      <img class="detail-spotify-service-logo" src="/assets/brands/spotify-logo.svg" alt="" aria-hidden="true">
       <span class="detail-spotify-service-copy"><strong>Listen on Spotify</strong><small>Stream this album on Spotify</small></span>
     </a>
   </div>
+  <div id="detailSocialContext" class="detail-social-context" hidden></div>
 </div>
 
 <div class="album-tracks">
@@ -237,25 +256,41 @@
   </section>
   <div class="tracks-title">TRACKLIST</div>
   <div id="detailTracks"></div>
-  <section class="marketplace-panel" aria-labelledby="marketplaceTitle">
-    <div class="marketplace-heading">
-      <span class="marketplace-icon" aria-hidden="true"></span>
-      <div><strong id="marketplaceTitle">Marketplace</strong><small>Find this record on trusted marketplaces.</small></div>
-    </div>
-    <div class="marketplace-triggers">
-      <button id="traderaButton" class="tradera-trigger" type="button" aria-haspopup="dialog">
-        <span class="tradera-trigger-mark" aria-hidden="true">T</span>
-        <span id="traderaButtonLabel">Tradera</span>
-        <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
-      </button>
-      <button id="ebayButton" class="tradera-trigger ebay-trigger" type="button" aria-haspopup="dialog" data-enabled="false" hidden>
-        <span class="tradera-trigger-mark ebay-trigger-mark" aria-hidden="true">e</span>
-        <span id="ebayButtonLabel">eBay</span>
-        <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
-      </button>
-    </div>
-  </section>
 </div>
+
+<section id="detailAboutAlbum" class="album-about" aria-labelledby="detailAboutAlbumTitle" hidden>
+  <h2 id="detailAboutAlbumTitle">About This Album</h2>
+  <div id="detailAboutAlbumBody" class="album-about-body"><div id="detailAboutAlbumText" class="album-about-text"></div></div>
+  <button id="detailAboutAlbumToggle" class="album-about-toggle" type="button" aria-expanded="false" aria-controls="detailAboutAlbumBody" hidden><span>Read more</span><i aria-hidden="true"></i></button>
+  <div class="album-about-source">
+    <a id="detailAboutAlbumLink" href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia ↗</a>
+    <span>Wikipedia contributors · <a class="album-about-license" href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a></span>
+  </div>
+</section>
+
+<section class="marketplace-panel" aria-labelledby="marketplaceTitle">
+  <div class="marketplace-heading">
+    <span class="marketplace-icon" aria-hidden="true"></span>
+    <div><strong id="marketplaceTitle">Marketplace</strong><small>Find this record on trusted marketplaces.</small></div>
+    <label class="marketplace-currency-control" for="marketplaceCurrencySelect"><span>Currency</span><select id="marketplaceCurrencySelect" aria-label="Marketplace currency"><option value="auto">Auto</option><option value="SEK">SEK</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="NOK">NOK</option><option value="DKK">DKK</option><option value="CHF">CHF</option><option value="CAD">CAD</option><option value="AUD">AUD</option><option value="JPY">JPY</option><option value="PLN">PLN</option><option value="CZK">CZK</option></select></label>
+  </div>
+  <div id="marketplacePriceSummary" class="marketplace-price-summary loading" aria-live="polite">
+    <div class="marketplace-price-copy"><span class="marketplace-price-kicker">LOWEST BUY NOW</span><a id="marketplaceLowestPriceLink" class="marketplace-lowest-price" href="#" target="_blank" rel="noopener noreferrer" hidden><strong id="marketplaceLowestPrice"></strong><span id="marketplaceLowestMeta"></span></a><span id="marketplacePriceStatus" class="marketplace-price-status">Checking fixed prices…</span></div>
+    <span id="marketplacePriceNote" class="marketplace-price-note">Excl. shipping</span>
+  </div>
+  <div class="marketplace-triggers">
+    <button id="traderaButton" class="tradera-trigger" type="button" aria-haspopup="dialog">
+      <span class="tradera-trigger-mark" aria-hidden="true">T</span>
+      <span id="traderaButtonLabel">Tradera</span>
+      <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
+    </button>
+    <button id="ebayButton" class="tradera-trigger ebay-trigger" type="button" aria-haspopup="dialog" data-enabled="true">
+      <span class="tradera-trigger-mark ebay-trigger-mark" aria-hidden="true">e</span>
+      <span id="ebayButtonLabel">eBay</span>
+      <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
+    </button>
+  </div>
+</section>
 
   </div>
 </div>
@@ -306,8 +341,7 @@
       <label class="pressing-field"><span>Record label</span><select id="pressingLabel" disabled><option value="">Choose label</option></select></label>
       <label class="pressing-field"><span>Catalog number</span><select id="pressingCatalogNumber" disabled><option value="">Choose catalog number</option></select></label>
       <div id="pressingMatrixSearch" class="pressing-matrix-search" hidden>
-        <label class="pressing-field"><span>Matrix / runout</span><input id="pressingMatrixQuery" type="text" placeholder="For example SMAS-11163-A-2" autocomplete="off"></label>
-        <button id="pressingMatrixSearchButton" class="copy-action-button primary" type="button">Find matrix</button>
+        <label class="pressing-field"><span>Matrix / runout</span><input id="pressingMatrixQuery" type="text" placeholder="For example SMAS-11163-A-2" autocomplete="off"></label>        <button id="pressingMatrixSearchButton" class="copy-action-button primary" type="button">Find matrix</button>
         <p class="pressing-help">Enter one side exactly as it appears in the runout groove.</p>
       </div>
       <div id="pressingMatches" class="pressing-matches"></div>
@@ -392,9 +426,8 @@
   </div>
 </div>
 
-<div id="addAlbumModal" class="add-album-modal" role="dialog" aria-modal="true" aria-labelledby="addAlbumTitle">
-
-    <div class="add-album-box search-modal-box">
+<div id="addAlbumModal" class="add-album-modal">
+    <div class="add-album-box">
 
         <button id="closeAddAlbum" class="close-add-album">
             ×
@@ -416,8 +449,7 @@
 
   <div id="searchUserModal" class="add-album-modal" role="dialog" aria-modal="true" aria-labelledby="searchUserTitle">
     <div class="add-album-box search-modal-box">
-      <button id="closeSearchUser" class="close-add-album">×</button>
-      <div class="search-modal-heading">
+      <button id="closeSearchUser" class="close-add-album">×</button>      <div class="search-modal-heading">
         <span class="search-modal-kicker">The community</span>
         <h2 id="searchUserTitle">Search User</h2>
         <p>Discover collectors and explore their shelves.</p>
@@ -464,7 +496,7 @@
 
 <aside id="installAppBanner" class="install-app-banner" aria-label="Install Groovy" hidden>
   <button id="installAppButton" class="install-app-action" type="button">
-    <img src="/groovy/icons/app-icon-192.png" alt="">
+    <img src="/assets/icons/app-icon-192.png" alt="">
     <span><strong>Install Groovy</strong><small>Add it to your home screen</small></span>
   </button>
   <button id="dismissInstallApp" class="install-app-dismiss" type="button" aria-label="Dismiss">×</button>
@@ -473,7 +505,7 @@
 <div id="installHelpModal" class="install-help-modal" role="dialog" aria-modal="true" aria-labelledby="installHelpTitle" aria-hidden="true">
   <div class="install-help-panel">
     <button id="closeInstallHelp" class="install-help-close" type="button" aria-label="Close">×</button>
-    <img class="install-help-icon" src="/groovy/icons/app-icon-192.png" alt="">
+    <img class="install-help-icon" src="/assets/icons/app-icon-192.png" alt="">
     <span class="search-modal-kicker">Your collection, one tap away</span>
     <h2 id="installHelpTitle">Add Groovy to your home screen</h2>
     <div id="installHelpSteps" class="install-help-steps"></div>
@@ -481,10 +513,23 @@
   </div>
 </div>
 
-<script src="/groovy/js/route-state.js?v=14"></script>
-<script src="/groovy/js/app.js?v=95"></script>
-<script src="/groovy/js/statistics-core.js?v=3"></script>
-<script src="/groovy/js/statistics.js?v=6"></script>
-<script src="/groovy/js/pwa.js?v=3"></script>
+<script src="/js/route-state.js?v=20"></script>
+<script src="/js/record-model.js?v=4"></script>
+<script src="/js/streaming-links.js?v=1"></script>
+<script src="/js/notification-core.js?v=1"></script>
+<script src="/js/pressing-core.js?v=3"></script>
+<script src="/js/rating-core.js?v=1"></script>
+<script src="/js/marketplace-core.js?v=1"></script>
+<script src="/js/shelf-core.js?v=2"></script>
+<script src="/js/library-core.js?v=1"></script>
+<script src="/js/apple-search-core.js?v=1"></script>
+<script src="/js/wikipedia-service.js?v=1"></script>
+<script src="/js/app.js?v=143"></script>
+<script src="/js/detail-enhancements-v2.js?v=9"></script>
+<script src="/js/statistics-core.js?v=4"></script>
+<script src="/js/statistics.js?v=11"></script>
+<script src="/js/profile.js?v=11"></script>
+<script src="/js/album-rating-layout-v4.js?v=3"></script>
+<script src="/js/pwa.js?v=18"></script>
 </body>
 </html>

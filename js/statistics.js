@@ -10,19 +10,11 @@
   var openedWithHistory=false;
 
   function escapeHtml(value){
-    return String(value===undefined||value===null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(value===undefined||value===null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;');
   }
 
   function coverUrl(value){
-    return value||'/groovy/avatar_placeholder.png';
-  }
-
-  function spotifySearchUrl(release){
-    return 'https://open.spotify.com/search/'+encodeURIComponent([release.artist,release.title].filter(Boolean).join(' '));
-  }
-
-  function spotifyMark(){
-    return '<svg class="spotify-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12"></circle><path d="M5.8 9.1c4.3-1.2 8.7-.8 12.4 1.2M6.7 12.5c3.6-.9 7.2-.5 10.3.9M7.6 15.6c2.8-.6 5.5-.3 7.9.7"></path></svg>';
+    return value||'/assets/images/avatar-placeholder.png';
   }
 
   function hideStatistics(){
@@ -65,18 +57,72 @@
       }).join('')+'</div>':'<p class="stats-empty">'+escapeHtml(emptyText)+'</p>')+'</section>';
   }
 
-  function releaseCard(label,release){
-    if(!release)return '<article class="stats-release stats-release-empty"><span>'+label+'</span><strong>No dated records yet</strong></article>';
-    return '<article class="stats-release"><img src="'+escapeHtml(coverUrl(release.cover))+'" alt="" onerror="this.src=\'/groovy/avatar_placeholder.png\'"><div class="stats-release-copy"><span>'+label+'</span><strong>'+escapeHtml(release.title)+'</strong><small>'+escapeHtml(release.artist)+' · '+release.year+'</small><a class="stats-spotify-link" href="'+escapeHtml(spotifySearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(release.title)+' by '+escapeHtml(release.artist)+' on Spotify">'+spotifyMark()+'<span>Listen on Spotify</span></a></div></article>';
+  function releaseStreaming(release){
+    return '<div class="stats-release-streaming">'+
+      '<a class="stats-release-service stats-release-apple" href="'+escapeHtml(window.GroovyStatistics.appleSearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Listen to '+escapeHtml(release.title)+' on Apple Music"><img src="/assets/brands/apple-music-listen.svg" alt="Listen on Apple Music"></a>'+
+      '<a class="stats-release-service stats-release-spotify" href="'+escapeHtml(window.GroovyStatistics.spotifySearchUrl(release))+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(release.title)+' on Spotify"><img src="/assets/brands/spotify-logo.svg" alt="Spotify"></a>'+
+    '</div>';
   }
 
-  function render(profile,stats){
+  function releaseCard(label,release){
+    if(!release)return '<article class="stats-release stats-release-empty"><span>'+label+'</span><strong>No dated records yet</strong></article>';
+    return '<article class="stats-release"><img src="'+escapeHtml(coverUrl(release.cover))+'" alt="" onerror="this.src=\'/assets/images/avatar-placeholder.png\'"><div class="stats-release-copy"><span>'+label+'</span><strong>'+escapeHtml(release.title)+'</strong><small>'+escapeHtml(release.artist)+' · '+release.year+'</small>'+releaseStreaming(release)+'</div></article>';
+  }
+
+  function followingComparisonCard(label,item,type){
+    if(!item){
+      return '<article class="stats-community-card stats-community-empty"><strong>No comparison yet</strong><small>Follow collectors with records in their shelves to unlock this statistic.</small></article>';
+    }
+    var value=type==='taste'?Math.round(Number(item.taste_similarity)||0)+'%':Number(item.common_count||0);
+    var valueLabel=type==='taste'?'genre match':'records in common';
+    var note=type==='taste'?'Closest music taste among collectors you follow':'Most shared collected albums among collectors you follow';
+    return '<article class="stats-community-card'+(type==='taste'?' stats-community-card-accent':'')+'">'+
+      '<img class="stats-community-avatar" src="'+escapeHtml(item.avatar_url||'/assets/images/avatar-placeholder.png')+'" alt="" onerror="this.src=\'/assets/images/avatar-placeholder.png\'">'+
+      '<div class="stats-community-copy"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(item.username||'Collector')+'</strong><small>'+escapeHtml(note)+'</small></div>'+
+      '<div class="stats-community-value"><strong>'+escapeHtml(value)+'</strong><span>'+escapeHtml(valueLabel)+'</span></div>'+
+    '</article>';
+  }
+
+  function followingComparisonPanel(social){
+    if(!social||!social.isOwn)return '';
+    var hasFollowing=social.followingCount>0;
+    return '<section class="stats-panel stats-community"><div class="stats-section-heading"><span>Your community</span><h3>Collectors you connect with</h3></div>'+
+      '<div class="stats-community-grid">'+
+        followingComparisonCard('Most records in common',hasFollowing?social.mostCommon:null,'common')+
+        followingComparisonCard('Closest music taste',hasFollowing?social.closestTaste:null,'taste')+
+      '</div>'+
+    '</section>';
+  }
+
+  async function fetchFollowingComparisons(userId){
+    var sessionResult=await supabaseClient.auth.getSession();
+    var sessionUser=sessionResult.data&&sessionResult.data.session&&sessionResult.data.session.user;
+    if(!sessionUser||String(sessionUser.id)!==String(userId))return {isOwn:false,followingCount:0,mostCommon:null,closestTaste:null};
+
+    var response=await supabaseClient.rpc('get_following_statistics');
+    if(response.error){
+      console.warn('Could not load following statistics:',response.error);
+      return {isOwn:true,followingCount:0,mostCommon:null,closestTaste:null};
+    }
+
+    var rows=(response.data||[]).slice();
+    var mostCommon=rows.slice().sort(function(a,b){
+      return Number(b.common_count||0)-Number(a.common_count||0)||String(a.username||'').localeCompare(String(b.username||''));
+    })[0]||null;
+    var closestTaste=rows.slice().sort(function(a,b){
+      return Number(b.taste_similarity||0)-Number(a.taste_similarity||0)||Number(b.common_count||0)-Number(a.common_count||0)||String(a.username||'').localeCompare(String(b.username||''));
+    })[0]||null;
+
+    return {isOwn:true,followingCount:rows.length,mostCommon:mostCommon,closestTaste:closestTaste};
+  }
+
+  function render(profile,stats,social){
     var topStyle=stats.topStyles[0];
     var topArtist=stats.topArtists[0];
     var topDecade=stats.topDecades[0];
     var topCountry=stats.topCountries[0];
     var rating=stats.averageAlbumRating?stats.averageAlbumRating.toFixed(1):'—';
-    var avatar=profile.avatar_url||'/groovy/avatar_placeholder.png';
+    var avatar=profile.avatar_url||'/assets/images/avatar-placeholder.png';
 
     content.innerHTML=
       '<section class="stats-hero"><div class="stats-hero-profile"><img src="'+escapeHtml(avatar)+'" alt=""><div><span class="stats-kicker">Collection insights</span><h1>'+escapeHtml(profile.username||'Groovy listener')+'</h1><p>A snapshot of the records, eras and sounds that shape this collection.</p></div></div><div class="stats-hero-groove" aria-hidden="true"></div></section>'+
@@ -92,6 +138,7 @@
         '<article class="stats-feature"><span>Most collected artist</span><strong>'+escapeHtml(topArtist?topArtist.label:'—')+'</strong><small>'+(topArtist?topArtist.count+' records':'No artist data yet')+'</small></article>'+
         '<article class="stats-feature"><span>Strongest decade</span><strong>'+escapeHtml(topDecade?topDecade.label:'—')+'</strong><small>'+(topDecade?topDecade.count+' releases':'No dated releases yet')+'</small></article>'+
       '</section>'+
+      followingComparisonPanel(social)+
       '<section class="stats-split">'+rankedBars('Top styles',stats.topStyles,'Add records to reveal the collection’s sound.')+rankedBars('Decades',stats.topDecades,'Release years will build this timeline.')+'</section>'+
       '<section class="stats-panel"><div class="stats-section-heading"><span>The collection</span><h3>More in the grooves</h3></div><div class="stats-detail-grid">'+
         metric('Five-star records',stats.fiveStarAlbums,'personal essentials')+
@@ -104,7 +151,7 @@
   async function fetchStatistics(userId){
     var results=await Promise.all([
       supabaseClient.from('profiles').select('username,avatar_url').eq('id',userId).maybeSingle(),
-      supabaseClient.from('collections').select('id,cover_url,discogs_style,discogs_release_id,media_condition,pressing_country,albums(id,title,release_year,genre,cover_url,artists(name))').eq('user_id',userId),
+      supabaseClient.from('collections').select('id,cover_url,discogs_style,discogs_release_id,media_condition,pressing_country,albums(id,title,release_year,genre,cover_url,apple_collection_url,artists(name))').eq('user_id',userId),
       supabaseClient.from('wishlists').select('id').eq('user_id',userId),
       supabaseClient.from('album_ratings').select('album_id,rating').eq('user_id',userId)
     ]);
@@ -113,9 +160,12 @@
     if(results[1].error)throw results[1].error;
     if(results[2].error)throw results[2].error;
 
+    var social=await fetchFollowingComparisons(userId);
+
     return {
       profile:results[0].data||{},
-      stats:window.GroovyStatistics.build(results[1].data||[],(results[2].data||[]).length,results[3].error?[]:results[3].data)
+      stats:window.GroovyStatistics.build(results[1].data||[],(results[2].data||[]).length,results[3].error?[]:results[3].data),
+      social:social
     };
   }
 
@@ -137,7 +187,7 @@
       if(version!==requestVersion)return;
       result.profile.username=result.profile.username||(profileHint&&profileHint.username)||'';
       result.profile.avatar_url=result.profile.avatar_url||(profileHint&&profileHint.avatar_url)||'';
-      render(result.profile,result.stats);
+      render(result.profile,result.stats,result.social);
     }catch(error){
       console.error('Could not load statistics:',error);
       if(version!==requestVersion)return;
@@ -152,7 +202,14 @@
     if(user)openStatistics(user.id,{username:profileUsername.textContent});
   });
 
-  viewedButton.addEventListener('click',function(){
+  viewedButton.addEventListener('click',async function(){
+    var header=document.getElementById('viewedUserHeader');
+    if(header&&header.dataset.own==='true'){
+      var sessionResult=await supabaseClient.auth.getSession();
+      var user=sessionResult.data&&sessionResult.data.session&&sessionResult.data.session.user;
+      if(user)openStatistics(user.id,{username:profileUsername.textContent});
+      return;
+    }
     var profile=window.groovyViewedStatisticsProfile;
     if(profile)openStatistics(profile.id,profile);
   });
@@ -160,7 +217,7 @@
   copyProfileButton.addEventListener('click',async function(){
     var profile=window.groovyViewedStatisticsProfile;
     if(!profile||!profile.username)return;
-    var profileUrl=window.location.origin+'/groovy/user/'+encodeURIComponent(profile.username);
+    var profileUrl=window.location.origin+'/profile/'+encodeURIComponent(profile.username);
     try{
       await navigator.clipboard.writeText(profileUrl);
       var label=copyProfileButton.querySelector('.viewed-action-label');
