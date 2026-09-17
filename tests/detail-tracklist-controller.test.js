@@ -24,6 +24,7 @@ function makeRecordModel(){
   return {
     albumId(record){return record.albumId;},
     discogsMasterId(record){return record.masterId;},
+    pressing(record){return record.pressing||{};},
     sides(record){return record.sides;},
     trackDurationCacheKey(record){return record.albumId?'cache:'+String(record.masterId||record.albumId):'';},
     hasMissingTrackDurations(record){
@@ -141,6 +142,139 @@ test('Discogs hydration falls back to a vinyl release when master positions lack
   assert.deepEqual(actions,['master','vinylRelease']);
   assert.equal(normalizedTracklist[0].position,'A1');
   assert.equal(record.sides.A[0].duration,'4:00');
+});
+
+test('exact saved Discogs release is preferred for missing durations',async()=>{
+  const record={
+    albumId:42,
+    masterId:123,
+    pressing:{discogsReleaseId:987},
+    sides:{A:[{trackNumber:1,title:'One',duration:''}]}
+  };
+  const actions=[];
+  const {controller,element}=createController({
+    api:{functions:{async invoke(name,payload){
+      actions.push(payload.body);
+      return {data:{tracklist:[{position:'A1',title:'One',duration:'3:33'}]}};
+    }}},
+    pressingCore:{discogsTrackRows(albumId,tracks){
+      return [{album_id:albumId,disc_side:'A',track_number:1,duration:tracks[0].duration}];
+    }}
+  });
+
+  await controller.openForRecord(record,0);
+
+  assert.deepEqual(actions,[{action:'release',releaseId:'987'}]);
+  assert.equal(record.sides.A[0].duration,'3:33');
+  assert.match(element.innerHTML,/3:33/);
+});
+
+test('master with disc sides but missing duration still falls back to vinyl release',async()=>{
+  const record={albumId:42,masterId:123,sides:{A:[{trackNumber:1,title:'One',duration:''}]}};
+  const actions=[];
+  const {controller}=createController({
+    api:{functions:{async invoke(name,payload){
+      actions.push(payload.body.action);
+      if(payload.body.action==='master'){
+        return {data:{tracklist:[{position:'A1',title:'One',duration:''}]}};
+      }
+      return {data:{tracklist:[{position:'A1',title:'One',duration:'4:44'}]}};
+    }}},
+    pressingCore:{discogsTrackRows(albumId,tracks){
+      return tracks.map(track=>({
+        album_id:albumId,
+        disc_side:String(track.position).charAt(0),
+        track_number:parseInt(String(track.position).slice(1),10),
+        duration:String(track.duration||'')
+      }));
+    }}
+  });
+
+  await controller.openForRecord(record,0);
+
+  assert.deepEqual(actions,['master','vinylRelease']);
+  assert.equal(record.sides.A[0].duration,'4:44');
+});
+
+test('partial durations from release and master are merged into cache',async()=>{
+  const storage=makeStorage();
+  const record={
+    albumId:42,
+    masterId:123,
+    pressing:{discogsReleaseId:987},
+    sides:{A:[
+      {trackNumber:1,title:'One',duration:''},
+      {trackNumber:2,title:'Two',duration:''}
+    ]}
+  };
+  const {controller}=createController({
+    storage,
+    api:{functions:{async invoke(name,payload){
+      if(payload.body.action==='release'){
+        return {data:{tracklist:[
+          {position:'A1',duration:'3:00'},
+          {position:'A2',duration:''}
+        ]}};
+      }
+      if(payload.body.action==='master'){
+        return {data:{tracklist:[
+          {position:'A1',duration:''},
+          {position:'A2',duration:'4:00'}
+        ]}};
+      }
+      return {data:{tracklist:[]}};
+    }}},
+    pressingCore:{discogsTrackRows(albumId,tracks){
+      return tracks.map(track=>({
+        album_id:albumId,
+        disc_side:String(track.position).charAt(0),
+        track_number:parseInt(String(track.position).slice(1),10),
+        duration:String(track.duration||'')
+      }));
+    }}
+  });
+
+  await controller.openForRecord(record,0);
+
+  assert.equal(record.sides.A[0].duration,'3:00');
+  assert.equal(record.sides.A[1].duration,'4:00');
+  const cached=JSON.parse(storage.getItem('cache:123'));
+  assert.deepEqual(cached.tracks.map(track=>track.duration),['3:00','4:00']);
+});
+
+test('four-LP A-H positions can all receive durations',async()=>{
+  const sideNames=['A','B','C','D','E','F','G','H'];
+  const record={
+    albumId:42,
+    masterId:123,
+    pressing:{discogsReleaseId:987},
+    sides:Object.fromEntries(sideNames.map(side=>[side,[{trackNumber:1,title:side+' One',duration:''}]]))
+  };
+  const tracklist=sideNames.map((side,index)=>({
+    position:side+'1',
+    title:side+' One',
+    duration:(index+3)+':00'
+  }));
+  const {controller}=createController({
+    api:{functions:{async invoke(name,payload){
+      assert.equal(payload.body.action,'release');
+      return {data:{tracklist}};
+    }}},
+    pressingCore:{discogsTrackRows(albumId,tracks){
+      return tracks.map(track=>({
+        album_id:albumId,
+        disc_side:String(track.position).charAt(0),
+        track_number:parseInt(String(track.position).slice(1),10),
+        duration:String(track.duration||'')
+      }));
+    }}
+  });
+
+  await controller.openForRecord(record,0);
+
+  sideNames.forEach((side,index)=>{
+    assert.equal(record.sides[side][0].duration,(index+3)+':00');
+  });
 });
 
 test('late duration responses update data but do not rerender another open record',async()=>{
