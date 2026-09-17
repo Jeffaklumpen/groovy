@@ -102,7 +102,32 @@ function hasMissingTrackDurations(record){
   });
 }
 
-var api={INDEX:INDEX,value:value,setRatings:setRatings,emptySides:emptySides,fromWishlist:fromWishlist,trackDurationCacheKey:trackDurationCacheKey,applyTrackDurations:applyTrackDurations,hasMissingTrackDurations:hasMissingTrackDurations};
+function compactShelfOrder(records,shelfId){
+  if(!shelfId||!Array.isArray(records))return records;
+  records
+    .filter(function(record){return String(value(record,'shelfId')||'')===String(shelfId);})
+    .sort(function(a,b){
+      var aOrder=parseInt(value(a,'shelfSortOrder'),10);
+      var bOrder=parseInt(value(b,'shelfSortOrder'),10);
+      if(isNaN(aOrder))aOrder=2147483647;
+      if(isNaN(bOrder))bOrder=2147483647;
+      return aOrder-bOrder||(parseInt(value(a,'order'),10)||0)-(parseInt(value(b,'order'),10)||0);
+    })
+    .forEach(function(record,index){record[INDEX.shelfSortOrder]=index+1;});
+  return records;
+}
+
+function nextShelfOrder(records,shelfId,excludedRecord){
+  var highest=0;
+  (records||[]).forEach(function(record){
+    if(record===excludedRecord)return;
+    if(String(value(record,'shelfId')||'')!==String(shelfId||''))return;
+    highest=Math.max(highest,parseInt(value(record,'shelfSortOrder'),10)||0);
+  });
+  return highest+1;
+}
+
+var api={INDEX:INDEX,value:value,setRatings:setRatings,emptySides:emptySides,fromWishlist:fromWishlist,trackDurationCacheKey:trackDurationCacheKey,applyTrackDurations:applyTrackDurations,hasMissingTrackDurations:hasMissingTrackDurations,compactShelfOrder:compactShelfOrder,nextShelfOrder:nextShelfOrder};
 Object.keys(INDEX).forEach(function(name){
   api[name]=function(record){return value(record,name);};
 });

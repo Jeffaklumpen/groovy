@@ -102,3 +102,46 @@ test('app delegates wishlist and track-duration tuple logic to record model',fun
   assert.equal(section.includes('Record.applyTrackDurations'),true);
   assert.equal(section.includes('Record.hasMissingTrackDurations'),true);
 });
+
+
+test('record model compacts shelf order without changing other shelves',function(){
+  const Record=loadModel();
+  function item(order,shelfId,shelfOrder){
+    const record=new Array(15).fill('');
+    record[0]=order;record[13]=shelfId;record[14]=shelfOrder;
+    return record;
+  }
+  const first=item(4,'target',3);
+  const second=item(2,'target',1);
+  const missing=item(1,'target',null);
+  const other=item(3,'other',9);
+  const records=[first,second,missing,other];
+  assert.equal(Record.compactShelfOrder(records,'target'),records);
+  assert.equal(Record.shelfSortOrder(second),1);
+  assert.equal(Record.shelfSortOrder(first),2);
+  assert.equal(Record.shelfSortOrder(missing),3);
+  assert.equal(Record.shelfSortOrder(other),9);
+});
+
+test('record model finds the next shelf order while excluding a moving record',function(){
+  const Record=loadModel();
+  function item(shelfId,shelfOrder){
+    const record=new Array(15).fill('');
+    record[13]=shelfId;record[14]=shelfOrder;
+    return record;
+  }
+  const one=item('target',1);
+  const moving=item('target',8);
+  const four=item('target',4);
+  const other=item('other',20);
+  assert.equal(Record.nextShelfOrder([one,moving,four,other],'target',moving),5);
+  assert.equal(Record.nextShelfOrder([other],'target',null),1);
+});
+
+test('app delegates local shelf ordering to record model',function(){
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  assert.equal(app.includes('function compactLocalShelfOrder('),false);
+  assert.equal(app.includes('function nextLocalShelfOrder('),false);
+  assert.ok((app.match(/Record\.compactShelfOrder\(records,/g)||[]).length>=2);
+  assert.equal(app.includes('Record.nextShelfOrder(records,normalizedShelfId,record)'),true);
+});

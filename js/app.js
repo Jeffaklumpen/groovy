@@ -1876,30 +1876,6 @@ function renderDetailShelfActions(index){
   }
 }
 
-function compactLocalShelfOrder(shelfId){
-  if(!shelfId)return;
-  records
-    .filter(function(record){return String(record[13]||'')===String(shelfId);})
-    .sort(function(a,b){
-      var aOrder=parseInt(a[14],10);
-      var bOrder=parseInt(b[14],10);
-      if(isNaN(aOrder))aOrder=2147483647;
-      if(isNaN(bOrder))bOrder=2147483647;
-      return aOrder-bOrder||(parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);
-    })
-    .forEach(function(record,index){record[14]=index+1;});
-}
-
-function nextLocalShelfOrder(shelfId,excludedRecord){
-  var highest=0;
-  records.forEach(function(record){
-    if(record===excludedRecord)return;
-    if(String(record[13]||'')!==String(shelfId||''))return;
-    highest=Math.max(highest,parseInt(record[14],10)||0);
-  });
-  return highest+1;
-}
-
 async function assignRecordToShelf(index,shelfId){
   var record=records[index];
   if(!record||viewedUserId!==null)return false;
@@ -1918,14 +1894,14 @@ async function assignRecordToShelf(index,shelfId){
   });
 
   var newShelfOrder=normalizedShelfId
-    ?nextLocalShelfOrder(normalizedShelfId,record)
+    ?Record.nextShelfOrder(records,normalizedShelfId,record)
     :null;
 
   record[13]=normalizedShelfId||'';
   record[14]=newShelfOrder;
 
   if(oldShelfId&&String(oldShelfId)!==String(normalizedShelfId||'')){
-    compactLocalShelfOrder(oldShelfId);
+    Record.compactShelfOrder(records,oldShelfId);
   }
 
   libraryPage=1;
@@ -3981,7 +3957,7 @@ async function deleteCollectionAlbum(index){
     .sort(function(a,b){return (parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);})
     .forEach(function(item,position){item[0]=position+1;});
 
-  if(deletedShelfId)compactLocalShelfOrder(deletedShelfId);
+  if(deletedShelfId)Record.compactShelfOrder(records,deletedShelfId);
 
   libraryPage=1;
   renderShelfStrip();
