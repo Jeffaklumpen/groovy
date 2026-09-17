@@ -2,6 +2,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const {
   profileUsernameFromPath,
+  publicProfileUsernameFromPath,
   resolveProfileView,
   libraryViewFromSearch,
   statisticsFromSearch,
@@ -19,6 +20,13 @@ test('recognises and decodes current shelf URLs',function(){
   assert.equal(profileUsernameFromPath('/groovy/user/Jeffaklumpen'),null);
   assert.equal(profileUsernameFromPath('/other/user/Jeffaklumpen'),null);
   assert.equal(profileUsernameFromPath('/shelf/%E0%A4%A'),null);
+});
+
+test('recognises public collector profile URLs separately from shelf URLs',function(){
+  assert.equal(publicProfileUsernameFromPath('/profile/Jeffaklumpen'),'Jeffaklumpen');
+  assert.equal(publicProfileUsernameFromPath('/profile/Anna%20Maria/'),'Anna Maria');
+  assert.equal(publicProfileUsernameFromPath('/shelf/Jeffaklumpen'),null);
+  assert.equal(publicProfileUsernameFromPath('/profile/%E0%A4%A'),null);
 });
 
 test('reads the library view from the URL',function(){
@@ -69,6 +77,10 @@ test('profile routing does not monkey patch browser history or route helpers',fu
   assert.doesNotMatch(profile,/history\.pushState\s*=|history\.replaceState\s*=|__groovyShelfRoutesPatched/);
   assert.doesNotMatch(profile,/GroovyRouteState\.profileUsernameFromPath\s*=/);
   assert.match(profile,/addEventListener\('groovy-route-change',syncRoute\)/);
+  assert.match(profile,/RouteState\.publicProfileUsernameFromPath\(pathname\)/);
+  assert.doesNotMatch(profile,/match\(\/\^\\\/profile/);
+  assert.match(app,/GroovyRouteState\.publicProfileUsernameFromPath\(window\.location\.pathname\)/);
+  assert.match(app,/records=\[\];\s*collection\.innerHTML='';/);
 });
 
 
@@ -106,4 +118,17 @@ test('notification realtime channel is subscribed before the first awaited reloa
   const subscribe=block.indexOf('.subscribe();');
   const initialLoad=block.lastIndexOf('await load();');
   assert.ok(subscribe>=0&&initialLoad>subscribe,'channel must exist before an awaited notification load can race');
+});
+
+
+test('other-user collection construction uses record model rating metadata explicitly',function(){
+  const fs=require('node:fs');
+  const path=require('node:path');
+  const app=fs.readFileSync(path.resolve(__dirname,'..','js','app.js'),'utf8');
+  const start=app.indexOf('async function loadOtherUserCollection(userId){');
+  const end=app.indexOf('async function loadUserFromUrl(){',start);
+  assert.ok(start>=0&&end>start);
+  const block=app.slice(start,end);
+  assert.match(block,/Record\.applyRatingMeta\(\[/);
+  assert.doesNotMatch(block,/return applyAlbumRatingMeta\(\[/);
 });

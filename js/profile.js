@@ -7,13 +7,13 @@
   var myCollectionButton=document.getElementById('myCollectionButton');
   if(!profileMenu||!myCollectionButton)return;
 
-  function decodeUsername(value){
-    try{return decodeURIComponent(value);}catch(error){return null;}
+  var RouteState=window.GroovyRouteState;
+  if(!RouteState||typeof RouteState.publicProfileUsernameFromPath!=='function'){
+    throw new Error('GroovyRouteState public profile routing must load before profile.js');
   }
 
   function publicProfileUsernameFromPath(pathname){
-    var match=String(pathname||'').match(/^\/profile\/([^\/]+)\/?$/);
-    return match?decodeUsername(match[1]):null;
+    return RouteState.publicProfileUsernameFromPath(pathname);
   }
 
   var state={user:null,profile:null,counts:{collection:0,wishlist:0,shelves:0},loading:false,publicProfile:null,grail:null};

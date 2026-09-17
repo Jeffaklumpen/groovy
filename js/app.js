@@ -659,7 +659,10 @@ async function renderOwnLibraryHeader(user){
 window.loadCollection=async function(){
   var path=window.location.pathname;
 
-  if(/^\/(?:user|shelf)\/[^\/]+\/?$/.test(path)){
+  if(
+    GroovyRouteState.profileUsernameFromPath(path)||
+    GroovyRouteState.publicProfileUsernameFromPath(path)
+  ){
     return;
   }
 
@@ -3388,7 +3391,7 @@ async function loadOtherUserCollection(userId){
                     });
             }
 
-            return applyAlbumRatingMeta([
+            return Record.applyRatingMeta([
                 index+1,
                 artist,
                 album.title||'Okänd titel',
@@ -3519,6 +3522,19 @@ async function renderCurrentRoute(){
         await socialController.renderFollowingPage();
         return;
     }
+
+    var publicProfileUsername=GroovyRouteState.publicProfileUsernameFromPath(window.location.pathname);
+    if(publicProfileUsername){
+        socialController.hideFollowingPage();
+        viewedUserId='profile-route';
+        window.loginRequiredForViewedCollection=false;
+        window.profileNotFound=false;
+        records=[];
+        collection.innerHTML='';
+        document.getElementById('collectionCount').textContent='';
+        return;
+    }
+
     socialController.hideFollowingPage();
     await loadUserFromUrl();
 }

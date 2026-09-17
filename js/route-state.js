@@ -21,6 +21,18 @@
     }
   }
 
+  function publicProfileUsernameFromPath(pathname){
+    var match=String(pathname||'').match(/^\/profile\/([^\/]+)\/?$/);
+
+    if(!match)return null;
+
+    try{
+      return decodeURIComponent(match[1]);
+    }catch(error){
+      return null;
+    }
+  }
+
   function resolveProfileView(sessionUser,profile){
     if(!sessionUser)return 'login-required';
     if(!profile)return 'not-found';
@@ -58,6 +70,7 @@
 
   return {
     profileUsernameFromPath:profileUsernameFromPath,
+    publicProfileUsernameFromPath:publicProfileUsernameFromPath,
     resolveProfileView:resolveProfileView,
     libraryViewFromSearch:libraryViewFromSearch,
     statisticsFromSearch:statisticsFromSearch,
