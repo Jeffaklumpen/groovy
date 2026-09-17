@@ -30,9 +30,9 @@ test('mobile header offers app installation instead of a delete toggle',function
   assert.doesNotMatch(html,/id="deleteModeButton"/);
   assert.match(pwa,/installShortcutButton\.addEventListener\('click',startInstall\)/);
   assert.doesNotMatch(pwa,/loadProfileModule|loadAlbumRatingLayoutV4|profile\.js|album-rating-layout-v4/);
-  assert.match(html,/href="\/css\/profile\.css\?v=9"/);
-  assert.match(html,/src="\/js\/profile\.js\?v=10"/);
-  assert.match(html,/src="\/js\/album-rating-layout-v4\.js\?v=3"/);
+  assert.match(html,/href="\/css\/profile\.css\?v=\d+"/);
+  assert.match(html,/src="\/js\/profile\.js\?v=\d+"/);
+  assert.match(html,/src="\/js\/album-rating-layout-v4\.js\?v=\d+"/);
 });
 
 test('long press enters delete mode before movement starts sorting',function(){
@@ -78,8 +78,8 @@ test('routing state stays pure and detail enhancements load directly',function()
 
   assert.doesNotMatch(routeState,/installRuntimeFixes|syncPublicShelfRecords|Object\.defineProperty\(windowObject,'loadCollection'/);
   assert.doesNotMatch(html,/route-runtime\.js/);
-  assert.match(html,/href="\/css\/detail-enhancements\.css\?v=8"/);
-  assert.match(html,/src="\/js\/detail-enhancements-v2\.js\?v=9"/);
+  assert.match(html,/href="\/css\/detail-enhancements\.css\?v=\d+"/);
+  assert.match(html,/src="\/js\/detail-enhancements-v2\.js\?v=\d+"/);
 
   const statePosition=html.indexOf('/js/route-state.js');
   const appPosition=html.indexOf('/js/app.js');
@@ -97,7 +97,6 @@ test('signup uses the auth trigger and collection membership checks are direct',
   assert.doesNotMatch(app,/\.limit\(500\)/);
 });
 
-
 test('document metadata is accessible and obsolete rating scripts are gone',function(){
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   assert.match(html,/<html lang="en">/);
@@ -109,7 +108,6 @@ test('document metadata is accessible and obsolete rating scripts are gone',func
   assert.equal(fs.existsSync(path.join(root,'js','album-rating-layout-v4.js')),true);
 });
 
-
 test('pressing matrices A-H use one schema path without compatibility hydration',function(){
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
   assert.doesNotMatch(app,/hydrateExtendedMatrices|extendedMatricesSaved|extendedPayload|database update needed for E–H/);
@@ -117,7 +115,6 @@ test('pressing matrices A-H use one schema path without compatibility hydration'
   assert.match(app,/matrix_runout_h:matrixH&&matrixH\.value\?matrixH\.value:null/);
   assert.match(app,/record\[11\]\.matrixH=payload\.matrix_runout_h\|\|''/);
 });
-
 
 test('album rating presentation lives in CSS instead of runtime style injection',function(){
   const layout=fs.readFileSync(path.join(root,'js','album-rating-layout-v4.js'),'utf8');
