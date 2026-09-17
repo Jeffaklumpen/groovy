@@ -103,6 +103,7 @@ test('pressing view loads before app and app delegates copy rendering after extr
   assert.match(app,/PressingView\.renderCopyDetails/);
   assert.match(app,/PressingView\.setOptions/);
   assert.match(app,/PressingView\.updateProgress/);
+  assert.match(app,/function recordConditionMeta\(value\)\{return PressingView\.conditionMeta\(value\);\}/);
+  assert.match(app,/function hasCopyDetails\(details\)\{return PressingView\.hasCopyDetails\(details\);\}/);
   assert.doesNotMatch(app,/function conditionOptions\(/);
-  assert.doesNotMatch(app,/function recordConditionMeta\(/);
 });
