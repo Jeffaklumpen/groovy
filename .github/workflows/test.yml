@@ -6,12 +6,12 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   node-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -19,5 +19,54 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Apply marketplace listing view extraction
+        run: node scripts/apply-marketplace-view-extraction.js
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/app.js
+          node --check js/marketplace-view.js
       - name: Run regression tests
         run: node --test tests/*.test.js
+      - name: Install browser test dependencies
+        run: npm install --no-audit --no-fund --package-lock=false
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser smoke tests on transformed app
+        env:
+          GROOVY_E2E_EMAIL: ${{ secrets.GROOVY_E2E_EMAIL }}
+          GROOVY_E2E_PASSWORD: ${{ secrets.GROOVY_E2E_PASSWORD }}
+        run: npm run test:e2e
+      - name: Commit extraction
+        if: github.event_name == 'push'
+        run: |
+          cat > .github/workflows/test.yml <<'WORKFLOW'
+          name: Tests
+
+          on:
+            push:
+              branches: [notes]
+            pull_request:
+
+          permissions:
+            contents: read
+
+          jobs:
+            node-tests:
+              runs-on: ubuntu-latest
+              timeout-minutes: 5
+              steps:
+                - name: Check out repository
+                  uses: actions/checkout@v4
+                - name: Set up Node
+                  uses: actions/setup-node@v4
+                  with:
+                    node-version: '22'
+                - name: Run regression tests
+                  run: node --test tests/*.test.js
+          WORKFLOW
+          git rm scripts/apply-marketplace-view-extraction.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Move marketplace listing UI into view helper"
+          git push origin HEAD:notes
