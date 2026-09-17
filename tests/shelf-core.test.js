@@ -30,3 +30,23 @@ test('recordCount handles all shelves and positional shelf ids',()=>{
   assert.equal(Shelf.recordCount([a,b,c],'shelf-a'),2);
   assert.equal(Shelf.recordCount([a,b,c],'missing'),0);
 });
+
+test('shelf icon aliases normalize to supported icons',()=>{
+  assert.equal(Shelf.normalizeIcon('vinyl'),'record');
+  assert.equal(Shelf.normalizeIcon('fire'),'flame');
+  assert.equal(Shelf.normalizeIcon('not-real'),'record');
+});
+
+test('shelf icon SVG uses the normalized icon path',()=>{
+  const svg=Shelf.iconSvg('vinyl');
+  assert.match(svg,/class="shelf-svg-icon"/);
+  assert.match(svg,/viewBox="0 0 24 24"/);
+  assert.ok(svg.includes(Shelf.ICON_PATHS.record));
+});
+
+test('shelf icon metadata remains available to the app',()=>{
+  assert.ok(Array.isArray(Shelf.ICON_OPTIONS));
+  assert.equal(Shelf.ICON_OPTIONS[0].id,'record');
+  assert.equal(Shelf.ICON_ALIASES.lightning,'bolt');
+});
+

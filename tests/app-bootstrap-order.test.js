@@ -32,3 +32,12 @@ test('Apple search core is initialized before first use in app.js',()=>{
   assert.ok(declaration<firstUse,'AppleSearchCore must be initialized before it is used');
 });
 
+test('shelf core is initialized before first shelf helper use in app.js',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  const declaration=source.indexOf('var ShelfCore=window.GroovyShelfCore;');
+  const firstUse=source.indexOf('ShelfCore.ICON_OPTIONS');
+  assert.ok(declaration>=0,'ShelfCore bootstrap declaration is missing');
+  assert.ok(firstUse>=0,'ShelfCore first icon use is missing');
+  assert.ok(declaration<firstUse,'ShelfCore must be initialized before icon helpers are used');
+});
+
