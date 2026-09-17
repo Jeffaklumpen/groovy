@@ -99,18 +99,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-se
 .year{margin-top:5px;font-size:13px;color:#777}
 .copy-line{margin-top:6px;color:#a94818;font-size:11px;font-weight:650;letter-spacing:.01em}
 
-.carousel{width:100%}
-.carousel-viewport{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;white-space:nowrap;padding:42px 0 55px;position:relative;-ms-overflow-style:none;scrollbar-width:none}
-.carousel-viewport::-webkit-scrollbar{display:none}
-.carousel-track{display:inline-block;white-space:nowrap;font-size:0}
-.carousel-card{display:inline-block;vertical-align:top;width:300px;margin:0 14px;white-space:normal;cursor:pointer;transform:scale(1);-webkit-transform:scale(1);transform-origin:center center;transition:none;-webkit-transition:none;-webkit-backface-visibility:hidden;backface-visibility:hidden;-webkit-tap-highlight-color:transparent}
-.carousel-card .cover-wrapper{box-shadow:0 7px 10px rgba(0,0,0,.25),0 18px 32px rgba(0,0,0,.52),0 28px 48px rgba(0,0,0,.25);border:1px solid #2d2d30}
-.carousel-card.active .cover-wrapper{box-shadow:0 9px 12px rgba(0,0,0,.30),0 22px 42px rgba(0,0,0,.62),0 32px 55px rgba(0,0,0,.28)}
-.carousel-card.active{transform:scale(1.08);-webkit-transform:scale(1.08);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
-.carousel-card .info{transition:none}
-.carousel-card .artist{font-size:18px}
-.carousel-card .album{font-size:15px}
-.carousel-card .year{font-size:13px}
 
 .album-overlay{position:fixed;z-index:1000;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0);display:block;padding:28px;overflow:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;visibility:hidden;opacity:0;pointer-events:none;-webkit-transition:opacity .28s ease,visibility 0s linear .32s;transition:opacity .28s ease,visibility 0s linear .32s}
 .album-overlay.visible{visibility:visible;opacity:1;pointer-events:auto;background:rgba(0,0,0,.90);-webkit-transition:opacity .28s ease,visibility 0s linear 0s;transition:opacity .28s ease,visibility 0s linear 0s}
@@ -179,11 +167,6 @@ body{padding:20px}
 .grid .artist{font-size:15px}
 .grid .album{font-size:13px}
 .grid .year{font-size:12px}
-.carousel-viewport{padding-top:32px;padding-bottom:58px}
-.carousel-card{width:300px;margin-left:12px;margin-right:12px}
-.carousel-card.active{transform:scale(1.10);-webkit-transform:scale(1.10);transition:transform .45s ease;-webkit-transition:-webkit-transform .45s ease}
-.carousel-card .artist{font-size:16px}
-.carousel-card .album{font-size:14px}
 .album-overlay{padding:20px}
 .album-detail{min-height:620px}
 .album-detail-main{padding:28px 30px 30px}
@@ -215,8 +198,6 @@ body{padding:15px}
 .add-album-card-icon{width:52px;height:52px;font-size:34px;margin-bottom:12px}
 .add-album-card-title{font-size:15px}
 .add-album-card-text{font-size:11px}
-.carousel-card{width:260px;margin-left:9px;margin-right:9px}
-.carousel-card.active{transform:scale(1.07);-webkit-transform:scale(1.07);transition:transform .4s ease;-webkit-transition:-webkit-transform .4s ease}
 .album-overlay{padding:10px}
 .album-detail{display:flex;flex-direction:column;min-height:0;height:auto}
 .album-detail-main{order:1;position:relative;width:100%;left:auto;bottom:auto;padding:20px 20px 18px;background:#111113}

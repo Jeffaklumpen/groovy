@@ -1095,14 +1095,7 @@ var pressingMatrixQuery=document.getElementById('pressingMatrixQuery');
 var pressingMatrixSearchButton=document.getElementById('pressingMatrixSearchButton');
 var pressingMatches=document.getElementById('pressingMatches');
 
-var view='grid';
-var activeIndex=0;
-var drag=false;
 var selectedRating='all';
-var startX=0;
-var startY=0;
-var startScroll=0;
-var scrollTimer=null;
 var suppressAlbumClick=false;
 var copyDetailsExpanded=false;
 var copyDetailsRecordKey='';
@@ -2208,8 +2201,6 @@ function attachAlbumClicks(){
 
     if(isNaN(index))return;
 
-    if(view==='carousel'&&drag)return;
-
     openAlbum(index);
   });
 }
@@ -2248,7 +2239,7 @@ confirmRemoveAlbum.addEventListener('click',async function(){
 });
 
 function enableGridSorting(){
-    if(view!=='grid'||selectedRating!=='all'||librarySearchQuery||librarySort!=='added'){
+    if(selectedRating!=='all'||librarySearchQuery||librarySort!=='added'){
       collection.classList.remove('grid-sort-enabled');
       return;
     }
@@ -3108,164 +3099,6 @@ window.buildGrid=function(){
   loadVisibleImages();
 }
 
-function setActive(index){
-  activeIndex=index;
-
-  var cards=document.getElementsByClassName('carousel-card');
-
-  for(var i=0;i<cards.length;i++){
-    cards[i].className=cards[i].className.replace(/\sactive\b/g,'');
-
-    if(i===index){
-      cards[i].className+=' active';
-    }
-  }
-}
-
-function animateScroll(element,to,smooth){
-  if(!smooth){
-    element.scrollLeft=to;
-    return;
-  }
-
-  if(element.scrollTo){
-    try{
-      element.scrollTo({left:to,behavior:'smooth'});
-      return;
-    }catch(e){}
-  }
-
-  var from=element.scrollLeft;
-  var change=to-from;
-  var duration=420;
-  var start=new Date().getTime();
-
-  function step(){
-    var time=new Date().getTime();
-    var progress=Math.min(1,(time-start)/duration);
-    var easing=progress*(2-progress);
-    element.scrollLeft=from+change*easing;
-    if(progress<1)setTimeout(step,16);
-  }
-  step();
-}
-
-function centerCard(index,smooth){
-  var viewport=document.getElementById('carouselViewport');
-  var cards=document.getElementsByClassName('carousel-card');
-  var card=cards[index];
-
-  if(!viewport||!card)return;
-
-  var target=card.offsetLeft-(viewport.clientWidth-card.offsetWidth)/2;
-  var max=viewport.scrollWidth-viewport.clientWidth;
-
-  target=Math.max(0,Math.min(target,max));
-
-  setActive(index);
-  animateScroll(viewport,target,smooth);
-}
-
-function nearest(){
-  var viewport=document.getElementById('carouselViewport');
-  var cards=document.getElementsByClassName('carousel-card');
-  var center=viewport.scrollLeft+viewport.clientWidth/2;
-
-  var best=0;
-  var distance=Infinity;
-
-  for(var i=0;i<cards.length;i++){
-    var card=cards[i];
-    var cardCenter=card.offsetLeft+card.offsetWidth/2;
-    var currentDistance=Math.abs(cardCenter-center);
-
-    if(currentDistance<distance){
-      distance=currentDistance;
-      best=i;
-    }
-  }
-
-  return best;
-}
-
-function buildCarousel(){
-  collection.className='collection carousel';
-
-  var html=
-    '<div class="carousel-viewport" id="carouselViewport">'+
-      '<div class="carousel-track" id="carouselTrack">';
-
-  for(var i=0;i<records.length;i++){
-    var rating=parseInt(records[i][5],10);
-  
-    if(selectedRating==='all'||rating===parseInt(selectedRating,10)){
-      html+=recordHTML(records[i],'carousel-card');
-    }
-  }
-
-  html+='</div></div>';
-  collection.innerHTML=html;
-  loadVisibleImages();
-  
-  var viewport=document.getElementById('carouselViewport');
-  var cards=document.getElementsByClassName('carousel-card');
-
-  attachWishlistRemoveControls();
-  attachAlbumClicks();
-
-  function scheduleSettle(){
-    if(scrollTimer)clearTimeout(scrollTimer);
-
-    scrollTimer=setTimeout(function(){
-      setActive(nearest());
-    },180);
-  }
-
-  viewport.onscroll=function(){
-    scheduleImageLoad();
-    scheduleSettle();
-  };
-
-  viewport.ontouchstart=function(event){
-    if(!event.touches||!event.touches.length)return;
-
-    drag=false;
-    startX=event.touches[0].pageX;
-    startY=event.touches[0].pageY;
-    startScroll=viewport.scrollLeft;
-
-    if(scrollTimer)clearTimeout(scrollTimer);
-  };
-
-  viewport.ontouchmove=function(event){
-    if(!event.touches||!event.touches.length)return;
-
-    var dx=event.touches[0].pageX-startX;
-
-    if(Math.abs(dx)>8)drag=true;
-  };
-
-  viewport.ontouchend=function(){
-    scheduleSettle();
-
-    setTimeout(function(){
-      drag=false;
-    },120);
-  };
-
-  setTimeout(function(){
-    centerCard(activeIndex,false);
-    scheduleImageLoad();
-  },30);
-}
-
-function setView(nextView){
-  view=nextView;
-
-  view='grid';
-  buildGrid();
-}
-
 albumClose.onclick=function(){
   closeAlbum();
 };
@@ -3287,13 +3120,6 @@ document.onkeydown=function(event){
     return;
   }
 
-  if(view!=='carousel')return;
-
-  if(event.keyCode===39&&activeIndex<records.length-1){
-    centerCard(activeIndex+1,true);
-  }else if(event.keyCode===37&&activeIndex>0){
-    centerCard(activeIndex-1,true);
-  }
 };
 
 filterButton.onclick=function(event){
@@ -3376,7 +3202,6 @@ for(var f=0;f<filterButtons.length;f++){
     filterMenu.classList.remove('open');
     filterButton.setAttribute('aria-expanded','false');
 
-    activeIndex=0;
     libraryPage=1;
 
     buildGrid();
