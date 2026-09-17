@@ -750,6 +750,7 @@ var MarketplaceCore=window.GroovyMarketplaceCore;
 var MarketplaceView=window.GroovyMarketplaceView;
 var ShelfCore=window.GroovyShelfCore;
 var ShelfView=window.GroovyShelfView;
+var ShelfController=window.GroovyShelfController;
 var LibraryCore=window.GroovyLibraryCore;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
@@ -760,6 +761,7 @@ if(!RatingCore)throw new Error('GroovyRatingCore must load before app.js');
 if(!MarketplaceCore)throw new Error('GroovyMarketplaceCore must load before app.js');
 if(!ShelfCore)throw new Error('GroovyShelfCore must load before app.js');
 if(!ShelfView)throw new Error('GroovyShelfView must load before app.js');
+if(!ShelfController)throw new Error('GroovyShelfController must load before app.js');
 if(!LibraryCore)throw new Error('GroovyLibraryCore must load before app.js');
 
 window.records = [];
@@ -1330,13 +1332,7 @@ var refreshedStyleMasters=new Set();
 
 var shelves=[];
 var activeShelfId='all';
-var loadedShelfUserId='';
-var shelfPickerRecordIndex=-1;
-var createShelfReturnRecordIndex=-1;
-var selectedShelfIcon='record';
 var SHELF_COLORS=['#E85301','#FF3B45','#FF6B4A','#F43F8C','#8B5CF6','#6366F1','#3B82F6','#14B8D4','#10B981','#84CC16','#F5C542','#6B7280','#14B8A6','#F59E0B'];
-var selectedShelfColor=SHELF_COLORS[0];
-var editingShelfId='';
 var MAX_SHELVES=10;
 
 var shelfStrip=document.getElementById('shelfStrip');
@@ -1379,32 +1375,10 @@ var detailOpenRecordIndex=-1;
 var detailSocialRequestVersion=0;
 var detailSocialCache=new Map();
 
-function normalizeShelfIcon(icon){
-  return ShelfCore.normalizeIcon(icon);
-}
-
 function shelfIconSvg(icon){
   return ShelfCore.iconSvg(icon);
 }
 
-
-function renderShelfIconChoices(){
-  ShelfView.renderIconChoices(shelfIconChoices);
-}
-
-renderShelfIconChoices();
-
-function normalizeShelfColor(value){
-  return ShelfCore.normalizeColor(value,SHELF_COLORS);
-}
-
-function shelfColorRgb(value){
-  return ShelfCore.colorRgb(value,SHELF_COLORS);
-}
-
-function shelfColorStyle(shelf){
-  return ShelfCore.colorStyle(shelf,SHELF_COLORS);
-}
 
 function syncMobileDetailPairHeight(){
   if(!detailInfoCard)return;
@@ -1440,6 +1414,24 @@ document.body.appendChild(recordMenuBackdrop);
 function isMobileRecordMenu(){
   return window.matchMedia&&window.matchMedia('(max-width: 760px)').matches;
 }
+
+var shelfController=ShelfController.create({
+  elements:{
+    strip:shelfStrip,stripViewport:shelfStripViewport,stripScroll:shelfStripScroll,scrollLeft:shelfScrollLeft,scrollRight:shelfScrollRight,
+    editButton:editShelfButton,deleteButton:deleteShelfButton,deleteModal:deleteShelfModal,closeDelete:closeDeleteShelfButton,cancelDelete:cancelDeleteShelfButton,confirmDelete:confirmDeleteShelfButton,deleteMessage:deleteShelfMessage,deleteStatus:deleteShelfStatus,
+    createModal:createShelfModal,createTitle:createShelfTitle,createDescription:createShelfDescription,closeCreate:closeCreateShelfButton,cancelCreate:cancelCreateShelfButton,confirmCreate:confirmCreateShelfButton,nameInput:shelfNameInput,iconChoices:shelfIconChoices,colorChoices:shelfColorChoices,createStatus:createShelfStatus,
+    pickerModal:shelfPickerModal,closePicker:closeShelfPickerButton,cancelPicker:cancelShelfPickerButton,confirmPicker:confirmShelfPickerButton,createFromPicker:createShelfFromPickerButton,pickerList:shelfPickerList,pickerSubtitle:shelfPickerSubtitle,pickerStatus:shelfPickerStatus,pickerTitle:shelfPickerTitle,
+    detailActions:detailShelfActions,detailStatus:detailShelfStatus
+  },
+  colors:SHELF_COLORS,maxShelves:MAX_SHELVES,api:supabaseClient,recordModel:Record,
+  getShelves:function(){return shelves;},setShelves:function(value){shelves=value;},
+  getActiveShelfId:function(){return activeShelfId;},setActiveShelfId:function(value){activeShelfId=value||'all';},
+  getRecords:function(){return records;},getViewedUserId:function(){return viewedUserId;},getLibraryView:function(){return window.libraryView;},
+  getDetailOpenRecordIndex:function(){return detailOpenRecordIndex;},getSessionUser:currentSessionUser,
+  shouldHideStrip:function(){return window.libraryView==='wishlist'||window.loginRequiredForViewedCollection||window.profileNotFound||(!window.hasAuthenticatedUser&&viewedUserId===null);},
+  onLibraryPageReset:function(){libraryPage=1;},onGridChange:function(){buildGrid();},isMobile:isMobileRecordMenu,
+  requestFrame:function(callback){return requestAnimationFrame(callback);},alert:function(message){alert(message);}
+});
 
 function closeRecordActionMenus(){
   document.querySelectorAll('.record-action-menu.open').forEach(function(menu){
@@ -1500,335 +1492,27 @@ recordMenuBackdrop.addEventListener('touchmove',function(){
   closeRecordActionMenus();
 },{passive:true});
 
-function updateShelfScrollArrows(){
-  if(!shelfStrip||!shelfStripScroll)return;
-  if(isMobileRecordMenu()){
-    shelfStrip.classList.remove('has-overflow');
-    return;
-  }
+function updateShelfScrollArrows(){return shelfController.updateScrollArrows();}
 
-  var maxScroll=Math.max(0,shelfStripScroll.scrollWidth-shelfStripScroll.clientWidth);
-  var hasOverflow=maxScroll>2;
-  shelfStrip.classList.toggle('has-overflow',hasOverflow);
-  maxScroll=Math.max(0,shelfStripScroll.scrollWidth-shelfStripScroll.clientWidth);
 
-  if(shelfScrollLeft)shelfScrollLeft.disabled=!hasOverflow||shelfStripScroll.scrollLeft<=2;
-  if(shelfScrollRight)shelfScrollRight.disabled=!hasOverflow||shelfStripScroll.scrollLeft>=maxScroll-2;
-}
-
-function renderShelfStrip(){
-  if(!shelfStrip||!shelfStripScroll)return;
-
-  var hide=window.libraryView==='wishlist'||window.loginRequiredForViewedCollection||window.profileNotFound||(!window.hasAuthenticatedUser&&viewedUserId===null);
-  shelfStrip.hidden=hide;
-  if(hide){
-    shelfStripScroll.innerHTML='';
-    shelfStrip.classList.remove('has-overflow');
-    if(editShelfButton)editShelfButton.hidden=true;
-    if(deleteShelfButton)deleteShelfButton.hidden=true;
-    return;
-  }
-
-  if(activeShelfId!=='all'&&!shelfById(activeShelfId))activeShelfId='all';
-
-  var html=ShelfView.stripMarkup({
-    shelves:shelves,
-    records:records,
-    activeShelfId:activeShelfId,
-    maxShelves:MAX_SHELVES,
-    showCreate:viewedUserId===null,
-    colors:SHELF_COLORS
-  });
-
-  var previousShelfScrollLeft=shelfStripScroll.scrollLeft;
-  shelfStripScroll.innerHTML=html;
-  shelfStripScroll.scrollLeft=previousShelfScrollLeft;
-
-  shelfStripScroll.querySelectorAll('.shelf-chip[data-shelf-id]').forEach(function(button){
-    button.addEventListener('click',function(){
-      activeShelfId=button.getAttribute('data-shelf-id')||'all';
-      libraryPage=1;
-      buildGrid();
-    });
-  });
-
-  var newShelfButton=shelfStripScroll.querySelector('.shelf-new-button:not(:disabled)');
-  if(newShelfButton)newShelfButton.addEventListener('click',function(){openCreateShelfModal(-1);});
-
-  var canManageActiveShelf=viewedUserId===null&&activeShelfId!=='all'&&shelfById(activeShelfId);
-  if(editShelfButton)editShelfButton.hidden=!canManageActiveShelf;
-  if(deleteShelfButton)deleteShelfButton.hidden=!canManageActiveShelf;
-
-  requestAnimationFrame(updateShelfScrollArrows);
-}
-
+function renderShelfStrip(){return shelfController.renderStrip();}
 window.renderShelfStrip=renderShelfStrip;
+window.loadShelvesForUser=function(userId){return shelfController.loadForUser(userId);};
 
-window.loadShelvesForUser=async function(userId){
-  if(!userId){
-    shelves=[];
-    activeShelfId='all';
-    loadedShelfUserId='';
-    renderShelfStrip();
-    return;
-  }
 
-  if(String(loadedShelfUserId)!==String(userId))activeShelfId='all';
-  loadedShelfUserId=String(userId);
+function openCreateShelfModal(index){return shelfController.openCreate(index);}
+function closeCreateShelfModal(){return shelfController.closeCreate();}
+function openEditShelfModal(){return shelfController.openEdit();}
+function openShelfPicker(index){return shelfController.openPicker(index);}
+function closeShelfPicker(){return shelfController.closePicker();}
+function renderShelfPicker(index){return shelfController.renderPicker(index);}
+function renderDetailShelfStatus(index){return shelfController.renderDetailStatus(index);}
+function renderDetailShelfActions(index){return shelfController.renderDetailActions(index);}
+function assignRecordToShelf(index,shelfId){return shelfController.assignRecord(index,shelfId);}
+function openDeleteShelfModal(){return shelfController.openDelete();}
+function closeDeleteShelfModal(){return shelfController.closeDelete();}
+function deleteActiveShelf(){return shelfController.deleteActive();}
 
-  var {data,error}=await supabaseClient
-    .from('shelves')
-    .select('id,user_id,name,icon,color,sort_order,created_at')
-    .eq('user_id',userId)
-    .order('sort_order',{ascending:true})
-    .order('created_at',{ascending:true});
-
-  if(error){
-    console.error('Kunde inte hämta shelves:',error);
-    shelves=[];
-    activeShelfId='all';
-  }else{
-    shelves=(data||[]).map(function(shelf){shelf.color=normalizeShelfColor(shelf.color);return shelf;});
-    if(activeShelfId!=='all'&&!shelfById(activeShelfId))activeShelfId='all';
-  }
-
-  renderShelfStrip();
-};
-
-function setShelfIconChoice(icon){
-  selectedShelfIcon=ShelfView.applyIconChoice(shelfIconChoices,icon);
-}
-
-function resetShelfIconChoice(){setShelfIconChoice('record');}
-
-function setShelfColorChoice(color){
-  selectedShelfColor=ShelfView.applyColorChoice(shelfColorChoices,createShelfModal,color,SHELF_COLORS);
-}
-
-function resetShelfColorChoice(){setShelfColorChoice(SHELF_COLORS[0]);}
-
-function shouldAutofocusShelfModal(){
-  return !(window.matchMedia&&window.matchMedia('(max-width: 760px)').matches);
-}
-
-function resetShelfModalScroll(){
-  var box=createShelfModal&&createShelfModal.querySelector('.shelf-modal-box');
-  if(box)box.scrollTop=0;
-}
-
-function closeCreateShelfModal(){
-  createShelfModal.style.display='none';
-  shelfNameInput.value='';
-  createShelfStatus.textContent='';
-  createShelfReturnRecordIndex=-1;
-  editingShelfId='';
-  if(createShelfTitle)createShelfTitle.textContent='Create New Shelf';
-  if(createShelfDescription)createShelfDescription.textContent='Give your shelf a name, icon and color.';
-  if(confirmCreateShelfButton)confirmCreateShelfButton.textContent='Create Shelf';
-  resetShelfIconChoice();
-  resetShelfColorChoice();
-}
-
-function openCreateShelfModal(returnRecordIndex){
-  if(viewedUserId!==null)return;
-  if(shelves.length>=MAX_SHELVES){
-    if(returnRecordIndex>=0){
-      shelfPickerStatus.textContent='You can create up to '+MAX_SHELVES+' shelves.';
-    }
-    return;
-  }
-  editingShelfId='';
-  createShelfReturnRecordIndex=typeof returnRecordIndex==='number'?returnRecordIndex:-1;
-  shelfNameInput.value='';
-  createShelfStatus.textContent='';
-  if(createShelfTitle)createShelfTitle.textContent='Create New Shelf';
-  if(createShelfDescription)createShelfDescription.textContent='Give your shelf a name, icon and color.';
-  if(confirmCreateShelfButton)confirmCreateShelfButton.textContent='Create Shelf';
-  resetShelfIconChoice();
-  resetShelfColorChoice();
-  createShelfModal.style.display='flex';
-  resetShelfModalScroll();
-  if(shouldAutofocusShelfModal())setTimeout(function(){shelfNameInput.focus();},0);
-}
-
-function openEditShelfModal(){
-  if(viewedUserId!==null||activeShelfId==='all')return;
-  var shelf=shelfById(activeShelfId);
-  if(!shelf)return;
-
-  editingShelfId=String(shelf.id);
-  createShelfReturnRecordIndex=-1;
-  shelfNameInput.value=String(shelf.name||'');
-  createShelfStatus.textContent='';
-  if(createShelfTitle)createShelfTitle.textContent='Edit Shelf';
-  if(createShelfDescription)createShelfDescription.textContent='Change the shelf name, icon or color.';
-  if(confirmCreateShelfButton)confirmCreateShelfButton.textContent='Save Changes';
-  setShelfIconChoice(shelf.icon||'record');
-  setShelfColorChoice(shelf.color||SHELF_COLORS[0]);
-  createShelfModal.style.display='flex';
-  resetShelfModalScroll();
-  if(shouldAutofocusShelfModal())setTimeout(function(){shelfNameInput.focus();shelfNameInput.select();},0);
-}
-
-function closeShelfPicker(){
-  shelfPickerModal.style.display='none';
-  shelfPickerRecordIndex=-1;
-  shelfPickerStatus.textContent='';
-}
-
-function renderShelfPicker(index){
-  var record=records[index];
-  if(!record)return;
-  var currentShelf=String(record[13]||'');
-  shelfPickerTitle.textContent=currentShelf?'Move to Shelf':'Add to Shelf';
-  shelfPickerSubtitle.textContent=currentShelf
-    ?'Choose a new shelf for “'+record[2]+'”.'
-    :'Choose a shelf for “'+record[2]+'”.';
-
-  shelfPickerList.innerHTML=ShelfView.pickerMarkup({
-    shelves:shelves,
-    currentShelfId:currentShelf,
-    colors:SHELF_COLORS
-  });
-
-  shelfPickerList.querySelectorAll('input[name="recordShelf"]').forEach(function(input){
-    input.addEventListener('change',function(){ShelfView.syncPickerSelection(shelfPickerList);});
-  });
-
-  createShelfFromPickerButton.disabled=shelves.length>=MAX_SHELVES;
-  createShelfFromPickerButton.textContent=shelves.length>=MAX_SHELVES
-    ?MAX_SHELVES+' shelf limit reached'
-    :'+ New Shelf';
-}
-
-function openShelfPicker(index){
-  if(viewedUserId!==null||window.libraryView==='wishlist')return;
-  if(!records[index])return;
-  shelfPickerRecordIndex=index;
-  shelfPickerStatus.textContent='';
-  renderShelfPicker(index);
-  shelfPickerModal.style.display='flex';
-}
-
-function renderDetailShelfStatus(index){
-  if(!detailShelfStatus)return;
-  var record=records[index];
-  var shelf=record?shelfById(record[13]):null;
-  ShelfView.renderDetailStatus(detailShelfStatus,{
-    record:record,
-    shelf:shelf,
-    isWishlist:window.libraryView==='wishlist'
-  });
-}
-
-function renderDetailShelfActions(index){
-  if(!detailShelfActions)return;
-
-  var record=records[index];
-  var canEdit=!!record&&viewedUserId===null&&window.libraryView!=='wishlist';
-
-  if(!canEdit){
-    detailShelfActions.hidden=true;
-    detailShelfActions.innerHTML='';
-    return;
-  }
-
-  var hasShelf=!!record[13];
-  detailShelfActions.hidden=false;
-  detailShelfActions.innerHTML=ShelfView.detailActionsMarkup(hasShelf);
-
-  var pickButton=detailShelfActions.querySelector('[data-detail-shelf-action="pick"]');
-  if(pickButton){
-    pickButton.addEventListener('click',function(event){
-      event.preventDefault();
-      event.stopPropagation();
-      openShelfPicker(index);
-    });
-  }
-
-  var removeButton=detailShelfActions.querySelector('[data-detail-shelf-action="remove"]');
-  if(removeButton){
-    removeButton.addEventListener('click',async function(event){
-      event.preventDefault();
-      event.stopPropagation();
-      removeButton.disabled=true;
-      try{
-        await assignRecordToShelf(index,null);
-        renderDetailShelfActions(index);
-      }catch(error){
-        console.error('Kunde inte ta bort albumet från shelf:',error);
-        alert('Could not remove the record from the shelf.\n\n'+(error.message||error));
-        removeButton.disabled=false;
-      }
-    });
-  }
-}
-
-async function assignRecordToShelf(index,shelfId){
-  var record=records[index];
-  if(!record||viewedUserId!==null)return false;
-
-  var {data:{session}}=await supabaseClient.auth.getSession();
-  var user=session&&session.user;
-  if(!user)throw new Error('Du måste vara inloggad.');
-
-  var normalizedShelfId=shelfId||null;
-  var oldShelfId=record[13]||'';
-
-  if(String(oldShelfId||'')===String(normalizedShelfId||''))return true;
-
-  var snapshot=records.map(function(item){
-    return {record:item,shelfId:item[13]||'',shelfOrder:item[14]==null?null:item[14]};
-  });
-
-  var newShelfOrder=normalizedShelfId
-    ?Record.nextShelfOrder(records,normalizedShelfId,record)
-    :null;
-
-  record[13]=normalizedShelfId||'';
-  record[14]=newShelfOrder;
-
-  if(oldShelfId&&String(oldShelfId)!==String(normalizedShelfId||'')){
-    Record.compactShelfOrder(records,oldShelfId);
-  }
-
-  libraryPage=1;
-  renderShelfStrip();
-  buildGrid();
-  if(detailOpenRecordIndex===index){
-    renderDetailShelfStatus(index);
-    renderDetailShelfActions(index);
-  }
-
-  try{
-    var {data,error}=await supabaseClient.rpc('move_collection_to_shelf',{
-      p_collection_id:String(record[9]),
-      p_shelf_id:normalizedShelfId
-    });
-
-    if(error)throw error;
-
-    if(data&&data.shelf_sort_order!=null){
-      record[14]=parseInt(data.shelf_sort_order,10)||record[14];
-    }else if(!normalizedShelfId){
-      record[14]=null;
-    }
-
-    return true;
-  }catch(error){
-    snapshot.forEach(function(item){
-      item.record[13]=item.shelfId;
-      item.record[14]=item.shelfOrder;
-    });
-    renderShelfStrip();
-    buildGrid();
-    if(detailOpenRecordIndex===index){
-      renderDetailShelfStatus(index);
-      renderDetailShelfActions(index);
-    }
-    throw error;
-  }
-}
 
 function attachRecordActionMenus(){
   var menuButtons=collection.querySelectorAll('.record-menu-button');
@@ -1894,204 +1578,7 @@ function attachRecordActionMenus(){
   });
 }
 
-if(shelfIconChoices){
-  shelfIconChoices.addEventListener('click',function(event){
-    var button=event.target.closest('.shelf-icon-choice');
-    if(!button)return;
-    setShelfIconChoice(button.getAttribute('data-icon')||'record');
-  });
-}
 
-if(shelfColorChoices){
-  shelfColorChoices.addEventListener('click',function(event){
-    var button=event.target.closest('.shelf-color-choice');
-    if(!button)return;
-    setShelfColorChoice(button.getAttribute('data-color'));
-  });
-}
-
-closeCreateShelfButton.addEventListener('click',closeCreateShelfModal);
-cancelCreateShelfButton.addEventListener('click',closeCreateShelfModal);
-createShelfModal.addEventListener('click',function(event){if(event.target===createShelfModal)closeCreateShelfModal();});
-
-confirmCreateShelfButton.addEventListener('click',async function(){
-  var editingShelf=editingShelfId?shelfById(editingShelfId):null;
-
-  if(!editingShelf&&shelves.length>=MAX_SHELVES){
-    createShelfStatus.textContent='You can create up to '+MAX_SHELVES+' shelves.';
-    return;
-  }
-
-  var name=shelfNameInput.value.trim();
-  if(!name){createShelfStatus.textContent='Enter a shelf name.';shelfNameInput.focus();return;}
-  if(name.length>30){createShelfStatus.textContent='Use 30 characters or fewer.';return;}
-  if(shelves.some(function(shelf){
-    return (!editingShelf||String(shelf.id)!==String(editingShelf.id))&&
-      String(shelf.name).toLocaleLowerCase()===name.toLocaleLowerCase();
-  })){
-    createShelfStatus.textContent='You already have a shelf with that name.';
-    return;
-  }
-
-  confirmCreateShelfButton.disabled=true;
-  createShelfStatus.textContent=editingShelf?'Saving…':'Creating…';
-
-  try{
-    var {data:{session}}=await supabaseClient.auth.getSession();
-    var user=session&&session.user;
-    if(!user)throw new Error('Du måste vara inloggad.');
-
-    if(editingShelf){
-      var {data:updatedShelf,error:updateError}=await supabaseClient
-        .from('shelves')
-        .update({name:name,icon:selectedShelfIcon,color:selectedShelfColor})
-        .eq('id',editingShelf.id)
-        .eq('user_id',user.id)
-        .select('id,user_id,name,icon,color,sort_order,created_at')
-        .single();
-
-      if(updateError)throw updateError;
-
-      shelves=shelves.map(function(shelf){
-        return String(shelf.id)===String(updatedShelf.id)?updatedShelf:shelf;
-      });
-
-      closeCreateShelfModal();
-      renderShelfStrip();
-      buildGrid();
-      return;
-    }
-
-    var {data,error}=await supabaseClient
-      .from('shelves')
-      .insert({user_id:user.id,name:name,icon:selectedShelfIcon,color:selectedShelfColor,sort_order:shelves.length+1})
-      .select('id,user_id,name,icon,color,sort_order,created_at')
-      .single();
-
-    if(error)throw error;
-    shelves.push(data);
-    shelves.sort(function(a,b){return (a.sort_order||0)-(b.sort_order||0);});
-    var returnIndex=createShelfReturnRecordIndex;
-    closeCreateShelfModal();
-
-    if(returnIndex>=0&&records[returnIndex]){
-      await assignRecordToShelf(returnIndex,data.id);
-      if(detailOpenRecordIndex===returnIndex){renderDetailShelfStatus(returnIndex);renderDetailShelfActions(returnIndex);}
-    }else{
-      activeShelfId=data.id;
-      renderShelfStrip();
-      buildGrid();
-    }
-  }catch(error){
-    console.error(editingShelf?'Kunde inte uppdatera shelf:':'Kunde inte skapa shelf:',error);
-    createShelfStatus.textContent=editingShelf?'Could not update shelf.':'Could not create shelf.';
-  }finally{
-    confirmCreateShelfButton.disabled=false;
-  }
-});
-
-function closeDeleteShelfModal(){
-  deleteShelfModal.style.display='none';
-  deleteShelfStatus.textContent='';
-}
-
-function openDeleteShelfModal(){
-  if(viewedUserId!==null||activeShelfId==='all')return;
-  var shelf=shelfById(activeShelfId);
-  if(!shelf)return;
-  var count=shelfRecordCount(shelf.id);
-  deleteShelfStatus.textContent='';
-  deleteShelfMessage.textContent='Delete “'+shelf.name+'”? '+count+' record'+(count===1?'':'s')+' will stay in All Records and become unshelved.';
-  deleteShelfModal.style.display='flex';
-}
-
-async function deleteActiveShelf(){
-  if(viewedUserId!==null||activeShelfId==='all')return;
-  var shelf=shelfById(activeShelfId);
-  if(!shelf)return;
-
-  confirmDeleteShelfButton.disabled=true;
-  deleteShelfStatus.textContent='Deleting…';
-
-  try{
-    var {data:{session}}=await supabaseClient.auth.getSession();
-    var user=session&&session.user;
-    if(!user)throw new Error('Du måste vara inloggad.');
-
-    var {error}=await supabaseClient.rpc('delete_shelf_and_unshelve',{
-      p_shelf_id:shelf.id
-    });
-
-    if(error)throw error;
-
-    records.forEach(function(record){
-      if(String(record[13]||'')===String(shelf.id)){
-        record[13]='';
-        record[14]=null;
-      }
-    });
-    shelves=shelves.filter(function(item){return String(item.id)!==String(shelf.id);});
-    activeShelfId='all';
-    libraryPage=1;
-    closeDeleteShelfModal();
-    renderShelfStrip();
-    buildGrid();
-  }catch(error){
-    console.error('Kunde inte radera shelf:',error);
-    deleteShelfStatus.textContent='Could not delete shelf.';
-  }finally{
-    confirmDeleteShelfButton.disabled=false;
-  }
-}
-
-if(editShelfButton)editShelfButton.addEventListener('click',openEditShelfModal);
-if(deleteShelfButton)deleteShelfButton.addEventListener('click',openDeleteShelfModal);
-if(closeDeleteShelfButton)closeDeleteShelfButton.addEventListener('click',closeDeleteShelfModal);
-if(cancelDeleteShelfButton)cancelDeleteShelfButton.addEventListener('click',closeDeleteShelfModal);
-if(confirmDeleteShelfButton)confirmDeleteShelfButton.addEventListener('click',deleteActiveShelf);
-if(deleteShelfModal)deleteShelfModal.addEventListener('click',function(event){if(event.target===deleteShelfModal)closeDeleteShelfModal();});
-
-if(shelfScrollLeft)shelfScrollLeft.addEventListener('click',function(){
-  shelfStripScroll.scrollBy({left:-Math.max(260,shelfStripScroll.clientWidth*.65),behavior:'smooth'});
-});
-if(shelfScrollRight)shelfScrollRight.addEventListener('click',function(){
-  shelfStripScroll.scrollBy({left:Math.max(260,shelfStripScroll.clientWidth*.65),behavior:'smooth'});
-});
-if(shelfStripScroll)shelfStripScroll.addEventListener('scroll',updateShelfScrollArrows,{passive:true});
-
-closeShelfPickerButton.addEventListener('click',closeShelfPicker);
-cancelShelfPickerButton.addEventListener('click',closeShelfPicker);
-shelfPickerModal.addEventListener('click',function(event){if(event.target===shelfPickerModal)closeShelfPicker();});
-
-createShelfFromPickerButton.addEventListener('click',function(){
-  var returnIndex=shelfPickerRecordIndex;
-  closeShelfPicker();
-  openCreateShelfModal(returnIndex);
-});
-
-confirmShelfPickerButton.addEventListener('click',async function(){
-  if(shelfPickerRecordIndex<0)return;
-  var selected=shelfPickerList.querySelector('input[name="recordShelf"]:checked');
-  if(!selected){shelfPickerStatus.textContent='Choose a shelf.';return;}
-
-  var pickerRecordIndex=shelfPickerRecordIndex;
-  confirmShelfPickerButton.disabled=true;
-  shelfPickerStatus.textContent='Saving…';
-  try{
-    await assignRecordToShelf(pickerRecordIndex,selected.value);
-    if(detailOpenRecordIndex===pickerRecordIndex){renderDetailShelfStatus(pickerRecordIndex);renderDetailShelfActions(pickerRecordIndex);}
-    closeShelfPicker();
-  }catch(error){
-    console.error('Kunde inte flytta albumet till shelf:',error);
-    shelfPickerStatus.textContent='Could not save shelf.';
-  }finally{
-    confirmShelfPickerButton.disabled=false;
-  }
-});
-
-shelfNameInput.addEventListener('keydown',function(event){
-  if(event.key==='Enter')confirmCreateShelfButton.click();
-});
 
 document.addEventListener('click',function(event){
   if(!event.target.closest('.record-menu-button')&&!event.target.closest('.record-action-menu'))closeRecordActionMenus();
