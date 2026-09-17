@@ -1,0 +1,107 @@
+name: Notification refactor checkpoint
+
+on:
+  push:
+    branches: [notes]
+    paths:
+      - '.github/workflows/notification-refactor.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out notes
+        uses: actions/checkout@v4
+        with:
+          ref: notes
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Guard verified files
+        shell: bash
+        run: |
+          test "$(git hash-object js/app.js)" = "9f952ea64b17a61ba60a1fb8483148201ef46e82"
+          test "$(git hash-object index.html)" = "d1c11467eaa2c740696d935bb1ed0174bb04b29c"
+          test "$(git hash-object tests/app-bootstrap-order.test.js)" = "eda39356a2416e078914a575e92ad46b5ea4b7d8"
+
+      - name: Add notification controller bootstrap
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(source,old,new,label):
+              count=source.count(old)
+              if count!=1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {count}')
+              return source.replace(old,new,1)
+
+          index_path=Path('index.html')
+          html=index_path.read_text()
+          html=replace_once(
+              html,
+              '<script src="/js/notification-core.js?v=1"></script>\n',
+              '<script src="/js/notification-core.js?v=1"></script>\n<script src="/js/notification-controller.js?v=1"></script>\n',
+              'notification script insertion'
+          )
+          core=html.index('/js/notification-core.js?v=')
+          controller=html.index('/js/notification-controller.js?v=')
+          app=html.index('/js/app.js?v=')
+          if not (core>=0 and controller>core and app>controller):
+              raise SystemExit('Notification script order is invalid')
+          index_path.write_text(html)
+
+          test_path=Path('tests/app-bootstrap-order.test.js')
+          source=test_path.read_text()
+          source=replace_once(
+              source,
+              "'/js/notification-core.js?v=',",
+              "'/js/notification-core.js?v=','/js/notification-controller.js?v=',",
+              'dependency script list'
+          )
+          marker="test('marketplace scripts load core, view and controller in order before app.js',()=>{"
+          addition="""test('notification scripts load core then controller before app.js',()=>{
+            const html=fs.readFileSync('index.html','utf8');
+            const core=html.indexOf('/js/notification-core.js?v=');
+            const controller=html.indexOf('/js/notification-controller.js?v=');
+            const app=html.indexOf('/js/app.js?v=');
+            assert.ok(core>=0&&controller>core&&app>controller);
+          });
+
+          """
+          if addition.strip() in source:
+              raise SystemExit('notification bootstrap test already exists')
+          source=replace_once(source,marker,addition+marker,'bootstrap test insertion')
+          test_path.write_text(source)
+          PY
+
+      - name: Syntax and Node regression checks
+        run: |
+          node --check js/notification-controller.js
+          node --check tests/notification-controller.test.js
+          node --check tests/app-bootstrap-order.test.js
+          node --test tests/*.test.js
+
+      - name: Verify diff scope
+        shell: bash
+        run: |
+          git diff --check
+          test "$(git hash-object js/app.js)" = "9f952ea64b17a61ba60a1fb8483148201ef46e82"
+          printf '%s\n' "$(git diff --name-only | sort)" > /tmp/changed.txt
+          printf '%s\n' 'index.html' 'tests/app-bootstrap-order.test.js' | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+
+      - name: Commit bootstrap checkpoint
+        shell: bash
+        run: |
+          git config user.name 'Groovyshelf'
+          git config user.email '150244154+Jeffaklumpen@users.noreply.github.com'
+          git add index.html tests/app-bootstrap-order.test.js
+          git commit -m 'Load notification controller before app'
+          git push origin HEAD:notes
