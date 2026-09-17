@@ -16,6 +16,7 @@ GroovyShelves remains a vanilla JavaScript application. The cleanup is intention
 - `js/marketplace-core.js` — pure external-listing URL validation, buy-now normalization, marketplace cache keys and listing relevance matching.
 - `js/apple-search-core.js` — pure Apple/iTunes text normalization, artist/album matching, edition filtering and artwork helpers.
 - `js/shelf-core.js` — pure shelf icon normalization/rendering, color formatting, shelf lookup and record-count helpers.
+- `js/library-core.js` — pure library search, rating filtering and record sorting helpers.
 - `js/notification-core.js` — pure notification escaping, relative-time formatting and notification message copy.
 - `js/detail-enhancements-v2.js` — active album-detail compatibility/enhancement layer. This should shrink as its behavior is moved into the actual detail implementation.
 - `js/album-rating-layout-v4.js` — active rating presentation layer. Older rating layout generations have been removed.

@@ -744,6 +744,7 @@ var PressingCore=window.GroovyPressingCore;
 var RatingCore=window.GroovyRatingCore;
 var MarketplaceCore=window.GroovyMarketplaceCore;
 var ShelfCore=window.GroovyShelfCore;
+var LibraryCore=window.GroovyLibraryCore;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
 if(!Streaming)throw new Error('GroovyStreaming must load before app.js');
@@ -752,6 +753,7 @@ if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
 if(!RatingCore)throw new Error('GroovyRatingCore must load before app.js');
 if(!MarketplaceCore)throw new Error('GroovyMarketplaceCore must load before app.js');
 if(!ShelfCore)throw new Error('GroovyShelfCore must load before app.js');
+if(!LibraryCore)throw new Error('GroovyLibraryCore must load before app.js');
 
 window.records = [];
 window.viewedUserId=null;
@@ -5148,28 +5150,15 @@ window.buildGrid=function(){
       :records.length+' RECORDS IN COLLECTION';
   }
 
-  var query=librarySearchQuery.toLocaleLowerCase();
-  var visibleRecords=shelfRecords.filter(function(record){
-    var rating=parseInt(record[5],10);
-    var matchesRating=isWishlist||selectedRating==='all'||rating===parseInt(selectedRating,10);
-    var matchesSearch=!query||[record[1],record[2],record[3],record[4]].join(' ').toLocaleLowerCase().indexOf(query)!==-1;
-    return matchesRating&&matchesSearch;
+  var visibleRecords=LibraryCore.filterRecords(shelfRecords,{
+    query:librarySearchQuery,
+    selectedRating:selectedRating,
+    isWishlist:isWishlist
   });
-  visibleRecords=visibleRecords.slice().sort(function(a,b){
-    if(librarySort==='album-asc')return String(a[2]||'').localeCompare(String(b[2]||''),undefined,{sensitivity:'base'});
-    if(librarySort==='album-desc')return String(b[2]||'').localeCompare(String(a[2]||''),undefined,{sensitivity:'base'});
-    if(librarySort==='artist-asc')return String(a[1]||'').localeCompare(String(b[1]||''),undefined,{sensitivity:'base'});
-    if(librarySort==='artist-desc')return String(b[1]||'').localeCompare(String(a[1]||''),undefined,{sensitivity:'base'});
-    if(librarySort==='year-desc')return (parseInt(b[3],10)||0)-(parseInt(a[3],10)||0);
-    if(librarySort==='year-asc')return (parseInt(a[3],10)||9999)-(parseInt(b[3],10)||9999);
-    if(!isWishlist&&activeShelfId!=='all'){
-      var aShelfOrder=parseInt(a[14],10);
-      var bShelfOrder=parseInt(b[14],10);
-      if(isNaN(aShelfOrder))aShelfOrder=2147483647;
-      if(isNaN(bShelfOrder))bShelfOrder=2147483647;
-      return aShelfOrder-bShelfOrder||(parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);
-    }
-    return (parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);
+  visibleRecords=LibraryCore.sortRecords(visibleRecords,{
+    sort:librarySort,
+    isWishlist:isWishlist,
+    activeShelfId:activeShelfId
   });
   renderLibraryPagination(visibleRecords.length);
   var totalPages=Math.max(1,Math.ceil(visibleRecords.length/RECORDS_PER_PAGE));

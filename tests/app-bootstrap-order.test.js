@@ -15,7 +15,7 @@ test('pure dependency scripts load before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const app=html.indexOf('/js/app.js?v=');
   assert.ok(app>=0,'app.js script is missing');
-  ['/js/notification-core.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/shelf-core.js?v=','/js/apple-search-core.js?v='].forEach((script)=>{
+  ['/js/notification-core.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/shelf-core.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v='].forEach((script)=>{
     const pos=html.indexOf(script);
     assert.ok(pos>=0,script+' script is missing');
     assert.ok(pos<app,script+' must load before app.js');
@@ -39,5 +39,14 @@ test('shelf core is initialized before first shelf helper use in app.js',()=>{
   assert.ok(declaration>=0,'ShelfCore bootstrap declaration is missing');
   assert.ok(firstUse>=0,'ShelfCore first icon use is missing');
   assert.ok(declaration<firstUse,'ShelfCore must be initialized before icon helpers are used');
+});
+
+test('library core is initialized before library filtering in app.js',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  const declaration=source.indexOf('var LibraryCore=window.GroovyLibraryCore;');
+  const firstUse=source.indexOf('LibraryCore.filterRecords');
+  assert.ok(declaration>=0,'LibraryCore bootstrap declaration is missing');
+  assert.ok(firstUse>=0,'LibraryCore first use is missing');
+  assert.ok(declaration<firstUse,'LibraryCore must be initialized before library helpers are used');
 });
 
