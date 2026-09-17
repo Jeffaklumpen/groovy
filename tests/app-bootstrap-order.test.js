@@ -15,7 +15,7 @@ test('dependency scripts load before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const app=html.indexOf('/js/app.js?v=');
   assert.ok(app>=0,'app.js script is missing');
-  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v='].forEach((script)=>{
+  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v='].forEach((script)=>{
     const pos=html.indexOf(script);assert.ok(pos>=0,script+' script is missing');assert.ok(pos<app,script+' must load before app.js');
   });
   assert.match(html,/\/js\/app\.js\?v=\d+/);
@@ -52,6 +52,14 @@ test('social controller initializes before app integration',()=>{
   assert.ok(declaration>=0&&create>declaration);
   assert.match(source,/GroovySocialController must load before app\.js/);
   assert.doesNotMatch(source,/async function groovyFollowingIds|function ensureFollowingPage|function renderFollowingPage|supabaseClient\.rpc\('get_following_overview'\)/);
+});
+
+test('user search controller loads after social controller and before app.js',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const social=html.indexOf('/js/social-controller.js?v=');
+  const userSearch=html.indexOf('/js/user-search-controller.js?v=');
+  const app=html.indexOf('/js/app.js?v=');
+  assert.ok(social>=0&&userSearch>social&&app>userSearch);
 });
 
 test('marketplace scripts load core, view and controller in order before app.js',()=>{
