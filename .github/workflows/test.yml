@@ -29,7 +29,18 @@ jobs:
           node --check js/shelf-controller.js
           node --check js/shelf-view.js
       - name: Run full Node regression suite
-        run: node --test tests/*.test.js
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test tests/*.test.js 2>&1 | tee /tmp/shelf-controller-node-tests.txt
+      - name: Upload Node regression output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shelf-controller-node-tests
+          path: /tmp/shelf-controller-node-tests.txt
+          if-no-files-found: ignore
+          retention-days: 1
       - name: Check patch whitespace
         run: git diff --check
       - name: Install browser test dependency
