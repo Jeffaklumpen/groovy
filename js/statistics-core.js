@@ -21,6 +21,19 @@
     if(label)counts[label]=(counts[label]||0)+1;
   }
 
+  function releaseSearchQuery(release){
+    return [release&&release.artist,release&&release.title].filter(Boolean).join(' ');
+  }
+
+  function spotifySearchUrl(release){
+    return 'https://open.spotify.com/search/'+encodeURIComponent(releaseSearchQuery(release));
+  }
+
+  function appleSearchUrl(release){
+    if(release&&release.appleUrl)return release.appleUrl;
+    return 'https://music.apple.com/us/search?term='+encodeURIComponent(releaseSearchQuery(release));
+  }
+
   function build(collectionRows,wishlistCount,albumRatings){
     var rows=(collectionRows||[]).filter(function(row){return row&&row.albums;});
     var styles={};
@@ -89,5 +102,5 @@
     };
   }
 
-  return {build:build};
+  return {build:build,spotifySearchUrl:spotifySearchUrl,appleSearchUrl:appleSearchUrl};
 });

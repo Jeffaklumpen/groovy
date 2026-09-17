@@ -46,3 +46,14 @@ test('returns calm empty states for a new collection',function(){
   assert.equal(result.averageAlbumRating,0);
   assert.deepEqual(result.topStyles,[]);
 });
+
+test('builds streaming search URLs without duplicating view logic',function(){
+  const release={artist:'Pink Floyd',title:'The Wall'};
+  assert.equal(statistics.spotifySearchUrl(release),'https://open.spotify.com/search/Pink%20Floyd%20The%20Wall');
+  assert.equal(statistics.appleSearchUrl(release),'https://music.apple.com/us/search?term=Pink%20Floyd%20The%20Wall');
+});
+
+test('keeps a saved Apple Music URL when one is available',function(){
+  const release={artist:'ABBA',title:'Arrival',appleUrl:'https://music.apple.com/se/album/arrival/1422648512'};
+  assert.equal(statistics.appleSearchUrl(release),release.appleUrl);
+});
