@@ -15,7 +15,7 @@ test('pure dependency scripts load before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const app=html.indexOf('/js/app.js?v=');
   assert.ok(app>=0,'app.js script is missing');
-  ['/js/notification-core.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v='].forEach((script)=>{
+  ['/js/notification-core.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/shelf-core.js?v='].forEach((script)=>{
     const pos=html.indexOf(script);
     assert.ok(pos>=0,script+' script is missing');
     assert.ok(pos<app,script+' must load before app.js');

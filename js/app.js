@@ -741,6 +741,7 @@ var NotificationCore=window.GroovyNotificationCore;
 var PressingCore=window.GroovyPressingCore;
 var RatingCore=window.GroovyRatingCore;
 var MarketplaceCore=window.GroovyMarketplaceCore;
+var ShelfCore=window.GroovyShelfCore;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
 if(!Streaming)throw new Error('GroovyStreaming must load before app.js');
@@ -748,6 +749,7 @@ if(!NotificationCore)throw new Error('GroovyNotificationCore must load before ap
 if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
 if(!RatingCore)throw new Error('GroovyRatingCore must load before app.js');
 if(!MarketplaceCore)throw new Error('GroovyMarketplaceCore must load before app.js');
+if(!ShelfCore)throw new Error('GroovyShelfCore must load before app.js');
 
 window.records = [];
 window.viewedUserId=null;
@@ -1576,19 +1578,15 @@ function renderShelfIconChoices(){
 renderShelfIconChoices();
 
 function normalizeShelfColor(value){
-  var candidate=String(value||'').toUpperCase();
-  for(var i=0;i<SHELF_COLORS.length;i++){if(SHELF_COLORS[i].toUpperCase()===candidate)return SHELF_COLORS[i];}
-  return SHELF_COLORS[0];
+  return ShelfCore.normalizeColor(value,SHELF_COLORS);
 }
 
 function shelfColorRgb(value){
-  var color=normalizeShelfColor(value).replace('#','');
-  return parseInt(color.slice(0,2),16)+','+parseInt(color.slice(2,4),16)+','+parseInt(color.slice(4,6),16);
+  return ShelfCore.colorRgb(value,SHELF_COLORS);
 }
 
 function shelfColorStyle(shelf){
-  var color=normalizeShelfColor(shelf&&shelf.color);
-  return '--shelf-color:'+color+';--shelf-rgb:'+shelfColorRgb(color)+';';
+  return ShelfCore.colorStyle(shelf,SHELF_COLORS);
 }
 
 function syncMobileDetailPairHeight(){
@@ -1607,12 +1605,11 @@ function syncMobileDetailPairHeight(){
 }
 
 function shelfById(id){
-  return shelves.find(function(shelf){return String(shelf.id)===String(id);})||null;
+  return ShelfCore.findById(shelves,id);
 }
 
 function shelfRecordCount(id){
-  if(id==='all')return records.length;
-  return records.filter(function(record){return String(record[13]||'')===String(id);}).length;
+  return ShelfCore.recordCount(records,id);
 }
 
 window.addEventListener('resize',syncMobileDetailPairHeight,{passive:true});
