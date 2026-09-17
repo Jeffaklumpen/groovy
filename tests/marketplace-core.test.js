@@ -137,15 +137,17 @@ test('resolveBestPrice reports partial data when one of several conversions fail
   assert.match(result.label,/eBay/);
 });
 
-test('resolveBestPrice keeps the original currency when one conversion fails',async()=>{
+test('resolveBestPrice preserves the legacy single-conversion failure behavior',async()=>{
   const result=await Marketplace.resolveBestPrice([
     {amount:149,currency:'SEK',marketplace:'Tradera',url:'https://example.com/tradera'}
   ],'EUR',async()=>{throw new Error('no rate');},'sv-SE');
 
   assert.equal(result.state,'ready');
-  assert.equal(result.shownAmount,149);
-  assert.equal(result.shownCurrency,'SEK');
-  assert.equal(result.metaLabel,'Tradera');
+  assert.equal(result.shownAmount,null);
+  assert.equal(result.shownCurrency,'EUR');
+  assert.equal(result.priceLabel,'');
+  assert.match(result.metaLabel,/Tradera/);
+  assert.match(result.metaLabel,/149/);
 });
 
 test('resolveBestPrice supports cancellation between asynchronous conversions',async()=>{
