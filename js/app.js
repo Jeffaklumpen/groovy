@@ -739,11 +739,13 @@ var Wikipedia=window.GroovyWikipedia;
 var Streaming=window.GroovyStreaming;
 var NotificationCore=window.GroovyNotificationCore;
 var PressingCore=window.GroovyPressingCore;
+var RatingCore=window.GroovyRatingCore;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
 if(!Streaming)throw new Error('GroovyStreaming must load before app.js');
 if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
 if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
+if(!RatingCore)throw new Error('GroovyRatingCore must load before app.js');
 
 window.records = [];
 window.viewedUserId=null;
@@ -885,20 +887,15 @@ async function renderOwnLibraryHeader(user){
 
 
 function clampGroovyRating(value){
-  var numeric=Number(value);
-  if(!isFinite(numeric))numeric=0;
-  return Math.max(0,Math.min(5,numeric));
+  return RatingCore.clamp(value);
 }
 
 function formatCommunityRating(value){
-  var numeric=clampGroovyRating(value);
-  if(!numeric)return '—';
-  var rounded=Math.round(numeric*10)/10;
-  return Number.isInteger(rounded)?String(rounded.toFixed(0)):String(rounded.toFixed(1));
+  return RatingCore.format(value);
 }
 
 function ratingFillPercent(value){
-  return (clampGroovyRating(value)/5*100).toFixed(1)+'%';
+  return RatingCore.fillPercent(value);
 }
 
 function renderStaticStarMeter(value,extraClass){
