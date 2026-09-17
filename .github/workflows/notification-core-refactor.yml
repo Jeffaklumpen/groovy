@@ -1,0 +1,236 @@
+name: Notification core refactor checkpoint
+
+on:
+  push:
+    branches: ['tmp/notification-core-refactor-6']
+    paths:
+      - '.github/workflows/notification-core-refactor.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out refactor branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp/notification-core-refactor-6
+          fetch-depth: 0
+
+      - name: Extract notification formatting logic
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+
+          function replaceOnce(path,from,to,label){
+            const text=fs.readFileSync(path,'utf8');
+            const count=text.split(from).length-1;
+            if(count!==1)throw new Error(label+' expected exactly once, found '+count);
+            fs.writeFileSync(path,text.replace(from,to));
+          }
+
+          function replaceSection(path,start,end,replacement,label){
+            const text=fs.readFileSync(path,'utf8');
+            const startIndex=text.indexOf(start);
+            if(startIndex<0)throw new Error(label+' start marker not found');
+            const secondStart=text.indexOf(start,startIndex+start.length);
+            if(secondStart>=0)throw new Error(label+' start marker found more than once');
+            const endIndex=text.indexOf(end,startIndex+start.length);
+            if(endIndex<0)throw new Error(label+' end marker not found');
+            fs.writeFileSync(path,text.slice(0,startIndex)+replacement+text.slice(endIndex));
+          }
+
+          const dependencyOld=String.raw`var Record=window.GroovyRecord;
+          var Wikipedia=window.GroovyWikipedia;
+          var Streaming=window.GroovyStreaming;
+          if(!Record)throw new Error('GroovyRecord must load before app.js');
+          if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
+          if(!Streaming)throw new Error('GroovyStreaming must load before app.js');`;
+          const dependencyNew=String.raw`var Record=window.GroovyRecord;
+          var Wikipedia=window.GroovyWikipedia;
+          var Streaming=window.GroovyStreaming;
+          var NotificationCore=window.GroovyNotificationCore;
+          if(!Record)throw new Error('GroovyRecord must load before app.js');
+          if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
+          if(!Streaming)throw new Error('GroovyStreaming must load before app.js');
+          if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');`;
+          replaceOnce('js/app.js',dependencyOld,dependencyNew,'app dependency block');
+
+          replaceSection(
+            'js/app.js',
+            'function escapeSocialHtml(value){',
+            '\n\nasync function currentSessionUser',
+            'var escapeSocialHtml=NotificationCore.escapeHtml;',
+            'escapeSocialHtml helper'
+          );
+
+          replaceSection(
+            'js/app.js',
+            'function relativeNotificationTime(value){',
+            '\n\nfunction closeNotificationPanel',
+            'var relativeNotificationTime=NotificationCore.relativeTime;',
+            'relativeNotificationTime helper'
+          );
+
+          replaceSection(
+            'js/app.js',
+            'function notificationCopy(item){',
+            '\n\nfunction renderNotifications',
+            'var notificationCopy=NotificationCore.copy;',
+            'notificationCopy helper'
+          );
+
+          const scriptsOld=String.raw`<script src="/js/route-state.js?v=20"></script>
+          <script src="/js/record-model.js?v=1"></script>
+          <script src="/js/streaming-links.js?v=1"></script>
+          <script src="/js/wikipedia-service.js?v=1"></script>
+          <script src="/js/app.js?v=128"></script>`;
+          const scriptsNew=String.raw`<script src="/js/route-state.js?v=20"></script>
+          <script src="/js/record-model.js?v=1"></script>
+          <script src="/js/streaming-links.js?v=1"></script>
+          <script src="/js/notification-core.js?v=1"></script>
+          <script src="/js/wikipedia-service.js?v=1"></script>
+          <script src="/js/app.js?v=129"></script>`;
+          replaceOnce('index.html',scriptsOld,scriptsNew,'script loading block');
+
+          const architectureOld='- `js/streaming-links.js` — pure Spotify and Apple Music URL construction shared by feature code.';
+          const architectureNew=architectureOld+'\n- `js/notification-core.js` — pure notification escaping, relative-time formatting and notification message copy.';
+          replaceOnce('docs/ARCHITECTURE.md',architectureOld,architectureNew,'architecture streaming line');
+
+          fs.writeFileSync('js/notification-core.js',String.raw`(function(root,factory){
+            var api=factory();
+            if(typeof module==='object'&&module.exports)module.exports=api;
+            if(root)root.GroovyNotificationCore=api;
+          })(typeof window!=='undefined'?window:null,function(){
+            function escapeHtml(value){
+              return String(value==null?'':value).replace(/[&<>"']/g,function(character){
+                return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character];
+              });
+            }
+
+            function relativeTime(value,now){
+              var time=new Date(value).getTime();
+              if(!time)return '';
+              var current=now===undefined?Date.now():Number(now);
+              var seconds=Math.max(0,Math.floor((current-time)/1000));
+              if(seconds<60)return 'now';
+              var minutes=Math.floor(seconds/60);
+              if(minutes<60)return minutes+'m';
+              var hours=Math.floor(minutes/60);
+              if(hours<24)return hours+'h';
+              var days=Math.floor(hours/24);
+              if(days<7)return days+'d';
+              return new Date(value).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+            }
+
+            function copy(item){
+              item=item||{};
+              var actor=item.actor&&item.actor.username?item.actor.username:'A collector';
+              var payload=item.payload||{};
+              if(item.notification_type==='new_follower')return '<strong>'+escapeHtml(actor)+'</strong> started following you.';
+              if(item.notification_type==='collection_activity'){
+                var count=Math.max(1,parseInt(item.item_count,10)||1);
+                var sharedCount=Math.max(0,parseInt(payload.shared_count,10)||0);
+                if(count===1&&payload.album_title){
+                  var single='<strong>'+escapeHtml(actor)+'</strong> added <em>'+escapeHtml(payload.album_title)+'</em> to their collection.';
+                  if(sharedCount>0)single+=' <b class="notification-shared">You have this too</b>';
+                  return single;
+                }
+                var grouped='<strong>'+escapeHtml(actor)+'</strong> added '+count+' records to their collection.';
+                if(sharedCount===1)grouped+=' <b class="notification-shared">1 is also in your collection</b>';
+                if(sharedCount>1)grouped+=' <b class="notification-shared">'+sharedCount+' are also in your collection</b>';
+                return grouped;
+              }
+              if(item.notification_type==='wishlist_match'){
+                var wishlistCount=Math.max(1,parseInt(item.item_count,10)||1);
+                if(wishlistCount===1&&payload.album_title){
+                  return '<strong>'+escapeHtml(actor)+'</strong> added <em>'+escapeHtml(payload.album_title)+'</em> to their wishlist. <b class="notification-shared">It is in your collection</b>';
+                }
+                return '<strong>'+escapeHtml(actor)+'</strong> added '+wishlistCount+' records to their wishlist that you already own. <b class="notification-shared">Collection match</b>';
+              }
+              return '<strong>'+escapeHtml(actor)+'</strong> has new activity.';
+            }
+
+            return Object.freeze({escapeHtml:escapeHtml,relativeTime:relativeTime,copy:copy});
+          });
+          `);
+
+          fs.writeFileSync('tests/notification-core.test.js',String.raw`const test=require('node:test');
+          const assert=require('node:assert/strict');
+          const fs=require('node:fs');
+          const path=require('node:path');
+          const Notifications=require('../js/notification-core.js');
+
+          const root=path.resolve(__dirname,'..');
+
+          test('escapes notification HTML',function(){
+            assert.equal(
+              Notifications.escapeHtml('A&B <C> "D" \'E\''),
+              'A&amp;B &lt;C&gt; &quot;D&quot; &#39;E&#39;'
+            );
+          });
+
+          test('formats relative notification time deterministically',function(){
+            const now=Date.parse('2026-09-17T07:00:00Z');
+            assert.equal(Notifications.relativeTime('2026-09-17T06:59:40Z',now),'now');
+            assert.equal(Notifications.relativeTime('2026-09-17T06:55:00Z',now),'5m');
+            assert.equal(Notifications.relativeTime('2026-09-17T05:00:00Z',now),'2h');
+            assert.equal(Notifications.relativeTime('2026-09-15T07:00:00Z',now),'2d');
+          });
+
+          test('builds safe follower notification copy',function(){
+            assert.equal(
+              Notifications.copy({notification_type:'new_follower',actor:{username:'<Jeff>'}}),
+              '<strong>&lt;Jeff&gt;</strong> started following you.'
+            );
+          });
+
+          test('highlights a shared record in collection activity',function(){
+            assert.equal(
+              Notifications.copy({notification_type:'collection_activity',item_count:1,actor:{username:'Anna'},payload:{album_title:'The Wall',shared_count:1}}),
+              '<strong>Anna</strong> added <em>The Wall</em> to their collection. <b class="notification-shared">You have this too</b>'
+            );
+          });
+
+          test('builds grouped wishlist match copy',function(){
+            assert.equal(
+              Notifications.copy({notification_type:'wishlist_match',item_count:3,actor:{username:'Anna'},payload:{}}),
+              '<strong>Anna</strong> added 3 records to their wishlist that you already own. <b class="notification-shared">Collection match</b>'
+            );
+          });
+
+          test('notification core loads before app and app delegates pure formatting',function(){
+            const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+            const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+            const corePosition=html.indexOf('/js/notification-core.js?v=1');
+            const appPosition=html.indexOf('/js/app.js?v=');
+            assert.ok(corePosition>=0&&appPosition>corePosition);
+            assert.match(app,/var NotificationCore=window\.GroovyNotificationCore/);
+            assert.match(app,/var escapeSocialHtml=NotificationCore\.escapeHtml/);
+            assert.match(app,/var relativeNotificationTime=NotificationCore\.relativeTime/);
+            assert.match(app,/var notificationCopy=NotificationCore\.copy/);
+            assert.doesNotMatch(app,/function escapeSocialHtml\(/);
+            assert.doesNotMatch(app,/function relativeNotificationTime\(/);
+            assert.doesNotMatch(app,/function notificationCopy\(/);
+          });
+          `);
+          NODE
+
+      - name: Validate syntax and regression suite
+        run: |
+          node --check js/notification-core.js
+          node --check js/app.js
+          node --test tests/*.test.js
+
+      - name: Commit stable checkpoint
+        run: |
+          rm .github/workflows/notification-core-refactor.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Extract notification formatting helpers"
+          git push origin HEAD:tmp/notification-core-refactor-6
