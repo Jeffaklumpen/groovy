@@ -91,14 +91,48 @@ test.describe('authenticated read-only smoke flows',()=>{
     expectNoPageErrors(pageErrors);
   });
 
-  test('authenticated read-only controls, sorting and filtering stay responsive',async({page})=>{
+  test('authenticated read-only controls, search, sorting and shelving stay responsive',async({page})=>{
     const pageErrors=watchPageErrors(page);
 
+    await page.route('**/functions/v1/discogs-search',async route=>{
+      if(route.request().method()!=='POST')return route.continue();
+      await route.fulfill({
+        status:200,
+        contentType:'application/json',
+        body:JSON.stringify({
+          results:[{
+            id:987654321,
+            title:'Playwright Artist - Browser Album',
+            year:2026,
+            thumb:'',
+            cover_image:''
+          }]
+        })
+      });
+    });
+    await page.route('https://itunes.apple.com/**',route=>route.fulfill({
+      status:200,
+      contentType:'application/json',
+      body:JSON.stringify({resultCount:0,results:[]})
+    }));
+
     await loginWithTestAccount(page);
+
+    await expect(page.locator('#emptyCollection')).toBeVisible();
 
     await page.locator('#addAlbumButton').click();
     await expect(page.locator('#addAlbumModal')).toBeVisible();
     await expect(page.locator('#albumSearchInput')).toBeFocused();
+    await page.locator('#albumSearchInput').fill('Playwright Browser Album');
+
+    const searchResult=page.locator('#albumSearchResults .mb-result').first();
+    await expect(searchResult).toBeVisible({timeout:10_000});
+    await expect(searchResult.locator('.mb-title')).toHaveText('Browser Album');
+    await expect(searchResult.locator('.mb-artist')).toHaveText('Playwright Artist');
+    await expect(searchResult.locator('.mb-year')).toHaveText('2026');
+    await expect(searchResult.locator('.mb-add-button')).toHaveText('Add Record');
+    await expect(searchResult.locator('.mb-wishlist-button')).toContainText('Wishlist');
+
     await page.locator('#closeAddAlbum').click();
     await expect(page.locator('#addAlbumModal')).not.toBeVisible();
 
@@ -130,6 +164,20 @@ test.describe('authenticated read-only smoke flows',()=>{
     await page.locator('#filterMenu [data-rating="all"]').click();
     await expect(page.locator('#filterButton')).toContainText('All ratings');
     await expect(page.locator('#filterButton')).toHaveAttribute('aria-expanded','false');
+
+    await expect(page.locator('#shelfStrip')).toBeVisible();
+    const customShelves=page.locator('#shelfStripScroll .shelf-chip-custom');
+    const shelfCountBefore=await customShelves.count();
+    await page.locator('#shelfStripScroll .shelf-new-button').click();
+    await expect(page.locator('#createShelfModal')).toBeVisible();
+    await expect(page.locator('#createShelfTitle')).toHaveText('Create New Shelf');
+    await expect(page.locator('#shelfNameInput')).toBeFocused();
+    await page.locator('#shelfNameInput').fill('Playwright Temporary Shelf');
+    await page.locator('#shelfColorChoices [aria-label="Blue"]').click();
+    await expect(page.locator('#shelfColorChoices [aria-label="Blue"]')).toHaveAttribute('aria-checked','true');
+    await page.locator('#cancelCreateShelf').click();
+    await expect(page.locator('#createShelfModal')).not.toBeVisible();
+    await expect(customShelves).toHaveCount(shelfCountBefore);
 
     expectNoPageErrors(pageErrors);
   });
