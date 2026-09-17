@@ -283,5 +283,8 @@ test('library render controller owns card markup pagination and grid presentatio
   assert.match(source,/GroovyLibraryRenderController must load before app\.js/);
   assert.match(source,/function buildGrid\(\)\{\s*return libraryRenderController\.render\(\);\s*\}/);
   assert.match(source,/window\.onscroll=libraryRenderController\.scheduleImageLoad/);
+  assert.match(source,/loginToViewCollection:document\.getElementById\('loginToViewCollection'\)/);
+  assert.match(source,/emptyViewedCollection:document\.getElementById\('emptyViewedCollection'\)/);
+  assert.doesNotMatch(source,/loginToViewCollection:loginToViewCollection|emptyViewedCollection:emptyViewedCollection/);
   assert.doesNotMatch(source,/function recordDisplayNumber|function recordArrayIndex|function recordHTML|function loadVisibleImages|function paginationItems|function renderLibraryPagination/);
 });
