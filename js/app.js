@@ -538,6 +538,7 @@ var Streaming=window.GroovyStreaming;
 var NotificationCore=window.GroovyNotificationCore;
 var PressingCore=window.GroovyPressingCore;
 var RatingCore=window.GroovyRatingCore;
+var AlbumRatingController=window.GroovyAlbumRatingController;
 var MarketplaceController=window.GroovyMarketplaceController;
 var ShelfCore=window.GroovyShelfCore;
 var ShelfView=window.GroovyShelfView;
@@ -551,6 +552,7 @@ if(!Streaming)throw new Error('GroovyStreaming must load before app.js');
 if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
 if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
 if(!RatingCore)throw new Error('GroovyRatingCore must load before app.js');
+if(!AlbumRatingController)throw new Error('GroovyAlbumRatingController must load before app.js');
 if(!MarketplaceController)throw new Error('GroovyMarketplaceController must load before app.js');
 if(!ShelfCore)throw new Error('GroovyShelfCore must load before app.js');
 if(!ShelfView)throw new Error('GroovyShelfView must load before app.js');
@@ -654,115 +656,6 @@ async function renderOwnLibraryHeader(user){
 }
 
 
-function clampGroovyRating(value){
-  return RatingCore.clamp(value);
-}
-
-function formatCommunityRating(value){
-  return RatingCore.format(value);
-}
-
-function ratingFillPercent(value){
-  return RatingCore.fillPercent(value);
-}
-
-function renderStaticStarMeter(value,extraClass){
-  var label=(clampGroovyRating(value)||0).toFixed(1)+' out of 5';
-  return '<span class="groovy-star-meter'+(extraClass?' '+extraClass:'')+'" style="--rating-fill:'+ratingFillPercent(value)+';" aria-label="'+esc(label)+'">'+
-    '<span class="groovy-star-meter-base" aria-hidden="true">★★★★★</span>'+
-    '<span class="groovy-star-meter-fill" aria-hidden="true">★★★★★</span>'+
-  '</span>';
-}
-
-async function loadAlbumRatingData(albumIds,ownUserId){
-  var ids=Array.from(new Set((albumIds||[]).filter(Boolean)));
-  if(!ids.length)return {};
-
-  var map={};
-  ids.forEach(function(id){
-    map[id]={ownRating:0,communityAverage:0,communityCount:0};
-  });
-
-  var ratingsResponse=await supabaseClient
-    .from('album_ratings')
-    .select('album_id,user_id,rating')
-    .in('album_id',ids);
-
-  if(ratingsResponse.error){
-    console.error('Kunde inte hämta albumratings:',ratingsResponse.error);
-    return map;
-  }
-
-  (ratingsResponse.data||[]).forEach(function(row){
-    var entry=map[row.album_id]||(map[row.album_id]={ownRating:0,communityAverage:0,communityCount:0});
-    var rating=clampGroovyRating(row.rating);
-    if(!rating)return;
-    entry.communityTotal=(entry.communityTotal||0)+rating;
-    entry.communityCount=(entry.communityCount||0)+1;
-    if(ownUserId&&row.user_id===ownUserId)entry.ownRating=rating;
-  });
-
-  Object.keys(map).forEach(function(id){
-    var entry=map[id];
-    entry.communityAverage=entry.communityCount?Math.round((entry.communityTotal||0)/entry.communityCount*10)/10:0;
-    delete entry.communityTotal;
-  });
-
-  return map;
-}
-
-window.loadAlbumRatingData=loadAlbumRatingData;
-window.applyAlbumRatingMeta=Record.applyRatingMeta;
-
-function renderDetailRatingPanels(index){
-  var record=records[index];
-  if(!record)return;
-  var ownRating=clampGroovyRating(record[5]);
-  var communityAverage=clampGroovyRating(record[15]);
-  var communityCount=parseInt(record[16],10)||0;
-  var ownStars='';
-  var personIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.2"></circle><path d="M5.8 19.3c.4-4 2.8-6.2 6.2-6.2s5.8 2.2 6.2 6.2"></path></svg>';
-  var communityIcon='<svg viewBox="0 0 28 24" aria-hidden="true"><circle cx="14" cy="6.2" r="2.8"></circle><circle cx="6.6" cy="8.1" r="2.3"></circle><circle cx="21.4" cy="8.1" r="2.3"></circle><path d="M8.4 19.4c.35-4.1 2.45-6.4 5.6-6.4s5.25 2.3 5.6 6.4"></path><path d="M1.9 19.4c.25-3.2 1.9-5.1 4.7-5.1 1.1 0 2 .25 2.8.75M26.1 19.4c-.25-3.2-1.9-5.1-4.7-5.1-1.1 0-2 .25-2.8.75"></path></svg>';
-
-  for(var i=1;i<=5;i++){
-    ownStars+='<button class="album-rating-star '+(i<=ownRating?'filled':'empty')+'" type="button" data-rating="'+i+'" aria-label="Rate '+i+' out of 5">★</button>';
-  }
-
-  detailRating.innerHTML='<div class="rating-panels">'+
-    '<section class="rating-panel rating-panel-your">'+
-      '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-user">'+personIcon+'</span><span>Your rating</span></div>'+
-      '<div class="rating-panel-stars" aria-label="Your rating">'+ownStars+'</div>'+
-      (ownRating?'':'<div class="rating-panel-footer"><span class="rating-panel-empty-note">Not rated yet</span></div>')+
-    '</section>'+
-    '<section class="rating-panel rating-panel-community">'+
-      '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-group">'+communityIcon+'</span><span>Community rating</span></div>'+
-      '<div class="rating-panel-community-main">'+renderStaticStarMeter(communityAverage,'is-community')+'<strong>'+esc(formatCommunityRating(communityAverage))+'</strong></div>'+
-      '<div class="rating-panel-footer"><span class="rating-panel-meta">'+esc(String(communityCount||0))+' rating'+(communityCount===1?'':'s')+'</span></div>'+
-    '</section>'+
-  '</div>';
-
-  var ratingButtons=detailRating.querySelectorAll('.album-rating-star');
-  for(var r=0;r<ratingButtons.length;r++){
-    ratingButtons[r].addEventListener('mouseenter',function(){
-      var hoverRating=parseInt(this.getAttribute('data-rating'),10);
-      for(var i=0;i<ratingButtons.length;i++)ratingButtons[i].classList.toggle('hover-filled',i<hoverRating);
-    });
-    ratingButtons[r].addEventListener('mouseleave',function(){
-      for(var i=0;i<ratingButtons.length;i++)ratingButtons[i].classList.remove('hover-filled');
-    });
-    ratingButtons[r].addEventListener('click',function(event){
-      event.preventDefault();
-      event.stopPropagation();
-      saveAlbumRating(index,parseInt(this.getAttribute('data-rating'),10));
-    });
-    ratingButtons[r].addEventListener('touchend',function(event){
-      event.preventDefault();
-      event.stopPropagation();
-      saveAlbumRating(index,parseInt(this.getAttribute('data-rating'),10));
-    },{passive:false});
-  }
-}
-
 window.loadCollection=async function(){
   var path=window.location.pathname;
 
@@ -860,7 +753,7 @@ window.loadCollection=async function(){
     return item.albums&&item.albums.id;
   }).filter(Boolean);
 
-  var ratingMeta=await loadAlbumRatingData(albumIds,user.id);
+  var ratingMeta=await ratingController.loadData(albumIds,user.id);
 
   if(loadVersion!==window.collectionLoadVersion)return;
 
@@ -894,6 +787,26 @@ var detailAlbum=document.getElementById('detailAlbum');
 var detailYear=document.getElementById('detailYear');
 var detailGenre=document.getElementById('detailGenre');
 var detailRating=document.getElementById('detailRating');
+var ratingController=AlbumRatingController.create({
+  api:supabaseClient,
+  ratingCore:RatingCore,
+  recordModel:Record,
+  detailElement:detailRating,
+  collectionElement:collection,
+  getRecords:function(){return records;},
+  escapeHtml:function(value){return esc(value==null?'':String(value));},
+  onAlert:function(message){alert(message);},
+  onRatingUpdated:function(detail){
+    window.dispatchEvent(new CustomEvent('groovy-rating-updated',{detail:detail}));
+  },
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
+window.loadAlbumRatingData=ratingController.loadData;
+window.applyAlbumRatingMeta=Record.applyRatingMeta;
 var detailTracks=document.getElementById('detailTracks');
 var detailAboutAlbum=document.getElementById('detailAboutAlbum');
 var wikipediaAboutController=WikipediaAboutController.create({
@@ -1696,7 +1609,7 @@ function recordHTML(record, className){
   if(isWishlist){
     html+='<span class="wishlist-cover-label"><span class="wishlist-icon" aria-hidden="true"></span>Wishlisted</span>';
   }else{
-    html+='<span class="cover-rating-inner">'+renderStaticStarMeter(Record.communityRating(record)||0,'is-compact')+'<span class="cover-rating-number">'+esc(formatCommunityRating(Record.communityRating(record)||0))+'</span></span>';
+    html+='<span class="cover-rating-inner">'+ratingController.renderStaticStarMeter(Record.communityRating(record)||0,'is-compact')+'<span class="cover-rating-number">'+esc(ratingController.formatCommunityRating(Record.communityRating(record)||0))+'</span></span>';
   }
 
   html+='</span></div></div>'+
@@ -1780,7 +1693,7 @@ function openAlbum(index){
   detailSpotifyLink.setAttribute('aria-label','Find '+record[2]+' by '+record[1]+' on Spotify');
   wikipediaAboutController.openForRecord(record);
 
-  renderDetailRatingPanels(index);
+  ratingController.renderDetail(index);
   renderDetailShelfStatus(index);
   renderDetailShelfActions(index);
   detailSocialController.openForRecord(record,index);
@@ -1796,70 +1709,6 @@ function openAlbum(index){
       syncMobileDetailPairHeight();
     });
   });
-}
-
-async function saveAlbumRating(index,rating){
-  var record=records[index];
-  if(!record)return;
-
-  var {data:{user},error:userError}=await supabaseClient.auth.getUser();
-  if(userError||!user){
-    alert('Du måste vara inloggad.');
-    return;
-  }
-
-  var albumId=record[8];
-  var previousOwnRating=clampGroovyRating(record[5]);
-  var previousAverage=clampGroovyRating(record[15]);
-  var previousCount=parseInt(record[16],10)||0;
-
-  var {error}=await supabaseClient
-    .from('album_ratings')
-    .upsert({
-      user_id:user.id,
-      album_id:albumId,
-      rating:rating
-    },{
-      onConflict:'user_id,album_id'
-    });
-
-  if(error){
-    console.error('Kunde inte spara albumrating:',error);
-    alert('Kunde inte spara ratingen.\n\n'+error.message);
-    return;
-  }
-
-  var nextCount=previousCount;
-  var nextAverage=previousAverage;
-  if(previousOwnRating>0&&previousCount>0){
-    nextAverage=((previousAverage*previousCount)-previousOwnRating+rating)/previousCount;
-  }else if(rating>0){
-    nextCount=previousCount+1;
-    nextAverage=((previousAverage*previousCount)+rating)/Math.max(1,nextCount);
-  }
-  nextAverage=Math.round(clampGroovyRating(nextAverage)*10)/10;
-
-  for(var r=0;r<records.length;r++){
-    if(records[r][8]!==albumId)continue;
-    records[r][5]=rating;
-    records[r][15]=nextAverage;
-    records[r][16]=nextCount;
-  }
-
-  renderDetailRatingPanels(index);
-
-  var cards=collection.querySelectorAll('.record');
-  for(var c=0;c<cards.length;c++){
-    var cardIndex=parseInt(cards[c].getAttribute('data-index'),10);
-    var cardRecord=records[cardIndex];
-    if(!cardRecord||cardRecord[8]!==albumId)continue;
-    var coverRating=cards[c].querySelector('.cover-rating');
-    if(coverRating){
-      coverRating.innerHTML='<span class="cover-rating-inner">'+renderStaticStarMeter(nextAverage,'is-compact')+'<span class="cover-rating-number">'+esc(formatCommunityRating(nextAverage))+'</span></span>';
-    }
-  }
-
-  window.dispatchEvent(new CustomEvent('groovy-rating-updated',{detail:{albumId:albumId,index:index,source:'save'}}));
 }
 
 function closeAlbum(){
@@ -3501,7 +3350,7 @@ async function loadOtherUserCollection(userId){
 
     var {data:{user:sessionUser}}=await supabaseClient.auth.getUser();
     var ownRatingUserId=sessionUser&&sessionUser.id?sessionUser.id:null;
-    var albumRatingsMeta=await loadAlbumRatingData(albumIds,ownRatingUserId);
+    var albumRatingsMeta=await ratingController.loadData(albumIds,ownRatingUserId);
 
      if(loadVersion!==window.collectionLoadVersion)return;
 

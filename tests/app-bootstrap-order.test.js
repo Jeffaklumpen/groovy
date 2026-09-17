@@ -15,7 +15,7 @@ test('dependency scripts load before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const app=html.indexOf('/js/app.js?v=');
   assert.ok(app>=0,'app.js script is missing');
-  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/detail-tracklist-controller.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
+  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/detail-tracklist-controller.js?v=','/js/rating-core.js?v=','/js/album-rating-controller.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
     const pos=html.indexOf(script);assert.ok(pos>=0,script+' script is missing');assert.ok(pos<app,script+' must load before app.js');
   });
   assert.match(html,/\/js\/app\.js\?v=\d+/);
@@ -178,4 +178,24 @@ test('library core is initialized before library filtering in app.js',()=>{
   const declaration=source.indexOf('var LibraryCore=window.GroovyLibraryCore;');
   const firstUse=source.indexOf('LibraryCore.filterRecords');
   assert.ok(declaration>=0,'LibraryCore bootstrap declaration is missing');assert.ok(firstUse>=0,'LibraryCore first use is missing');assert.ok(declaration<firstUse,'LibraryCore must be initialized before library helpers are used');
+});
+
+
+test('album rating controller loads after rating core and before app.js',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const core=html.indexOf('/js/rating-core.js?v=');
+  const controller=html.indexOf('/js/album-rating-controller.js?v=');
+  const app=html.indexOf('/js/app.js?v=');
+  assert.ok(core>=0&&controller>core&&app>controller);
+});
+
+test('album rating controller owns rating data, detail rendering and save flow',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  const declaration=source.indexOf('var AlbumRatingController=window.GroovyAlbumRatingController;');
+  const create=source.indexOf('AlbumRatingController.create({');
+  assert.ok(declaration>=0&&create>declaration);
+  assert.match(source,/GroovyAlbumRatingController must load before app\.js/);
+  assert.match(source,/ratingController\.loadData\(albumIds,user\.id\)/);
+  assert.match(source,/ratingController\.renderDetail\(index\)/);
+  assert.doesNotMatch(source,/function clampGroovyRating|function renderDetailRatingPanels|async function saveAlbumRating|function renderStaticStarMeter/);
 });
