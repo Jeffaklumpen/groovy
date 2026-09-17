@@ -126,7 +126,7 @@ jobs:
               count=1
           )
           if count!=1:
-              raise SystemExit(f'legacy follow-change listener: expected one replacement, found {count}')
+              raise SystemExit(f'legacy follow-change UI listener: expected one replacement, found {count}')
 
           viewed_pattern=(
               r"if\(viewedUserFollowButton\)viewedUserFollowButton\.addEventListener\('click',[\s\S]*?"
@@ -156,7 +156,9 @@ jobs:
               'viewed state delegate':'socialController.setViewedUserFollowState(',
               'following render delegate':'await socialController.renderFollowingPage();',
               'following hide delegate':'socialController.hideFollowingPage();',
-              'social escape helper':'var escapeSocialHtml=NotificationCore.escapeHtml;'
+              'social escape helper':'var escapeSocialHtml=NotificationCore.escapeHtml;',
+              'album social cache listener':"window.addEventListener('groovy-follow-changed',function(){detailSocialCache.clear();});",
+              'album social follows query':"var followResult=await supabaseClient.from('user_follows')"
           }
           for label,value in required.items():
               if value not in app:
@@ -173,14 +175,13 @@ jobs:
               'function ensureFollowingPage(',
               'function hideFollowingPage(',
               'async function renderFollowingPage(',
-              "window.addEventListener('groovy-follow-changed'",
+              "document.querySelectorAll('.user-search-follow-button[data-user-id=",
               "if(viewedUserFollowButton)viewedUserFollowButton.addEventListener('click'",
-              "supabaseClient.from('user_follows')",
               "supabaseClient.rpc('get_following_overview')"
           ]
           leftovers=[value for value in forbidden if value in app]
           if leftovers:
-              raise SystemExit('Legacy social symbols remain in app.js: '+', '.join(leftovers))
+              raise SystemExit('Legacy owned social symbols remain in app.js: '+', '.join(leftovers))
           if len(app)>=171003:
               raise SystemExit('app.js did not shrink after social extraction')
           app_path.write_text(app)
@@ -199,7 +200,7 @@ jobs:
             const create=source.indexOf('SocialController.create({');
             assert.ok(declaration>=0&&create>declaration);
             assert.match(source,/GroovySocialController must load before app\\.js/);
-            assert.doesNotMatch(source,/async function groovyFollowingIds|function ensureFollowingPage|function renderFollowingPage|supabaseClient\\.from\\('user_follows'\\)/);
+            assert.doesNotMatch(source,/async function groovyFollowingIds|function ensureFollowingPage|function renderFollowingPage|supabaseClient\\.rpc\\('get_following_overview'\\)/);
           });
 
           """.replace('          ','')
