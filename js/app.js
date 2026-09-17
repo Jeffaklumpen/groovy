@@ -532,6 +532,7 @@ function copyDetailsFromRow(item){
 
 var Record=window.GroovyRecord;
 var Wikipedia=window.GroovyWikipedia;
+var WikipediaAboutController=window.GroovyWikipediaAboutController;
 var Streaming=window.GroovyStreaming;
 var NotificationCore=window.GroovyNotificationCore;
 var PressingCore=window.GroovyPressingCore;
@@ -543,6 +544,7 @@ var ShelfController=window.GroovyShelfController;
 var LibraryCore=window.GroovyLibraryCore;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
+if(!WikipediaAboutController)throw new Error('GroovyWikipediaAboutController must load before app.js');
 if(!Streaming)throw new Error('GroovyStreaming must load before app.js');
 if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
 if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
@@ -982,10 +984,24 @@ var detailGenre=document.getElementById('detailGenre');
 var detailRating=document.getElementById('detailRating');
 var detailTracks=document.getElementById('detailTracks');
 var detailAboutAlbum=document.getElementById('detailAboutAlbum');
-var detailAboutAlbumText=document.getElementById('detailAboutAlbumText');
-var detailAboutAlbumBody=document.getElementById('detailAboutAlbumBody');
-var detailAboutAlbumToggle=document.getElementById('detailAboutAlbumToggle');
-var detailAboutAlbumLink=document.getElementById('detailAboutAlbumLink');
+var wikipediaAboutController=WikipediaAboutController.create({
+  service:Wikipedia,
+  recordModel:Record,
+  window:window,
+  document:document,
+  elements:{
+    root:detailAboutAlbum,
+    text:document.getElementById('detailAboutAlbumText'),
+    body:document.getElementById('detailAboutAlbumBody'),
+    toggle:document.getElementById('detailAboutAlbumToggle'),
+    link:document.getElementById('detailAboutAlbumLink')
+  },
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
 
 function syncAlbumDesktopColumns(){
   if(!albumDetailElement||!albumTracksPanel||!marketplacePanelElement||!detailAboutAlbum)return;
@@ -1039,9 +1055,6 @@ window.addEventListener('resize',function(){
   syncAlbumDesktopColumns();
   window.requestAnimationFrame(syncDesktopAlbumMiddleHeight);
 },{passive:true});
-var wikipediaAboutRequestVersion=0;
-var wikipediaAlbumCache=new Map();
-var WIKIPEDIA_CACHE_TTL=14*24*60*60*1000;
 var traderaButton=document.getElementById('traderaButton');
 var traderaButtonLabel=document.getElementById('traderaButtonLabel');
 var traderaModal=document.getElementById('traderaModal');
@@ -1818,151 +1831,6 @@ function loadVisibleImages(){
   }
 }
 
-function wikipediaAboutLineHeight(){
-  if(!detailAboutAlbumText)return 20.8;
-  var sample=detailAboutAlbumText.querySelector('p')||detailAboutAlbumText;
-  var style=window.getComputedStyle(sample);
-  return parseFloat(style.lineHeight)||20.8;
-}
-
-function renderWikipediaParagraphs(text,heading,sectionParagraphs){
-  if(!detailAboutAlbumText)return;
-  detailAboutAlbumText.innerHTML='';
-  String(text||'').split(/\n{2,}/).map(function(paragraph){return paragraph.replace(/\s*\n\s*/g,' ').trim();}).filter(Boolean).forEach(function(paragraph){
-    var element=document.createElement('p');
-    element.textContent=paragraph;
-    detailAboutAlbumText.appendChild(element);
-  });
-  if(heading){
-    var headingElement=document.createElement('h3');
-    headingElement.className='about-album-first-heading';
-    headingElement.textContent=heading;
-    detailAboutAlbumText.appendChild(headingElement);
-  }
-  (Array.isArray(sectionParagraphs)?sectionParagraphs:[]).forEach(function(paragraph){
-    var value=String(paragraph||'').replace(/\s+/g,' ').trim();
-    if(!value)return;
-    var element=document.createElement('p');
-    element.textContent=value;
-    detailAboutAlbumText.appendChild(element);
-  });
-}
-
-function setWikipediaAboutExpanded(expanded,animate){
-  if(!detailAboutAlbumBody||!detailAboutAlbumToggle)return;
-  var textSpan=detailAboutAlbumToggle.querySelector('span');
-  var lineHeight=wikipediaAboutLineHeight();
-  var collapsedHeight=lineHeight*3;
-  detailAboutAlbumToggle.setAttribute('aria-expanded',expanded?'true':'false');
-  detailAboutAlbumBody.classList.toggle('expanded',expanded);
-  if(textSpan)textSpan.textContent=expanded?'Show less':'Read more';
-  if(!animate)detailAboutAlbumBody.style.transition='none';
-  detailAboutAlbumBody.style.maxHeight=(expanded?detailAboutAlbumBody.scrollHeight:collapsedHeight)+'px';
-  if(!animate){
-    detailAboutAlbumBody.offsetHeight;
-    detailAboutAlbumBody.style.transition='';
-  }
-}
-
-function syncWikipediaAboutToggle(reset){
-  if(!detailAboutAlbumBody||!detailAboutAlbumText||!detailAboutAlbumToggle)return;
-  if(reset)setWikipediaAboutExpanded(false,false);
-  requestAnimationFrame(function(){
-    var lineHeight=wikipediaAboutLineHeight();
-    var collapsedHeight=lineHeight*3;
-    var needsToggle=detailAboutAlbumBody.scrollHeight>collapsedHeight+2;
-    detailAboutAlbumToggle.hidden=!needsToggle;
-    if(!needsToggle){
-      detailAboutAlbumBody.classList.add('expanded');
-      detailAboutAlbumBody.style.maxHeight=detailAboutAlbumBody.scrollHeight+'px';
-    }else if(reset){
-      setWikipediaAboutExpanded(false,false);
-    }
-  });
-}
-
-function readWikipediaCache(record){
-  var key=Wikipedia.cacheKey(record);
-  if(wikipediaAlbumCache.has(key))return wikipediaAlbumCache.get(key);
-  try{
-    var stored=JSON.parse(localStorage.getItem(key)||'null');
-    if(stored&&stored.savedAt&&Date.now()-stored.savedAt<WIKIPEDIA_CACHE_TTL&&stored.text){
-      wikipediaAlbumCache.set(key,stored);
-      return stored;
-    }
-  }catch(error){}
-  return null;
-}
-
-function saveWikipediaCache(record,result){
-  var key=Wikipedia.cacheKey(record);
-  var cached={text:result.text,heading:result.heading||'',sectionParagraphs:Array.isArray(result.sectionParagraphs)?result.sectionParagraphs:[],url:result.url,title:result.title,savedAt:Date.now()};
-  wikipediaAlbumCache.set(key,cached);
-  try{localStorage.setItem(key,JSON.stringify(cached));}catch(error){}
-  return cached;
-}
-
-function renderWikipediaAbout(result){
-  if(!detailAboutAlbum||!detailAboutAlbumText||!detailAboutAlbumLink)return;
-  if(!result||!result.text){detailAboutAlbum.hidden=true;return;}
-  renderWikipediaParagraphs(result.text,result.heading||'',result.sectionParagraphs||[]);
-  detailAboutAlbumLink.href=result.url||'https://en.wikipedia.org/';
-  detailAboutAlbumLink.setAttribute('aria-label','Read '+(result.title||'this album article')+' on Wikipedia');
-  detailAboutAlbum.hidden=false;
-  syncWikipediaAboutToggle(true);
-}
-
-async function loadWikipediaAlbumAbout(record){
-  var requestVersion=++wikipediaAboutRequestVersion;
-  if(!detailAboutAlbum||!detailAboutAlbumText||!detailAboutAlbumLink)return;
-
-  var cached=readWikipediaCache(record);
-  if(cached){renderWikipediaAbout(cached);return;}
-
-  renderWikipediaParagraphs('Loading album information…','',[]);
-  if(detailAboutAlbumToggle)detailAboutAlbumToggle.hidden=true;
-  if(detailAboutAlbumBody){detailAboutAlbumBody.classList.remove('expanded');detailAboutAlbumBody.style.maxHeight='';}
-  detailAboutAlbumLink.href='https://en.wikipedia.org/';
-  detailAboutAlbum.hidden=false;
-
-  try{
-    var album=String(Record.title(record)||'').trim();
-    var artist=String(Record.artist(record)||'').trim();
-    var queries=['"'+album+'" "'+artist+'" album',album+' '+artist+' album'];
-    var pages=[];
-
-    for(var q=0;q<queries.length&&!pages.length;q++){
-      pages=await Wikipedia.searchCandidates(record,queries[q]);
-    }
-
-    if(requestVersion!==wikipediaAboutRequestVersion)return;
-    var ranked=pages.map(function(page){return {page:page,score:Wikipedia.candidateScore(page,record)};}).sort(function(a,b){return b.score-a.score;});
-    var best=ranked.length?ranked[0]:null;
-    var introduction=best&&best.score>=18?Wikipedia.introduction(best.page.extract):'';
-
-    if(!introduction){detailAboutAlbum.hidden=true;return;}
-    var firstSection=await Wikipedia.firstSection(best.page);
-    if(requestVersion!==wikipediaAboutRequestVersion)return;
-    var firstHeading=firstSection&&firstSection.heading?firstSection.heading:'';
-    var sectionParagraphs=firstSection?await Wikipedia.sectionParagraphs(best.page,firstSection.index):[];
-    if(requestVersion!==wikipediaAboutRequestVersion)return;
-    var result=saveWikipediaCache(record,{text:introduction,heading:firstHeading,sectionParagraphs:sectionParagraphs,url:best.page.fullurl||'https://en.wikipedia.org/wiki/'+encodeURIComponent(best.page.title||''),title:best.page.title||''});
-    renderWikipediaAbout(result);
-  }catch(error){
-    if(requestVersion!==wikipediaAboutRequestVersion)return;
-    console.warn('Could not load Wikipedia album information:',error);
-    detailAboutAlbum.hidden=true;
-  }
-}
-
-if(detailAboutAlbumToggle){
-  detailAboutAlbumToggle.addEventListener('click',function(){
-    var expanded=this.getAttribute('aria-expanded')==='true';
-    setWikipediaAboutExpanded(!expanded,true);
-  });
-}
-
-
 function openAlbum(index){
   var record=records[index];
   if(!record)return;
@@ -1991,7 +1859,7 @@ function openAlbum(index){
   }
   detailSpotifyLink.href=spotifyAlbumLink(record);
   detailSpotifyLink.setAttribute('aria-label','Find '+record[2]+' by '+record[1]+' on Spotify');
-  loadWikipediaAlbumAbout(record);
+  wikipediaAboutController.openForRecord(record);
 
   renderDetailRatingPanels(index);
   renderDetailShelfStatus(index);
@@ -2077,10 +1945,7 @@ async function saveAlbumRating(index,rating){
 }
 
 function closeAlbum(){
-  wikipediaAboutRequestVersion++;
-  if(detailAboutAlbum)detailAboutAlbum.hidden=true;
-  if(detailAboutAlbumToggle){detailAboutAlbumToggle.hidden=true;detailAboutAlbumToggle.setAttribute('aria-expanded','false');}
-  if(detailAboutAlbumBody){detailAboutAlbumBody.classList.remove('expanded');detailAboutAlbumBody.style.maxHeight='';}
+  wikipediaAboutController.close();
   marketplaceController.close();
   albumOverlay.className='album-overlay';
   document.body.style.overflow='';

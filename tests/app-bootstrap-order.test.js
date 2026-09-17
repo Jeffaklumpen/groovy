@@ -15,7 +15,7 @@ test('dependency scripts load before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const app=html.indexOf('/js/app.js?v=');
   assert.ok(app>=0,'app.js script is missing');
-  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v='].forEach((script)=>{
+  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
     const pos=html.indexOf(script);assert.ok(pos>=0,script+' script is missing');assert.ok(pos<app,script+' must load before app.js');
   });
   assert.match(html,/\/js\/app\.js\?v=\d+/);
@@ -89,6 +89,25 @@ test('detail social controller initializes before app integration',()=>{
   assert.match(source,/detailSocialController\.openForRecord\(record,index\)/);
   assert.match(source,/detailSocialController\.close\(\)/);
   assert.doesNotMatch(source,/detailSocialRequestVersion|detailSocialCache|function detailSocialEscape|function loadDetailSocialContext|function renderFollowedCollectorsForAlbum|function renderOwnCollectionMatch|function positionDetailSocialMenu/);
+});
+
+test('Wikipedia about controller loads after its service and before app.js',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const service=html.indexOf('/js/wikipedia-service.js?v=');
+  const controller=html.indexOf('/js/wikipedia-about-controller.js?v=');
+  const app=html.indexOf('/js/app.js?v=');
+  assert.ok(service>=0&&controller>service&&app>controller);
+});
+
+test('Wikipedia about controller initializes before app integration',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  const declaration=source.indexOf('var WikipediaAboutController=window.GroovyWikipediaAboutController;');
+  const create=source.indexOf('WikipediaAboutController.create({');
+  assert.ok(declaration>=0&&create>declaration);
+  assert.match(source,/GroovyWikipediaAboutController must load before app\.js/);
+  assert.match(source,/wikipediaAboutController\.openForRecord\(record\)/);
+  assert.match(source,/wikipediaAboutController\.close\(\)/);
+  assert.doesNotMatch(source,/wikipediaAboutRequestVersion|wikipediaAlbumCache|WIKIPEDIA_CACHE_TTL|function wikipediaAboutLineHeight|function renderWikipediaParagraphs|function setWikipediaAboutExpanded|function syncWikipediaAboutToggle|function readWikipediaCache|function saveWikipediaCache|function renderWikipediaAbout|function loadWikipediaAlbumAbout/);
 });
 
 test('marketplace scripts load core, view and controller in order before app.js',()=>{

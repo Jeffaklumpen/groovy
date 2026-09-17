@@ -29,10 +29,15 @@ test('Wikipedia service loads before app and extracted functions leave app.js',f
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
   const recordPosition=html.indexOf('/js/record-model.js?v=');
   const wikipediaPosition=html.indexOf('/js/wikipedia-service.js?v=');
+  const controllerPosition=html.indexOf('/js/wikipedia-about-controller.js?v=');
   const appPosition=html.indexOf('/js/app.js?v=');
-  assert.ok(recordPosition>=0&&wikipediaPosition>recordPosition&&appPosition>wikipediaPosition);
+  const controller=fs.readFileSync(path.join(root,'js','wikipedia-about-controller.js'),'utf8');
+  assert.ok(recordPosition>=0&&wikipediaPosition>recordPosition&&controllerPosition>wikipediaPosition&&appPosition>controllerPosition);
   assert.equal(app.includes('var Wikipedia=window.GroovyWikipedia'),true);
+  assert.equal(app.includes('var WikipediaAboutController=window.GroovyWikipediaAboutController'),true);
   ['function normalizeWikipediaIdentity(','function wikipediaCacheKey(','function wikipediaIntroduction(','function wikipediaCandidateScore(','async function fetchWikipediaAlbumCandidates(','async function fetchWikipediaFirstSection(','async function fetchWikipediaSectionParagraphs('].forEach(function(token){assert.equal(app.includes(token),false,token+' should live outside app.js');});
-  assert.equal(app.includes('Wikipedia.cacheKey(record)'),true);
-  assert.equal(app.includes('Wikipedia.searchCandidates(record,queries[q])'),true);
+  assert.equal(controller.includes('service.cacheKey(record)'),true);
+  assert.equal(controller.includes('service.searchCandidates(record,queries[q])'),true);
+  assert.equal(app.includes('Wikipedia.cacheKey(record)'),false);
+  assert.equal(app.includes('Wikipedia.searchCandidates(record,queries[q])'),false);
 });
