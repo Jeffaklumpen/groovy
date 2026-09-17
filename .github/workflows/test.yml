@@ -28,7 +28,14 @@ jobs:
           node --check js/app.js
           node --check js/album-search.js
       - name: Run full Node regression suite
-        run: node --test tests/*.test.js
+        run: node --test tests/*.test.js 2>&1 | tee /tmp/album-search-node-tests.txt
+      - name: Upload Node regression output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: album-search-node-tests
+          path: /tmp/album-search-node-tests.txt
+          retention-days: 1
       - name: Check patch whitespace
         run: git diff --check
       - name: Install browser test dependency
