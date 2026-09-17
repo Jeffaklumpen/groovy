@@ -3897,6 +3897,8 @@ async function deleteCollectionAlbum(index){
     return;
   }
 
+  invalidateSearchLibraryState();
+
   var deletedShelfId=record[13]||'';
   records.splice(index,1);
   records
@@ -3935,6 +3937,7 @@ async function deleteWishlistAlbum(index){
     return;
   }
 
+  invalidateSearchLibraryState();
   await window.loadCollection();
 }
 
@@ -3992,6 +3995,7 @@ async function moveWishlistAlbumToCollection(index,button){
       .eq('user_id',user.id);
     if(deleteError)throw deleteError;
 
+    invalidateSearchLibraryState();
     await window.loadCollection();
     return true;
   }catch(error){
@@ -5951,18 +5955,19 @@ loginToViewCollectionButton.addEventListener('click',function(event){
     openAuthPanel('login');
 });
 
-closeAddAlbum.addEventListener('click',function(){
+function closeAddAlbumSearch(){
+    clearTimeout(searchTimer);
+    searchTimer=null;
+    musicBrainzSearchNumber++;
     addAlbumModal.style.display='none';
     albumSearchInput.value='';
     albumSearchResults.innerHTML='';
-});
+}
+
+closeAddAlbum.addEventListener('click',closeAddAlbumSearch);
 
 addAlbumModal.addEventListener('click',function(event){
-    if(event.target===addAlbumModal){
-        addAlbumModal.style.display='none';
-        albumSearchInput.value='';
-        albumSearchResults.innerHTML='';
-    }
+    if(event.target===addAlbumModal)closeAddAlbumSearch();
 });
 
 albumSearchInput.addEventListener('input',function(){
