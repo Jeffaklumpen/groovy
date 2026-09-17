@@ -214,7 +214,7 @@ function renderNotifications(){
     notificationList.innerHTML=notificationsCache.map(function(item){
         var actor=item.actor||{};
         return '<button class="notification-item'+(item.read_at?'':' unread')+'" type="button" data-notification-id="'+item.id+'" data-username="'+escapeSocialHtml(actor.username||'')+'" data-type="'+escapeSocialHtml(item.notification_type||'')+'">'+
-          '<span class="notification-avatar" style="background-image:url(&quot;'+escapeSocialHtml(actor.avatar_url||'/avatar_placeholder.png')+'&quot;)"></span>'+
+          '<span class="notification-avatar" style="background-image:url(&quot;'+escapeSocialHtml(actor.avatar_url||'/assets/images/avatar-placeholder.png')+'&quot;)"></span>'+
           '<span class="notification-item-copy"><span>'+notificationCopy(item)+'</span><small>'+escapeSocialHtml(relativeNotificationTime(item.updated_at||item.created_at))+'</small></span>'+
           '<i aria-hidden="true"></i>'+
         '</button>';
@@ -341,7 +341,7 @@ async function renderFollowingPage(){
     grid.innerHTML=data.map(function(item){
         return '<article class="following-card">'+
           '<button class="following-identity" type="button" data-profile-username="'+escapeSocialHtml(item.username||'')+'">'+
-            '<span class="following-avatar" style="background-image:url(&quot;'+escapeSocialHtml(item.avatar_url||'/avatar_placeholder.png')+'&quot;)"></span>'+
+            '<span class="following-avatar" style="background-image:url(&quot;'+escapeSocialHtml(item.avatar_url||'/assets/images/avatar-placeholder.png')+'&quot;)"></span>'+
             '<span><strong>'+escapeSocialHtml(item.username||'Collector')+'</strong><small>Following since '+escapeSocialHtml(new Date(item.followed_at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}))+'</small></span>'+
           '</button>'+
           '<div class="following-stats">'+
@@ -500,11 +500,11 @@ async function updateAuthUI(){
             profileImageMenu.style.backgroundSize='cover';
             profileImageMenu.style.backgroundPosition='center';
         }else{
-            profileImage.style.backgroundImage='url("/avatar_placeholder.png")';
+            profileImage.style.backgroundImage='url("/assets/images/avatar-placeholder.png")';
             profileImage.style.backgroundSize='cover';
             profileImage.style.backgroundPosition='center';
         
-            profileImageMenu.style.backgroundImage='url("/avatar_placeholder.png")';
+            profileImageMenu.style.backgroundImage='url("/assets/images/avatar-placeholder.png")';
             profileImageMenu.style.backgroundSize='cover';
             profileImageMenu.style.backgroundPosition='center';
         }
@@ -518,11 +518,11 @@ async function updateAuthUI(){
         profileMenu.classList.remove('open');
         loginPanel.classList.remove('open');
 
-        profileImage.style.backgroundImage='url("/avatar_placeholder.png")';
+        profileImage.style.backgroundImage='url("/assets/images/avatar-placeholder.png")';
         profileImage.style.backgroundSize='cover';
         profileImage.style.backgroundPosition='center';
         
-        profileImageMenu.style.backgroundImage='url("/avatar_placeholder.png")';
+        profileImageMenu.style.backgroundImage='url("/assets/images/avatar-placeholder.png")';
         profileImageMenu.style.backgroundSize='cover';
         profileImageMenu.style.backgroundPosition='center';
         syncNotificationSubscription(null);
@@ -822,7 +822,7 @@ async function renderOwnLibraryHeader(user){
   viewedUserHeader.style.display='flex';
   if(viewedUserFollowButton)viewedUserFollowButton.style.display='none';
 
-  var avatarUrl='/avatar_placeholder.png';
+  var avatarUrl='/assets/images/avatar-placeholder.png';
   try{
     var profileResult=await supabaseClient
       .from('profiles')
@@ -3335,7 +3335,7 @@ function recordHTML(record, className){
             'target="_blank" rel="noopener noreferrer" '+
             'aria-label="Listen to '+esc(Record.title(record))+' by '+esc(Record.artist(record))+' on Apple Music">'+
             '<img class="apple-music-small-badge" '+
-                'src="/Apple_Music_Listen_on_Badge_Small.svg" '+
+                'src="/assets/brands/apple-music-badge-small.svg" '+
                 'alt="Listen on Apple Music">'+
         '</a>'+
     
@@ -3344,7 +3344,7 @@ function recordHTML(record, className){
             'target="_blank" rel="noopener noreferrer" '+
             'aria-label="Listen to '+esc(Record.title(record))+' by '+esc(Record.artist(record))+' on Spotify">'+
             '<img class="spotify-service-logo" '+
-                'src="/Full_Logo_Green_RGB.svg" '+
+                'src="/assets/brands/spotify-full-logo-green.svg" '+
                 'alt="Spotify">'+
         '</a>'+
     
@@ -3561,7 +3561,7 @@ function renderFollowedCollectorsForAlbum(profiles){
   function personButton(profile,extraClass){
     var username=profile.username||'Collector';
     return '<button class="detail-social-person'+(extraClass?' '+extraClass:'')+'" type="button" data-detail-social-username="'+detailSocialEscape(username)+'" data-tooltip="'+detailSocialEscape(username)+'" aria-label="View '+detailSocialEscape(username)+'">'+
-      '<span class="detail-social-avatar" style="background-image:url(&quot;'+detailSocialEscape(profile.avatar_url||'/avatar_placeholder.png')+'&quot;)"></span>'+
+      '<span class="detail-social-avatar" style="background-image:url(&quot;'+detailSocialEscape(profile.avatar_url||'/assets/images/avatar-placeholder.png')+'&quot;)"></span>'+
       '<span class="detail-social-person-name">'+detailSocialEscape(username)+'</span>'+
     '</button>';
   }
@@ -5561,7 +5561,7 @@ async function loadTopUsers(){
         avatar.className='user-search-avatar';
 
         avatar.style.backgroundImage='url("'+
-            (user.avatar_url||'/avatar_placeholder.png')+
+            (user.avatar_url||'/assets/images/avatar-placeholder.png')+
             '")';
 
         avatar.style.backgroundSize='cover';
@@ -5650,7 +5650,7 @@ async function searchUsers(query){
         avatar.className='user-search-avatar';
     
         avatar.style.backgroundImage='url("'+
-            (user.avatar_url||'/avatar_placeholder.png')+
+            (user.avatar_url||'/assets/images/avatar-placeholder.png')+
             '")';
     
         avatar.style.backgroundSize='cover';
@@ -6317,7 +6317,7 @@ async function loadOtherUserCollection(userId){
     viewedUserAvatar.style.backgroundImage='url("'+
         (profile&&profile.avatar_url
             ?profile.avatar_url
-            :'/avatar_placeholder.png')+
+            :'/assets/images/avatar-placeholder.png')+
         '")';
 
     viewedUserAvatar.style.backgroundSize='cover';
