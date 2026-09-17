@@ -2,6 +2,8 @@ var NotificationCore=window.GroovyNotificationCore;
 if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
 var AppleSearchCore=window.GroovyAppleSearchCore;
 if(!AppleSearchCore)throw new Error('GroovyAppleSearchCore must load before app.js');
+var PressingCore=window.GroovyPressingCore;
+if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
 
 const profileButton=document.getElementById('profileButton');
 const profileMenu=document.getElementById('profileMenu');
