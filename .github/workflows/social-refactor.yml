@@ -55,6 +55,19 @@ jobs:
 
           app=replace_once(app,"const followingButton=document.getElementById('followingButton');\n",'', 'following button ownership')
 
+          app=replace_once(
+              app,
+              'await groovyFollowingIds(users.map(function(user){return user.id;}))',
+              'await socialController.followingIds(users.map(function(user){return user.id;}))',
+              'search result following ids delegation'
+          )
+          app=replace_once(
+              app,
+              'await groovyFollowingIds(data.map(function(user){return user.id;}))',
+              'await socialController.followingIds(data.map(function(user){return user.id;}))',
+              'typed search following ids delegation'
+          )
+
           app,count=re.subn(
               r"async function groovyFollowingIds\(userIds\)\{[\s\S]*?(?=function openCollectorRoute\(username,view\)\{)",
               '',
@@ -123,7 +136,6 @@ jobs:
               raise SystemExit(f'legacy viewed follow listener: expected one replacement, found {count}')
 
           replacements={
-              'groovyFollowingIds(':'socialController.followingIds(',
               'setFollowButtonState(':'socialController.setFollowButtonState(',
               'setViewedUserFollowState(':'socialController.setViewedUserFollowState(',
               'hideFollowingPage();':'socialController.hideFollowingPage();',
