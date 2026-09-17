@@ -65,4 +65,32 @@ test.describe('authenticated read-only smoke flows',()=>{
 
     expectNoPageErrors(pageErrors);
   });
+
+  test('authenticated core controls open and close without fatal browser errors',async({page})=>{
+    const pageErrors=watchPageErrors(page);
+
+    await loginWithTestAccount(page);
+
+    await page.locator('#addAlbumButton').click();
+    await expect(page.locator('#addAlbumModal')).toBeVisible();
+    await expect(page.locator('#albumSearchInput')).toBeFocused();
+    await page.locator('#closeAddAlbum').click();
+    await expect(page.locator('#addAlbumModal')).not.toBeVisible();
+
+    await page.locator('#profileButton').click();
+    await expect(page.locator('#profileMenu')).toBeVisible();
+
+    await page.locator('#searchUserButton').click();
+    await expect(page.locator('#searchUserModal')).toBeVisible();
+    await expect(page.locator('#userSearchInput')).toBeFocused();
+    await page.locator('#closeSearchUser').click();
+    await expect(page.locator('#searchUserModal')).not.toBeVisible();
+
+    await expect(page.locator('#notificationBox')).toBeVisible();
+    await page.locator('#notificationBellButton').click();
+    await expect(page.locator('#notificationBellButton')).toHaveAttribute('aria-expanded','true');
+    await expect(page.locator('#notificationPanel')).toHaveAttribute('aria-hidden','false');
+
+    expectNoPageErrors(pageErrors);
+  });
 });
