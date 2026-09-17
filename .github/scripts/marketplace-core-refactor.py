@@ -140,7 +140,7 @@ test_file.write_text(test_source.replace(old,new,1))
 
 docs=Path('docs/ARCHITECTURE.md')
 doc=docs.read_text()
-old='- `js/rating-core.js` — pure album-rating clamping, formatting and star-fill calculations.\n'
+old='- `js/rating-core.js` — pure 0–5 rating normalization and display formatting helpers.\n'
 new=old+'- `js/marketplace-core.js` — pure external-listing URL validation and buy-now candidate normalization.\n'
 if doc.count(old)!=1:
     raise SystemExit('architecture rating-core line did not match exactly once')
