@@ -1,0 +1,105 @@
+name: Social refactor checkpoint
+
+on:
+  push:
+    branches: [notes]
+    paths:
+      - '.github/workflows/social-refactor.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out notes
+        uses: actions/checkout@v4
+        with:
+          ref: notes
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Guard verified files
+        shell: bash
+        run: |
+          test "$(git hash-object js/app.js)" = "28294e9553bea2566695fc1a34f5679fac54b5a8"
+          test "$(git hash-object index.html)" = "b2187baf33ef9bdf5bd5fb72e8fa1338ca98f961"
+          test "$(git hash-object tests/app-bootstrap-order.test.js)" = "fa0bc1a6f21fb1664dc22e7fb2411392485f5fe2"
+
+      - name: Add social controller bootstrap
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(source,old,new,label):
+              count=source.count(old)
+              if count!=1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {count}')
+              return source.replace(old,new,1)
+
+          index_path=Path('index.html')
+          html=index_path.read_text()
+          html=replace_once(
+              html,
+              '<script src="/js/notification-controller.js?v=1"></script>\n',
+              '<script src="/js/notification-controller.js?v=1"></script>\n<script src="/js/social-controller.js?v=1"></script>\n',
+              'social script insertion'
+          )
+          social=html.index('/js/social-controller.js?v=')
+          app=html.index('/js/app.js?v=')
+          if not (social>=0 and app>social):
+              raise SystemExit('Social script order is invalid')
+          index_path.write_text(html)
+
+          test_path=Path('tests/app-bootstrap-order.test.js')
+          source=test_path.read_text()
+          source=replace_once(
+              source,
+              "'/js/notification-controller.js?v=',",
+              "'/js/notification-controller.js?v=','/js/social-controller.js?v=',",
+              'dependency script list'
+          )
+          marker="test('marketplace scripts load core, view and controller in order before app.js',()=>{"
+          addition="""test('social controller loads before app.js',()=>{
+            const html=fs.readFileSync('index.html','utf8');
+            const social=html.indexOf('/js/social-controller.js?v=');
+            const app=html.indexOf('/js/app.js?v=');
+            assert.ok(social>=0&&app>social);
+          });
+
+          """
+          if addition.strip() in source:
+              raise SystemExit('social bootstrap test already exists')
+          source=replace_once(source,marker,addition+marker,'social bootstrap test insertion')
+          test_path.write_text(source)
+          PY
+
+      - name: Syntax and Node regression checks
+        run: |
+          node --check js/social-controller.js
+          node --check tests/social-controller.test.js
+          node --check tests/app-bootstrap-order.test.js
+          node --test tests/*.test.js
+
+      - name: Verify diff scope
+        shell: bash
+        run: |
+          git diff --check
+          test "$(git hash-object js/app.js)" = "28294e9553bea2566695fc1a34f5679fac54b5a8"
+          printf '%s\n' "$(git diff --name-only | sort)" > /tmp/changed.txt
+          printf '%s\n' 'index.html' 'tests/app-bootstrap-order.test.js' | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+
+      - name: Commit bootstrap checkpoint
+        shell: bash
+        run: |
+          git config user.name 'Groovyshelf'
+          git config user.email '150244154+Jeffaklumpen@users.noreply.github.com'
+          git add index.html tests/app-bootstrap-order.test.js
+          git commit -m 'Load social controller before app'
+          git push origin HEAD:notes
