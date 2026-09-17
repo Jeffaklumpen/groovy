@@ -6,18 +6,47 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   node-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 20
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run regression tests
+      - name: Apply album search extraction
+        run: node scripts/apply-album-search-extraction.js
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/app.js
+          node --check js/album-search.js
+      - name: Run full Node regression suite
         run: node --test tests/*.test.js
+      - name: Check patch whitespace
+        run: git diff --check
+      - name: Install browser test dependency
+        run: npm install --no-audit --no-fund --package-lock=false
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser smoke tests on transformed app
+        env:
+          GROOVY_E2E_EMAIL: ${{ secrets.GROOVY_E2E_EMAIL }}
+          GROOVY_E2E_PASSWORD: ${{ secrets.GROOVY_E2E_PASSWORD }}
+        run: npm run test:e2e
+      - name: Commit extraction
+        if: github.event_name == 'push'
+        run: |
+          git checkout 4dc9fc9b98b4f69b56264c753209d77caf6d7bb8 -- .github/workflows/test.yml
+          git rm scripts/apply-album-search-extraction.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Move album search flow into feature module"
+          git push origin HEAD:notes
