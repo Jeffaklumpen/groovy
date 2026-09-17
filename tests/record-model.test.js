@@ -2,22 +2,27 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const test=require('node:test');
-const vm=require('node:vm');
-const root=path.resolve(__dirname,'..');
 
-function loadModel(){
-  const source=fs.readFileSync(path.join(root,'js','record-model.js'),'utf8');
-  const context={window:{}};
-  vm.runInNewContext(source,context);
-  return context.window.GroovyRecord;
-}
+const root=path.resolve(__dirname,'..');
+const Record=require('../js/record-model.js');
 
 test('record model names legacy tuple fields without changing storage',function(){
-  const Record=loadModel();
-  const record=[1,'Pink Floyd','The Wall',1979,'Rock',4,'cover.jpg',{},42,99,123,{},'',null,null,4.5,10];
-  assert.equal(Record.artist(record),'Pink Floyd');
-  assert.equal(Record.title(record),'The Wall');
+  const record=[3,'Artist','Album',1980,'Rock',4,'cover.jpg',{A:[]},42,99,123,{mediaCondition:'VG+'},'https://music.apple.com/album',7,2,4.5,8];
+  assert.equal(Record.order(record),3);
+  assert.equal(Record.artist(record),'Artist');
+  assert.equal(Record.title(record),'Album');
+  assert.equal(Record.year(record),1980);
+  assert.equal(Record.genre(record),'Rock');
+  assert.equal(Record.ownRating(record),4);
+  assert.equal(Record.coverUrl(record),'cover.jpg');
+  assert.deepEqual(Record.sides(record),{A:[]});
   assert.equal(Record.albumId(record),42);
+  assert.equal(Record.entryId(record),99);
+  assert.equal(Record.discogsMasterId(record),123);
+  assert.equal(Record.pressing(record).mediaCondition,'VG+');
+  assert.equal(Record.appleUrl(record),'https://music.apple.com/album');
+  assert.equal(Record.shelfId(record),7);
+  assert.equal(Record.shelfSortOrder(record),2);
   assert.equal(Record.communityRating(record),4.5);
   Record.setRatings(record,5,4.6,11);
   assert.equal(record[5],5);
@@ -30,7 +35,7 @@ test('record model loads before consumers and separated modules use named access
   const detail=fs.readFileSync(path.join(root,'js','detail-enhancements-v2.js'),'utf8');
   const layout=fs.readFileSync(path.join(root,'js','album-rating-layout-v4.js'),'utf8');
   const modelPosition=html.indexOf('/js/record-model.js?v=1');
-  const appPosition=html.indexOf('/js/app.js?v=127');
+  const appPosition=html.indexOf('/js/app.js?v=');
   assert.ok(modelPosition>=0&&appPosition>modelPosition);
   assert.match(detail,/var Record=window.GroovyRecord/);
   assert.match(layout,/var Record=window.GroovyRecord/);
