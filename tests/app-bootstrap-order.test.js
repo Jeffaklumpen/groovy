@@ -15,7 +15,7 @@ test('dependency scripts load before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const app=html.indexOf('/js/app.js?v=');
   assert.ok(app>=0,'app.js script is missing');
-  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
+  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/detail-tracklist-controller.js?v=','/js/rating-core.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
     const pos=html.indexOf(script);assert.ok(pos>=0,script+' script is missing');assert.ok(pos<app,script+' must load before app.js');
   });
   assert.match(html,/\/js\/app\.js\?v=\d+/);
@@ -89,6 +89,24 @@ test('detail social controller initializes before app integration',()=>{
   assert.match(source,/detailSocialController\.openForRecord\(record,index\)/);
   assert.match(source,/detailSocialController\.close\(\)/);
   assert.doesNotMatch(source,/detailSocialRequestVersion|detailSocialCache|function detailSocialEscape|function loadDetailSocialContext|function renderFollowedCollectorsForAlbum|function renderOwnCollectionMatch|function positionDetailSocialMenu/);
+});
+
+test('detail tracklist controller loads after pressing core and before app.js',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const pressing=html.indexOf('/js/pressing-core.js?v=');
+  const tracklist=html.indexOf('/js/detail-tracklist-controller.js?v=');
+  const app=html.indexOf('/js/app.js?v=');
+  assert.ok(pressing>=0&&tracklist>pressing&&app>tracklist);
+});
+
+test('detail tracklist controller owns duration hydration before app integration',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  const declaration=source.indexOf('var DetailTracklistController=window.GroovyDetailTracklistController;');
+  const create=source.indexOf('DetailTracklistController.create({');
+  assert.ok(declaration>=0&&create>declaration);
+  assert.match(source,/GroovyDetailTracklistController must load before app\.js/);
+  assert.match(source,/detailTracklistController\.openForRecord\(record,index\)/);
+  assert.doesNotMatch(source,/function loadCachedTrackDurations|function persistTrackDurations|function renderDetailTracklist|function ensureDetailTrackDurations|\bdiscogsTrackRows\(/);
 });
 
 test('Wikipedia about controller loads after its service and before app.js',()=>{

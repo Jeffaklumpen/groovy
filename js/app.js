@@ -533,6 +533,7 @@ function copyDetailsFromRow(item){
 var Record=window.GroovyRecord;
 var Wikipedia=window.GroovyWikipedia;
 var WikipediaAboutController=window.GroovyWikipediaAboutController;
+var DetailTracklistController=window.GroovyDetailTracklistController;
 var Streaming=window.GroovyStreaming;
 var NotificationCore=window.GroovyNotificationCore;
 var PressingCore=window.GroovyPressingCore;
@@ -545,6 +546,7 @@ var LibraryCore=window.GroovyLibraryCore;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
 if(!WikipediaAboutController)throw new Error('GroovyWikipediaAboutController must load before app.js');
+if(!DetailTracklistController)throw new Error('GroovyDetailTracklistController must load before app.js');
 if(!Streaming)throw new Error('GroovyStreaming must load before app.js');
 if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
 if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
@@ -670,96 +672,6 @@ function renderStaticStarMeter(value,extraClass){
     '<span class="groovy-star-meter-base" aria-hidden="true">★★★★★</span>'+
     '<span class="groovy-star-meter-fill" aria-hidden="true">★★★★★</span>'+
   '</span>';
-}
-
-function loadCachedTrackDurations(record){
-  var key=Record.trackDurationCacheKey(record);
-  if(!key)return;
-  try{
-    var raw=localStorage.getItem(key);
-    if(!raw)return;
-    var parsed=JSON.parse(raw);
-    if(!parsed||!Array.isArray(parsed.tracks))return;
-    Record.applyTrackDurations(record,parsed.tracks,false);
-  }catch(error){}
-}
-
-function persistTrackDurations(record,tracks){
-  var key=Record.trackDurationCacheKey(record);
-  if(!key||!Array.isArray(tracks)||!tracks.length)return;
-  try{
-    localStorage.setItem(key,JSON.stringify({savedAt:Date.now(),tracks:tracks}));
-  }catch(error){}
-}
-
-function renderDetailTracklist(record){
-  var sides=Record.sides(record)||{};
-  var sideNames=['A','B','C','D','E','F','G','H'];
-  var html='';
-
-  for(var i=0;i<sideNames.length;i++){
-    var side=sideNames[i];
-    var tracks=sides[side];
-    if(!tracks||!tracks.length)continue;
-
-    html+='<section class="track-side">'+
-      '<div class="side-title"><span>SIDE</span>'+side+'</div>'+
-      '<ol class="tracks-list">';
-
-    for(var j=0;j<tracks.length;j++){
-      var track=tracks[j]||{};
-      var title=track.title||'Okänd låt';
-      var number=track.trackNumber==null?String(j+1).padStart(2,'0'):String(track.trackNumber).padStart(2,'0');
-      var duration=String(track.duration||'').trim();
-      html+='<li data-track-id="'+esc(track.id||'')+'">'+
-        '<span class="track-index">'+esc(number)+'</span>'+
-        '<span class="track-title">'+esc(title)+'</span>'+
-        '<span class="track-duration">'+esc(duration||'—')+'</span>'+
-      '</li>';
-    }
-
-    html+='</ol></section>';
-  }
-
-  detailTracks.innerHTML=html||'<div style="color:#666;font-size:13px">Ingen låtlista tillagd</div>';
-}
-
-async function ensureDetailTrackDurations(record,index){
-  if(!Record.albumId(record))return;
-  loadCachedTrackDurations(record);
-  if(detailOpenRecordIndex===index)renderDetailTracklist(record);
-
-  if(!Record.hasMissingTrackDurations(record))return;
-  var masterId=String(Record.discogsMasterId(record)||'').trim();
-  if(!masterId)return;
-
-  try{
-    var result=await supabaseClient.functions.invoke('discogs-search',{body:{action:'master',masterId:masterId}});
-    var discogsData=result&&result.data?result.data:null;
-    var discogsError=result&&result.error?result.error:null;
-    if(discogsError)throw discogsError;
-
-    var finalTracklist=Array.isArray(discogsData&&discogsData.tracklist)?discogsData.tracklist:[];
-    var hasDiscSides=finalTracklist.some(function(track){
-      var position=String(track&&track.position||'').toUpperCase();
-      return /^[A-H]\d/.test(position);
-    });
-
-    if(!hasDiscSides){
-      var vinylResult=await supabaseClient.functions.invoke('discogs-search',{body:{action:'vinylRelease',masterId:masterId}});
-      if(vinylResult&&vinylResult.data&&Array.isArray(vinylResult.data.tracklist)&&vinylResult.data.tracklist.length){
-        finalTracklist=vinylResult.data.tracklist;
-      }
-    }
-
-    var incoming=discogsTrackRows(Record.albumId(record),finalTracklist,true);
-    if(!incoming.length)return;
-    var changed=Record.applyTrackDurations(record,incoming,false);
-    persistTrackDurations(record,incoming);
-    if(changed&&detailOpenRecordIndex===index)renderDetailTracklist(record);
-  }catch(error){
-    console.warn('Could not hydrate track durations:',error);
-  }
 }
 
 async function loadAlbumRatingData(albumIds,ownUserId){
@@ -1153,6 +1065,20 @@ var detailShelfStatus=document.getElementById('detailShelfStatus');
 var detailSocialContext=document.getElementById('detailSocialContext');
 var detailInfoCard=document.querySelector('.detail-info-card');
 var detailOpenRecordIndex=-1;
+var detailTracklistController=DetailTracklistController.create({
+  api:supabaseClient,
+  recordModel:Record,
+  pressingCore:PressingCore,
+  element:detailTracks,
+  storage:localStorage,
+  escapeHtml:function(value){return esc(value==null?'':String(value));},
+  getOpenRecordIndex:function(){return detailOpenRecordIndex;},
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
 var detailSocialController=DetailSocialController.create({
   api:supabaseClient,
   window:window,
@@ -1858,8 +1784,7 @@ function openAlbum(index){
   renderDetailShelfStatus(index);
   renderDetailShelfActions(index);
   detailSocialController.openForRecord(record,index);
-  renderDetailTracklist(record);
-  ensureDetailTrackDurations(record,index);
+  detailTracklistController.openForRecord(record,index);
 
   albumOverlay.className='album-overlay visible';
   document.body.style.overflow='hidden';

@@ -88,19 +88,17 @@ test('record model owns track-duration identity and mutation rules',function(){
   assert.equal(Record.sides(record).A[1].duration,'4:20');
 });
 
-test('app delegates wishlist and track-duration tuple logic to record model',function(){
+test('track-duration controller delegates tuple mutation rules to record model',function(){
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
-  const start=app.indexOf('window.emptyRecordSides=Record.emptySides;');
-  const end=app.indexOf('async function loadAlbumRatingData',start);
-  const section=app.slice(start,end);
-  assert.ok(start>=0&&end>start);
-  assert.equal(section.includes('function wishlistRecord('),false);
-  assert.equal(section.includes('function applyTrackDurationRows('),false);
-  assert.equal(section.includes('record[7]'),false);
-  assert.equal(section.includes('record[8]'),false);
-  assert.equal(section.includes('record[10]'),false);
-  assert.equal(section.includes('Record.applyTrackDurations'),true);
-  assert.equal(section.includes('Record.hasMissingTrackDurations'),true);
+  const controller=fs.readFileSync(path.join(root,'js','detail-tracklist-controller.js'),'utf8');
+  assert.equal(app.includes('function wishlistRecord('),false);
+  assert.equal(app.includes('function applyTrackDurationRows('),false);
+  assert.equal(controller.includes('record[7]'),false);
+  assert.equal(controller.includes('record[8]'),false);
+  assert.equal(controller.includes('record[10]'),false);
+  assert.equal(controller.includes('recordModel.applyTrackDurations'),true);
+  assert.equal(controller.includes('recordModel.hasMissingTrackDurations'),true);
+  assert.equal(controller.includes('pressingCore.discogsTrackRows'),true);
 });
 
 
