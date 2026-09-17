@@ -20,4 +20,18 @@ jobs:
         with:
           node-version: '22'
       - name: Run regression tests
-        run: node --test tests/*.test.js
+        shell: bash
+        run: |
+          set +e
+          node --test tests/*.test.js > /tmp/node-test-output.txt 2>&1
+          status=$?
+          cat /tmp/node-test-output.txt
+          exit $status
+      - name: Upload Node failure output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-test-output
+          path: /tmp/node-test-output.txt
+          if-no-files-found: error
+          retention-days: 1
