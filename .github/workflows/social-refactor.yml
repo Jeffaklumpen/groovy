@@ -119,11 +119,12 @@ jobs:
           if count!=1:
               raise SystemExit(f'legacy following page block: expected one replacement, found {count}')
 
-          event_pattern=(
-              r"window\.addEventListener\('groovy-follow-changed',[\s\S]*?"
-              r"(?=searchUserButton\.addEventListener\('click')"
+          app,count=re.subn(
+              r"window\.addEventListener\('groovy-follow-changed',function\(event\)\{[\s\S]*?\n\}\);",
+              '',
+              app,
+              count=1
           )
-          app,count=re.subn(event_pattern,'',app,count=1)
           if count!=1:
               raise SystemExit(f'legacy follow-change listener: expected one replacement, found {count}')
 
