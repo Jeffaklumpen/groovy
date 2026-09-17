@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: notes
-          fetch-depth: 2
+          fetch-depth: 3
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -26,7 +26,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "5ead82b90ff647cc3bab78f2f8489c2a21366f85"
+          git merge-base --is-ancestor 5ead82b90ff647cc3bab78f2f8489c2a21366f85 HEAD
           test "$(git hash-object js/app.js)" = "1f503be620c98cd2905a4b6a99c647ca2f8aef56"
           test -f assets/images/avatar-placeholder.png
       - name: Fix landing image path and add regression test
@@ -63,7 +63,8 @@ jobs:
           node --check js/app.js
           node --test tests/*.test.js
           git diff --check
-          test "$(git diff --name-only | sort | tr '\n' ' ')" = "js/app.js tests/landing-asset.test.js "
+          changed="$({ git diff --name-only; git ls-files --others --exclude-standard; } | sort | tr '\n' ' ')"
+          test "$changed" = "js/app.js tests/landing-asset.test.js "
       - name: Commit fix
         shell: bash
         run: |
