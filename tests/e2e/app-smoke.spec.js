@@ -163,7 +163,7 @@ test('a rendered record card opens the album detail view',async({page})=>{
   await expect(page.locator('#albumOverlay')).toHaveClass(/visible/);
   await expect(page.locator('#detailArtist')).toHaveText('Playwright Artist');
   await expect(page.locator('#detailAlbum')).toHaveText('Playwright Album');
-  await expect(page.locator('#detailRating')).toContainText('Your rating');
+  await expect(page.locator('#detailRating')).toContainText(/Your Rating/i);
   await expect(page.locator('#detailRating .album-rating-star')).toHaveCount(5);
 
   const track=page.locator('#detailTracks li').first();
