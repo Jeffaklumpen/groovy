@@ -2,6 +2,8 @@ var NotificationCore=window.GroovyNotificationCore;
 if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
 var NotificationController=window.GroovyNotificationController;
 if(!NotificationController)throw new Error('GroovyNotificationController must load before app.js');
+var SocialController=window.GroovySocialController;
+if(!SocialController)throw new Error('GroovySocialController must load before app.js');
 var AppleSearchCore=window.GroovyAppleSearchCore;
 if(!AppleSearchCore)throw new Error('GroovyAppleSearchCore must load before app.js');
 var AlbumSearch=window.GroovyAlbumSearch;
@@ -50,7 +52,6 @@ const registerFields=document.getElementById('registerFields');
 const registerUsername=document.getElementById('registerUsername');
 const registerButton=document.getElementById('registerButton');
 const authSwitchButton=document.getElementById('authSwitchButton');
-const followingButton=document.getElementById('followingButton');
 const viewedUserFollowButton=document.getElementById('viewedUserFollowButton');
 
 // A blurred header becomes a containing block for fixed descendants in mobile
@@ -118,69 +119,6 @@ async function currentSessionUser(){
     return session&&session.user?session.user:null;
 }
 
-async function groovyFollowingIds(userIds){
-    var user=await currentSessionUser();
-    if(!user||!Array.isArray(userIds)||!userIds.length)return new Set();
-    var ids=userIds.filter(function(id){return id&&id!==user.id;});
-    if(!ids.length)return new Set();
-    var {data,error}=await supabaseClient.from('user_follows')
-      .select('followed_id')
-      .eq('follower_id',user.id)
-      .in('followed_id',ids);
-    if(error){console.warn('Could not load follow status:',error);return new Set();}
-    return new Set((data||[]).map(function(row){return row.followed_id;}));
-}
-
-window.groovyIsFollowing=async function(targetUserId){
-    if(!targetUserId)return false;
-    var set=await groovyFollowingIds([targetUserId]);
-    return set.has(targetUserId);
-};
-
-window.groovyFollowUser=async function(targetUserId){
-    var user=await currentSessionUser();
-    if(!user)throw new Error('You need to be logged in to follow collectors.');
-    if(!targetUserId||targetUserId===user.id)return false;
-    var {error}=await supabaseClient.from('user_follows').insert({follower_id:user.id,followed_id:targetUserId});
-    if(error&&error.code!=='23505')throw error;
-    window.dispatchEvent(new CustomEvent('groovy-follow-changed',{detail:{userId:targetUserId,following:true}}));
-    return true;
-};
-
-window.groovyUnfollowUser=async function(targetUserId){
-    var user=await currentSessionUser();
-    if(!user)throw new Error('You need to be logged in.');
-    if(!targetUserId)return false;
-    var {error}=await supabaseClient.from('user_follows').delete()
-      .eq('follower_id',user.id)
-      .eq('followed_id',targetUserId);
-    if(error)throw error;
-    window.dispatchEvent(new CustomEvent('groovy-follow-changed',{detail:{userId:targetUserId,following:false}}));
-    return true;
-};
-
-async function setFollowButtonState(button,targetUserId,isFollowing){
-    if(!button)return;
-    button.dataset.following=isFollowing?'true':'false';
-    button.classList.toggle('following',isFollowing);
-    button.textContent=isFollowing?'Following':'Follow';
-    button.setAttribute('aria-label',(isFollowing?'Unfollow ':'Follow ')+(button.dataset.username||'collector'));
-    button.dataset.userId=targetUserId||'';
-}
-
-function setViewedUserFollowState(targetUserId,username,isFollowing){
-    if(!viewedUserFollowButton)return;
-    viewedUserFollowButton.dataset.userId=targetUserId||'';
-    viewedUserFollowButton.dataset.username=username||'collector';
-    viewedUserFollowButton.dataset.following=isFollowing?'true':'false';
-    viewedUserFollowButton.classList.toggle('following',isFollowing);
-    viewedUserFollowButton.setAttribute('aria-label',(isFollowing?'Unfollow ':'Follow ')+(username||'collector'));
-    var label=viewedUserFollowButton.querySelector('.viewed-action-label');
-    var icon=viewedUserFollowButton.querySelector('.viewed-follow-icon');
-    if(label)label.textContent=isFollowing?'Following':'Follow';
-    if(icon)icon.textContent=isFollowing?'✓':'+';
-}
-
 function openCollectorRoute(username,view){
     if(!username)return;
     var url=view==='profile'?'/profile/'+encodeURIComponent(username):'/shelf/'+encodeURIComponent(username);
@@ -188,6 +126,28 @@ function openCollectorRoute(username,view){
     history.pushState({},'',url);
     renderCurrentRoute();
 }
+
+var socialController=SocialController.create({
+  elements:{
+    followingButton:document.getElementById('followingButton'),
+    viewedUserFollowButton:viewedUserFollowButton
+  },
+  api:supabaseClient,
+  window:window,
+  document:document,
+  getCurrentUser:currentSessionUser,
+  escapeHtml:escapeSocialHtml,
+  onNavigate:function(username,view){openCollectorRoute(username,view);},
+  onOpenFollowingRoute:function(){history.pushState({},'','/following');renderCurrentRoute();},
+  onBackHome:function(){history.pushState({},'','/');renderCurrentRoute();},
+  onRequireAuth:function(){openAuthPanel('login');history.replaceState({},'','/');},
+  onBeforeFollowingOpen:function(){profileMenu.classList.remove('open');},
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
 
 var notificationController=NotificationController.create({
   elements:{
@@ -208,96 +168,6 @@ var notificationController=NotificationController.create({
     else if(level==='warn')console.warn(message,error||'');
     else console.log(message,error||'');
   }
-});
-
-function ensureFollowingPage(){
-    var page=document.getElementById('followingPage');
-    if(page)return page;
-    page=document.createElement('section');
-    page.id='followingPage';
-    page.className='following-page';
-    page.hidden=true;
-    page.innerHTML='<div class="following-shell">'+
-      '<div class="following-heading"><div><span class="following-kicker">YOUR COMMUNITY</span><h1>Following</h1><p>Collectors you follow, their libraries and the records you have in common.</p></div><button id="followingBackButton" type="button">Back to My Shelf</button></div>'+
-      '<div id="followingGrid" class="following-grid"></div>'+
-    '</div>';
-    document.body.appendChild(page);
-    page.querySelector('#followingBackButton').addEventListener('click',function(){history.pushState({},'','/');renderCurrentRoute();});
-    page.querySelector('#followingGrid').addEventListener('click',async function(event){
-        var unfollow=event.target.closest('[data-unfollow-user]');
-        if(unfollow){
-            event.preventDefault();event.stopPropagation();
-            var id=unfollow.getAttribute('data-unfollow-user');
-            unfollow.disabled=true;unfollow.textContent='Unfollowing...';
-            try{await window.groovyUnfollowUser(id);await renderFollowingPage();}
-            catch(error){console.error('Could not unfollow:',error);unfollow.disabled=false;unfollow.textContent='Unfollow';}
-            return;
-        }
-        var shelf=event.target.closest('[data-shelf-username]');
-        if(shelf){
-            event.preventDefault();
-            openCollectorRoute(shelf.getAttribute('data-shelf-username'),'collection');
-            return;
-        }
-        var open=event.target.closest('[data-profile-username]');
-        if(open){
-            event.preventDefault();
-            openCollectorRoute(open.getAttribute('data-profile-username'),'profile');
-        }
-    });
-    return page;
-}
-
-function hideFollowingPage(){
-    var page=document.getElementById('followingPage');
-    if(page)page.hidden=true;
-    document.body.classList.remove('following-page-open');
-}
-
-async function renderFollowingPage(){
-    var page=ensureFollowingPage();
-    var grid=page.querySelector('#followingGrid');
-    var user=await currentSessionUser();
-    if(!user){
-        hideFollowingPage();
-        openAuthPanel('login');
-        history.replaceState({},'','/');
-        return;
-    }
-    page.hidden=false;
-    document.body.classList.add('following-page-open');
-    grid.innerHTML='<div class="following-loading"><span></span><strong>Loading collectors...</strong></div>';
-    var {data,error}=await supabaseClient.rpc('get_following_overview');
-    if(error){
-        console.error('Could not load following:',error);
-        grid.innerHTML='<div class="following-empty"><strong>Could not load following.</strong><span>Make sure the social migration has been run in Supabase.</span></div>';
-        return;
-    }
-    if(!data||!data.length){
-        grid.innerHTML='<div class="following-empty"><strong>You are not following anyone yet.</strong><span>Use Search User or visit a collector profile to follow someone.</span></div>';
-        return;
-    }
-    grid.innerHTML=data.map(function(item){
-        return '<article class="following-card">'+
-          '<button class="following-identity" type="button" data-profile-username="'+escapeSocialHtml(item.username||'')+'">'+
-            '<span class="following-avatar" style="background-image:url(&quot;'+escapeSocialHtml(item.avatar_url||'/assets/images/avatar-placeholder.png')+'&quot;)"></span>'+
-            '<span><strong>'+escapeSocialHtml(item.username||'Collector')+'</strong><small>Following since '+escapeSocialHtml(new Date(item.followed_at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}))+'</small></span>'+
-          '</button>'+
-          '<div class="following-stats">'+
-            '<div><strong>'+Number(item.collection_count||0)+'</strong><span>Records</span></div>'+
-            '<div><strong>'+Number(item.wishlist_count||0)+'</strong><span>Wishlist</span></div>'+
-            '<div><strong>'+Number(item.common_count||0)+'</strong><span>In common</span></div>'+
-          '</div>'+
-          '<div class="following-actions"><button type="button" data-profile-username="'+escapeSocialHtml(item.username||'')+'">View Profile</button><button type="button" data-shelf-username="'+escapeSocialHtml(item.username||'')+'">View Shelf</button><button class="following-unfollow" type="button" data-unfollow-user="'+escapeSocialHtml(item.user_id||'')+'">Unfollow</button></div>'+
-        '</article>';
-    }).join('');
-}
-
-if(followingButton)followingButton.addEventListener('click',function(event){
-    event.preventDefault();event.stopPropagation();
-    profileMenu.classList.remove('open');
-    history.pushState({},'','/following');
-    renderCurrentRoute();
 });
 
 loginClose.addEventListener('click',function(){
@@ -3960,7 +3830,7 @@ function appendUserSearchFollowButton(container,user,sessionUser,followingSet){
     button.type='button';
     button.className='user-search-follow-button';
     button.dataset.username=user.username||'collector';
-    setFollowButtonState(button,user.id,followingSet&&followingSet.has(user.id));
+    socialController.setFollowButtonState(button,user.id,followingSet&&followingSet.has(user.id));
     button.addEventListener('click',async function(event){
         event.preventDefault();
         event.stopPropagation();
@@ -3970,10 +3840,10 @@ function appendUserSearchFollowButton(container,user,sessionUser,followingSet){
         try{
             if(wasFollowing)await window.groovyUnfollowUser(user.id);
             else await window.groovyFollowUser(user.id);
-            setFollowButtonState(button,user.id,!wasFollowing);
+            socialController.setFollowButtonState(button,user.id,!wasFollowing);
         }catch(error){
             console.error('Could not change follow status:',error);
-            setFollowButtonState(button,user.id,wasFollowing);
+            socialController.setFollowButtonState(button,user.id,wasFollowing);
         }
         button.disabled=false;
     });
@@ -3997,7 +3867,7 @@ async function loadTopUsers(){
     }
 
     const sessionUser=await currentSessionUser();
-    const followingSet=sessionUser?await groovyFollowingIds(users.map(function(user){return user.id;})):new Set();
+    const followingSet=sessionUser?await socialController.followingIds(users.map(function(user){return user.id;})):new Set();
 
     const userCollectionCounts=await Promise.all(
         users.map(async function(user){
@@ -4094,7 +3964,7 @@ async function searchUsers(query){
     }
 
     const sessionUser=await currentSessionUser();
-    const followingSet=sessionUser?await groovyFollowingIds(data.map(function(user){return user.id;})):new Set();
+    const followingSet=sessionUser?await socialController.followingIds(data.map(function(user){return user.id;})):new Set();
 
     const userCollectionCounts=await Promise.all(
         data.map(async function(user){
@@ -4162,14 +4032,7 @@ async function searchUsers(query){
     });
 }
 
-window.addEventListener('groovy-follow-changed',function(event){
-    var detail=event.detail||{};
-    document.querySelectorAll('.user-search-follow-button[data-user-id="'+String(detail.userId||'')+'"]')
-      .forEach(function(button){setFollowButtonState(button,detail.userId,!!detail.following);});
-    if(viewedUserFollowButton&&String(viewedUserFollowButton.dataset.userId||'')===String(detail.userId||'')){
-        setViewedUserFollowState(detail.userId,viewedUserFollowButton.dataset.username,!!detail.following);
-    }
-});
+
 
 searchUserButton.addEventListener('click',async function(event){
     event.preventDefault();
@@ -4274,25 +4137,6 @@ viewedUserWishlistButton.addEventListener('click',function(){
     if(header&&header.dataset.own==='true')navigateOwnLibrary('wishlist');
     else navigateViewedLibrary('wishlist');
 });
-if(viewedUserFollowButton)viewedUserFollowButton.addEventListener('click',async function(event){
-    event.preventDefault();event.stopPropagation();
-    var targetUserId=viewedUserFollowButton.dataset.userId;
-    if(!targetUserId)return;
-    var wasFollowing=viewedUserFollowButton.dataset.following==='true';
-    viewedUserFollowButton.disabled=true;
-    var label=viewedUserFollowButton.querySelector('.viewed-action-label');
-    if(label)label.textContent=wasFollowing?'Unfollowing...':'Following...';
-    try{
-        if(wasFollowing)await window.groovyUnfollowUser(targetUserId);
-        else await window.groovyFollowUser(targetUserId);
-        setViewedUserFollowState(targetUserId,viewedUserFollowButton.dataset.username,!wasFollowing);
-    }catch(error){
-        console.error('Could not change follow status:',error);
-        setViewedUserFollowState(targetUserId,viewedUserFollowButton.dataset.username,wasFollowing);
-    }
-    viewedUserFollowButton.disabled=false;
-});
-
 emptyWishlistAddButton.addEventListener('click',function(){
     addAlbumButton.click();
 });
@@ -4479,7 +4323,7 @@ async function loadOtherUserCollection(userId){
     if(viewedUserFollowButton){
         var isFollowingViewed=false;
         try{isFollowingViewed=await window.groovyIsFollowing(userId);}catch(error){isFollowingViewed=false;}
-        setViewedUserFollowState(userId,profile&&profile.username?profile.username:'collector',isFollowingViewed);
+        socialController.setViewedUserFollowState(userId,profile&&profile.username?profile.username:'collector',isFollowingViewed);
         viewedUserFollowButton.style.display='inline-flex';
     }
 
@@ -4712,7 +4556,7 @@ async function renderCurrentRoute(){
         window.libraryView='collection';
     }
     if(!routeUser){
-        hideFollowingPage();
+        socialController.hideFollowingPage();
         viewedUserId=null;
         window.loginRequiredForViewedCollection=false;
         window.profileNotFound=false;
@@ -4720,10 +4564,10 @@ async function renderCurrentRoute(){
         return;
     }
     if(/^\/following\/?$/.test(window.location.pathname)){
-        await renderFollowingPage();
+        await socialController.renderFollowingPage();
         return;
     }
-    hideFollowingPage();
+    socialController.hideFollowingPage();
     await loadUserFromUrl();
 }
 

@@ -45,6 +45,15 @@ test('social controller loads before app.js',()=>{
   assert.ok(social>=0&&app>social);
 });
 
+test('social controller initializes before app integration',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  const declaration=source.indexOf('var SocialController=window.GroovySocialController;');
+  const create=source.indexOf('SocialController.create({');
+  assert.ok(declaration>=0&&create>declaration);
+  assert.match(source,/GroovySocialController must load before app\.js/);
+  assert.doesNotMatch(source,/async function groovyFollowingIds|function ensureFollowingPage|function renderFollowingPage|supabaseClient\.rpc\('get_following_overview'\)/);
+});
+
 test('marketplace scripts load core, view and controller in order before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const core=html.indexOf('/js/marketplace-core.js?v=');
