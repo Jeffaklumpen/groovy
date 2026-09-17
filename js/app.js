@@ -4,6 +4,7 @@ var AppleSearchCore=window.GroovyAppleSearchCore;
 if(!AppleSearchCore)throw new Error('GroovyAppleSearchCore must load before app.js');
 var PressingCore=window.GroovyPressingCore;
 if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
+var PressingView=window.GroovyPressingView;
 
 const profileButton=document.getElementById('profileButton');
 const profileMenu=document.getElementById('profileMenu');
@@ -2471,71 +2472,12 @@ async function loadEbayListings(record,index){
   if(ebayModal.classList.contains('visible')&&ebayAlbumIndex===index)openEbayModal();
 }
 
-function hasCopyDetails(details){
-  return !!(details&&(details.mediaCondition||details.sleeveCondition||
-    details.discogsReleaseId||details.country||details.year||details.label||
-    details.catalogNumber||details.matrixA||details.matrixB||details.matrixC||details.matrixD||
-    details.matrixE||details.matrixF||details.matrixG||details.matrixH));
-}
-
-function conditionOptions(selected,includeNoCover){
-  var options=[
-    ['', 'Not set'],
-    ['M', 'Mint (M)'],
-    ['NM', 'Near Mint (NM)'],
-    ['VG+', 'Very Good Plus (VG+)'],
-    ['VG', 'Very Good (VG)'],
-    ['G+', 'Good Plus (G+)'],
-    ['G', 'Good (G)'],
-    ['F', 'Fair (F)'],
-    ['P', 'Poor (P)']
-  ];
-
-  if(includeNoCover)options.push(['NO_COVER','No cover']);
-
-  return options.map(function(option){
-    return '<option value="'+esc(option[0])+'"'+(option[0]===selected?' selected':'')+'>'+esc(option[1])+'</option>';
-  }).join('');
-}
-
-function recordConditionMeta(value){
-  var conditions={
-    'M':{className:'mint',label:'Mint'},
-    'NM':{className:'near-mint',label:'Near Mint'},
-    'VG+':{className:'very-good-plus',label:'Very Good Plus'},
-    'VG':{className:'very-good',label:'Very Good'},
-    'G+':{className:'good-plus',label:'Good Plus'},
-    'G':{className:'good',label:'Good'},
-    'F':{className:'fair',label:'Fair'},
-    'P':{className:'poor',label:'Poor'}
-  };
-  return conditions[value]||null;
-}
-
-function copyDetailItem(label,value){
-  if(!value)return '';
-  return '<div class="copy-detail-item"><span class="copy-detail-label">'+esc(label)+'</span><span class="copy-detail-value">'+esc(value)+'</span></div>';
-}
-
-function copySummaryText(details){
-  var values=[details.country,details.year];
-  var summary=values.filter(Boolean).join(' · ');
-  return summary||(details.mediaCondition?'':'Add details');
-}
-
-function conditionChipHTML(value){
-  var condition=recordConditionMeta(value);
-  return condition
-    ?'<span class="copy-condition-chip condition-'+condition.className+'" title="Record condition: '+esc(condition.label)+'">'+esc(value)+'</span>'
-    :'';
-}
+function hasCopyDetails(details){return PressingView.hasCopyDetails(details);}
+function recordConditionMeta(value){return PressingView.conditionMeta(value);}
 
 function setCopyDetailsExpanded(expanded){
   copyDetailsExpanded=!!expanded;
-  copyDetails.classList.toggle('expanded',copyDetailsExpanded);
-  copyDetailsToggle.setAttribute('aria-expanded',copyDetailsExpanded?'true':'false');
-  copyDetailsContent.setAttribute('aria-hidden',copyDetailsExpanded?'false':'true');
-  copyDetailsContent.inert=!copyDetailsExpanded;
+  PressingView.setExpanded({root:copyDetails,toggle:copyDetailsToggle,content:copyDetailsContent},copyDetailsExpanded);
 }
 
 copyDetailsToggle.addEventListener('click',function(){
@@ -2544,95 +2486,26 @@ copyDetailsToggle.addEventListener('click',function(){
 
 function renderCopyDetails(index){
   var record=records[index];
-  var isWishlist=window.libraryView==='wishlist';
-
-  if(!record||isWishlist){
-    copyDetails.hidden=true;
-    copyDetailsContent.innerHTML='';
-    return;
-  }
-
-  var details=record[11]||{};
-  var isOwner=viewedUserId===null;
-
-  if(!isOwner&&!hasCopyDetails(details)){
-    copyDetails.hidden=true;
-    copyDetailsContent.innerHTML='';
-    return;
-  }
-
-  copyDetails.hidden=false;
-  copyDetailsSaved.textContent='';
-  var recordKey=String(record[9]||('record-'+index));
-  if(recordKey!==copyDetailsRecordKey){
-    copyDetailsRecordKey=recordKey;
-    copyDetailsExpanded=!hasCopyDetails(details);
-  }
-  var compactText=copySummaryText(details);
-  copyDetailsSummary.innerHTML=(compactText?'<span class="copy-summary-text">'+esc(compactText)+'</span>':'')+conditionChipHTML(details.mediaCondition);
-  var chips='';
-
-  if(details.mediaCondition)chips+=conditionChipHTML(details.mediaCondition);
-  if(details.sleeveCondition)chips+='<span class="copy-summary-chip">Sleeve '+esc(details.sleeveCondition)+'</span>';
-
-  var info=copyDetailItem('Country',details.country)+
-    copyDetailItem('Release year',details.year)+
-    copyDetailItem('Record label',details.label)+
-    copyDetailItem('Catalog number',details.catalogNumber);
-
-  var matrix='';
-  if(details.matrixA||details.matrixB||details.matrixC||details.matrixD||details.matrixE||details.matrixF||details.matrixG||details.matrixH){
-    matrix='<section class="advanced-pressing"><div class="advanced-pressing-title">Advanced pressing</div><div class="matrix-list">'+
-      (details.matrixA?'<div><span class="copy-detail-label">Matrix / Runout A</span><div class="matrix-value">'+esc(details.matrixA)+'</div></div>':'')+
-      (details.matrixB?'<div><span class="copy-detail-label">Matrix / Runout B</span><div class="matrix-value">'+esc(details.matrixB)+'</div></div>':'')+
-      (details.matrixC?'<div><span class="copy-detail-label">Matrix / Runout C</span><div class="matrix-value">'+esc(details.matrixC)+'</div></div>':'')+
-      (details.matrixD?'<div><span class="copy-detail-label">Matrix / Runout D</span><div class="matrix-value">'+esc(details.matrixD)+'</div></div>':'')+
-      (details.matrixE?'<div><span class="copy-detail-label">Matrix / Runout E</span><div class="matrix-value">'+esc(details.matrixE)+'</div></div>':'')+
-      (details.matrixF?'<div><span class="copy-detail-label">Matrix / Runout F</span><div class="matrix-value">'+esc(details.matrixF)+'</div></div>':'')+
-      (details.matrixG?'<div><span class="copy-detail-label">Matrix / Runout G</span><div class="matrix-value">'+esc(details.matrixG)+'</div></div>':'')+
-      (details.matrixH?'<div><span class="copy-detail-label">Matrix / Runout H</span><div class="matrix-value">'+esc(details.matrixH)+'</div></div>':'')+
-    '</div></section>';
-  }
-
-  var summary=chips
-    ?'<div class="copy-summary">'+chips+'</div>'
-    :(!info&&!matrix?'<p class="copy-summary-empty">Add details about the physical record you own.</p>':'');
-
-  if(isOwner){
-    copyDetailsContent.innerHTML=summary+
-      (info?'<div class="copy-details-readonly">'+info+'</div>':'')+
-      matrix+
-      '<div class="copy-details-actions">'+
-        '<button id="editConditionButton" class="copy-action-button" type="button">'+(details.mediaCondition||details.sleeveCondition?'Edit condition':'Add condition')+'</button>'+
-        '<button id="identifyPressingButton" class="copy-action-button primary" type="button">'+(details.discogsReleaseId?'Change pressing':'Identify pressing')+'</button>'+
-      '</div>'+
-      '<div id="conditionEditor" class="condition-editor" hidden>'+
-        '<label class="condition-field"><span>Record condition</span><select id="mediaConditionSelect">'+conditionOptions(details.mediaCondition||'',false)+'</select></label>'+
-        '<label class="condition-field"><span>Sleeve condition</span><select id="sleeveConditionSelect">'+conditionOptions(details.sleeveCondition||'',true)+'</select></label>'+
-      '</div>'+
-      (details.discogsReleaseId?'<p class="copy-credit">Pressing data from <a href="https://www.discogs.com/release/'+encodeURIComponent(details.discogsReleaseId)+'" target="_blank" rel="noopener noreferrer">Discogs</a></p>':'');
-
-    document.getElementById('editConditionButton').addEventListener('click',function(){
-      var editor=document.getElementById('conditionEditor');
-      editor.hidden=!editor.hidden;
-    });
-
-    document.getElementById('identifyPressingButton').addEventListener('click',function(){
-      openPressingPicker(index);
-    });
-
-    ['mediaConditionSelect','sleeveConditionSelect'].forEach(function(id){
-      document.getElementById(id).addEventListener('change',function(){
-        saveConditionDetails(index);
-      });
-    });
-  }else{
-    copyDetailsContent.innerHTML=(chips?'<div class="copy-summary">'+chips+'</div>':'')+
-      (info?'<div class="copy-details-readonly">'+info+'</div>':'')+matrix+
-      (details.discogsReleaseId?'<p class="copy-credit">Pressing data from <a href="https://www.discogs.com/release/'+encodeURIComponent(details.discogsReleaseId)+'" target="_blank" rel="noopener noreferrer">Discogs</a></p>':'');
-  }
-
-  setCopyDetailsExpanded(copyDetailsExpanded);
+  var result=PressingView.renderCopyDetails({
+    hasRecord:!!record,
+    isWishlist:window.libraryView==='wishlist',
+    isOwner:viewedUserId===null,
+    details:record&&record[11]?record[11]:{},
+    recordKey:record?String(record[9]||('record-'+index)):'',
+    previousRecordKey:copyDetailsRecordKey,
+    expanded:copyDetailsExpanded,
+    elements:{
+      root:copyDetails,
+      content:copyDetailsContent,
+      toggle:copyDetailsToggle,
+      summary:copyDetailsSummary,
+      saved:copyDetailsSaved
+    },
+    onIdentifyPressing:function(){openPressingPicker(index);},
+    onConditionChange:function(){saveConditionDetails(index);}
+  });
+  copyDetailsExpanded=result.expanded;
+  copyDetailsRecordKey=result.recordKey;
 }
 
 async function saveConditionDetails(index){
@@ -2685,16 +2558,11 @@ var matrixChoices=PressingCore.matrixChoices;
 var vinylDiscCount=PressingCore.vinylDiscCount;
 
 function setPressingOptions(select,values,placeholder,current){
-  select.innerHTML='<option value="">'+esc(placeholder)+'</option>'+values.map(function(value){
-    return '<option value="'+esc(value)+'"'+(value===current?' selected':'')+'>'+esc(value)+'</option>';
-  }).join('');
-  select.disabled=!values.length;
+  PressingView.setOptions(select,values,placeholder,current);
 }
 
 function updatePressingProgress(){
-  var completed=[pressingCountry.value,pressingYear.value,pressingLabel.value,pressingCatalogNumber.value].filter(Boolean).length;
-  var bars=pressingForm.querySelectorAll('.pressing-progress span');
-  for(var i=0;i<bars.length;i++)bars[i].classList.toggle('active',i<=completed);
+  PressingView.updateProgress(pressingForm,[pressingCountry.value,pressingYear.value,pressingLabel.value,pressingCatalogNumber.value]);
 }
 
 function currentPressingMatches(){
