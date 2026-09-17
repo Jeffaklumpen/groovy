@@ -1,432 +1,211 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-
-  <script>
-  (function(){
-    var redirect=sessionStorage.redirect;
-    delete sessionStorage.redirect;
-
-    if(redirect&&redirect!==location.href){
-      history.replaceState(null,null,redirect);
-    }
-  })();
-  </script>
-
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Groovy">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="application-name" content="Groovy">
-  <meta name="theme-color" content="#121214">
-  <title>GroovyShelves – Track Your Vinyl Collection</title>
-  <link rel="stylesheet" href="/css/style.css?v=116">
-  <link rel="stylesheet" href="/css/detail-enhancements.css?v=8">
-  <link rel="stylesheet" href="/css/profile.css?v=9">
-  <link rel="icon" type="image/png" href="/assets/icons/favicon.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
-  <link rel="manifest" href="/manifest.webmanifest?v=3">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Groovy">
+<link rel="manifest" href="/manifest.webmanifest?v=5">
+<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/assets/icons/favicon.png">
+<title>Groovy</title>
+<link rel="stylesheet" href="/css/style.css?v=91">
+<link rel="stylesheet" href="/css/profile.css?v=14">
+<link rel="stylesheet" href="/css/detail-enhancements.css?v=14">
 </head>
-
 <body>
-
 <header class="header">
-  <div class="header-main">
-    <div class="header-brand">
-      <img class="logo" src="/assets/images/logo.png" alt="Groovy">
-      <span class="header-tagline">EVERY RECORD COUNTS</span>
+  <div class="header-inner">
+    <a class="logo" href="/" aria-label="Groovy home">
+      <img src="/assets/images/logo.png" alt="Groovy">
+    </a>
+
+    <div id="onlineUsersStatus" class="online-users-status" aria-label="0 users online">
+      <span class="online-users-dot" aria-hidden="true"></span>
+      <span id="onlineUsersCount">0</span>
+      <span id="onlineUsersDesktopLabel">users online</span>
     </div>
 
-    <nav id="libraryTabs" class="library-tabs" aria-label="My library" style="display:none;">
-      <button id="collectionTabButton" class="library-tab active" type="button"><span class="record-icon" aria-hidden="true"></span>My Shelf</button>
-      <button id="wishlistTabButton" class="library-tab" type="button"><span class="wishlist-icon" aria-hidden="true"></span>My Wishlist</button>
+    <nav class="header-actions" aria-label="Account and library">
+      <button id="searchUserButton" class="search-user-button" type="button" aria-label="Search users">
+        <span aria-hidden="true">⌕</span>
+      </button>
+
+      <div id="notificationBox" class="notification-box">
+        <button id="notificationBellButton" class="notification-bell-button" type="button" aria-label="Notifications" aria-expanded="false">
+          <span aria-hidden="true">♢</span>
+          <span id="notificationBadge" class="notification-badge" hidden>0</span>
+        </button>
+        <div id="notificationPanel" class="notification-panel" aria-hidden="true">
+          <div class="notification-panel-header">
+            <div><span class="notification-panel-kicker">ACTIVITY</span><strong>Notifications</strong></div>
+            <div class="notification-panel-actions">
+              <button id="markAllNotificationsRead" type="button">Mark all read</button>
+              <button id="clearNotificationsButton" type="button">Clear</button>
+            </div>
+          </div>
+          <div id="notificationList" class="notification-list"></div>
+        </div>
+      </div>
+
+      <button id="followingButton" class="following-button" type="button">Following</button>
+
+      <div class="profile-box">
+        <button id="profileButton" class="profile-button" type="button" aria-label="Account">
+          <span id="profileImage" class="profile-image"></span>
+        </button>
+        <div id="profileMenu" class="profile-menu">
+          <div class="profile-menu-user">
+            <span id="profileImageMenu" class="profile-menu-avatar"></span>
+            <strong id="profileUsername">User</strong>
+          </div>
+          <button id="myCollectionButton" type="button">My Shelf</button>
+          <button id="profileAvatarButton" type="button">Change Profile Picture</button>
+          <input id="profileImageInput" type="file" accept="image/*" hidden>
+          <button id="logoutButton" type="button">Log out</button>
+        </div>
+      </div>
     </nav>
-
-    <div class="header-tools">
-      <div class="header-controls">
-        <button id="addAlbumButton" class="add-album-button" type="button">Add Record</button>
-
-        <button id="installAppShortcutButton" class="install-shortcut-button" type="button" aria-label="Install Groovy" title="Install Groovy"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3"/></svg></button>
-
-      </div>
-
-      <div id="onlineUsersStatus" class="online-users-pill" role="status" aria-live="polite" aria-label="0 users online">
-        <span class="online-users-dot" aria-hidden="true"></span>
-        <span class="online-users-copy"><strong id="onlineUsersCount">0</strong><span id="onlineUsersDesktopLabel" class="online-users-desktop">users online</span><span class="online-users-mobile">online</span></span>
-      </div>
-
-      <div id="authBox">
-        <div id="notificationBox" class="notification-box" hidden>
-          <button id="notificationBellButton" class="notification-bell-button" type="button" aria-label="Notifications" aria-expanded="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
-            <span id="notificationBadge" class="notification-badge" hidden>0</span>
-          </button>
-          <div id="notificationPanel" class="notification-panel" aria-hidden="true">
-            <div class="notification-panel-head"><div><span>ACTIVITY</span><strong>Notifications</strong></div><div class="notification-panel-actions"><button id="markAllNotificationsRead" type="button">Mark all read</button><button id="clearNotificationsButton" type="button">Clear</button></div></div>
-            <div id="notificationList" class="notification-list"><div class="notification-empty">No notifications yet.</div></div>
-          </div>
-        </div>
-        <button id="profileButton" type="button" aria-label="Profil"><span id="profileImage"></span></button>
-        <div id="profileMenu">
-          <div class="profile-header"><button id="profileAvatarButton" class="profile-avatar" type="button" aria-label="Byt profilbild"><span id="profileImageMenu"></span></button><span id="profileUsername"></span></div>
-          <input id="profileImageInput" type="file" accept="image/*" style="display:none;">
-          <button id="myCollectionButton" class="menu-button" type="button">My Collection</button>
-          <button id="statisticsButton" class="menu-button" type="button">Statistics</button>
-          <button id="searchUserButton" class="menu-button" type="button">Search User</button>
-          <button id="followingButton" class="menu-button" type="button">Following</button>
-          <button id="installAppMenuButton" class="menu-button" type="button">Install Groovy</button>
-          <div class="profile-divider"></div><button id="logoutButton" type="button">Logout</button>
-        </div>
-        <div id="loginPanel">
-          <div class="login-modal">
-            <button id="loginClose" type="button" aria-label="Close">×</button>
-            <div class="auth-modal-heading">
-              <div class="auth-mark" aria-hidden="true"><span class="record-icon"></span></div>
-              <span class="auth-kicker" id="authKicker">Your collection awaits</span>
-              <div class="login-title" id="authTitle">Welcome back</div>
-              <p id="authDescription">Sign in and pick up exactly where you left off.</p>
-            </div>
-            <div id="registerFields" style="display:none;">
-              <label class="auth-field"><span>Username</span><input id="registerUsername" type="text" placeholder="Choose a username" autocomplete="username"></label>
-            </div>
-            <label class="auth-field"><span>Email</span><input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email"></label>
-            <label class="auth-field"><span>Password</span><input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password"></label>
-            <button id="loginButton" class="auth-primary-button" type="button">Log in</button>
-            <button id="registerButton" class="auth-primary-button" type="button" style="display:none;">Create account</button>
-            <div class="auth-switch-row"><span id="authSwitchPrompt">New to Groovy?</span><button id="authSwitchButton" type="button">Create account</button></div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </header>
 
-<section class="library-overview" aria-labelledby="libraryTitle">
-  <div class="viewed-user-header" id="viewedUserHeader">
+<div id="loginPanel" class="login-panel" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="login-card">
+    <button id="loginClose" class="login-close" type="button" aria-label="Close">×</button>
+    <span id="authKicker" class="login-kicker">Your collection awaits</span>
+    <h2 id="authTitle">Welcome back</h2>
+    <p id="authDescription">Sign in and pick up exactly where you left off.</p>
+    <div id="registerFields" style="display:none">
+      <label for="registerUsername">Username</label>
+      <input id="registerUsername" type="text" autocomplete="username" placeholder="Choose a username">
+    </div>
+    <label for="loginEmail">Email</label>
+    <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com">
+    <label for="loginPassword">Password</label>
+    <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
+    <button id="loginButton" class="login-primary" type="button">Log in</button>
+    <button id="registerButton" class="login-primary" type="button" style="display:none">Create account</button>
+    <div class="auth-switch"><span id="authSwitchPrompt">New to Groovy?</span><button id="authSwitchButton" type="button">Create account</button></div>
+  </div>
+</div>
+
+<main>
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="hero-kicker">YOUR VINYL COLLECTION</span>
+      <h1>Keep your records in the groove.</h1>
+      <p>Catalog your vinyl, rate your collection, identify your pressings and discover other collectors.</p>
+    </div>
+  </section>
+
+  <section id="viewedUserHeader" class="viewed-user-header" hidden>
     <div class="viewed-user-identity">
-      <div class="viewed-user-avatar" id="viewedUserAvatar"></div>
-      <div class="viewed-user-copy"><span id="viewedUserContext">Collection</span><strong class="viewed-user-name" id="viewedUserName"></strong></div>
+      <span id="viewedUserAvatar" class="viewed-user-avatar"></span>
+      <div>
+        <span class="viewed-user-kicker">COLLECTOR</span>
+        <h1 id="viewedUserUsername"></h1>
+      </div>
     </div>
-    <button class="viewed-user-follow" id="viewedUserFollowButton" type="button" aria-label="Follow collector" data-following="false"><span class="viewed-follow-icon" aria-hidden="true">+</span><span class="viewed-action-label">Follow</span></button>
-    <div class="viewed-user-actions" role="navigation" aria-label="Viewed user library">
-      <button class="viewed-user-nav" id="viewedUserShelfButton" type="button" aria-label="View shelf"><span class="record-icon" aria-hidden="true"></span><span class="viewed-action-label">Shelf</span></button>
-      <button class="viewed-user-nav" id="viewedUserWishlistButton" type="button" aria-label="View wishlist"><span class="wishlist-icon" aria-hidden="true"></span><span class="viewed-action-label">Wishlist</span></button>
-      <button class="viewed-user-stats" id="viewedUserStatsButton" type="button" aria-label="View statistics"><span aria-hidden="true">▥</span><span class="viewed-action-label">Statistics</span></button>
+    <div class="viewed-user-actions">
+      <button id="viewedUserFollowButton" type="button"><span class="viewed-follow-icon">+</span><span class="viewed-action-label">Follow</span></button>
+      <button id="viewedUserShelfButton" type="button">Shelf</button>
+      <button id="viewedUserWishlistButton" type="button">Wishlist</button>
     </div>
-    <div class="viewed-user-search-row">
-      <label class="banner-library-search" for="librarySearchInput">
-        <span class="banner-search-icon" aria-hidden="true"></span>
-        <input id="librarySearchInput" type="search" placeholder="Search this shelf..." autocomplete="off">
-      </label>
-    </div>
-  </div>
-  <span id="copyProfileLinkButton" hidden aria-hidden="true"><span class="viewed-action-label"></span></span>
-  <section id="shelfStrip" class="shelf-strip" aria-label="Shelves" hidden>
-    <button id="shelfScrollLeft" class="shelf-scroll-arrow shelf-scroll-left" type="button" aria-label="Previous shelves">‹</button>
-    <div id="shelfStripViewport" class="shelf-strip-viewport">
-      <div id="shelfStripScroll" class="shelf-strip-scroll"></div>
-    </div>
-    <button id="shelfScrollRight" class="shelf-scroll-arrow shelf-scroll-right" type="button" aria-label="Next shelves">›</button>
   </section>
 
-  <div class="library-title-row">
-    <div class="library-title-copy">
-      <h1 id="libraryTitle">All Records</h1>
-      <div class="subtitle" id="collectionCount">0 RECORDS</div>
+  <section class="library-toolbar">
+    <div class="library-tabs">
+      <button id="collectionTabButton" class="active" type="button"><span class="record-icon" aria-hidden="true"></span>My Shelf</button>
+      <button id="wishlistTabButton" type="button"><span class="wishlist-icon" aria-hidden="true"></span>My Wishlist</button>
     </div>
-    <div class="library-title-actions">
-      <button id="editShelfButton" class="edit-shelf-button" type="button" aria-label="Edit shelf" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4ZM13.5 6.5l4 4"/></svg>
-        <span>Edit Shelf</span>
-      </button>
-      <button id="deleteShelfButton" class="delete-shelf-button" type="button" aria-label="Delete shelf" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
-        <span>Delete Shelf</span>
-      </button>
-      <button id="mobileAddRecordButton" class="mobile-add-record" type="button" aria-label="Add record">+</button>
-    </div>
-  </div>
-  <div class="library-toolbar">
-    <div class="menu-dropdown library-sort-field">
-      <button id="librarySortButton" class="menu-button" type="button" aria-expanded="false" aria-controls="librarySortMenu" aria-haspopup="true">Sort: Date added ▾</button>
-      <div id="librarySortMenu" class="menu-panel">
-        <button type="button" data-sort="added" class="active">Date added</button>
-        <button type="button" data-sort="album-asc">Album A–Z</button>
-        <button type="button" data-sort="album-desc">Album Z–A</button>
-        <button type="button" data-sort="artist-asc">Artist A–Z</button>
-        <button type="button" data-sort="artist-desc">Artist Z–A</button>
-        <button type="button" data-sort="year-desc">Year newest</button>
-        <button type="button" data-sort="year-asc">Year oldest</button>
+    <div class="library-actions">
+      <div class="library-search-wrap"><input id="librarySearchInput" type="search" placeholder="Search your library..." aria-label="Search library"></div>
+      <div class="library-sort-box">
+        <button id="librarySortButton" type="button" aria-expanded="false">Sort: Recently Added ▾</button>
+        <div id="librarySortMenu" class="library-sort-menu">
+          <button type="button" data-sort="added" class="active">Recently Added</button>
+          <button type="button" data-sort="artist">Artist</button>
+          <button type="button" data-sort="album">Album</button>
+          <button type="button" data-sort="year">Year</button>
+          <button type="button" data-sort="rating">Rating</button>
+        </div>
       </div>
-    </div>
-    <div class="menu-dropdown library-rating-filter">
-      <button id="filterButton" class="menu-button" type="button" aria-expanded="false">All ratings ▾</button>
-      <div id="filterMenu" class="menu-panel">
-        <button type="button" data-rating="all" class="active">All ratings</button>
-        <button type="button" data-rating="1">★ 1</button>
-        <button type="button" data-rating="2">★ 2</button>
-        <button type="button" data-rating="3">★ 3</button>
-        <button type="button" data-rating="4">★ 4</button>
-        <button type="button" data-rating="5">★ 5</button>
+      <div class="filter-box">
+        <button id="filterButton" type="button" aria-expanded="false">All Ratings ▾</button>
+        <div id="filterMenu" class="filter-menu">
+          <button type="button" class="active" data-rating="all">All Ratings</button>
+          <button type="button" data-rating="5">5 Stars</button>
+          <button type="button" data-rating="4">4 Stars</button>
+          <button type="button" data-rating="3">3 Stars</button>
+          <button type="button" data-rating="2">2 Stars</button>
+          <button type="button" data-rating="1">1 Star</button>
+          <button type="button" data-rating="0">Unrated</button>
+        </div>
       </div>
+      <button id="addAlbumButton" class="add-album-button" type="button">+ Add Record</button>
     </div>
-  </div>
-</section>
+  </section>
 
-<nav id="libraryPaginationTop" class="library-pagination library-pagination-top" aria-label="Collection pages"></nav>
-<main id="collection" class="collection"></main>
-<nav id="libraryPaginationBottom" class="library-pagination library-pagination-bottom" aria-label="Collection pages"></nav>
-<div id="emptyCollection" class="empty-collection">
-  <div class="empty-collection-title">Track your collection</div>
-  <div class="empty-collection-text">Add your first record and build your collection.</div>
-  <button id="emptyCollectionAddButton" type="button">Add record</button>
-</div>
+  <div id="shelfStrip" class="shelf-strip"></div>
+  <div id="collection" class="collection"></div>
+  <div id="libraryPagination" class="library-pagination"></div>
+  <button id="mobileAddRecordButton" class="mobile-add-record-button" type="button">+</button>
+</main>
 
-<div id="loginToViewCollection" class="empty-collection" style="display:none;">
-  <div class="empty-collection-title">Log in to view this collection</div>
-  <div class="empty-collection-text">You need an account to view other users' collections.</div>
-  <button id="loginToViewCollectionButton" type="button">Log in or create account</button>
-</div>
+<div id="recordMenuBackdrop" class="record-menu-backdrop"></div>
 
-<div id="emptyViewedCollection" class="empty-collection" style="display:none;">
-  <div class="empty-collection-title">Uh oh, empty</div>
-  <div class="empty-collection-text">This user hasn't added any records to their shelf yet.</div>
-</div>
-
-<div id="emptyWishlist" class="empty-collection" style="display:none;">
-  <div class="empty-collection-title" id="emptyWishlistTitle">Your wishlist is empty</div>
-  <div class="empty-collection-text" id="emptyWishlistText">Save records you want to add to your collection next.</div>
-  <button id="emptyWishlistAddButton" type="button">Find albums</button>
-</div>
-
-<div id="profileNotFound" class="empty-collection" style="display:none;">
-  <div class="empty-collection-title">User not found</div>
-  <div class="empty-collection-text">This profile doesn't exist.</div>
-</div>
-
-<div class="album-overlay" id="albumOverlay">
+<div id="albumOverlay" class="album-overlay">
   <div class="album-detail">
-
-<button type="button" class="album-close" id="albumClose" aria-label="Stäng">×</button>
-
-<div class="album-detail-cover">
-  <img id="detailCover" src="" alt="">
-</div>
-
-<div class="album-detail-main">
-  <div class="detail-info-card">
-    <div class="detail-number" id="detailNumber" hidden></div>
-    <div class="detail-artist" id="detailArtist"></div>
-    <div class="detail-album" id="detailAlbum"></div>
-
-    <div class="detail-meta">
-      <span id="detailYear"></span>
-      <span id="detailGenre"></span>
-    </div>
-
-    <div id="detailShelfStatus" class="detail-shelf-status" aria-live="polite" hidden></div>
-    <div class="detail-rating" id="detailRating"></div>
-  </div>
-  <div id="detailShelfActions" class="detail-shelf-actions" hidden></div>
-  <div class="detail-streaming-row" aria-label="Streaming links">    <a id="detailAppleMusicLink" class="detail-streaming-link detail-apple-service" href="https://music.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Listen on Apple Music">
-      <img class="detail-apple-music-badge" src="/assets/brands/apple-music-listen.svg" alt="Listen on Apple Music">
-    </a>
-    <a id="detailSpotifyLink" class="detail-streaming-link detail-spotify-service" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer" aria-label="Listen on Spotify">
-      <img class="detail-spotify-service-logo" src="/assets/brands/spotify-logo.svg" alt="" aria-hidden="true">
-      <span class="detail-spotify-service-copy"><strong>Listen on Spotify</strong><small>Stream this album on Spotify</small></span>
-    </a>
-  </div>
-  <div id="detailSocialContext" class="detail-social-context" hidden></div>
-</div>
-
-<div class="album-tracks">
-  <section id="copyDetails" class="copy-details" aria-labelledby="copyDetailsTitle">
-    <div class="copy-details-heading">
-      <button id="copyDetailsToggle" class="copy-details-toggle" type="button" aria-expanded="false" aria-controls="copyDetailsContent">
-        <span id="copyDetailsTitle" class="copy-details-title">My pressing</span>
-        <span id="copyDetailsSummary" class="copy-details-compact-summary"></span>
-        <span class="copy-details-chevron" aria-hidden="true"></span>
-      </button>
-      <span id="copyDetailsSaved" class="copy-details-saved" aria-live="polite"></span>
-    </div>
-    <div id="copyDetailsContent" class="copy-details-content"></div>
-  </section>
-  <div class="tracks-title">TRACKLIST</div>
-  <div id="detailTracks"></div>
-</div>
-
-<section id="detailAboutAlbum" class="album-about" aria-labelledby="detailAboutAlbumTitle" hidden>
-  <h2 id="detailAboutAlbumTitle">About This Album</h2>
-  <div id="detailAboutAlbumBody" class="album-about-body"><div id="detailAboutAlbumText" class="album-about-text"></div></div>
-  <button id="detailAboutAlbumToggle" class="album-about-toggle" type="button" aria-expanded="false" aria-controls="detailAboutAlbumBody" hidden><span>Read more</span><i aria-hidden="true"></i></button>
-  <div class="album-about-source">
-    <a id="detailAboutAlbumLink" href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia ↗</a>
-    <span>Wikipedia contributors · <a class="album-about-license" href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a></span>
-  </div>
-</section>
-
-<section class="marketplace-panel" aria-labelledby="marketplaceTitle">
-  <div class="marketplace-heading">
-    <span class="marketplace-icon" aria-hidden="true"></span>
-    <div><strong id="marketplaceTitle">Marketplace</strong><small>Find this record on trusted marketplaces.</small></div>
-    <label class="marketplace-currency-control" for="marketplaceCurrencySelect"><span>Currency</span><select id="marketplaceCurrencySelect" aria-label="Marketplace currency"><option value="auto">Auto</option><option value="SEK">SEK</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="NOK">NOK</option><option value="DKK">DKK</option><option value="CHF">CHF</option><option value="CAD">CAD</option><option value="AUD">AUD</option><option value="JPY">JPY</option><option value="PLN">PLN</option><option value="CZK">CZK</option></select></label>
-  </div>
-  <div id="marketplacePriceSummary" class="marketplace-price-summary loading" aria-live="polite">
-    <div class="marketplace-price-copy"><span class="marketplace-price-kicker">LOWEST BUY NOW</span><a id="marketplaceLowestPriceLink" class="marketplace-lowest-price" href="#" target="_blank" rel="noopener noreferrer" hidden><strong id="marketplaceLowestPrice"></strong><span id="marketplaceLowestMeta"></span></a><span id="marketplacePriceStatus" class="marketplace-price-status">Checking fixed prices…</span></div>
-    <span id="marketplacePriceNote" class="marketplace-price-note">Excl. shipping</span>
-  </div>
-  <div class="marketplace-triggers">
-    <button id="traderaButton" class="tradera-trigger" type="button" aria-haspopup="dialog">
-      <span class="tradera-trigger-mark" aria-hidden="true">T</span>
-      <span id="traderaButtonLabel">Tradera</span>
-      <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
-    </button>
-    <button id="ebayButton" class="tradera-trigger ebay-trigger" type="button" aria-haspopup="dialog" data-enabled="true">
-      <span class="tradera-trigger-mark ebay-trigger-mark" aria-hidden="true">e</span>
-      <span id="ebayButtonLabel">eBay</span>
-      <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
-    </button>
-  </div>
-</section>
-
-  </div>
-</div>
-
-<div id="traderaModal" class="tradera-modal" role="dialog" aria-modal="true" aria-labelledby="traderaModalTitle" aria-hidden="true">
-  <div class="tradera-modal-panel">
-    <div class="tradera-modal-scroll">
-      <button id="closeTraderaModal" class="tradera-modal-close" type="button" aria-label="Close">×</button>
-      <div class="tradera-modal-heading">
-        <span class="search-modal-kicker">Available now</span>
-        <h2 id="traderaModalTitle">Listings on Tradera</h2>
-        <p id="traderaModalSubtitle"></p>
-      </div>
-      <div id="traderaListingsStatus" class="tradera-listings-status" aria-live="polite"></div>
-      <div id="traderaListingsGrid" class="tradera-listings-grid"></div>
-    </div>
-  </div>
-</div>
-
-<div id="ebayModal" class="tradera-modal" role="dialog" aria-modal="true" aria-labelledby="ebayModalTitle" aria-hidden="true">
-  <div class="tradera-modal-panel">
-    <div class="tradera-modal-scroll">
-      <button id="closeEbayModal" class="tradera-modal-close" type="button" aria-label="Close">×</button>
-      <div class="tradera-modal-heading">
-        <span class="search-modal-kicker">Available now</span>
-        <h2 id="ebayModalTitle">Listings on eBay</h2>
-        <p id="ebayModalSubtitle"></p>
-      </div>
-      <div id="ebayListingsStatus" class="tradera-listings-status" aria-live="polite"></div>
-      <div id="ebayListingsGrid" class="tradera-listings-grid"></div>
-    </div>
-  </div>
-</div>
-
-<div id="pressingModal" class="add-album-modal pressing-modal" role="dialog" aria-modal="true" aria-labelledby="pressingModalTitle">
-  <div class="add-album-box pressing-modal-box">
-    <button id="closePressingModal" class="close-add-album" type="button" aria-label="Close">×</button>
-    <div class="search-modal-heading">
-      <span class="search-modal-kicker">Identify your copy</span>
-      <h2 id="pressingModalTitle">Find your pressing</h2>
-      <p>Choose what is printed on your record.</p>
-    </div>
-    <div id="pressingLoading" class="pressing-loading" aria-live="polite">Finding vinyl pressings…</div>
-    <div id="pressingForm" class="pressing-form" hidden>
-      <div class="pressing-progress" aria-hidden="true"><span class="active"></span><span></span><span></span><span></span></div>
-      <label class="pressing-field"><span>Country</span><select id="pressingCountry"><option value="">Choose country</option></select></label>
-      <label class="pressing-field"><span>Release year</span><select id="pressingYear" disabled><option value="">Choose year</option></select></label>
-      <label class="pressing-field"><span>Record label</span><select id="pressingLabel" disabled><option value="">Choose label</option></select></label>
-      <label class="pressing-field"><span>Catalog number</span><select id="pressingCatalogNumber" disabled><option value="">Choose catalog number</option></select></label>
-      <div id="pressingMatrixSearch" class="pressing-matrix-search" hidden>
-        <label class="pressing-field"><span>Matrix / runout</span><input id="pressingMatrixQuery" type="text" placeholder="For example SMAS-11163-A-2" autocomplete="off"></label>        <button id="pressingMatrixSearchButton" class="copy-action-button primary" type="button">Find matrix</button>
-        <p class="pressing-help">Enter one side exactly as it appears in the runout groove.</p>
-      </div>
-      <div id="pressingMatches" class="pressing-matches"></div>
-      <p class="pressing-help">Matrix details become available after you choose a pressing.</p>
-    </div>
-    <div id="pressingError" class="pressing-error" hidden></div>
-  </div>
-</div>
-
-<div id="createShelfModal" class="add-album-modal shelf-modal" role="dialog" aria-modal="true" aria-labelledby="createShelfTitle">
-  <div class="add-album-box shelf-modal-box">
-    <button id="closeCreateShelf" class="close-add-album" type="button" aria-label="Close">×</button>
-    <div class="search-modal-heading">
-      <span class="search-modal-kicker">Organize your collection</span>
-      <h2 id="createShelfTitle">Create New Shelf</h2>
-      <p id="createShelfDescription">Give your shelf a name, icon and color.</p>
-    </div>
-    <label class="shelf-name-field"><span>Name</span><input id="shelfNameInput" type="text" maxlength="30" placeholder="e.g. Jazz, Favorites, Sunday Spins" autocomplete="off"></label>
-    <div class="shelf-icon-field">
-      <span>Icon</span>
-      <div id="shelfIconChoices" class="shelf-icon-choices" role="radiogroup" aria-label="Shelf icon">
+    <button id="closeAlbum" class="close-album" type="button">×</button>
+    <div class="album-detail-cover-column">
+      <div id="detailCover" class="detail-cover"></div>
+      <div id="detailRating" class="detail-rating"></div>
+      <div id="copyDetails" class="copy-details">
+        <button id="copyDetailsToggle" class="copy-details-toggle" type="button" aria-expanded="false">
+          <span><strong>Your copy</strong><small id="copyDetailsSummary"></small></span><span aria-hidden="true">⌄</span>
+        </button>
+        <div id="copyDetailsContent" class="copy-details-content"></div>
+        <span id="copyDetailsSaved" class="copy-details-saved"></span>
       </div>
     </div>
-    <div class="shelf-color-field">
-      <span>Color</span>
-      <div id="shelfColorChoices" class="shelf-color-choices" role="radiogroup" aria-label="Shelf color">
-        <button type="button" class="shelf-color-choice selected" role="radio" aria-checked="true" data-color="#E85301" aria-label="Orange" style="--swatch:#E85301"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#FF3B45" aria-label="Red" style="--swatch:#FF3B45"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#FF6B4A" aria-label="Coral" style="--swatch:#FF6B4A"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#F43F8C" aria-label="Pink" style="--swatch:#F43F8C"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#8B5CF6" aria-label="Purple" style="--swatch:#8B5CF6"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#6366F1" aria-label="Indigo" style="--swatch:#6366F1"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#3B82F6" aria-label="Blue" style="--swatch:#3B82F6"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#14B8D4" aria-label="Cyan" style="--swatch:#14B8D4"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#14B8A6" aria-label="Teal" style="--swatch:#14B8A6"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#10B981" aria-label="Green" style="--swatch:#10B981"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#84CC16" aria-label="Lime" style="--swatch:#84CC16"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#F5C542" aria-label="Yellow" style="--swatch:#F5C542"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#F59E0B" aria-label="Amber" style="--swatch:#F59E0B"></button>
-        <button type="button" class="shelf-color-choice" role="radio" aria-checked="false" data-color="#6B7280" aria-label="Slate" style="--swatch:#6B7280"></button>
+    <div class="album-detail-main">
+      <span id="detailArtist" class="detail-artist"></span>
+      <h2 id="detailTitle"></h2>
+      <div id="detailMeta" class="detail-meta"></div>
+      <div id="detailSocialContext" class="detail-social-context" hidden></div>
+      <div id="detailTracks" class="detail-tracks"></div>
+      <div id="detailShelfStatus" class="detail-shelf-status"></div>
+      <div id="detailShelfActions" class="detail-shelf-actions"></div>
+      <div class="streaming-links-row">
+        <a id="spotifyLink" class="streaming-link spotify-link" target="_blank" rel="noopener"><img src="/assets/brands/spotify-full-logo-green.svg" alt="Listen on Spotify"></a>
+        <a id="appleMusicLink" class="streaming-link apple-link" target="_blank" rel="noopener"><img src="/assets/brands/apple-music-listen.svg" alt="Listen on Apple Music"></a>
+      </div>
+      <div id="marketplacePriceSummary" class="marketplace-price-summary">
+        <div><span>Best current price</span><strong id="marketplaceLowestPrice">—</strong><small id="marketplaceLowestMeta"></small></div>
+        <div id="marketplacePriceStatus"></div>
+        <a id="marketplaceLowestPriceLink" target="_blank" rel="noopener" hidden>View listing</a>
+        <small id="marketplacePriceNote"></small>
+      </div>
+      <div class="marketplace-buttons">
+        <button id="traderaButton" type="button"><span id="traderaButtonLabel">Tradera</span></button>
+        <button id="ebayButton" type="button" data-enabled="false"><span id="ebayButtonLabel">eBay</span></button>
       </div>
     </div>
-    <div id="createShelfStatus" class="shelf-modal-status" aria-live="polite"></div>
-    <div class="shelf-modal-actions">
-      <button id="cancelCreateShelf" class="shelf-secondary-button" type="button">Cancel</button>
-      <button id="confirmCreateShelf" class="shelf-primary-button" type="button">Create Shelf</button>
-    </div>
   </div>
 </div>
 
-<div id="deleteShelfModal" class="add-album-modal shelf-modal" role="dialog" aria-modal="true" aria-labelledby="deleteShelfTitle">
-  <div class="add-album-box shelf-modal-box delete-shelf-modal-box">
-    <button id="closeDeleteShelf" class="close-add-album" type="button" aria-label="Close">×</button>
-    <div class="search-modal-heading">
-      <span class="search-modal-kicker">Shelf settings</span>
-      <h2 id="deleteShelfTitle">Delete Shelf?</h2>
-      <p id="deleteShelfMessage">Records in this shelf will remain in All Records.</p>
-    </div>
-    <div id="deleteShelfStatus" class="shelf-modal-status" aria-live="polite"></div>
-    <div class="shelf-modal-actions">
-      <button id="cancelDeleteShelf" class="shelf-secondary-button" type="button">Cancel</button>
-      <button id="confirmDeleteShelf" class="shelf-danger-button" type="button">Delete Shelf</button>
-    </div>
-  </div>
-</div>
+<div id="traderaModal" class="marketplace-modal"><div class="marketplace-dialog"><button id="closeTraderaModal" type="button">×</button><h2>Tradera listings</h2><p id="traderaModalSubtitle"></p><div id="traderaListingsStatus"></div><div id="traderaListingsGrid"></div></div></div>
+<div id="ebayModal" class="marketplace-modal"><div class="marketplace-dialog"><button id="closeEbayModal" type="button">×</button><h2>eBay listings</h2><p id="ebayModalSubtitle"></p><div id="ebayListingsStatus"></div><div id="ebayListingsGrid"></div></div></div>
 
-<div id="shelfPickerModal" class="add-album-modal shelf-modal" role="dialog" aria-modal="true" aria-labelledby="shelfPickerTitle">
-  <div class="add-album-box shelf-modal-box shelf-picker-box">
-    <button id="closeShelfPicker" class="close-add-album" type="button" aria-label="Close">×</button>
-    <div class="search-modal-heading">
-      <span class="search-modal-kicker">Organize record</span>
-      <h2 id="shelfPickerTitle">Add to Shelf</h2>
-      <p id="shelfPickerSubtitle">Choose one shelf for this record.</p>
-    </div>
-    <div id="shelfPickerList" class="shelf-picker-list"></div>
-    <button id="createShelfFromPicker" class="shelf-picker-create" type="button">+ New Shelf</button>
-    <div id="shelfPickerStatus" class="shelf-modal-status" aria-live="polite"></div>
-    <div class="shelf-modal-actions">
-      <button id="cancelShelfPicker" class="shelf-secondary-button" type="button">Cancel</button>
-      <button id="confirmShelfPicker" class="shelf-primary-button" type="button">Save</button>
-    </div>
-  </div>
-</div>
+<div id="shelfPickerModal" class="add-album-modal"><div class="add-album-box"><button id="closeShelfPicker" class="close-add-album">×</button><h2>Choose shelf</h2><div id="shelfPickerList"></div></div></div>
+<div id="createShelfModal" class="add-album-modal"><div class="add-album-box"><button id="closeCreateShelf" class="close-add-album">×</button><h2 id="createShelfTitle">Create shelf</h2><input id="createShelfName" maxlength="30" placeholder="Shelf name"><div id="createShelfError"></div><button id="saveShelfButton" type="button">Save</button></div></div>
+<div id="deleteShelfModal" class="add-album-modal"><div class="add-album-box"><h2>Delete shelf?</h2><p id="deleteShelfMessage"></p><div class="remove-album-buttons"><button id="cancelDeleteShelf" type="button">No</button><button id="confirmDeleteShelf" type="button">Yes</button></div></div></div>
 
-<div id="addAlbumModal" class="add-album-modal">
+<div id="pressingPickerModal" class="add-album-modal"><div class="add-album-box pressing-picker-box"><button id="closePressingPicker" class="close-add-album">×</button><h2>Identify pressing</h2><div id="pressingPickerStatus"></div><div id="pressingPickerResults"></div></div></div>
+
+<div id="addAlbumModal" class="add-album-modal" role="dialog" aria-modal="true" aria-labelledby="addAlbumTitle">
     <div class="add-album-box">
 
         <button id="closeAddAlbum" class="close-add-album">
@@ -519,6 +298,7 @@
 <script src="/js/notification-core.js?v=1"></script>
 <script src="/js/notification-controller.js?v=1"></script>
 <script src="/js/social-controller.js?v=1"></script>
+<script src="/js/user-search-controller.js?v=1"></script>
 <script src="/js/pressing-core.js?v=3"></script>
 <script src="/js/pressing-view.js?v=1"></script>
 <script src="/js/pressing-picker.js?v=1"></script>
