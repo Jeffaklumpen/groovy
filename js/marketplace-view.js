@@ -20,6 +20,71 @@ function esc(value){
     .replace(/"/g,'&quot;');
 }
 
+function syncCurrencyControl(select,preference,regionalCurrency){
+  if(!select)return;
+  var resolvedPreference=String(preference||'auto');
+  var autoOption=select.querySelector&&select.querySelector('option[value="auto"]');
+  if(autoOption)autoOption.textContent='Auto · '+String(regionalCurrency||'EUR');
+  var options=select.options?Array.from(select.options):[];
+  select.value=options.some(function(option){return option.value===resolvedPreference;})?resolvedPreference:'auto';
+}
+
+function applyPriceSummaryState(elements,state,result){
+  elements=elements||{};
+  result=result||{};
+  var summary=elements.summary;
+  var link=elements.link;
+  var price=elements.price;
+  var meta=elements.meta;
+  var status=elements.status;
+  var note=elements.note;
+
+  if(summary&&summary.classList){
+    summary.classList.remove('loading','empty','partial','ready');
+    if(state==='loading'||state==='empty'||state==='partial'||state==='ready')summary.classList.add(state);
+  }
+
+  if(state==='clear'){
+    if(link){link.hidden=true;link.href='#';}
+    if(price)price.textContent='';
+    if(meta)meta.textContent='';
+    if(status){status.hidden=false;status.textContent='Checking fixed prices…';}
+    if(note)note.textContent='Excl. shipping';
+    return;
+  }
+
+  if(state==='loading'){
+    if(link)link.hidden=true;
+    if(status){status.hidden=false;status.textContent='Checking fixed prices…';}
+    if(note)note.textContent='Excl. shipping';
+    return;
+  }
+
+  if(state==='resolving')return;
+
+  if(state==='empty'){
+    if(link)link.hidden=true;
+    if(status){status.hidden=false;status.textContent='No Buy Now prices found';}
+    if(note)note.textContent='Auctions are not included';
+    return;
+  }
+
+  if(state==='partial'){
+    if(link)link.hidden=true;
+    if(status){status.hidden=false;status.textContent=String(result.label||'');}
+    if(note)note.textContent='Currency conversion unavailable';
+    return;
+  }
+
+  if(state==='ready'){
+    if(status)status.hidden=true;
+    if(price)price.textContent=String(result.priceLabel||'');
+    if(meta)meta.textContent=String(result.metaLabel||'');
+    if(link){link.href=result.url||'#';link.hidden=false;}
+    if(note)note.textContent='Excl. shipping';
+  }
+}
+
 function buttonState(marketplace,state,count){
   var name=String(marketplace||'Marketplace');
   var total=Number(count||0);
@@ -109,6 +174,8 @@ function closeListingsModal(modal){
 }
 
 return Object.freeze({
+  syncCurrencyControl:syncCurrencyControl,
+  applyPriceSummaryState:applyPriceSummaryState,
   buttonState:buttonState,
   applyButtonState:applyButtonState,
   listingCardHtml:listingCardHtml,
