@@ -774,8 +774,10 @@ function copyDetailsFromRow(item){
 
 var Record=window.GroovyRecord;
 var Wikipedia=window.GroovyWikipedia;
+var Streaming=window.GroovyStreaming;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
+if(!Streaming)throw new Error('GroovyStreaming must load before app.js');
 
 window.records = [];
 window.viewedUserId=null;
@@ -3622,27 +3624,19 @@ closePressingModalButton.addEventListener('click',closePressingPicker);
 pressingModal.addEventListener('click',function(event){if(event.target===pressingModal)closePressingPicker();});
 
 function spotifyAlbumLink(record){
-    var query=[
-        record&&Record.artist(record),
-        record&&Record.title(record)
-    ].filter(Boolean).join(' ');
-
-    return 'https://open.spotify.com/search/'+encodeURIComponent(query);
+  return Streaming.spotifySearchUrl(
+    record&&Record.artist(record),
+    record&&Record.title(record)
+  );
 }
 
 function appleMusicAlbumLink(record){
-    var savedUrl=record&&Record.appleUrl(record);
-
-    if(/^https:\/\/(?:music|itunes)\.apple\.com\//.test(String(savedUrl||''))){
-        return savedUrl;
-    }
-
-    var query=[
-        record&&Record.artist(record),
-        record&&Record.title(record)
-    ].filter(Boolean).join(' ');
-
-    return 'https://music.apple.com/se/search?term='+encodeURIComponent(query);
+  return Streaming.appleMusicSearchUrl(
+    record&&Record.artist(record),
+    record&&Record.title(record),
+    record&&Record.appleUrl(record),
+    'se'
+  );
 }
 
 function recordDisplayNumber(record){
