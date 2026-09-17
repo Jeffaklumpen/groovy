@@ -659,10 +659,7 @@ async function renderOwnLibraryHeader(user){
 window.loadCollection=async function(){
   var path=window.location.pathname;
 
-  if(
-    GroovyRouteState.profileUsernameFromPath(path)||
-    GroovyRouteState.publicProfileUsernameFromPath(path)
-  ){
+  if(/^\/(?:user|shelf)\/[^\/]+\/?$/.test(path)){
     return;
   }
 
@@ -3353,7 +3350,7 @@ async function loadOtherUserCollection(userId){
 
     var {data:{user:sessionUser}}=await supabaseClient.auth.getUser();
     var ownRatingUserId=sessionUser&&sessionUser.id?sessionUser.id:null;
-    var albumRatingsMeta=await ratingController.loadData(albumIds,ownRatingUserId);
+    var albumRatingsMeta=await window.loadAlbumRatingData(albumIds,ownRatingUserId);
 
      if(loadVersion!==window.collectionLoadVersion)return;
 
@@ -3391,7 +3388,7 @@ async function loadOtherUserCollection(userId){
                     });
             }
 
-            return Record.applyRatingMeta([
+            return window.applyAlbumRatingMeta([
                 index+1,
                 artist,
                 album.title||'Okänd titel',
@@ -3522,19 +3519,6 @@ async function renderCurrentRoute(){
         await socialController.renderFollowingPage();
         return;
     }
-
-    var publicProfileUsername=GroovyRouteState.publicProfileUsernameFromPath(window.location.pathname);
-    if(publicProfileUsername){
-        socialController.hideFollowingPage();
-        viewedUserId='profile-route';
-        window.loginRequiredForViewedCollection=false;
-        window.profileNotFound=false;
-        records=[];
-        collection.innerHTML='';
-        document.getElementById('collectionCount').textContent='';
-        return;
-    }
-
     socialController.hideFollowingPage();
     await loadUserFromUrl();
 }
