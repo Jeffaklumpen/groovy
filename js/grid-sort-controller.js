@@ -189,7 +189,8 @@ function enable(){
     var libraryPage=parseInt(state.page,10)||1;
     var activeShelfId=state.activeShelfId||'all';
     var libraryView=state.libraryView||'collection';
-    if(selectedRating!=='all'||librarySearchQuery||librarySort!=='standard'){
+    var selectionMode=!!state.selectionMode;
+    if(selectionMode||selectedRating!=='all'||librarySearchQuery||librarySort!=='standard'){
       collection.classList.remove('grid-sort-enabled');
       return;
     }
