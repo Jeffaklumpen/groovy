@@ -283,6 +283,36 @@ test('Apple artwork warming is scoped to the verified Main Discography cache',()
   assert.match(block,/artwork_url/);
 });
 
+test('discography enrichment uses the canonical Groovy artist name for local catalog matching',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
+  const end=edge.indexOf("if (action === 'artistProfile')",start);
+  const block=edge.slice(start,end);
+  assert.match(block,/Promise\.all\(\[/);
+  assert.match(block,/\.from\('artists'\)/);
+  assert.match(block,/\.eq\('discogs_artist_id',resolvedArtistId\)/);
+  assert.match(block,/const canonicalArtistName=cleanArtistName\(localArtistResult\.data\?\.name\)\|\|/);
+  assert.match(block,/\.ilike\('artist_name',canonicalArtistName\)/);
+  assert.match(block,/wikipediaAlbumKeys\(row\?\.album_title,canonicalArtistName\)/);
+});
+
+test('locally unmatched Wikipedia albums can recover stable IDs in one Wikidata batch request',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const helperStart=edge.indexOf('async function wikidataReleaseIdentifiersByArticleTitles');
+  const helperEnd=edge.indexOf('async function verifiedAppleAlbum',helperStart);
+  const helper=edge.slice(helperStart,helperEnd);
+  const verifyStart=edge.indexOf("if (action === 'verifyArtistDiscography')");
+  const verifyEnd=edge.indexOf("if (action === 'artistProfile')",verifyStart);
+  const block=edge.slice(verifyStart,verifyEnd);
+  assert.match(helper,/action:'wbgetentities'/);
+  assert.match(helper,/sites:'enwiki'/);
+  assert.match(helper,/props:'claims\|sitelinks'/);
+  assert.match(helper,/claimValue\(entity,'P436'\)/);
+  assert.match(helper,/claimValue\(entity,'P1954'\)/);
+  assert.match(block,/const unresolved=prelim\.filter/);
+  assert.match(block,/wikidataReleaseIdentifiersByArticleTitles/);
+});
+
 test('dedicated discography fallback prefers Primary studio albums over broad Studio albums',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const start=edge.indexOf('function rankWikipediaStudioSection');
