@@ -370,14 +370,31 @@ test('weak distant compilation matches cannot veto a Wikipedia core album',()=>{
   assert.match(block,/distant compilation\/reissue/);
 });
 
-test('verified Main Discography drops locally identified secondary releases',()=>{
+test('verified Main Discography drops secondary releases and then requires Vinyl masters',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
   const end=edge.indexOf("if (action === 'artistProfile')",start);
   const block=edge.slice(start,end);
   assert.match(block,/const mainDiscographyEntries=prelim\.filter/);
   assert.match(block,/compilation\|live\|remix\|dj-mix\|mixtape\|demo\|interview/);
-  assert.match(block,/const matched=mainDiscographyEntries\.map/);
+  assert.match(block,/resolveVinylMasterByTitle/);
+  assert.match(block,/verifyDiscogsVinylMasters/);
+  assert.match(block,/const vinylDiscographyEntries=mainDiscographyEntries\.filter/);
+  assert.match(block,/const matched=vinylDiscographyEntries\.map/);
+  assert.match(block,/discography_source:'vinyl'/);
+});
+
+test('Discogs vinyl verification is globally cached by master ID',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const sql=fs.readFileSync('supabase/migrations/20260919014500_discogs_master_vinyl_cache.sql','utf8');
+  assert.match(edge,/function verifyDiscogsVinylMasters/);
+  assert.match(edge,/discogs_master_vinyl_cache/);
+  assert.match(edge,/database\/search\?type=master&format=Vinyl/);
+  assert.match(edge,/masters\/.*\/versions\?format=Vinyl&per_page=1/);
+  assert.match(sql,/discogs_master_id bigint primary key/);
+  assert.match(sql,/has_vinyl boolean not null/);
+  assert.match(sql,/enable row level security/);
+  assert.match(sql,/grant select,insert,update,delete .* service_role/);
 });
 
 test('artist overview can read direct artwork cached on verified discography rows',()=>{
@@ -617,7 +634,7 @@ test('discography source is exposed by the live read-model migration',()=>{
 });
 
 
-test('Wikipedia studio tables own Main Discography independently of local Discogs enrichment',()=>{
+test('Wikipedia proposes Main Discography candidates and Discogs Vinyl verification owns persistence',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const sql=fs.readFileSync('supabase/migrations/20260918203147_wikipedia_owned_artist_discography.sql','utf8');
   const view=fs.readFileSync('js/artist-view.js','utf8');
@@ -631,7 +648,11 @@ test('Wikipedia studio tables own Main Discography independently of local Discog
   assert.match(edge,/Released\\s\*:/);
   assert.match(edge,/wikipediaParse\(artistPage,'sections\|links\|text'\)/);
   assert.match(edge,/function wikipediaSectionHtml/);
-  assert.match(block,/Wikipedia alone decides which releases belong to Main Discography/i);
+  assert.match(block,/Wikipedia proposes the curated core catalogue/);
+  assert.match(block,/Discogs then verifies/);
+  assert.match(block,/verifyDiscogsVinylMasters/);
+  assert.match(block,/source:'wikipedia_vinyl'/);
+  assert.match(block,/discography_source:'vinyl'/);
   assert.match(block,/const catalogResult=await admin/);
   assert.doesNotMatch(block,/wikidataStudioAlbums\(resolvedWikidataId\)/);
   assert.doesNotMatch(block,/source:'wikidata'/);
