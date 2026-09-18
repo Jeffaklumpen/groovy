@@ -41,13 +41,7 @@ function create(options){
   }
 
   function detailsFor(record){
-    var details=recordModel.pressing(record);
-    if(details)return details;
-    details={};
-    if(record&&recordModel.INDEX&&recordModel.INDEX.pressing!==undefined){
-      record[recordModel.INDEX.pressing]=details;
-    }
-    return details;
+    return recordModel.ensurePressing(record);
   }
 
   function setExpanded(next){
@@ -228,6 +222,7 @@ function create(options){
       matches:elements.pressingMatches
     },
     getRecord:recordAt,
+    recordModel:recordModel,
     getMasterId:function(record){return record&&recordModel.discogsMasterId(record);},
     fetchVersions:fetchVersions,
     fetchRelease:fetchRelease,
