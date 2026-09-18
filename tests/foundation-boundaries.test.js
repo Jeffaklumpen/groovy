@@ -131,7 +131,7 @@ test('verified saves seed library cover overrides from the final persisted album
 
 
 test('final foundation hardening persists durations and enforces profile upload contracts',()=>{
-  const sql=fs.readFileSync('supabase/migrations/20260918110500_persist_track_durations_and_profile_constraints.sql','utf8');
+  const sql=fs.readFileSync('supabase/migrations/20260918110914_persist_track_durations_and_profile_constraints.sql','utf8');
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const library=fs.readFileSync('js/library-data.js','utf8');
   assert.match(sql,/add column if not exists duration text/i);
