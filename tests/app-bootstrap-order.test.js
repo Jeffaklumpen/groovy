@@ -15,7 +15,7 @@ test('dependency scripts load before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const app=html.indexOf('/js/app.js?v=');
   assert.ok(app>=0,'app.js script is missing');
-  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/pressing-view.js?v=','/js/pressing-picker.js?v=','/js/pressing-controller.js?v=','/js/detail-tracklist-controller.js?v=','/js/detail-layout-controller.js?v=','/js/rating-core.js?v=','/js/album-rating-controller.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/library-actions-controller.js?v=','/js/library-render-controller.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
+  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/pressing-view.js?v=','/js/pressing-picker.js?v=','/js/pressing-controller.js?v=','/js/detail-tracklist-controller.js?v=','/js/detail-layout-controller.js?v=','/js/rating-core.js?v=','/js/album-rating-controller.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/library-actions-controller.js?v=','/js/grid-sort-controller.js?v=','/js/library-render-controller.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
     const pos=html.indexOf(script);assert.ok(pos>=0,script+' script is missing');assert.ok(pos<app,script+' must load before app.js');
   });
   assert.match(html,/\/js\/app\.js\?v=\d+/);
@@ -287,4 +287,26 @@ test('library render controller owns card markup pagination and grid presentatio
   assert.match(source,/emptyViewedCollection:document\.getElementById\('emptyViewedCollection'\)/);
   assert.doesNotMatch(source,/loginToViewCollection:loginToViewCollection|emptyViewedCollection:emptyViewedCollection/);
   assert.doesNotMatch(source,/function recordDisplayNumber|function recordArrayIndex|function recordHTML|function loadVisibleImages|function paginationItems|function renderLibraryPagination/);
+});
+
+
+test('grid sort controller loads before library renderer and app.js',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const actions=html.indexOf('/js/library-actions-controller.js?v=');
+  const gridSort=html.indexOf('/js/grid-sort-controller.js?v=');
+  const render=html.indexOf('/js/library-render-controller.js?v=');
+  const app=html.indexOf('/js/app.js?v=');
+  assert.ok(actions>=0&&gridSort>actions&&render>gridSort&&app>render);
+});
+
+test('grid sort controller owns drag interactions reorder state and save queue',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  const controller=fs.readFileSync('js/grid-sort-controller.js','utf8');
+  assert.match(source,/var GridSortController=window\.GroovyGridSortController;/);
+  assert.match(source,/GridSortController\.create\(\{/);
+  assert.match(source,/enableGridSorting:gridSortController\.enable/);
+  assert.match(controller,/function commitDomOrder\(\)/);
+  assert.match(controller,/set_collection_display_order/);
+  assert.match(controller,/set_wishlist_display_order/);
+  assert.doesNotMatch(source,/function enableGridSorting|pendingGridOrderSaves|function queueGridOrderSave|function flushGridOrderSaveQueue/);
 });

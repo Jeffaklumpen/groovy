@@ -37,8 +37,9 @@ test('mobile header offers app installation instead of a delete toggle',function
 
 test('long press enters delete mode before movement starts sorting',function(){
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
-  assert.match(app,/touchLongPressActive=true;[\s\S]*setDeleteMode\(true\)/);
-  assert.match(app,/touchLongPressActive&&\(movedX>8\|\|movedY>8\)[\s\S]*startPointerDrag/);
+  const gridSort=fs.readFileSync(path.join(root,'js','grid-sort-controller.js'),'utf8');
+  assert.match(gridSort,/touchLongPressActive=true;[\s\S]*setDeleteMode\(true\)/);
+  assert.match(gridSort,/touchLongPressActive&&\(movedX>8\|\|movedY>8\)[\s\S]*startPointerDrag/);
   assert.match(app,/\.delete-cover-button,\.wishlist-remove-button,#removeAlbumModal/);
 });
 

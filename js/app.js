@@ -548,6 +548,7 @@ var ShelfController=window.GroovyShelfController;
 var LibraryCore=window.GroovyLibraryCore;
 var LibraryActionsController=window.GroovyLibraryActionsController;
 var LibraryRenderController=window.GroovyLibraryRenderController;
+var GridSortController=window.GroovyGridSortController;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
 if(!WikipediaAboutController)throw new Error('GroovyWikipediaAboutController must load before app.js');
@@ -565,6 +566,7 @@ if(!ShelfController)throw new Error('GroovyShelfController must load before app.
 if(!LibraryCore)throw new Error('GroovyLibraryCore must load before app.js');
 if(!LibraryActionsController)throw new Error('GroovyLibraryActionsController must load before app.js');
 if(!LibraryRenderController)throw new Error('GroovyLibraryRenderController must load before app.js');
+if(!GridSortController)throw new Error('GroovyGridSortController must load before app.js');
 
 window.records = [];
 window.viewedUserId=null;
@@ -1337,6 +1339,39 @@ function appleMusicAlbumLink(record){
   );
 }
 
+var gridSortController=GridSortController.create({
+  api:supabaseClient,
+  window:window,
+  document:document,
+  navigator:navigator,
+  collection:collection,
+  recordModel:Record,
+  recordsPerPage:RECORDS_PER_PAGE,
+  getRecords:function(){return records;},
+  setRecords:function(nextRecords){records=nextRecords;},
+  getState:function(){
+    return {
+      selectedRating:selectedRating,
+      searchQuery:librarySearchQuery,
+      sort:librarySort,
+      viewedUserId:viewedUserId,
+      libraryView:window.libraryView,
+      activeShelfId:activeShelfId,
+      page:libraryPage
+    };
+  },
+  setSuppressAlbumClick:function(value){suppressAlbumClick=!!value;},
+  setDeleteMode:function(active){setDeleteMode(active);},
+  renderGrid:function(){buildGrid();},
+  loadCollection:function(){return window.loadCollection();},
+  onAlert:function(message){alert(message);},
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
+
 var libraryRenderController=LibraryRenderController.create({
   window:window,
   document:document,
@@ -1398,7 +1433,7 @@ var libraryRenderController=LibraryRenderController.create({
   attachWishlistRemoveControls:attachWishlistRemoveControls,
   attachRecordActionMenus:attachRecordActionMenus,
   attachAlbumClicks:attachAlbumClicks,
-  enableGridSorting:enableGridSorting
+  enableGridSorting:gridSortController.enable
 });
 
 function buildGrid(){
@@ -1632,623 +1667,6 @@ confirmRemoveAlbum.addEventListener('click',async function(){
     }
 });
 
-function enableGridSorting(){
-    if(selectedRating!=='all'||librarySearchQuery||librarySort!=='added'){
-      collection.classList.remove('grid-sort-enabled');
-      return;
-    }
-    
-    if(viewedUserId!==null){
-      collection.classList.remove('grid-sort-enabled');
-      collection.ondragstart=null;
-      collection.ondragover=null;
-      collection.ondrop=null;
-      collection.ondragend=null;
-      collection.oncontextmenu=null;
-      return;
-    }
-
-  // Mark the editable grid so touch-action can be limited to the sortable cards.
-  // This prevents the browser from stealing a long-press as a scroll gesture.
-  collection.classList.add('grid-sort-enabled');
-
-  var dragged=null;
-  var touchTimer=null;
-  var touchDragging=false;
-  var touchX=0;
-  var touchY=0;
-  var autoScrollFrame=null;
-  var dragPreview=null;
-  var dragPreviewOffsetX=0;
-  var dragPreviewOffsetY=0;
-
-  collection.oncontextmenu=function(event){
-    event.preventDefault();
-    return false;
-  };
-
-  function animateCards(moveFunction){
-    var cards=collection.querySelectorAll('.record');
-    var positions=new Map();
-
-    for(var i=0;i<cards.length;i++){
-      if(cards[i]!==dragged){
-        positions.set(cards[i],cards[i].getBoundingClientRect());
-      }
-    }
-
-    moveFunction();
-
-    requestAnimationFrame(function(){
-      for(var i=0;i<cards.length;i++){
-        var card=cards[i];
-
-        if(card===dragged)continue;
-
-        var oldRect=positions.get(card);
-
-        if(!oldRect)continue;
-
-        var newRect=card.getBoundingClientRect();
-        var x=oldRect.left-newRect.left;
-        var y=oldRect.top-newRect.top;
-
-        if(x||y){
-          card.style.transition='none';
-          card.style.transform='translate3d('+x+'px,'+y+'px,0)';
-
-          (function(card){
-            requestAnimationFrame(function(){
-              card.style.transition='transform .24s cubic-bezier(.2,.8,.2,1)';
-              card.style.transform='translate3d(0,0,0)';
-
-              setTimeout(function(){
-                card.style.transition='';
-                card.style.transform='';
-              },260);
-            });
-          })(card);
-        }
-      }
-    });
-  }
-
-  function moveDragged(target,pointerX,pointerY){
-    if(!dragged||!target||target===dragged)return;
-
-    var rect=target.getBoundingClientRect();
-    var after;
-
-    if(pointerX<rect.left||pointerX>rect.right){
-      after=pointerX>rect.left+rect.width/2;
-    }else{
-      after=pointerY>rect.top+rect.height/2;
-    }
-
-    if(after){
-      if(target.nextSibling!==dragged){
-        animateCards(function(){
-          target.parentNode.insertBefore(dragged,target.nextSibling);
-        });
-      }
-    }else{
-      if(target!==dragged.nextSibling){
-        animateCards(function(){
-          target.parentNode.insertBefore(dragged,target);
-        });
-      }
-    }
-  }
-
-  function stopAutoScroll(){
-    if(autoScrollFrame){
-      cancelAnimationFrame(autoScrollFrame);
-      autoScrollFrame=null;
-    }
-  }
-
-  function createDragPreview(card,pointerX,pointerY){
-    removeDragPreview();
-
-    var rect=card.getBoundingClientRect();
-
-    dragPreview=card.cloneNode(true);
-    dragPreview.classList.remove('dragging');
-    dragPreview.classList.add('drag-preview');
-    dragPreview.removeAttribute('draggable');
-    dragPreview.style.width=rect.width+'px';
-    dragPreview.style.height=rect.height+'px';
-    dragPreview.style.left=(pointerX-rect.width/2)+'px';
-    dragPreview.style.top=(pointerY-rect.height/2)+'px';
-
-    dragPreviewOffsetX=rect.width/2;
-    dragPreviewOffsetY=rect.height/2;
-
-    document.body.appendChild(dragPreview);
-  }
-
-  function updateDragPreview(pointerX,pointerY){
-    if(!dragPreview)return;
-
-    dragPreview.style.left=(pointerX-dragPreviewOffsetX)+'px';
-    dragPreview.style.top=(pointerY-dragPreviewOffsetY)+'px';
-  }
-
-  function removeDragPreview(){
-    var previews=document.querySelectorAll('.drag-preview');
-
-    for(var i=0;i<previews.length;i++){
-      if(previews[i].parentNode){
-        previews[i].parentNode.removeChild(previews[i]);
-      }
-    }
-
-    dragPreview=null;
-  }
-
-  function autoScroll(){
-    if(!touchDragging||!dragged){
-      stopAutoScroll();
-      return;
-    }
-
-    var edge=100;
-    var maxSpeed=14;
-    var height=window.innerHeight;
-    var speed=0;
-
-    if(touchY<edge){
-      speed=-maxSpeed*(1-touchY/edge);
-    }else if(touchY>height-edge){
-      speed=maxSpeed*(1-(height-touchY)/edge);
-    }
-
-    if(speed){
-      window.scrollBy(0,speed);
-
-      var target=document.elementFromPoint(touchX,touchY);
-
-      if(target){
-        var card=target.closest
-          ?target.closest('.record')
-          :null;
-
-        if(card&&card!==dragged){
-          moveDragged(card,touchX,touchY);
-        }
-      }
-    }
-
-    autoScrollFrame=requestAnimationFrame(autoScroll);
-  }
-
-  function finishDrag(){
-    var orderedCards=collection.querySelectorAll('.record');
-    var reorderedPage=[];
-
-    for(var i=0;i<orderedCards.length;i++){
-      var index=parseInt(orderedCards[i].getAttribute('data-index'),10);
-      var record=records[index];
-
-      if(!record)continue;
-      reorderedPage.push(record);
-    }
-
-    var pageStart=(libraryPage-1)*RECORDS_PER_PAGE;
-
-    if(window.libraryView==='wishlist'||activeShelfId==='all'){
-      var orderedList=records
-        .slice()
-        .sort(function(a,b){return (parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);});
-
-      orderedList.splice.apply(
-        orderedList,
-        [pageStart,reorderedPage.length].concat(reorderedPage)
-      );
-
-      records=orderedList;
-      records.forEach(function(record,index){record[0]=index+1;});
-
-      var allOrderIds=records
-        .filter(function(record){return record&&record[9];})
-        .map(function(record){return String(record[9]);});
-
-      buildGrid();
-      queueGridOrderSave({
-        kind:window.libraryView==='wishlist'?'wishlist':'collection',
-        shelfId:null,
-        ids:allOrderIds
-      });
-      return;
-    }
-
-    var shelfList=records
-      .filter(function(record){return String(record[13]||'')===String(activeShelfId);})
-      .sort(function(a,b){
-        var aOrder=parseInt(a[14],10);
-        var bOrder=parseInt(b[14],10);
-        if(isNaN(aOrder))aOrder=2147483647;
-        if(isNaN(bOrder))bOrder=2147483647;
-        return aOrder-bOrder||(parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);
-      });
-
-    shelfList.splice.apply(
-      shelfList,
-      [pageStart,reorderedPage.length].concat(reorderedPage)
-    );
-    shelfList.forEach(function(record,index){record[14]=index+1;});
-
-    var shelfOrderIds=shelfList
-      .filter(function(record){return record&&record[9];})
-      .map(function(record){return String(record[9]);});
-
-    buildGrid();
-    queueGridOrderSave({
-      kind:'collection',
-      shelfId:activeShelfId,
-      ids:shelfOrderIds
-    });
-  }
-
-    collection.ondragstart=function(event){
-      if(viewedUserId!==null){
-        event.preventDefault();
-        return;
-      }
-    
-      var record=event.target.closest('.record');
-    
-      if(!record)return;
-
-    dragged=record;
-    record.classList.add('dragging');
-    createDragPreview(record,event.clientX,event.clientY);
-
-    if(event.dataTransfer){
-      event.dataTransfer.effectAllowed='move';
-      event.dataTransfer.setData('text/plain',record.getAttribute('data-index'));
-
-      if(dragPreview){
-        // Dölj webbläsarens halvtransparenta standard-ghost. Vår egen
-        // kopia följer musen och förblir helt ogenomskinlig.
-        var transparentDragImage=document.createElement('canvas');
-        transparentDragImage.width=1;
-        transparentDragImage.height=1;
-        event.dataTransfer.setDragImage(transparentDragImage,0,0);
-      }
-    }
-  };
-
-  collection.ondragover=function(event){
-    if(viewedUserId!==null)return;
-    if(!dragged)return;
-
-    event.preventDefault();
-    event.dataTransfer.dropEffect='move';
-
-    updateDragPreview(event.clientX,event.clientY);
-
-    var target=event.target.closest('.record');
-
-    if(!target||target===dragged)return;
-
-    moveDragged(target,event.clientX,event.clientY);
-  };
-
-  collection.ondragenter=function(event){
-    if(viewedUserId===null&&dragged){
-      event.preventDefault();
-      event.dataTransfer.dropEffect='move';
-    }
-  };
-
-  collection.ondrop=async function(event){
-    if(viewedUserId!==null)return;  
-    if(!dragged)return;
-
-    event.preventDefault();
-
-    var releasedDragged=dragged;
-
-    releasedDragged.classList.remove('dragging');
-    removeDragPreview();
-    dragged=null;
-
-    await finishDrag();
-  };
-
-  collection.ondragend=function(){
-    if(dragged){
-      dragged.classList.remove('dragging');
-    }
-
-    removeDragPreview();
-    dragged=null;
-  };
-
-  window.addEventListener('dragend',removeDragPreview);
-  window.addEventListener('blur',function(){
-    if(dragged){
-      dragged.classList.remove('dragging');
-      dragged=null;
-    }
-
-    removeDragPreview();
-    touchDragging=false;
-    resetPointerState();
-    resetTouchState();
-  });
-
-  collection.ondragstart=null;
-  collection.ondragover=null;
-  collection.ondragenter=null;
-  collection.ondrop=null;
-  collection.ondragend=null;
-
-  var cards=collection.querySelectorAll('.record');
-  var pointerId=null;
-  var pointerCard=null;
-  var pointerStartX=0;
-  var pointerStartY=0;
-  var touchId=null;
-  var touchCard=null;
-  var touchStartX=0;
-  var touchStartY=0;
-  var touchLongPressActive=false;
-
-  function resetPointerState(){
-    clearTimeout(touchTimer);
-    stopAutoScroll();
-
-    if(pointerCard&&pointerCard.releasePointerCapture&&pointerId!==null){
-      try{pointerCard.releasePointerCapture(pointerId);}catch(error){}
-    }
-
-    pointerId=null;
-    pointerCard=null;
-  }
-
-  function resetTouchState(){
-    clearTimeout(touchTimer);
-    touchId=null;
-    touchCard=null;
-    touchLongPressActive=false;
-  }
-
-  function findTouch(touchList,id){
-    for(var i=0;i<touchList.length;i++){
-      if(touchList[i].identifier===id)return touchList[i];
-    }
-
-    return null;
-  }
-
-  function startPointerDrag(card,event){
-    dragged=card;
-    touchDragging=true;
-    suppressAlbumClick=true;
-    touchX=event.clientX;
-    touchY=event.clientY;
-    card.classList.add('dragging');
-    createDragPreview(card,touchX,touchY);
-
-    if(card.setPointerCapture&&event.pointerId!==undefined){
-      try{card.setPointerCapture(event.pointerId);}catch(error){}
-    }
-
-    autoScroll();
-  }
-
-  function updatePointerDrag(event){
-    if(!touchDragging||!dragged)return;
-
-    event.preventDefault();
-
-    touchX=event.clientX;
-    touchY=event.clientY;
-    updateDragPreview(touchX,touchY);
-
-    var target=document.elementFromPoint(touchX,touchY);
-    var card=target&&target.closest
-      ?target.closest('.record')
-      :null;
-
-    if(card&&card!==dragged){
-      moveDragged(card,touchX,touchY);
-    }
-  }
-
-  async function finishPointerDrag(){
-    clearTimeout(touchTimer);
-    stopAutoScroll();
-
-    if(!touchDragging||!dragged){
-      removeDragPreview();
-      resetPointerState();
-      resetTouchState();
-      touchDragging=false;
-      dragged=null;
-      suppressAlbumClick=false;
-      return;
-    }
-
-    var releasedDragged=dragged;
-
-    releasedDragged.classList.remove('dragging');
-    removeDragPreview();
-    dragged=null;
-    touchDragging=false;
-    resetPointerState();
-    resetTouchState();
-
-    suppressAlbumClick=true;
-    await finishDrag();
-
-    setTimeout(function(){
-      suppressAlbumClick=false;
-    },300);
-  }
-
-  function cancelPointerDrag(){
-    clearTimeout(touchTimer);
-    stopAutoScroll();
-
-    if(dragged){
-      dragged.classList.remove('dragging');
-    }
-
-    removeDragPreview();
-    dragged=null;
-    touchDragging=false;
-    suppressAlbumClick=false;
-    resetPointerState();
-    resetTouchState();
-  }
-
-  for(var i=0;i<cards.length;i++){
-    cards[i].onpointerdown=function(event){
-      if(pointerId!==null)return;
-      if(event.button!==undefined&&event.button!==0)return;
-      if(event.pointerType==='touch')return;
-      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button,.streaming-link,.record-menu-button,.record-action-menu'))return;
-
-      pointerId=event.pointerId;
-      pointerCard=this;
-      pointerStartX=event.clientX;
-      pointerStartY=event.clientY;
-      touchX=event.clientX;
-      touchY=event.clientY;
-
-      clearTimeout(touchTimer);
-
-      // Keep receiving pointer events even when the pointer moves off the card.
-      if(this.setPointerCapture){
-        try{this.setPointerCapture(event.pointerId);}catch(error){}
-      }
-
-    };
-
-    cards[i].onpointermove=function(event){
-      if(pointerId===null||event.pointerId!==pointerId)return;
-
-      if(!touchDragging){
-        var movedX=Math.abs(event.clientX-pointerStartX);
-        var movedY=Math.abs(event.clientY-pointerStartY);
-
-        if(movedX>6||movedY>6){
-          startPointerDrag(this,event);
-          updatePointerDrag(event);
-        }
-
-        return;
-      }
-
-      updatePointerDrag(event);
-    };
-
-    cards[i].onpointerup=function(event){
-      if(pointerId===null||event.pointerId!==pointerId)return;
-      finishPointerDrag();
-    };
-
-    cards[i].onpointercancel=function(event){
-      if(pointerId===null||event.pointerId!==pointerId)return;
-      cancelPointerDrag();
-    };
-
-    cards[i].addEventListener('touchstart',function(event){
-      if(touchId!==null||!event.changedTouches.length)return;
-      if(event.target.closest&&event.target.closest('.delete-cover-button,.wishlist-remove-button,.move-to-collection-button,.streaming-link,.record-menu-button,.record-action-menu'))return;
-
-      var touch=event.changedTouches[0];
-      touchId=touch.identifier;
-      touchCard=this;
-      touchStartX=touch.clientX;
-      touchStartY=touch.clientY;
-      touchX=touch.clientX;
-      touchY=touch.clientY;
-
-      clearTimeout(touchTimer);
-      touchTimer=setTimeout(function(){
-        if(touchId===null||touchDragging||!touchCard)return;
-
-        touchLongPressActive=true;
-        suppressAlbumClick=true;
-        setDeleteMode(true);
-
-        if(navigator.vibrate){
-          try{navigator.vibrate(18);}catch(error){}
-        }
-      },350);
-    },{passive:true});
-
-    cards[i].addEventListener('touchmove',function(event){
-      if(touchId===null)return;
-
-      var touch=findTouch(event.touches,touchId);
-
-      if(!touch)return;
-
-      touchX=touch.clientX;
-      touchY=touch.clientY;
-
-      if(!touchDragging){
-        var movedX=Math.abs(touchX-touchStartX);
-        var movedY=Math.abs(touchY-touchStartY);
-
-        if(touchLongPressActive&&(movedX>8||movedY>8)){
-          startPointerDrag(touchCard,{
-            clientX:touchX,
-            clientY:touchY
-          });
-        }else if(!touchLongPressActive&&(movedX>8||movedY>8)){
-          clearTimeout(touchTimer);
-        }
-
-        if(!touchDragging)return;
-      }
-
-      event.preventDefault();
-      updateDragPreview(touchX,touchY);
-
-      var target=document.elementFromPoint(touchX,touchY);
-      var card=target&&target.closest
-        ?target.closest('.record')
-        :null;
-
-      if(card&&card!==dragged){
-        moveDragged(card,touchX,touchY);
-      }
-    },{passive:false});
-
-    cards[i].addEventListener('touchend',function(event){
-      if(touchId===null)return;
-
-      var touch=findTouch(event.changedTouches,touchId);
-
-      if(!touch)return;
-
-      if(touchDragging){
-        event.preventDefault();
-        finishPointerDrag();
-      }else if(touchLongPressActive){
-        event.preventDefault();
-        resetTouchState();
-        setTimeout(function(){
-          suppressAlbumClick=false;
-        },300);
-      }else{
-        resetTouchState();
-      }
-    },{passive:false});
-
-    cards[i].addEventListener('touchcancel',function(){
-      if(touchId===null)return;
-      cancelPointerDrag();
-    },{passive:true});
-  }
-}
-
 function attachWishlistRemoveControls(){
   var buttons=collection.querySelectorAll('.wishlist-remove-button');
 
@@ -2280,65 +1698,6 @@ function attachWishlistRemoveControls(){
       document.getElementById('removeAlbumModal').style.display='flex';
     });
   }
-}
-
-var pendingGridOrderSaves=new Map();
-var gridOrderSaveRunning=false;
-var gridOrderSaveErrorShown=false;
-
-function gridOrderSaveKey(job){
-  if(job.kind==='wishlist')return 'wishlist';
-  return 'collection|'+String(job.shelfId||'all');
-}
-
-function queueGridOrderSave(job){
-  pendingGridOrderSaves.set(gridOrderSaveKey(job),job);
-  if(gridOrderSaveRunning)return;
-  flushGridOrderSaveQueue();
-}
-
-async function flushGridOrderSaveQueue(){
-  if(gridOrderSaveRunning)return;
-  gridOrderSaveRunning=true;
-
-  while(pendingGridOrderSaves.size){
-    var nextEntry=pendingGridOrderSaves.entries().next().value;
-    var jobKey=nextEntry[0];
-    var job=nextEntry[1];
-    pendingGridOrderSaves.delete(jobKey);
-
-    var result;
-
-    if(job.kind==='wishlist'){
-      result=await supabaseClient.rpc('set_wishlist_display_order',{
-        p_wishlist_ids:job.ids
-      });
-    }else{
-      result=await supabaseClient.rpc('set_collection_display_order',{
-        p_shelf_id:job.shelfId||null,
-        p_collection_ids:job.ids
-      });
-    }
-
-    if(result.error){
-      console.error('Kunde inte spara sorteringen:',result.error);
-      pendingGridOrderSaves.clear();
-
-      if(!gridOrderSaveErrorShown){
-        gridOrderSaveErrorShown=true;
-        alert('Kunde inte spara den nya ordningen. Samlingen laddas om så att inget hamnar fel.');
-      }
-
-      await window.loadCollection();
-      break;
-    }
-
-    gridOrderSaveErrorShown=false;
-  }
-
-  gridOrderSaveRunning=false;
-
-  if(pendingGridOrderSaves.size)flushGridOrderSaveQueue();
 }
 
 albumClose.onclick=function(){
