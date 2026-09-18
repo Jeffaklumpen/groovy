@@ -8,7 +8,8 @@ GroovyShelves remains a vanilla JavaScript application. There is deliberately no
 
 ### Current ownership
 
-- `js/route-state.js` — pure URL/state helpers only.
+- `js/route-state.js` — pure URL/state parsing helpers only.
+- `js/router.js` — the single owner of browser history mutation and `popstate`; it delegates route rendering back to `app.js`.
 - `js/record-model.js` — adapter around the legacy positional record tuple plus collection/wishlist record construction.
 - `js/app.js` — application composition/integration root. It still owns auth and some route/library glue, but feature logic should continue moving into dedicated modules only when there is a real ownership boundary.
 - `js/album-search.js` — search-result orchestration, Discogs/Apple/CAA enrichment and handoff to the atomic database RPC. It must not directly create shared artist/album/track rows.
@@ -26,7 +27,11 @@ Application scripts and styles are still loaded explicitly from `index.html`. Do
 
 Canonical shelf URLs use `/shelf/:username`. `/user/:username` remains accepted only as a legacy route. Public profile pages use `/profile/:username`.
 
-Routing is not yet fully centralized: `app.js`, profile and statistics code still perform some history navigation. The long-term rule is one routing owner. New modules should not monkey-patch `history.pushState`, `history.replaceState` or application loaders.
+Browser navigation is centralized in `js/router.js`. It is the only application module allowed to call `history.pushState`, `history.replaceState`, `history.back` or listen for `popstate`.
+
+`app.js` registers `renderCurrentRoute` as the router's route handler. Feature modules such as profile and statistics react to the normal `groovy-route-change` event instead of simulating or owning browser navigation.
+
+New modules must use `GroovyRouter.navigate`, `GroovyRouter.replace` or `GroovyRouter.back`.
 
 ## Data model
 
