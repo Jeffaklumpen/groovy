@@ -548,6 +548,42 @@ export default {
         return children
       }
 
+      function wikipediaInlineCoreWorksHtml(html: string) {
+        const source=String(html||'')
+        if (!source)return ''
+
+        const gap='(?:\\s|<[^>]*>)*'
+        const starts=[
+          new RegExp('Musicals'+gap+'and'+gap+'show'+gap+'recordings','i'),
+          new RegExp('Musicals'+gap+'and'+gap+'recordings','i'),
+          new RegExp('Cast'+gap+'recordings','i'),
+          new RegExp('Show'+gap+'recordings','i')
+        ]
+
+        let start=-1
+        for (const pattern of starts) {
+          const match=pattern.exec(source)
+          if (!match)continue
+          start=Number(match.index)||0
+          break
+        }
+        if (start<0)return ''
+
+        const tail=source.slice(start)
+        const ends=[
+          new RegExp('Other'+gap+'albums?','i'),
+          new RegExp('Compilation'+gap+'albums?','i'),
+          new RegExp('Live'+gap+'albums?','i')
+        ]
+        let end=tail.length
+        for (const pattern of ends) {
+          const match=pattern.exec(tail)
+          if (!match||Number(match.index)<=0)continue
+          end=Math.min(end,Number(match.index))
+        }
+        return tail.slice(0,end)
+      }
+
       function rankWikipediaStudioSection(item: any) {
         const label=String(item?.line||'').trim()
         const normalized=normalizeIdentity(label)
@@ -657,10 +693,30 @@ export default {
             }
           }
 
+          // Some pages (Andrew Lloyd Webber is a real example) render the
+          // canonical works label as ordinary text rather than a MediaWiki
+          // subsection. Isolate that labelled block before "Other albums" and
+          // allow all of its list columns only inside that bounded slice.
+          const mainDiscographyHtml=wikipediaSectionHtml(artistData,discographySection)
+          const inlineWorksHtml=wikipediaInlineCoreWorksHtml(mainDiscographyHtml)
+          if (inlineWorksHtml) {
+            const inlineWorksAlbums=wikipediaStudioAlbumsFromHtml(
+              {parse:{text:inlineWorksHtml}},
+              {allLists:true}
+            )
+            if (inlineWorksAlbums.length>=2) {
+              return {
+                artistPage,
+                discographyPage:'',
+                studioAlbums:inlineWorksAlbums,
+                strategy:'main_article_inline_works'
+              }
+            }
+          }
+
           // Fast path: many artist main articles already contain a compact,
           // curated core/studio discography. Parse that first and avoid following
           // the much heavier dedicated discography page unless it is actually needed.
-          const mainDiscographyHtml=wikipediaSectionHtml(artistData,discographySection)
           const studioMarker=mainDiscographyHtml.search(/Studio\s+albums?/i)
           const mainDiscographyAlbums=wikipediaStudioAlbumsFromHtml({
             parse:{text:studioMarker>=0
