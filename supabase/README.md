@@ -57,6 +57,8 @@ The authenticated `/community` page reads `public.get_community_overview(...)`, 
 
 `public.community_activity` is the global activity-feed source. It is populated by database triggers for collection adds, wishlist adds and album rating changes. Authenticated clients have SELECT only; browser code must not insert or update feed events directly. This is intentionally separate from recipient-specific `notifications`.
 
+Community album previews reuse the same detail preview and Add Record / Wishlist flow as album search. Discogs-backed albums still save through the verified `discogs-search` Edge Function. For an already-existing catalog album without a Discogs master ID, `public.add_existing_album_to_library(...)` may add only that existing album ID to the authenticated user's collection or wishlist; it cannot create or modify shared catalog rows.
+
 ## Edge Functions
 
 The source for every live Edge Function belongs in `supabase/functions/<function-name>/` before or together with deployment.

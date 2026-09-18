@@ -59,6 +59,7 @@ test('community summary uses wishlisted records and taste cards use the statisti
   assert.match(core,/wishlisted_records:number\(summary\.wishlisted_records\)/);
   assert.doesNotMatch(core,/connections:number\(summary\.connections\)/);
   assert.match(view,/Wishlisted Records/);
+  assert.match(view,/Collected Records/);
   assert.match(view,/taste_similarity/);
   assert.match(view,/Genre overlap/);
   assert.doesNotMatch(view,/collection overlap/);
@@ -115,4 +116,32 @@ test('Community uses a three-person icon in the menu and shared people icon',()=
   assert.match(view,/people:'<circle cx="12" cy="7" r="2\.6"\/><circle cx="5\.4" cy="9" r="2\.1"\/><circle cx="18\.6" cy="9" r="2\.1"\/>/);
   assert.match(css,/\.community-tab \.community-tab-icon\{width:18px;height:18px/);
   assert.doesNotMatch(css,/community-tab-icon:before|community-tab-icon:after/);
+});
+
+
+test('community albums delegate to the shared search preview flow',()=>{
+  const view=fs.readFileSync('js/community-view.js','utf8');
+  const controller=fs.readFileSync('js/community-controller.js','utf8');
+  const app=fs.readFileSync('js/app.js','utf8');
+  const search=fs.readFileSync('js/album-search.js','utf8');
+
+  assert.match(view,/data-community-album-id/);
+  assert.match(controller,/onOpenAlbum/);
+  assert.match(controller,/community-streaming-row a/);
+  assert.match(app,/communityAlbumPreviewHandler/);
+  assert.match(app,/albumSearchController\.openCatalogPreview\(albumId\)/);
+  assert.match(search,/async function openCatalogAlbumPreview\(albumId\)/);
+  assert.match(search,/add_existing_album_to_library/);
+  assert.match(search,/onPreview\(\{/);
+});
+
+test('existing catalog fallback only mutates a user library entry',()=>{
+  const sql=fs.readFileSync('supabase/migrations/20260918174737_add_existing_album_to_library.sql','utf8');
+  assert.match(sql,/function public\.add_existing_album_to_library/i);
+  assert.match(sql,/auth\.uid\(\)/);
+  assert.match(sql,/insert into public\.collections/i);
+  assert.match(sql,/insert into public\.wishlists/i);
+  assert.doesNotMatch(sql,/insert into public\.(?:albums|artists|tracks)/i);
+  assert.match(sql,/revoke execute[\s\S]*anon/i);
+  assert.match(sql,/grant execute[\s\S]*authenticated/i);
 });

@@ -116,7 +116,7 @@ test.describe('authenticated read-only smoke flows',()=>{
     await expect(page.locator('#communityTabButton')).toHaveClass(/active/);
     await expect(page.locator('.community-heading')).toHaveCount(0);
     await expect(page.locator('.community-summary-card')).toHaveCount(3);
-    await expect(page.locator('.community-summary-card')).toContainText(['Collectors','Records','Wishlisted Records']);
+    await expect(page.locator('.community-summary-card')).toContainText(['Collectors','Collected Records','Wishlisted Records']);
     await expect(page.locator('.community-panel-heading h2')).toContainText([
       'Collectors with similar taste',
       'Activity Feed',
@@ -125,16 +125,44 @@ test.describe('authenticated read-only smoke flows',()=>{
       'Top rated albums'
     ]);
 
-    const albumCovers=page.locator('.community-cover');
+    const albumCovers=page.locator('.community-cover[data-community-album-id]');
     if(await albumCovers.count()>0){
       await expect(albumCovers.first().locator('.community-streaming-row')).toHaveCount(0);
       await expect(page.locator('.community-streaming-row .apple-music-small-badge').first()).toBeAttached();
       await expect(page.locator('.community-streaming-row .spotify-service-logo').first()).toBeAttached();
       await expect(page.locator('.community-streaming-row .spotify-service-logo').first()).toHaveAttribute('src','/assets/brands/spotify-full-logo-green.svg');
+
+      await albumCovers.first().click();
+      await expect(page.locator('#albumOverlay')).toHaveClass(/visible/);
+      await expect(page.locator('#albumOverlay')).toHaveClass(/search-preview/);
+      await expect(page.locator('#detailShelfActions')).toBeVisible();
+      await expect(page.locator('#detailShelfActions .detail-shelf-button.primary')).toContainText(/Add Record|In collection|On wishlist/);
+      await expect(page.locator('#detailShelfActions .detail-shelf-button.secondary')).toContainText(/Wishlist|In collection|Wishlisted/);
+      await page.locator('#albumClose').click();
+      await expect(page.locator('#albumOverlay')).not.toHaveClass(/visible/);
     }
 
     await page.setViewportSize({width:390,height:844});
     await expect(page.locator('#communityPage')).toBeVisible();
+
+    await page.evaluate(()=>window.scrollTo(0,Math.min(420,document.body.scrollHeight-window.innerHeight)));
+    const communityScroll=await page.evaluate(()=>window.scrollY);
+    await page.evaluate(()=>document.getElementById('collectionTabButton').click());
+    await expect(page).toHaveURL('http://127.0.0.1:4173/');
+    await page.evaluate(()=>window.scrollTo(0,Math.min(360,document.body.scrollHeight-window.innerHeight)));
+    const shelfScroll=await page.evaluate(()=>window.scrollY);
+    await page.evaluate(()=>document.getElementById('communityTabButton').click());
+    await expect(page).toHaveURL('http://127.0.0.1:4173/community');
+    if(communityScroll>0){
+      await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBeGreaterThanOrEqual(Math.max(0,communityScroll-2));
+    }
+    await page.evaluate(()=>document.getElementById('collectionTabButton').click());
+    await expect(page).toHaveURL('http://127.0.0.1:4173/');
+    if(shelfScroll>0){
+      await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBeGreaterThanOrEqual(Math.max(0,shelfScroll-2));
+    }
+    await page.evaluate(()=>document.getElementById('communityTabButton').click());
+    await expect(page).toHaveURL('http://127.0.0.1:4173/community');
 
     const mobileGeometry=await page.evaluate(()=>({
       viewport:document.documentElement.clientWidth,

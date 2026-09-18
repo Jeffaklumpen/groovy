@@ -16,6 +16,7 @@ function create(options){
   var onOpenRoute=typeof options.onOpenRoute==='function'?options.onOpenRoute:function(){};
   var onNavigateProfile=typeof options.onNavigateProfile==='function'?options.onNavigateProfile:function(){};
   var onNavigateShelf=typeof options.onNavigateShelf==='function'?options.onNavigateShelf:function(){};
+  var onOpenAlbum=typeof options.onOpenAlbum==='function'?options.onOpenAlbum:function(){};
   var onRequireAuth=typeof options.onRequireAuth==='function'?options.onRequireAuth:function(){};
   var onBeforeOpen=typeof options.onBeforeOpen==='function'?options.onBeforeOpen:function(){};
   var onLog=typeof options.onLog==='function'?options.onLog:function(){};
@@ -100,7 +101,7 @@ function create(options){
   }
 
   async function handlePageClick(event){
-    var service=event.target&&event.target.closest?event.target.closest('.community-cover-service'):null;
+    var service=event.target&&event.target.closest?event.target.closest('.community-streaming-row a'):null;
     if(service)return;
 
     var follow=event.target&&event.target.closest?event.target.closest('[data-community-follow]'):null;
@@ -122,6 +123,14 @@ function create(options){
     if(profile){
       event.preventDefault();
       onNavigateProfile(profile.getAttribute('data-community-profile'));
+      return;
+    }
+
+    var album=event.target&&event.target.closest?event.target.closest('[data-community-album-id]'):null;
+    if(album){
+      event.preventDefault();
+      event.stopPropagation();
+      onOpenAlbum(album.getAttribute('data-community-album-id'));
     }
   }
 

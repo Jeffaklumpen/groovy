@@ -1437,6 +1437,10 @@ async function searchAppleAlbumArtwork(artist,albumTitle,originalYear){
 }
 var discogsTrackRows=PressingCore.discogsTrackRows;
 
+function shouldReloadVisibleOwnLibrary(){
+    return window.location.pathname==='/';
+}
+
 async function saveAlbumFromDiscogs(master,artist,albumTitle,year,coverState,button,destination){
     var isWishlistDestination=destination==='wishlist';
     if(button.classList.contains(isWishlistDestination?'mb-wishlisted':'mb-added'))return;
@@ -1487,11 +1491,11 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,coverState,but
         setSearchResultStatus(button,savedStatus);
 
         if(savedStatus==='wishlist'){
-            if(window.libraryView==='wishlist')await window.loadCollection();
+            if(shouldReloadVisibleOwnLibrary()&&window.libraryView==='wishlist')await window.loadCollection();
             return savedStatus;
         }
 
-        if(!isWishlistDestination)await window.loadCollection();
+        if(!isWishlistDestination&&shouldReloadVisibleOwnLibrary())await window.loadCollection();
         return savedStatus;
 
     }catch(error){
@@ -1511,6 +1515,123 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,coverState,but
         );
         return false;
     }
+}
+
+async function saveExistingCatalogAlbum(album,destination,button){
+    var isWishlistDestination=destination==='wishlist';
+    button.textContent='Sparar...';
+    button.disabled=true;
+
+    try{
+        const {data,error}=await supabaseClient.rpc(
+            'add_existing_album_to_library',
+            {
+                p_album_id:Number(album.id),
+                p_destination:isWishlistDestination?'wishlist':'collection'
+            }
+        );
+
+        if(error)throw error;
+
+        const savedStatus=data&&data.status==='wishlist'?'wishlist':'collection';
+        invalidateSearchLibraryState();
+
+        if(savedStatus==='wishlist'){
+            if(shouldReloadVisibleOwnLibrary()&&window.libraryView==='wishlist')await window.loadCollection();
+            return savedStatus;
+        }
+
+        if(!isWishlistDestination&&shouldReloadVisibleOwnLibrary())await window.loadCollection();
+        return savedStatus;
+    }catch(error){
+        console.error('Kunde inte spara befintligt album:',error);
+        button.innerHTML=isWishlistDestination
+            ?'<span class="wishlist-icon" aria-hidden="true"></span>Wishlist'
+            :'Add Record';
+        button.disabled=false;
+        alert('Kunde inte spara albumet.\n\n'+(error.message||error));
+        return false;
+    }
+}
+
+async function openCatalogAlbumPreview(albumId){
+    const numericAlbumId=Number(albumId);
+    if(!Number.isFinite(numericAlbumId)||numericAlbumId<=0)return false;
+
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const user=session&&session.user;
+    if(!user)return false;
+
+    const results=await Promise.all([
+        supabaseClient
+            .from('albums')
+            .select('id,title,release_year,genre,cover_url,apple_collection_url,discogs_master_id,artists(name)')
+            .eq('id',numericAlbumId)
+            .maybeSingle(),
+        getSearchLibraryState(user)
+    ]);
+
+    const albumResult=results[0];
+    const libraryState=results[1];
+    if(albumResult.error)throw albumResult.error;
+    const album=albumResult.data;
+    if(!album)return false;
+
+    const artist=album.artists&&album.artists.name?album.artists.name:'Okänd artist';
+    const albumTitle=album.title||'Okänd titel';
+    const masterId=String(album.discogs_master_id||'').trim();
+    const albumKey=window.albumIdentityKey(artist,albumTitle);
+    let resultStatus=
+        (masterId&&libraryState.existingMasterIds.has(masterId))||
+        libraryState.existingAlbumKeys.has(albumKey)
+            ?'collection'
+            :(
+                (masterId&&libraryState.wishlistedMasterIds.has(masterId))||
+                libraryState.wishlistedAlbumKeys.has(albumKey)
+                    ?'wishlist'
+                    :''
+            );
+
+    const coverState={
+        url:album.cover_url||'',
+        source:'catalog',
+        appleCollectionUrl:album.apple_collection_url||''
+    };
+    const master=masterId
+        ?{id:masterId,title:artist+' - '+albumTitle,year:album.release_year||''}
+        :null;
+
+    async function saveResult(destination,button){
+        const status=masterId
+            ?await saveAlbumFromDiscogs(
+                master,
+                artist,
+                albumTitle,
+                album.release_year||'',
+                coverState,
+                button,
+                destination
+            )
+            :await saveExistingCatalogAlbum(album,destination,button);
+
+        if(status)resultStatus=status;
+        return status;
+    }
+
+    onPreview({
+        master:master,
+        albumId:album.id,
+        artist:artist,
+        albumTitle:albumTitle,
+        year:album.release_year||'',
+        genre:album.genre||'',
+        coverState:coverState,
+        isAdded:resultStatus==='collection',
+        isWishlisted:resultStatus==='wishlist',
+        save:saveResult
+    });
+
+    return true;
 }
 
 function addAlbumFromDiscogs(master,artist,albumTitle,year,coverState,button){
@@ -1540,6 +1661,7 @@ function addAlbumToWishlistFromDiscogs(master,artist,albumTitle,year,coverState,
   return Object.freeze({
     open:openAddAlbumSearch,
     close:closeAddAlbumSearch,
+    openCatalogPreview:openCatalogAlbumPreview,
     invalidateLibraryState:invalidateSearchLibraryState
   });
 }

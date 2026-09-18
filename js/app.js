@@ -162,6 +162,8 @@ var socialController=SocialController.create({
   }
 });
 
+var communityAlbumPreviewHandler=null;
+
 var communityView=CommunityView.create({
   window:window,
   document:document,
@@ -189,6 +191,11 @@ communityController=CommunityController.create({
   onOpenRoute:function(){return Router.navigate('/community');},
   onNavigateProfile:function(username){return openCollectorRoute(username,'profile');},
   onNavigateShelf:function(username){return openCollectorRoute(username,'collection');},
+  onOpenAlbum:function(albumId){
+    if(typeof communityAlbumPreviewHandler==='function'){
+      return communityAlbumPreviewHandler(albumId);
+    }
+  },
   onRequireAuth:function(){openAuthPanel('login');return Router.replace('/',{}, {render:false});},
   onBeforeOpen:function(){profileMenu.classList.remove('open');notificationController.closePanel();},
   onLog:function(level,message,error){
@@ -1514,20 +1521,22 @@ function openAlbum(index){
 
 async function hydrateSearchAlbumPreview(record){
   var masterId=String(Record.discogsMasterId(record)||'').trim();
-  if(!masterId)return;
+  var albumId=Number(Record.albumId(record))||0;
+  if(!masterId&&!albumId)return;
 
   try{
-    var result=await supabaseClient
+    var query=supabaseClient
       .from('albums')
-      .select('id,genre,cover_url,apple_collection_url,tracks(id,disc_side,track_number,title,duration)')
-      .eq('discogs_master_id',masterId)
-      .maybeSingle();
+      .select('id,release_year,genre,cover_url,apple_collection_url,tracks(id,disc_side,track_number,title,duration)');
+    query=albumId?query.eq('id',albumId):query.eq('discogs_master_id',masterId);
+    var result=await query.maybeSingle();
 
     if(result.error)throw result.error;
     if(detailPreviewRecord!==record||detailOpenRecordIndex!==SEARCH_PREVIEW_INDEX||!result.data)return;
 
     var album=result.data;
     Record.setValue(record,'albumId',album.id||null);
+    if(!Record.year(record)&&album.release_year)Record.setValue(record,'year',album.release_year);
     if(!Record.genre(record)&&album.genre)Record.setValue(record,'genre',album.genre);
     if(!Record.appleUrl(record)&&album.apple_collection_url)Record.setValue(record,'appleUrl',album.apple_collection_url);
     if(!Record.coverUrl(record)&&album.cover_url)Record.setValue(record,'coverUrl',album.cover_url);
@@ -1543,6 +1552,7 @@ async function hydrateSearchAlbumPreview(record){
     Record.applyRatingMeta(record,ratingMap);
     ratingController.renderPreview(record);
 
+    detailYear.textContent=Record.year(record)||'';
     var genreLabel=Record.genre(record)||'Genre saknas';
     detailGenre.textContent=genreLabel;
     detailGenre.setAttribute('data-mobile-genre',genreLabel.split(' · ')[0]||genreLabel);
@@ -1552,9 +1562,10 @@ async function hydrateSearchAlbumPreview(record){
 }
 
 function openSearchAlbumPreview(payload){
-  if(!payload||!payload.master)return;
-  var masterId=String(payload.master.id||'').trim();
-  if(!masterId)return;
+  if(!payload)return;
+  var masterId=String(payload.master&&payload.master.id||'').trim();
+  var albumId=Number(payload.albumId)||null;
+  if(!masterId&&!albumId)return;
 
   detailPreviewPayload=payload;
   detailPreviewRecord=Record.fromSearchPreview({
@@ -1563,6 +1574,7 @@ function openSearchAlbumPreview(payload){
     year:payload.year,
     genre:payload.genre,
     coverUrl:payload.coverState&&payload.coverState.url?payload.coverState.url:'',
+    albumId:albumId,
     discogsMasterId:masterId,
     appleUrl:payload.coverState&&payload.coverState.appleCollectionUrl?payload.coverState.appleCollectionUrl:''
   });
@@ -2117,7 +2129,7 @@ logo.addEventListener('click',async function(event){
     }
     libraryPage=1;
     setDeleteMode(false);
-    await Router.navigate('/');
+    await Router.navigate('/',{}, {scroll:'top'});
 });
 
 myCollectionButton.addEventListener('click',async function(event){
@@ -2132,7 +2144,7 @@ myCollectionButton.addEventListener('click',async function(event){
 
     libraryPage=1;
     setDeleteMode(false);
-    await Router.navigate('/');
+    await Router.navigate('/',{}, {scroll:'top'});
 });
 
 async function navigateOwnLibrary(nextView){
@@ -2207,6 +2219,9 @@ var albumSearchController=AlbumSearch.create({
     pressingCore:PressingCore,
     onPreview:function(payload){return window.groovyOpenSearchAlbumPreview(payload);}
 });
+communityAlbumPreviewHandler=function(albumId){
+    return albumSearchController.openCatalogPreview(albumId);
+};
 
 function openAddAlbumSearch(user){return albumSearchController.open(user);}
 function invalidateSearchLibraryState(){return albumSearchController.invalidateLibraryState();}

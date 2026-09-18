@@ -64,9 +64,23 @@ function create(options){
     '</span>';
   }
 
+  function albumTriggerAttributes(item){
+    var albumId=Core.number(item&&item.album_id);
+    return albumId>0
+      ?' data-community-album-id="'+escapeHtml(String(albumId))+'"'
+      :'';
+  }
+
+  function albumTitleButton(item,label,className){
+    var attrs=albumTriggerAttributes(item);
+    if(!attrs)return '<strong>'+escapeHtml(label)+'</strong>';
+    return '<button class="'+(className||'community-album-title-button')+'" type="button"'+attrs+'>'+escapeHtml(label)+'</button>';
+  }
+
   function coverMarkup(item,extraClass){
     var identity=albumIdentity(item);
-    return '<span class="community-cover '+(extraClass||'')+'">'+
+    return '<span class="community-cover community-album-trigger '+(extraClass||'')+'"'+albumTriggerAttributes(item)+'>'+
+
       '<span class="community-cover-fallback" aria-hidden="true"><span class="record-icon"></span></span>'+
       (identity.cover?'<img src="'+escapeHtml(identity.cover)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'')+
     '</span>';
@@ -106,10 +120,11 @@ function create(options){
 
   function activityCopy(item){
     var username=escapeHtml(item.username||'Collector');
-    var title=escapeHtml(item.album_title||'an album');
-    if(item.activity_type==='wishlist_add')return '<button type="button" data-community-profile="'+username+'">'+username+'</button> added <strong>'+title+'</strong> to their wishlist';
-    if(item.activity_type==='album_rating')return '<button type="button" data-community-profile="'+username+'">'+username+'</button> rated <strong>'+title+'</strong> <span class="community-feed-rating">'+escapeHtml(String(Core.clampRating(item.rating)))+' ★</span>';
-    return '<button type="button" data-community-profile="'+username+'">'+username+'</button> added <strong>'+title+'</strong> to their shelf';
+    var title=item.album_title||'an album';
+    var album=albumTitleButton(item,title,'community-inline-album');
+    if(item.activity_type==='wishlist_add')return '<button type="button" data-community-profile="'+username+'">'+username+'</button> added '+album+' to their wishlist';
+    if(item.activity_type==='album_rating')return '<button type="button" data-community-profile="'+username+'">'+username+'</button> rated '+album+' <span class="community-feed-rating">'+escapeHtml(String(Core.clampRating(item.rating)))+' ★</span>';
+    return '<button type="button" data-community-profile="'+username+'">'+username+'</button> added '+album+' to their shelf';
   }
 
   function activityFeed(items){
@@ -147,7 +162,7 @@ function create(options){
       return '<article class="community-stat-row">'+
         '<span class="community-stat-rank">'+(index+1)+'</span>'+
         coverMarkup(item,'community-mini-cover')+
-        '<div class="community-stat-copy"><strong>'+escapeHtml(item.title||'Unknown album')+'</strong><small>'+escapeHtml(item.artist_name||'Unknown artist')+'</small>'+serviceLinks(item,'community-streaming-compact')+'</div>'+
+        '<div class="community-stat-copy">'+albumTitleButton(item,item.title||'Unknown album')+'<small>'+escapeHtml(item.artist_name||'Unknown artist')+'</small>'+serviceLinks(item,'community-streaming-compact')+'</div>'+
         metric+
       '</article>';
     }).join('')+'</div>';
@@ -170,7 +185,7 @@ function create(options){
     return '<div class="community-album-strip">'+items.map(function(item,index){
       return '<article class="community-album-card">'+
         coverMarkup(item,'community-album-cover')+
-        '<div class="community-album-copy"><span class="community-album-rank">#'+(index+1)+'</span><strong>'+escapeHtml(item.title||'Unknown album')+'</strong><small>'+escapeHtml(item.artist_name||'Unknown artist')+'</small><span class="community-album-rating">★ '+escapeHtml(String(Core.clampRating(item.average_rating)))+' <em>'+escapeHtml(Core.formatCount(item.rating_count))+' rating'+(Core.number(item.rating_count)===1?'':'s')+'</em></span>'+serviceLinks(item,'community-streaming-card')+'</div>'+
+        '<div class="community-album-copy"><span class="community-album-rank">#'+(index+1)+'</span>'+albumTitleButton(item,item.title||'Unknown album')+'<small>'+escapeHtml(item.artist_name||'Unknown artist')+'</small><span class="community-album-rating">★ '+escapeHtml(String(Core.clampRating(item.average_rating)))+' <em>'+escapeHtml(Core.formatCount(item.rating_count))+' rating'+(Core.number(item.rating_count)===1?'':'s')+'</em></span>'+serviceLinks(item,'community-streaming-card')+'</div>'+
       '</article>';
     }).join('')+'</div>';
   }
@@ -204,7 +219,7 @@ function create(options){
     content.innerHTML=
       '<div class="community-summary-grid">'+
         summaryCard('people','Collectors',data.summary.collectors,'People building their shelves')+
-        summaryCard('record','Records',data.summary.records,'Records in community collections')+
+        summaryCard('record','Collected Records',data.summary.records,'Records in community collections')+
         summaryCard('heart','Wishlisted Records',data.summary.wishlisted_records,'Records saved across community wishlists')+
       '</div>'+
       '<div class="community-primary-grid">'+

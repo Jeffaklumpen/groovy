@@ -190,3 +190,11 @@ body.community-page-open .library-overview,body.community-page-open #selectionAc
 .community-feed-copy p{font-size:10.5px}
 .community-stat-title strong{font-size:10.5px}
 }
+
+.community-album-trigger[data-community-album-id]{cursor:pointer;transition:border-color .14s ease,transform .14s ease}
+.community-album-trigger[data-community-album-id]:hover{border-color:rgba(255,106,33,.45);transform:translateY(-1px)}
+.community-album-title-button,.community-inline-album{max-width:100%;padding:0;border:0;background:transparent;color:#eeeeF1;font-family:inherit;font-size:inherit;font-weight:inherit;line-height:inherit;text-align:left;cursor:pointer}
+.community-album-title-button{overflow:hidden;font-size:11.5px;font-weight:740;line-height:1.25;text-overflow:ellipsis;white-space:nowrap}
+.community-album-title-button:hover,.community-inline-album:hover{color:#ff762f}
+.community-inline-album{display:inline;font-weight:720}
+.community-album-copy>.community-album-title-button{overflow:hidden;color:#f0f0f2;font-size:12px;font-weight:740;text-overflow:ellipsis;white-space:nowrap}
