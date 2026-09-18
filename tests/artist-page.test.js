@@ -183,16 +183,39 @@ test('verified artist discography resolves trusted identity while Wikipedia alon
   assert.ok(start>=0&&end>start);
   const block=edge.slice(start,end);
   assert.match(edge,/P1953/);
-  assert.match(edge,/sitefilter=enwiki/);
+  assert.match(edge,/schema:isPartOf <https:\/\/en\.wikipedia\.org\/>/);
   assert.match(edge,/wikipediaStudioAlbumsFromHtml/);
   assert.match(edge,/standardised studio albums/);
+  assert.match(edge,/function wikipediaSectionHtml/);
   assert.match(block,/Wikipedia alone decides which releases belong to Main Discography/);
-  assert.match(block,/\[catalogResult,structuredAlbums\]=await Promise\.all/);
+  assert.match(block,/const catalogResult=await admin/);
+  assert.doesNotMatch(block,/wikidataStudioAlbums\(resolvedWikidataId\)/);
   assert.match(block,/source:'wikipedia'/);
   assert.match(block,/discogs_master_id:master/);
   assert.doesNotMatch(block,/function wikidataRows/);
   assert.doesNotMatch(block,/source:'wikidata'/);
   assert.doesNotMatch(block,/wikidataId:String/);
+});
+
+test('first artist verification collapses Wikidata and Wikipedia network round trips',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
+  const end=edge.indexOf("if (action === 'artistProfile')",start);
+  const block=edge.slice(start,end);
+  assert.match(edge,/SELECT DISTINCT \?artist \?article/);
+  assert.match(edge,/schema:isPartOf <https:\/\/en\.wikipedia\.org\/>/);
+  assert.match(edge,/wikipediaParse\(artistPage,'sections\|links\|text'\)/);
+  assert.match(edge,/wikipediaParse\(discographyPage,'sections\|links\|text'\)/);
+  assert.match(edge,/function wikipediaSectionHtml/);
+  assert.match(block,/resolvedWikipediaTitle/);
+  assert.doesNotMatch(block,/wikidataStudioAlbums\(resolvedWikidataId\)/);
+});
+
+test('artist Wikipedia about enrichment runs section and image work in parallel',()=>{
+  const service=fs.readFileSync('js/artist-wikipedia-service.js','utf8');
+  assert.match(service,/var sectionPromise=Promise\.all\(sections\.map/);
+  assert.match(service,/var imagePromise=freeImage\(page\)\.catch/);
+  assert.match(service,/var enriched=await Promise\.all\(\[sectionPromise,imagePromise\]\)/);
 });
 
 test('artist navigation resolves missing Discogs identity without loading the full profile first',()=>{
@@ -218,7 +241,7 @@ test('shared verified discography cache is checked before Wikidata network resol
   const end=edge.indexOf("if (action === 'artistProfile')",start);
   const block=edge.slice(start,end);
   const cacheRead=block.indexOf("select('wikidata_id,discography_checked_at,discography_source,discography_count')");
-  const externalLookup=block.indexOf('wikidataArtistQidByDiscogsId(resolvedArtistId)');
+  const externalLookup=block.indexOf('wikidataArtistIdentityByDiscogsId(resolvedArtistId)');
   assert.ok(cacheRead>=0&&externalLookup>cacheRead);
   assert.match(block,/cachedSource==='wikipedia' && cachedCount>0/);
   assert.match(block,/verified:true,[\s\S]*cached:true/);
@@ -390,12 +413,14 @@ test('Wikipedia studio tables own Main Discography independently of local Discog
   assert.match(edge,/function wikipediaStudioAlbumsFromHtml/);
   assert.match(edge,/const firstList=html\.match\(\/<ul/);
   assert.match(edge,/Released\\s\*:/);
-  assert.match(edge,/wikipediaParse\([\s\S]*?'text'/);
+  assert.match(edge,/wikipediaParse\(artistPage,'sections\|links\|text'\)/);
+  assert.match(edge,/function wikipediaSectionHtml/);
   assert.match(block,/Wikipedia alone decides which releases belong to Main Discography/i);
-  assert.match(block,/\[catalogResult,structuredAlbums\]=await Promise\.all/);
+  assert.match(block,/const catalogResult=await admin/);
+  assert.doesNotMatch(block,/wikidataStudioAlbums\(resolvedWikidataId\)/);
   assert.doesNotMatch(block,/source:'wikidata'/);
   assert.match(block,/source_key:sourceKey/);
-  assert.match(block,/const mbid=String\(local\?\.mbid\|\|structured\?\.mbid\|\|''\)/);
+  assert.match(block,/const mbid=String\(local\?\.mbid\|\|''\)/);
   assert.match(block,/discogs_master_id:master/);
 
   assert.match(sql,/alter column mbid drop not null/i);
