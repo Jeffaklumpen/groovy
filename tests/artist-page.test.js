@@ -597,7 +597,8 @@ test('Wikipedia studio tables own Main Discography independently of local Discog
   const block=edge.slice(start,end);
 
   assert.match(edge,/function wikipediaStudioAlbumsFromHtml/);
-  assert.match(edge,/const firstList=html\.match\(\/<ul/);
+  assert.match(edge,/const lists=html\.match\(\/<ul/);
+  assert.match(edge,/options\?\.allLists\?lists:lists\.slice\(0,1\)/);
   assert.match(edge,/Released\\s\*:/);
   assert.match(edge,/wikipediaParse\(artistPage,'sections\|links\|text'\)/);
   assert.match(edge,/function wikipediaSectionHtml/);
