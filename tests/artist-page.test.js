@@ -313,6 +313,50 @@ test('locally unmatched Wikipedia albums can recover stable IDs in one Wikidata 
   assert.match(block,/wikidataReleaseIdentifiersByArticleTitles/);
 });
 
+test('main article album parsing rejects obvious non-studio releases',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf('function wikipediaStudioAlbumsFromHtml');
+  const end=edge.indexOf('function rankWikipediaStudioSection',start);
+  const block=edge.slice(start,end);
+  assert.match(block,/\\bEP\\b/);
+  assert.match(block,/\\blive\\b/);
+  assert.match(block,/re-record/);
+  assert.match(block,/greatest hits/);
+});
+
+test('exact local album matching can use artist_title mappings',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
+  const end=edge.indexOf("if (action === 'artistProfile')",start);
+  const block=edge.slice(start,end);
+  assert.match(block,/row\?\.match_type!==\'direct\' && row\?\.match_type!==\'artist_title\'/);
+});
+
+test('artist artwork warmer supports verified rows without Discogs masters',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'cacheArtistArtwork')");
+  const end=edge.indexOf("if (action === 'verifyArtistDiscography')",start);
+  const block=edge.slice(start,end);
+  assert.match(block,/source_key,discogs_master_id,album_title/);
+  assert.match(block,/const directArtworkRows=/);
+  assert.match(block,/const directArtworkMissing=/);
+  assert.match(block,/const directMatches:any\[\]=\[\]/);
+  assert.match(block,/apple_collection_id:match\.apple_collection_id/);
+  assert.match(block,/\.eq\('source_key',match\.source_key\)/);
+  assert.doesNotMatch(block,/artist_name:canonicalArtistName/);
+  assert.match(block,/artist_name:resolvedArtistName/);
+});
+
+test('artist overview can read direct artwork cached on verified discography rows',()=>{
+  const sql=fs.readFileSync('supabase/migrations/20260919003500_artist_discography_direct_artwork.sql','utf8');
+  assert.match(sql,/add column if not exists apple_collection_id bigint/);
+  assert.match(sql,/add column if not exists apple_collection_url text/);
+  assert.match(sql,/add column if not exists artwork_url text/);
+  assert.match(sql,/adc\.artwork_url as cached_cover_url/);
+  assert.match(sql,/coalesce\(aac\.artwork_url,s\.cached_cover_url,a\.cover_url\)/);
+  assert.match(sql,/direct_apple_artwork_cached/);
+});
+
 test('dedicated discography fallback prefers Primary studio albums over broad Studio albums',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const start=edge.indexOf('function rankWikipediaStudioSection');
