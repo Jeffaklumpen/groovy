@@ -27,11 +27,11 @@ test('icon choices keep the existing shelf icon presentation',()=>{
 });
 
 test('strip markup keeps counts, active shelf and create limit state',()=>{
-  const a=new Array(14).fill('');a[13]='s1';
-  const b=new Array(14).fill('');b[13]='s2';
+  const a={shelf:'s1'};
+  const b={shelf:'s2'};
   const html=View.stripMarkup({
     shelves:[{id:'s1',name:'Favorites',icon:'heart',color:'#3B82F6'},{id:'s2',name:'Late Night',icon:'moon',color:'#10B981'}],
-    records:[a,b],activeShelfId:'s1',maxShelves:10,showCreate:true,
+    records:[a,b],getShelfId:record=>record.shelf,activeShelfId:'s1',maxShelves:10,showCreate:true,
     colors:['#E85301','#3B82F6','#10B981']
   });
   assert.match(html,/All Records/);
