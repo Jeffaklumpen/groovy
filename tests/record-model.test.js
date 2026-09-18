@@ -25,6 +25,19 @@ test('record model names legacy tuple fields without changing storage',function(
   assert.equal(record[16],11);
 });
 
+test('record model owns named tuple mutations as well as reads',function(){
+  const Record=loadModel();
+  const record=new Array(17).fill('');
+  Record.setShelf(record,'favorites',3);
+  assert.equal(Record.shelfId(record),'favorites');
+  assert.equal(Record.shelfSortOrder(record),3);
+  const details=Record.ensurePressing(record);
+  details.country='Sweden';
+  assert.equal(Record.pressing(record).country,'Sweden');
+  Record.setValue(record,'shelfSortOrder',4);
+  assert.equal(Record.shelfSortOrder(record),4);
+});
+
 test('record model loads before consumers and separated modules use named accessors',function(){
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const detail=fs.readFileSync(path.join(root,'js','detail-enhancements-v2.js'),'utf8');
