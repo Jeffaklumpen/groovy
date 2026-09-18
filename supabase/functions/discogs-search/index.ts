@@ -926,7 +926,7 @@ export default {
 
         const { data:existingRows,error:existingError } = await admin
           .from('apple_artwork_cache')
-          .select('discogs_master_id,apple_collection_id')
+          .select('discogs_master_id,apple_collection_id,apple_collection_url,artwork_url')
           .in('discogs_master_id',masterIds)
 
         if (existingError) {
@@ -953,12 +953,31 @@ export default {
         })
 
         if (duplicateMasterIds.size) {
+          const duplicateRows=(Array.isArray(existingRows)?existingRows:[])
+            .filter((row: any)=>duplicateMasterIds.has(String(row?.discogs_master_id||'')))
+
           const { error:duplicateDeleteError } = await admin
             .from('apple_artwork_cache')
             .delete()
             .in('discogs_master_id',Array.from(duplicateMasterIds).map(Number))
           if (duplicateDeleteError) {
             console.warn('Could not clear duplicate Apple album matches',duplicateDeleteError)
+          } else {
+            // Do not let a stale Apple URL stored on albums keep showing after
+            // the shared cache rejected that duplicate match.
+            await Promise.all(duplicateRows.map(async (row: any)=>{
+              const master=String(row?.discogs_master_id||'')
+              const appleUrl=String(row?.apple_collection_url||'')
+              if (!master||!appleUrl)return
+              const { error:albumClearError } = await admin
+                .from('albums')
+                .update({cover_url:null,apple_collection_url:null})
+                .eq('discogs_master_id',master)
+                .eq('apple_collection_url',appleUrl)
+              if (albumClearError) {
+                console.warn('Could not clear stale duplicate Apple album data',albumClearError)
+              }
+            }))
           }
         }
 
