@@ -57,6 +57,8 @@ The authenticated `/community` page reads `public.get_community_overview(...)`, 
 
 `public.community_activity` is the global activity-feed source. It is populated by database triggers for collection adds, wishlist adds and album rating changes. Authenticated clients have SELECT only; browser code must not insert or update feed events directly. This is intentionally separate from recipient-specific `notifications`.
 
+Artist profiles use `/artist/:discogs-artist-id-:slug`. The browser reads Groovy statistics and the base discography through `public.get_artist_overview(...)`, while the authenticated `discogs-search` Edge Function resolves artist identity, current/past members, fallback genres and an official non-social URL. The base discography comes from the local MusicBrainz release-group catalog so the UI can show primary albums instead of every Discogs release. Artist photos are not sourced from Discogs; the client only displays a Wikimedia Commons image when its metadata reports a free license, otherwise it uses the Groovy placeholder.
+
 Community album previews reuse the same detail preview and Add Record / Wishlist flow as album search. Discogs-backed albums still save through the verified `discogs-search` Edge Function. For an already-existing catalog album without a Discogs master ID, `public.add_existing_album_to_library(...)` may add only that existing album ID to the authenticated user's collection or wishlist; it cannot create or modify shared catalog rows.
 
 ## Edge Functions

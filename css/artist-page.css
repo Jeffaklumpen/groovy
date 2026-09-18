@@ -88,4 +88,4 @@ body.artist-page-open .library-overview,body.artist-page-open #selectionActionBa
 .album-context-back{position:absolute;z-index:20;left:14px;top:14px;max-width:calc(100% - 76px);padding:8px 10px;border:1px solid rgba(255,255,255,.13);border-radius:8px;background:rgba(11,11,13,.8);backdrop-filter:blur(8px);color:#d7d7da;font-family:inherit;font-size:9px;font-weight:750;cursor:pointer}
 .album-context-back[hidden]{display:none!important}
 .album-context-back:hover{border-color:rgba(232,83,1,.4);color:#fff}
-.community-artist-link{width:100%;font-family:inherit;text-align:left;cursor:pointer}
+.community-artist-link{width:100%;border-right:0;border-bottom:0;border-left:0;background:transparent;color:inherit;font-family:inherit;text-align:left;cursor:pointer}.community-artist-link:hover{background:rgba(255,255,255,.025)}

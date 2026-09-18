@@ -155,7 +155,7 @@ export default {
           .map((value)=>String(value||'').trim())
           .filter((value)=>/^https?:\/\//i.test(value))
         const blocked=/\b(?:discogs|wikipedia|musicbrainz|facebook|instagram|twitter|x\.com|youtube|tiktok|spotify|apple)\b/i
-        return values.find((value)=>!blocked.test(value)) || values[0] || ''
+        return values.find((value)=>!blocked.test(value)) || ''
       }
 
       function identityMatches(left: unknown,right: unknown) {
@@ -422,6 +422,33 @@ export default {
         const resolvedName=cleanArtistName(artist.name)||artistName
         const officialUrl=officialArtistUrl(artist.urls)
 
+        const genreResult=resolvedName
+          ?await discogsJson(
+            'https://api.discogs.com/database/search?artist=' +
+            encodeURIComponent(resolvedName) + '&type=master&per_page=30'
+          )
+          :{data:{results:[]}}
+
+        const genreCounts=new Map<string,number>()
+        if (!genreResult.response) {
+          const masters=Array.isArray(genreResult.data?.results)?genreResult.data.results:[]
+          masters.forEach((master: any)=>{
+            const values=[
+              ...(Array.isArray(master?.style)?master.style:[]),
+              ...(Array.isArray(master?.genre)?master.genre:[])
+            ]
+            values.forEach((value: unknown)=>{
+              const label=String(value||'').trim()
+              if (!label) return
+              genreCounts.set(label,(genreCounts.get(label)||0)+1)
+            })
+          })
+        }
+        const genres=Array.from(genreCounts.entries())
+          .sort((left,right)=>right[1]-left[1] || left[0].localeCompare(right[0]))
+          .slice(0,4)
+          .map((entry)=>entry[0])
+
         const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
         const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
         if (supabaseUrl && serviceRoleKey && resolvedName) {
@@ -444,6 +471,7 @@ export default {
           real_name:String(artist.realname||'').trim(),
           current_members:currentMembers,
           past_members:pastMembers,
+          genres:genres,
           official_url:officialUrl
         })
       }

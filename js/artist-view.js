@@ -94,7 +94,14 @@
       var overview=Core.normalizeOverview(data.overview||{});
       var wiki=data.wikipedia||null;
       var nav=data.navigation||{};
-      var genres=overview.genres;
+      var genres=[];
+      [].concat(overview.genres||[],profile.genres||[]).forEach(function(genre){
+        var value=String(genre||'').trim();
+        if(!value)return;
+        if(genres.some(function(existing){return existing.toLowerCase()===value.toLowerCase();}))return;
+        genres.push(value);
+      });
+      genres=genres.slice(0,4);
       var current=Array.isArray(profile.current_members)?profile.current_members:[];
       var past=Array.isArray(profile.past_members)?profile.past_members:[];
       var official=profile.official_url||'';

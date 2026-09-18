@@ -130,7 +130,7 @@ test('community albums delegate to the shared search preview flow',()=>{
   assert.match(controller,/community-streaming-row a/);
   assert.match(app,/communityAlbumPreviewHandler/);
   assert.match(app,/albumSearchController\.openCatalogPreview\(albumId\)/);
-  assert.match(search,/async function openCatalogAlbumPreview\(albumId\)/);
+  assert.match(search,/async function openCatalogAlbumPreview\(albumId,options\)/);
   assert.match(search,/add_existing_album_to_library/);
   assert.match(search,/onPreview\(\{/);
 });

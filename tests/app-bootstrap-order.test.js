@@ -395,3 +395,14 @@ test('community feature modules load before app.js and app only composes them',(
   assert.match(app,/CommunityController\.create\(\{/);
   assert.doesNotMatch(app,/function similarCollectors|function activityFeed|function topCollectors|function wishlistedAlbums/);
 });
+
+
+test('artist page modules load before app.js in dependency order',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const core=html.indexOf('/js/artist-core.js?v=');
+  const wikipedia=html.indexOf('/js/artist-wikipedia-service.js?v=');
+  const view=html.indexOf('/js/artist-view.js?v=');
+  const controller=html.indexOf('/js/artist-controller.js?v=');
+  const app=html.indexOf('/js/app.js?v=');
+  assert.ok(core>=0&&wikipedia>core&&view>wikipedia&&controller>view&&app>controller);
+});

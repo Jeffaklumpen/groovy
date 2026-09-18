@@ -5,6 +5,7 @@ const {
   resolveProfileView,
   libraryViewFromSearch,
   statisticsFromSearch,
+  artistFromPath,
   albumIdentityKey
 }=require('../js/route-state.js');
 
@@ -31,6 +32,13 @@ test('recognises a directly linked statistics view',function(){
   assert.equal(statisticsFromSearch('?stats=1'),true);
   assert.equal(statisticsFromSearch('?view=wishlist&stats=1'),true);
   assert.equal(statisticsFromSearch('?view=wishlist'),false);
+});
+
+test('recognises artist profile URLs',function(){
+  assert.deepEqual(artistFromPath('/artist/123-pink-floyd'),{id:123,slug:'pink-floyd'});
+  assert.deepEqual(artistFromPath('/artist/456/'),{id:456,slug:''});
+  assert.equal(artistFromPath('/artist/pink-floyd'),null);
+  assert.equal(artistFromPath('/artists/123-pink-floyd'),null);
 });
 
 test('matches the same album across formatting and edition suffixes',function(){

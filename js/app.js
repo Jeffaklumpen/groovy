@@ -2339,6 +2339,7 @@ detailArtist.addEventListener('click',async function(event){
       });
     }catch(error){
       console.error('Could not open artist from album:',error);
+      await restoreAlbumFromHistoryState();
     }
 });
 
@@ -2641,6 +2642,7 @@ async function renderCurrentRoute(){
         window.libraryView='collection';
     }
     if(!routeUser){
+        artistController.hidePage();
         communityController.hidePage();
         socialController.hideFollowingPage();
         viewedUserId=null;
