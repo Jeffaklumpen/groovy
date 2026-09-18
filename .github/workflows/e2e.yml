@@ -16,13 +16,19 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Generate lockfile for foundation checkpoint
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          echo "GROOVY_LOCKFILE_BEGIN"
+          cat package-lock.json
+          echo "GROOVY_LOCKFILE_END"
       - name: Install test dependency
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run browser smoke tests
