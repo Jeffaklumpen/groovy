@@ -8,7 +8,7 @@ function collection(order){const result={classList:classList(),cards:(order||[])
 function recordModel(){return {INDEX:{order:0,shelfSortOrder:14},order:r=>r[0],entryId:r=>r[9],shelfId:r=>r[13],shelfSortOrder:r=>r[14]};}
 function harness(config){
   config=config||{};let records=config.records||[];
-  const state=Object.assign({selectedRating:'all',searchQuery:'',sort:'added',viewedUserId:null,libraryView:'collection',activeShelfId:'all',page:1},config.state||{});
+  const state=Object.assign({selectedRating:'all',searchQuery:'',sort:'standard',viewedUserId:null,libraryView:'collection',activeShelfId:'all',page:1,selectionMode:false},config.state||{});
   const grid=config.collection||collection([]);const rpcCalls=[],alerts=[];let renders=0,reloads=0;
   const api={async rpc(name,payload){rpcCalls.push({name,payload});return config.rpcError?{error:new Error('save failed')}:{error:null};}};
   const windowListeners=new Map();
@@ -17,6 +17,8 @@ function harness(config){
   const controller=Controller.create({api,window:win,document:doc,navigator:{},collection:grid,recordModel:recordModel(),recordsPerPage:52,getRecords:()=>records,setRecords:next=>{records=next;},getState:()=>state,setSuppressAlbumClick(){},setDeleteMode(){},renderGrid:()=>{renders++;},loadCollection:async()=>{reloads++;},onAlert:message=>alerts.push(message),requestAnimationFrame:()=>1,cancelAnimationFrame(){},setTimeout:fn=>{fn();return 1;},clearTimeout(){}});
   return {controller,grid,state,rpcCalls,alerts,windowListeners,get records(){return records;},get renders(){return renders;},get reloads(){return reloads;}};
 }
+test('selection mode disables manual grid dragging',()=>{const h=harness({state:{selectionMode:true}});h.controller.enable();assert.equal(h.grid.classList.contains('grid-sort-enabled'),false);});
+
 test('sorting stays disabled with search/filter/alternate sort or another user',()=>{const h=harness({state:{searchQuery:'pink'}});h.controller.enable();assert.equal(h.grid.classList.contains('grid-sort-enabled'),false);h.state.searchQuery='';h.state.viewedUserId='other';h.controller.enable();assert.equal(h.grid.classList.contains('grid-sort-enabled'),false);});
 test('all-record reorder updates local order and collection RPC payload',async()=>{const records=[[1,'A','One',2020,'Rock',0,'',{},1,'id-1',null,{},null,'',null],[2,'B','Two',2021,'Rock',0,'',{},2,'id-2',null,{},null,'',null],[3,'C','Three',2022,'Rock',0,'',{},3,'id-3',null,{},null,'',null]];const h=harness({records,collection:collection([1,0,2])});h.controller.commitDomOrder();await Promise.resolve();await Promise.resolve();assert.deepEqual(h.records.map(r=>r[9]),['id-2','id-1','id-3']);assert.deepEqual(h.records.map(r=>r[0]),[1,2,3]);assert.equal(h.renders,1);assert.deepEqual(h.rpcCalls,[{name:'set_collection_display_order',payload:{p_shelf_id:null,p_collection_ids:['id-2','id-1','id-3']}}]);});
 test('active shelf reorder updates shelf order and shelf-scoped RPC payload',async()=>{const records=[[1,'A','One',2020,'Rock',0,'',{},1,'id-1',null,{},null,'s1',1],[2,'B','Two',2021,'Rock',0,'',{},2,'id-2',null,{},null,'s1',2],[3,'C','Three',2022,'Rock',0,'',{},3,'id-3',null,{},null,'s2',1]];const h=harness({records,collection:collection([1,0]),state:{activeShelfId:'s1'}});h.controller.commitDomOrder();await Promise.resolve();await Promise.resolve();assert.equal(records[1][14],1);assert.equal(records[0][14],2);assert.equal(records[2][14],1);assert.deepEqual(h.rpcCalls,[{name:'set_collection_display_order',payload:{p_shelf_id:'s1',p_collection_ids:['id-2','id-1']}}]);});
