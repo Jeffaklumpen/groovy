@@ -77,7 +77,7 @@ test('own collection loader cannot invalidate a viewed shelf load',function(){
   const path=require('node:path');
   const app=fs.readFileSync(path.resolve(__dirname,'..','js','app.js'),'utf8');
   const start=app.indexOf('window.loadCollection=async function(){');
-  const end=app.indexOf('async function refreshLibraryStyles',start);
+  const end=app.indexOf("var collection=document.getElementById('collection');",start);
   assert.ok(start>=0&&end>start,'loadCollection block should exist');
   const block=app.slice(start,end);
   const routeGuard=block.indexOf("var path=window.location.pathname;");
