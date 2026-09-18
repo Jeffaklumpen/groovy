@@ -62,7 +62,7 @@ GitHub Pages-konfigurationen bygger för närvarande även pushes till `notes`. 
 - Nya features ska läggas i tydliga moduler i stället för att växa `app.js` av bekvämlighet.
 - `app.js` är främst integrations-/composition root och ska inte delas bara för att nå ett visst filmått.
 - Ny kod ska använda `GroovyRecord`-adaptern och inte läsa positionsfält som `record[10]` direkt.
-- Routing ska successivt få en enda ägare.
+- Browser-navigation har en enda ägare i `js/router.js`; övriga moduler använder `GroovyRouter` och får inte skriva direkt till `history`.
 - Nya CSS-ändringar ska helst ändra den riktiga regeln i stället för att lägga ännu ett versionslager med `!important`.
 
 Se `docs/ARCHITECTURE.md` för mer detaljer.
