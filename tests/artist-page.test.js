@@ -271,8 +271,8 @@ test('Wikipedia studio tables own Main Discography independently of local Discog
   assert.match(block,/structuredAlbums=await wikidataStudioAlbums/);
   assert.doesNotMatch(block,/source:'wikidata'/);
   assert.match(block,/source_key:sourceKey/);
-  assert.match(block,/mbid:match\?\.mbid\?String\(match\.mbid\):null/);
-  assert.match(block,/discogs_master_id:match\?\.discogs_master_id[\s\S]*?:null/);
+  assert.match(block,/const mbid=String\(local\?\.mbid\|\|structured\?\.mbid\|\|''\)/);
+  assert.match(block,/discogs_master_id:master/);
 
   assert.match(sql,/alter column mbid drop not null/i);
   assert.match(sql,/alter column discogs_master_id drop not null/i);
