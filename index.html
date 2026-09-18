@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="/css/base-library.css?v=3">
   <link rel="stylesheet" href="/css/search-modals.css?v=4">
   <link rel="stylesheet" href="/css/copy-marketplace.css?v=3">
-  <link rel="stylesheet" href="/css/library-shell.css?v=5">
+  <link rel="stylesheet" href="/css/library-shell.css?v=6">
   <link rel="stylesheet" href="/css/shelves-streaming.css?v=3">
   <link rel="stylesheet" href="/css/album-detail-extras.css?v=1">
   <link rel="stylesheet" href="/css/landing-social.css?v=3">
@@ -170,6 +170,7 @@
         <button type="button" data-sort="year-asc">Year oldest</button>
       </div>
     </div>
+    <button id="librarySelectButton" class="menu-button library-select-button" type="button" aria-pressed="false" hidden>Select</button>
     <div class="menu-dropdown library-rating-filter">
       <button id="filterButton" class="menu-button" type="button" aria-expanded="false">All ratings ▾</button>
       <div id="filterMenu" class="menu-panel">
@@ -183,6 +184,15 @@
     </div>
   </div>
 </section>
+
+<div id="selectionActionBar" class="selection-action-bar" hidden>
+  <strong id="selectionCount" class="selection-action-count">0 selected</strong>
+  <div class="selection-action-buttons">
+    <button id="selectionMoveButton" class="selection-action-button primary" type="button" disabled>Move to Shelf</button>
+    <button id="selectionDeleteButton" class="selection-action-button danger" type="button" disabled>Delete</button>
+    <button id="selectionCancelButton" class="selection-action-button secondary" type="button">Cancel</button>
+  </div>
+</div>
 
 <nav id="libraryPaginationTop" class="library-pagination library-pagination-top" aria-label="Collection pages"></nav>
 <main id="collection" class="collection"></main>
@@ -490,8 +500,8 @@
         <p id="removeAlbumMessage"></p>
 
         <div class="remove-album-buttons">
-            <button id="cancelRemoveAlbum" type="button">No</button>
-            <button id="confirmRemoveAlbum" type="button">Yes</button>
+            <button id="cancelRemoveAlbum" type="button">Cancel</button>
+            <button id="confirmRemoveAlbum" type="button">Remove</button>
         </div>
     </div>
 </div>
@@ -564,18 +574,19 @@
 <script src="/js/marketplace-controller.js?v=2"></script>
 <script src="/js/shelf-core.js?v=2"></script>
 <script src="/js/shelf-view.js?v=1"></script>
-<script src="/js/shelf-controller.js?v=2"></script>
+<script src="/js/shelf-controller.js?v=3"></script>
 <script src="/js/library-core.js?v=2"></script>
 <script src="/js/library-data.js?v=5"></script>
 <script src="/js/library-style-refresh.js?v=1"></script>
-<script src="/js/library-actions-controller.js?v=2"></script>
-<script src="/js/grid-sort-controller.js?v=4"></script>
-<script src="/js/library-render-controller.js?v=4"></script>
+<script src="/js/library-actions-controller.js?v=3"></script>
+<script src="/js/selection-controller.js?v=1"></script>
+<script src="/js/grid-sort-controller.js?v=5"></script>
+<script src="/js/library-render-controller.js?v=5"></script>
 <script src="/js/apple-search-core.js?v=1"></script>
 <script src="/js/album-search.js?v=5"></script>
 <script src="/js/wikipedia-service.js?v=1"></script>
 <script src="/js/wikipedia-about-controller.js?v=1"></script>
-<script src="/js/app.js?v=183"></script>
+<script src="/js/app.js?v=184"></script>
 <script src="/js/detail-enhancements-v2.js?v=14"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=13"></script>
