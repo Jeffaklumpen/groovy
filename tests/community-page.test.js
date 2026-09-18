@@ -91,3 +91,28 @@ test('community keeps Collection streaming assets outside album artwork',()=>{
   assert.doesNotMatch(coverFunction,/serviceLinks/);
   assert.doesNotMatch(css,/community-cover-services/);
 });
+
+
+test('community statistics use requested order and Top Rated moves to the wide panel',()=>{
+  const view=fs.readFileSync('js/community-view.js','utf8');
+  const statisticsStart=view.indexOf("panel('Community Statistics'");
+  const statisticsEnd=view.indexOf("panel('Top rated albums'");
+  const statistics=view.slice(statisticsStart,statisticsEnd);
+  const collected=statistics.indexOf('Most collected albums');
+  const wishlisted=statistics.indexOf('Most wishlisted albums');
+  const artists=statistics.indexOf('Most collected artists');
+  assert.ok(collected>=0&&wishlisted>collected&&artists>wishlisted);
+  assert.match(statistics,/albumRows\(data\.most_wishlisted_albums,'wishlist'\)/);
+  assert.match(view,/panel\('Top rated albums','trophy',topRatedAlbums\(data\.top_rated_albums\)/);
+  assert.doesNotMatch(view,/panel\('Most wishlisted albums'/);
+});
+
+test('Community uses a three-person icon in the menu and shared people icon',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const view=fs.readFileSync('js/community-view.js','utf8');
+  const css=fs.readFileSync('css/community.css','utf8');
+  assert.match(html,/community-tab-icon[\s\S]*circle cx="12" cy="7"[\s\S]*circle cx="5\.4" cy="9"[\s\S]*circle cx="18\.6" cy="9"/);
+  assert.match(view,/people:'<circle cx="12" cy="7" r="2\.6"\/><circle cx="5\.4" cy="9" r="2\.1"\/><circle cx="18\.6" cy="9" r="2\.1"\/>/);
+  assert.match(css,/\.community-tab \.community-tab-icon\{width:18px;height:18px/);
+  assert.doesNotMatch(css,/community-tab-icon:before|community-tab-icon:after/);
+});

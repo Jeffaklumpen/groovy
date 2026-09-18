@@ -29,7 +29,7 @@ function create(options){
 
   function icon(name){
     var paths={
-      people:'<path d="M7 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm10 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2.5 19c.4-3.3 2.2-5 4.5-5s4.1 1.7 4.5 5M12.5 19c.4-3.3 2.2-5 4.5-5s4.1 1.7 4.5 5"/>',
+      people:'<circle cx="12" cy="7" r="2.6"/><circle cx="5.4" cy="9" r="2.1"/><circle cx="18.6" cy="9" r="2.1"/><path d="M7.4 19v-1.1c0-2.7 2-4.5 4.6-4.5s4.6 1.8 4.6 4.5V19M1.8 18.5v-.8c0-2.1 1.5-3.6 3.7-3.6.9 0 1.7.2 2.4.7M22.2 18.5v-.8c0-2.1-1.5-3.6-3.7-3.6-.9 0-1.7.2-2.4.7"/>',
       record:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r=".7"/>',
       link:'<path d="M9.5 14.5 14.5 9M7.8 16.2l-1 1a3 3 0 0 1-4.2-4.2l3-3a3 3 0 0 1 4.2 0M16.2 7.8l1-1a3 3 0 1 1 4.2 4.2l-3 3a3 3 0 0 1-4.2 0"/>',
       pulse:'<path d="M2 13h4l2-6 4 12 3-8 2 2h5"/>',
@@ -138,7 +138,7 @@ function create(options){
   }
 
   function albumRows(items,type){
-    var metricKey=type==='rating'?'average_rating':'collection_count';
+    var metricKey=type==='rating'?'average_rating':(type==='wishlist'?'wishlist_count':'collection_count');
     if(!items.length)return '<div class="community-empty compact"><strong>Not enough data yet</strong></div>';
     return '<div class="community-stat-list">'+items.map(function(item,index){
       var metric=type==='rating'
@@ -165,12 +165,12 @@ function create(options){
     }).join('')+'</div>';
   }
 
-  function wishlistedAlbums(items){
-    if(!items.length)return '<div class="community-empty"><strong>No wishlisted albums yet</strong><span>Albums collectors save for later will appear here.</span></div>';
-    return '<div class="community-wishlist-strip">'+items.map(function(item,index){
-      return '<article class="community-wishlist-card">'+
-        coverMarkup(item,'community-wishlist-cover')+
-        '<div class="community-wishlist-copy"><span class="community-wishlist-rank">#'+(index+1)+'</span><strong>'+escapeHtml(item.title||'Unknown album')+'</strong><small>'+escapeHtml(item.artist_name||'Unknown artist')+'</small><span class="community-wishlist-count">'+escapeHtml(Core.formatCount(item.wishlist_count))+' wishlists</span>'+serviceLinks(item,'community-streaming-card')+'</div>'+
+  function topRatedAlbums(items){
+    if(!items.length)return '<div class="community-empty"><strong>No rated albums yet</strong><span>Community ratings will appear here as collectors rate their records.</span></div>';
+    return '<div class="community-album-strip">'+items.map(function(item,index){
+      return '<article class="community-album-card">'+
+        coverMarkup(item,'community-album-cover')+
+        '<div class="community-album-copy"><span class="community-album-rank">#'+(index+1)+'</span><strong>'+escapeHtml(item.title||'Unknown album')+'</strong><small>'+escapeHtml(item.artist_name||'Unknown artist')+'</small><span class="community-album-rating">★ '+escapeHtml(String(Core.clampRating(item.average_rating)))+' <em>'+escapeHtml(Core.formatCount(item.rating_count))+' rating'+(Core.number(item.rating_count)===1?'':'s')+'</em></span>'+serviceLinks(item,'community-streaming-card')+'</div>'+
       '</article>';
     }).join('')+'</div>';
   }
@@ -215,12 +215,12 @@ function create(options){
         panel('Top Collectors','trophy',topCollectors(data.top_collectors),'community-top-panel')+
         panel('Community Statistics','chart',
           '<div class="community-stat-grid">'+
-            '<section class="community-stat-card"><div class="community-stat-title"><span>★</span><strong>Top rated albums</strong></div>'+albumRows(data.top_rated_albums,'rating')+'</section>'+
             '<section class="community-stat-card"><div class="community-stat-title"><span class="record-icon"></span><strong>Most collected albums</strong></div>'+albumRows(data.most_collected_albums,'collection')+'</section>'+
+            '<section class="community-stat-card"><div class="community-stat-title"><span>'+icon('heart')+'</span><strong>Most wishlisted albums</strong></div>'+albumRows(data.most_wishlisted_albums,'wishlist')+'</section>'+
             '<section class="community-stat-card"><div class="community-stat-title"><span>'+icon('people')+'</span><strong>Most collected artists</strong></div>'+artistRows(data.most_collected_artists)+'</section>'+
           '</div>','community-statistics-panel')+
       '</div>'+
-      panel('Most wishlisted albums','heart',wishlistedAlbums(data.most_wishlisted_albums),'community-wishlist-panel');
+      panel('Top rated albums','trophy',topRatedAlbums(data.top_rated_albums),'community-featured-panel');
   }
 
   function setFollowState(userId,following){

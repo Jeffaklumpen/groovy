@@ -122,7 +122,7 @@ test.describe('authenticated read-only smoke flows',()=>{
       'Activity Feed',
       'Top Collectors',
       'Community Statistics',
-      'Most wishlisted albums'
+      'Top rated albums'
     ]);
 
     const albumCovers=page.locator('.community-cover');
