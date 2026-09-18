@@ -281,7 +281,7 @@ test('library render controller owns card markup pagination and grid presentatio
   const create=source.indexOf('LibraryRenderController.create({');
   assert.ok(declaration>=0&&create>declaration);
   assert.match(source,/GroovyLibraryRenderController must load before app\.js/);
-  assert.match(source,/function buildGrid\(\)\{\s*return libraryRenderController\.render\(\);\s*\}/);
+  assert.match(source,/function buildGrid\(\)\{\s*var result=libraryRenderController\.render\(\);\s*if\(selectionController\)selectionController\.syncCards\(\);\s*return result;\s*\}/);
   assert.match(source,/window\.onscroll=libraryRenderController\.scheduleImageLoad/);
   assert.match(source,/loginToViewCollection:document\.getElementById\('loginToViewCollection'\)/);
   assert.match(source,/emptyViewedCollection:document\.getElementById\('emptyViewedCollection'\)/);
