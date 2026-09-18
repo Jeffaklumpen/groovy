@@ -517,6 +517,7 @@ var LibraryStyleRefresh=window.GroovyLibraryStyleRefresh;
 var LibraryActionsController=window.GroovyLibraryActionsController;
 var LibraryRenderController=window.GroovyLibraryRenderController;
 var GridSortController=window.GroovyGridSortController;
+var SelectionController=window.GroovySelectionController;
 if(!Record)throw new Error('GroovyRecord must load before app.js');
 if(!Wikipedia)throw new Error('GroovyWikipedia must load before app.js');
 if(!WikipediaAboutController)throw new Error('GroovyWikipediaAboutController must load before app.js');
@@ -536,6 +537,7 @@ if(!LibraryStyleRefresh)throw new Error('GroovyLibraryStyleRefresh must load bef
 if(!LibraryActionsController)throw new Error('GroovyLibraryActionsController must load before app.js');
 if(!LibraryRenderController)throw new Error('GroovyLibraryRenderController must load before app.js');
 if(!GridSortController)throw new Error('GroovyGridSortController must load before app.js');
+if(!SelectionController)throw new Error('GroovySelectionController must load before app.js');
 
 window.records = [];
 window.viewedUserId=null;
@@ -793,11 +795,18 @@ var RECORDS_PER_PAGE=52;
 var librarySearchInput=document.getElementById('librarySearchInput');
 var librarySortButton=document.getElementById('librarySortButton');
 var librarySortMenu=document.getElementById('librarySortMenu');
+var librarySelectButton=document.getElementById('librarySelectButton');
+var selectionActionBar=document.getElementById('selectionActionBar');
+var selectionCount=document.getElementById('selectionCount');
+var selectionMoveButton=document.getElementById('selectionMoveButton');
+var selectionDeleteButton=document.getElementById('selectionDeleteButton');
+var selectionCancelButton=document.getElementById('selectionCancelButton');
 var mobileAddRecordButton=document.getElementById('mobileAddRecordButton');
 var librarySearchQuery='';
 var librarySort='standard';
 var shelves=[];
 var activeShelfId='all';
+var selectionController=null;
 var SHELF_COLORS=['#E85301','#FF3B45','#FF6B4A','#F43F8C','#8B5CF6','#6366F1','#3B82F6','#14B8D4','#10B981','#84CC16','#F5C542','#6B7280','#14B8A6','#F59E0B'];
 var MAX_SHELVES=10;
 
@@ -921,7 +930,14 @@ var shelfController=ShelfController.create({
   shouldHideStrip:function(){return window.libraryView==='wishlist'||window.loginRequiredForViewedCollection||window.profileNotFound||(!window.hasAuthenticatedUser&&viewedUserId===null);},
   onLibraryPageReset:function(){libraryPage=1;},onGridChange:function(){buildGrid();},isMobile:isMobileRecordMenu,
   requestFrame:function(callback){return requestAnimationFrame(callback);},alert:function(message){alert(message);},
-  onDetailActionsRendered:function(index,container){renderDetailLibraryActions(index,container);}
+  onDetailActionsRendered:function(index,container){renderDetailLibraryActions(index,container);},
+  onBulkAssign:function(entryIds,shelfId){
+    if(!libraryActionsController)return Promise.resolve(false);
+    return libraryActionsController.moveCollectionRecordsToShelf(entryIds,shelfId);
+  },
+  onBulkAssigned:function(){
+    if(selectionController)selectionController.deactivate();
+  }
 });
 
 function closeRecordActionMenus(){
@@ -1235,7 +1251,8 @@ var gridSortController=GridSortController.create({
       viewedUserId:viewedUserId,
       libraryView:window.libraryView,
       activeShelfId:activeShelfId,
-      page:libraryPage
+      page:libraryPage,
+      selectionMode:!!(selectionController&&selectionController.isActive())
     };
   },
   setSuppressAlbumClick:function(value){suppressAlbumClick=!!value;},
@@ -1278,6 +1295,7 @@ var libraryRenderController=LibraryRenderController.create({
     wishlistTabButton:document.getElementById('wishlistTabButton'),
     addAlbumButton:document.getElementById('addAlbumButton'),
     filterButton:document.getElementById('filterButton'),
+    selectButton:librarySelectButton,
     collectionCount:document.getElementById('collectionCount')
   },
   getState:function(){
@@ -1315,7 +1333,9 @@ var libraryRenderController=LibraryRenderController.create({
 });
 
 function buildGrid(){
-  return libraryRenderController.render();
+  var result=libraryRenderController.render();
+  if(selectionController)selectionController.syncCards();
+  return result;
 }
 window.buildGrid=buildGrid;
 
@@ -1555,6 +1575,38 @@ var libraryActionsController=LibraryActionsController.create({
   }
 });
 
+selectionController=SelectionController.create({
+  recordModel:Record,
+  elements:{
+    body:document.body,
+    collection:collection,
+    selectButton:librarySelectButton,
+    actionBar:selectionActionBar,
+    count:selectionCount,
+    moveButton:selectionMoveButton,
+    deleteButton:selectionDeleteButton,
+    cancelButton:selectionCancelButton
+  },
+  getRecords:function(){return records;},
+  canActivate:function(){
+    return viewedUserId===null&&window.libraryView==='collection'&&window.hasAuthenticatedUser&&records.length>0;
+  },
+  onModeChange:function(){
+    closeRecordActionMenus();
+    buildGrid();
+  },
+  onMove:function(entryIds){
+    return shelfController.openBulkPicker(entryIds);
+  },
+  onDelete:function(entryIds){
+    requestBulkRemove(entryIds);
+    return true;
+  }
+});
+window.groovyExitSelectionMode=function(){
+  if(selectionController)selectionController.deactivate({silent:true});
+};
+
 window.groovyGetOpenRecordIndex=function(){return detailOpenRecordIndex;};
 
 function renderDetailLibraryActions(index,container){
@@ -1616,6 +1668,17 @@ function attachAlbumClicks(){
 
   collection.addEventListener('click',async function(event){
     var target=event.target||event.srcElement;
+
+    if(selectionController&&selectionController.isActive()){
+      var selectionRecord=target.closest?target.closest('.record'):null;
+      if(selectionRecord){
+        event.preventDefault();
+        event.stopPropagation();
+        var selectionIndex=parseInt(selectionRecord.getAttribute('data-index'),10);
+        if(!isNaN(selectionIndex))selectionController.toggleIndex(selectionIndex);
+      }
+      return;
+    }
 
     var recordMenuControl=target.closest
       ?target.closest('.record-menu-button,.record-action-menu')
@@ -1717,13 +1780,40 @@ const cancelRemoveAlbum=document.getElementById('cancelRemoveAlbum');
 const confirmRemoveAlbum=document.getElementById('confirmRemoveAlbum');
 
 let removeAlbumIndex=null;
+let removeAlbumIds=[];
 let removeAlbumFromDetail=false;
+
+function requestBulkRemove(entryIds){
+    var valid={};
+    records.forEach(function(record){
+      var id=String(Record.entryId(record)||'');
+      if(id)valid[id]=true;
+    });
+    var seen={};
+    var ids=(Array.isArray(entryIds)?entryIds:[])
+      .map(function(value){return String(value==null?'':value).trim();})
+      .filter(function(value){
+        if(!value||!valid[value]||seen[value])return false;
+        seen[value]=true;
+        return true;
+      });
+    if(!ids.length)return false;
+    removeAlbumIndex=null;
+    removeAlbumIds=ids;
+    removeAlbumFromDetail=false;
+    removeAlbumMessage.textContent='Remove '+ids.length+' selected record'+(ids.length===1?'':'s')+' from your collection?';
+    confirmRemoveAlbum.textContent=ids.length===1?'Remove record':'Remove '+ids.length+' records';
+    removeAlbumModal.style.display='flex';
+    return true;
+}
 
 function requestRemoveAlbum(index,fromDetail){
     var record=records[index];
     if(!record||viewedUserId!==null)return;
     removeAlbumIndex=index;
+    removeAlbumIds=[];
     removeAlbumFromDetail=!!fromDetail;
+    confirmRemoveAlbum.textContent='Remove';
     removeAlbumMessage.textContent=window.libraryView==='wishlist'
       ?'Remove "'+Record.title(record)+'" from your wishlist?'
       :'Are you sure you want to remove "'+Record.title(record)+'" from your collection?';
@@ -1733,18 +1823,34 @@ function requestRemoveAlbum(index,fromDetail){
 cancelRemoveAlbum.addEventListener('click',function(){
     removeAlbumModal.style.display='none';
     removeAlbumIndex=null;
+    removeAlbumIds=[];
     removeAlbumFromDetail=false;
+    confirmRemoveAlbum.textContent='Remove';
 });
 
 removeAlbumModal.addEventListener('click',function(event){
     if(event.target===removeAlbumModal){
         removeAlbumModal.style.display='none';
         removeAlbumIndex=null;
+        removeAlbumIds=[];
         removeAlbumFromDetail=false;
+        confirmRemoveAlbum.textContent='Remove';
     }
 });
 
 confirmRemoveAlbum.addEventListener('click',async function(){
+    if(removeAlbumIds.length){
+      var bulkIds=removeAlbumIds.slice();
+      removeAlbumModal.style.display='none';
+      removeAlbumIndex=null;
+      removeAlbumIds=[];
+      removeAlbumFromDetail=false;
+      confirmRemoveAlbum.textContent='Remove';
+      var bulkRemoved=await libraryActionsController.deleteCollectionRecords(bulkIds);
+      if(bulkRemoved&&selectionController)selectionController.deactivate();
+      return;
+    }
+
     if(removeAlbumIndex===null)return;
 
     const index=removeAlbumIndex;
@@ -1752,7 +1858,9 @@ confirmRemoveAlbum.addEventListener('click',async function(){
 
     removeAlbumModal.style.display='none';
     removeAlbumIndex=null;
+    removeAlbumIds=[];
     removeAlbumFromDetail=false;
+    confirmRemoveAlbum.textContent='Remove';
 
     var removed;
     if(window.libraryView==='wishlist'){
