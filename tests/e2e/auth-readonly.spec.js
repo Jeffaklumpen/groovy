@@ -116,6 +116,7 @@ test.describe('authenticated read-only smoke flows',()=>{
     await expect(page.locator('#communityTabButton')).toHaveClass(/active/);
     await expect(page.locator('.community-heading')).toHaveCount(0);
     await expect(page.locator('.community-summary-card')).toHaveCount(3);
+    await expect(page.locator('.community-summary-card')).toContainText(['Collectors','Records','Wishlisted Records']);
     await expect(page.locator('.community-panel-heading h2')).toContainText([
       'Collectors with similar taste',
       'Activity Feed',

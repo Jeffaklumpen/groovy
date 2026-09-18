@@ -20,6 +20,7 @@ test('community controller owns overview loading and social interactions',()=>{
   assert.match(controller,/api\.rpc\('get_community_overview'/);
   assert.match(controller,/socialController\.followUser/);
   assert.match(controller,/socialController\.unfollowUser/);
+  assert.doesNotMatch(controller,/adjustConnections/);
   assert.doesNotMatch(app,/\.rpc\('get_community_overview'/);
   assert.doesNotMatch(app,/\.from\('community_activity'\)/);
 });
@@ -47,4 +48,22 @@ test('community migration owns global activity and read-only overview aggregatio
   assert.match(sql,/after update of rating on public\.album_ratings/i);
   assert.match(sql,/grant execute on function public\.get_community_overview[\s\S]*authenticated/i);
   assert.match(sql,/revoke all on table public\.community_activity from anon, authenticated/i);
+});
+
+
+test('community summary uses wishlisted records and taste cards use the statistics genre overlap metric',()=>{
+  const core=fs.readFileSync('js/community-core.js','utf8');
+  const view=fs.readFileSync('js/community-view.js','utf8');
+  const migration=fs.readFileSync('supabase/migrations/20260918172422_community_wishlist_summary_and_genre_overlap.sql','utf8');
+
+  assert.match(core,/wishlisted_records:number\(summary\.wishlisted_records\)/);
+  assert.doesNotMatch(core,/connections:number\(summary\.connections\)/);
+  assert.match(view,/Wishlisted Records/);
+  assert.match(view,/taste_similarity/);
+  assert.match(view,/genre overlap/);
+  assert.doesNotMatch(view,/collection overlap/);
+  assert.match(migration,/'wishlisted_records'/);
+  assert.match(migration,/taste_similarity/);
+  assert.match(migration,/regexp_split_to_table/);
+  assert.match(migration,/least\(/);
 });

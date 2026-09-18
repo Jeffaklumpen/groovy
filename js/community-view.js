@@ -89,7 +89,7 @@ function create(options){
           avatar(item,'community-similar-avatar')+
           '<span><strong>'+escapeHtml(item.username||'Collector')+'</strong><small>'+escapeHtml(Core.formatCount(item.collection_count))+' records</small></span>'+
         '</button>'+
-        '<div class="community-taste-score"><strong>'+escapeHtml(Core.formatCount(item.common_count))+'</strong><span>records in common</span><small>'+escapeHtml(Core.formatCount(item.similarity_percent))+'% collection overlap</small></div>'+
+        '<div class="community-taste-score"><strong>'+escapeHtml(Core.formatCount(item.common_count))+'</strong><span>records in common</span><small><b>'+escapeHtml(String(Math.round(Core.number(item.taste_similarity))))+'%</b> genre overlap</small></div>'+
         '<div class="community-similar-actions">'+
           '<button class="community-follow-button'+(following?' following':'')+'" type="button" data-community-follow data-user-id="'+escapeHtml(item.user_id||'')+'" data-following="'+(following?'true':'false')+'">'+(following?'Following':'Follow')+'</button>'+
           '<button class="community-secondary-button" type="button" data-community-shelf="'+escapeHtml(item.username||'')+'">View Shelf</button>'+
@@ -199,7 +199,7 @@ function create(options){
       '<div class="community-summary-grid">'+
         summaryCard('people','Collectors',data.summary.collectors,'People building their shelves')+
         summaryCard('record','Records',data.summary.records,'Records in community collections')+
-        summaryCard('link','Connections',data.summary.connections,'Collector follows across Groovy')+
+        summaryCard('heart','Wishlisted Records',data.summary.wishlisted_records,'Records saved across community wishlists')+
       '</div>'+
       '<div class="community-primary-grid">'+
         panel('Collectors with similar taste','people',similarCollectors(data.similar_collectors),'community-similar-panel')+
@@ -226,24 +226,13 @@ function create(options){
     });
   }
 
-  function adjustConnections(delta){
-    var target=content.querySelector('[data-community-metric="connections"]');
-    if(!target)return;
-    var current=Number(target.dataset.rawValue);
-    if(!Number.isFinite(current))current=0;
-    current=Math.max(0,current+Number(delta||0));
-    target.dataset.rawValue=String(current);
-    target.textContent=Core.formatCount(current);
-  }
-
   return Object.freeze({
     show:show,
     hide:hide,
     loading:loading,
     error:error,
     render:render,
-    setFollowState:setFollowState,
-    adjustConnections:adjustConnections
+    setFollowState:setFollowState
   });
 }
 

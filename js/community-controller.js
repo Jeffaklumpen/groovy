@@ -93,7 +93,6 @@ function create(options){
       if(following)await socialController.unfollowUser(userId);
       else await socialController.followUser(userId);
       view.setFollowState(userId,!following);
-      view.adjustConnections(following?-1:1);
     }catch(error){
       log('error','Could not change community follow state:',error);
       view.setFollowState(userId,following);

@@ -51,7 +51,7 @@ function normalizeOverview(data){
     summary:{
       collectors:number(summary.collectors),
       records:number(summary.records),
-      connections:number(summary.connections)
+      wishlisted_records:number(summary.wishlisted_records)
     },
     similar_collectors:Array.isArray(data.similar_collectors)?data.similar_collectors:[],
     activity:Array.isArray(data.activity)?data.activity:[],
