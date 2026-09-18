@@ -37,16 +37,19 @@ test('selection mode tracks stable collection entry ids and drives actions',()=>
     body:{classList:classList()},
     collection:{querySelectorAll(){return cards;}},
     selectButton:button(),actionBar:{hidden:true},count:{textContent:''},
-    moveButton:button(),deleteButton:button(),cancelButton:button()
+    moveButton:button(),removeShelfButton:button(),addCollectionButton:button(),deleteButton:button(),cancelButton:button()
   };
-  const moved=[];const deleted=[];let renders=0;
+  const moved=[];const unshelved=[];const added=[];const deleted=[];let renders=0;
   const controller=Controller.create({
     elements,
     recordModel:{entryId:record=>record.id},
     getRecords:()=>records,
+    getContext:()=>({libraryView:'collection',activeShelfId:'shelf-1'}),
     canActivate:()=>true,
     onModeChange:()=>renders++,
     onMove:ids=>{moved.push(ids);return true;},
+    onRemoveShelf:ids=>{unshelved.push(ids);return true;},
+    onAddToCollection:ids=>{added.push(ids);return true;},
     onDelete:ids=>{deleted.push(ids);return true;}
   });
 
@@ -55,6 +58,9 @@ test('selection mode tracks stable collection entry ids and drives actions',()=>
   assert.equal(elements.actionBar.hidden,false);
   assert.equal(elements.body.classList.contains('selection-mode-active'),true);
   assert.equal(elements.moveButton.disabled,true);
+  assert.equal(elements.moveButton.hidden,false);
+  assert.equal(elements.removeShelfButton.hidden,false);
+  assert.equal(elements.addCollectionButton.hidden,true);
 
   controller.toggleIndex(1);
   assert.deepEqual(controller.selectedIds(),['20']);
@@ -63,8 +69,11 @@ test('selection mode tracks stable collection entry ids and drives actions',()=>
   assert.equal(elements.moveButton.disabled,false);
 
   elements.moveButton.click();
+  elements.removeShelfButton.click();
   elements.deleteButton.click();
   assert.deepEqual(moved,[['20']]);
+  assert.deepEqual(unshelved,[['20']]);
+  assert.deepEqual(added,[]);
   assert.deepEqual(deleted,[['20']]);
 
   elements.cancelButton.click();
@@ -78,7 +87,7 @@ test('selection mode refuses activation when the current library is not editable
     body:{classList:classList()},
     collection:{querySelectorAll(){return [];}},
     selectButton:button(),actionBar:{hidden:true},count:{textContent:''},
-    moveButton:button(),deleteButton:button(),cancelButton:button()
+    moveButton:button(),removeShelfButton:button(),addCollectionButton:button(),deleteButton:button(),cancelButton:button()
   };
   const controller=Controller.create({
     elements,
@@ -90,4 +99,38 @@ test('selection mode refuses activation when the current library is not editable
   elements.selectButton.click();
   assert.equal(controller.isActive(),false);
   assert.equal(elements.actionBar.hidden,true);
+});
+
+
+test('wishlist selection exposes add-to-collection instead of shelf actions',()=>{
+  const records=[{id:'wish-1'}];
+  const cards=[card('wish-1','Wishlist album')];
+  const elements={
+    body:{classList:classList()},
+    collection:{querySelectorAll(){return cards;}},
+    selectButton:button(),actionBar:{hidden:true},count:{textContent:''},
+    moveButton:button(),removeShelfButton:button(),addCollectionButton:button(),deleteButton:button(),cancelButton:button()
+  };
+  const added=[];const deleted=[];
+  const controller=Controller.create({
+    elements,
+    recordModel:{entryId:record=>record.id},
+    getRecords:()=>records,
+    getContext:()=>({libraryView:'wishlist',activeShelfId:'all'}),
+    canActivate:()=>true,
+    onAddToCollection:ids=>{added.push(ids);return true;},
+    onDelete:ids=>{deleted.push(ids);return true;}
+  });
+
+  controller.activate();
+  controller.toggleIndex(0);
+  assert.equal(elements.moveButton.hidden,true);
+  assert.equal(elements.removeShelfButton.hidden,true);
+  assert.equal(elements.addCollectionButton.hidden,false);
+  assert.equal(elements.addCollectionButton.disabled,false);
+
+  elements.addCollectionButton.click();
+  elements.deleteButton.click();
+  assert.deepEqual(added,[['wish-1']]);
+  assert.deepEqual(deleted,[['wish-1']]);
 });
