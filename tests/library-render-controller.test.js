@@ -37,7 +37,7 @@ function makeHarness(overrides){
     escapeHtml:value=>String(value==null?'':value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'),
     spotifyAlbumLink:record=>'spotify:'+record[2],appleMusicAlbumLink:record=>'apple:'+record[2],
     renderShelfStrip:()=>calls.hooks++,updateLibraryTabLabels:()=>calls.hooks++,shouldShowLoggedOutLanding:()=>false,renderLoggedOutLanding:()=>calls.hooks++,restoreEmptyCollectionMarkup:()=>calls.hooks++,
-    attachWishlistRemoveControls:()=>calls.hooks++,attachRecordActionMenus:()=>calls.hooks++,attachAlbumClicks:()=>calls.hooks++,enableGridSorting:()=>calls.hooks++,recordsPerPage:52
+    attachWishlistRemoveControls:()=>calls.hooks++,attachRecordActionMenus:()=>calls.hooks++,attachAlbumClicks:()=>calls.hooks++,enableGridSorting:()=>calls.hooks++,onRendered:()=>calls.hooks++,recordsPerPage:52
   });
   return {controller,elements,state,calls,baseRecord,collection,doc,win};
 }
@@ -75,6 +75,13 @@ test('Select control only appears for an authenticated owners collection with re
   h.controller.render();
   assert.equal(h.elements.selectButton.hidden,true);
 });
+test('every render exposes a post-render hook for selection resync',()=>{
+  const h=makeHarness();
+  const before=h.calls.hooks;
+  h.controller.render();
+  assert.ok(h.calls.hooks>before);
+});
+
 test('render exposes empty shelf messaging without changing interaction ownership',()=>{
   const h=makeHarness({activeShelfId:'shelf-1'});h.state.records=[[1,'ABBA','Arrival','1976','Pop',0,'abba.jpg',{},2,'entry-2',11,{},null,'other-shelf',1,3.2]];
   const result=h.controller.render();assert.equal(result.pageRecords.length,0);assert.match(h.collection.innerHTML,/This shelf is empty/);assert.match(h.collection.innerHTML,/Use the record menu to add records to this shelf/);
