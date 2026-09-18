@@ -837,7 +837,15 @@ var detailShelfActions=document.getElementById('detailShelfActions');
 var detailShelfStatus=document.getElementById('detailShelfStatus');
 var detailLibraryRemoveButton=document.getElementById('detailLibraryRemoveButton');
 var detailSocialContext=document.getElementById('detailSocialContext');
+var SEARCH_PREVIEW_INDEX=1000000000;
 var detailOpenRecordIndex=-1;
+var detailPreviewRecord=null;
+var detailPreviewPayload=null;
+
+function detailRecordAt(index){
+  return index===SEARCH_PREVIEW_INDEX?detailPreviewRecord:(records[index]||null);
+}
+
 var detailTracklistController=DetailTracklistController.create({
   api:supabaseClient,
   recordModel:Record,
@@ -1138,7 +1146,7 @@ var marketplaceController=MarketplaceController.create({
   navigator:navigator,
   Intl:Intl,
   recordModel:Record,
-  getRecord:function(index){return records[index]||null;},
+  getRecord:detailRecordAt,
   getArtist:function(record){return Record.artist(record);},
   getTitle:function(record){return Record.title(record);},
   onLog:function(level,message,error){
@@ -1311,16 +1319,80 @@ function buildGrid(){
 }
 window.buildGrid=buildGrid;
 
-function openAlbum(index){
-  var record=records[index];
+function setSearchPreviewActionState(addButton,wishlistButton,status){
+  if(!addButton||!wishlistButton)return;
+  if(status==='collection'){
+    addButton.textContent='✓ In collection';
+    addButton.disabled=true;
+    wishlistButton.textContent='In collection';
+    wishlistButton.disabled=true;
+  }else if(status==='wishlist'){
+    addButton.textContent='On wishlist';
+    addButton.disabled=true;
+    wishlistButton.textContent='✓ Wishlisted';
+    wishlistButton.disabled=true;
+  }
+}
+
+function renderSearchPreviewActions(payload){
+  if(!detailShelfActions)return;
+  detailShelfActions.innerHTML='';
+  detailShelfActions.hidden=false;
+
+  var addButton=document.createElement('button');
+  addButton.type='button';
+  addButton.className='detail-shelf-button primary';
+  addButton.textContent='Add Record';
+
+  var wishlistButton=document.createElement('button');
+  wishlistButton.type='button';
+  wishlistButton.className='detail-shelf-button secondary';
+  wishlistButton.innerHTML='<span class="wishlist-icon" aria-hidden="true"></span>Wishlist';
+
+  if(payload&&payload.isAdded)setSearchPreviewActionState(addButton,wishlistButton,'collection');
+  else if(payload&&payload.isWishlisted)setSearchPreviewActionState(addButton,wishlistButton,'wishlist');
+
+  addButton.addEventListener('click',async function(event){
+    event.preventDefault();
+    event.stopPropagation();
+    if(!payload||typeof payload.save!=='function')return;
+    var status=await payload.save('collection',addButton);
+    if(status){
+      payload.isAdded=status==='collection';
+      payload.isWishlisted=status==='wishlist';
+      setSearchPreviewActionState(addButton,wishlistButton,status);
+    }
+  });
+
+  wishlistButton.addEventListener('click',async function(event){
+    event.preventDefault();
+    event.stopPropagation();
+    if(!payload||typeof payload.save!=='function')return;
+    var status=await payload.save('wishlist',wishlistButton);
+    if(status){
+      payload.isAdded=status==='collection';
+      payload.isWishlisted=status==='wishlist';
+      setSearchPreviewActionState(addButton,wishlistButton,status);
+    }
+  });
+
+  detailShelfActions.appendChild(addButton);
+  detailShelfActions.appendChild(wishlistButton);
+}
+
+function renderAlbumDetail(record,index,options){
+  options=options||{};
   if(!record)return;
 
+  var searchPreview=!!options.searchPreview;
   detailOpenRecordIndex=index;
   marketplaceController.openForRecord(index);
   pressingController.resetRecord();
-  var isWishlist=window.libraryView==='wishlist';
+
+  var isWishlist=!searchPreview&&window.libraryView==='wishlist';
   detailNumber.hidden=!isWishlist;
   detailNumber.textContent=isWishlist?'Wishlisted':'';
+
   var artist=Record.artist(record);
   var title=Record.title(record);
   detailArtist.innerHTML=esc(artist);
@@ -1329,10 +1401,16 @@ function openAlbum(index){
   var genreLabel=Record.genre(record)||'Genre saknas';
   detailGenre.textContent=genreLabel;
   detailGenre.setAttribute('data-mobile-genre',genreLabel.split(' · ')[0]||genreLabel);
-  pressingController.render(index);
+
+  if(searchPreview){
+    copyDetails.hidden=true;
+  }else{
+    pressingController.render(index);
+  }
 
   detailCover.src=Record.coverUrl(record);
   detailCover.alt=artist+' - '+title;
+
   var detailAppleMusicLink=document.getElementById('detailAppleMusicLink');
   var detailSpotifyLink=document.getElementById('detailSpotifyLink');
   if(detailAppleMusicLink){
@@ -1343,15 +1421,94 @@ function openAlbum(index){
   detailSpotifyLink.setAttribute('aria-label','Find '+title+' by '+artist+' on Spotify');
   wikipediaAboutController.openForRecord(record);
 
-  ratingController.renderDetail(index);
-  renderDetailShelfStatus(index);
-  renderDetailShelfActions(index);
-  detailSocialController.openForRecord(record,index);
+  if(searchPreview){
+    ratingController.renderPreview(record);
+    if(detailShelfStatus){detailShelfStatus.hidden=true;detailShelfStatus.innerHTML='';detailShelfStatus.classList.remove('unshelved');}
+    if(detailLibraryRemoveButton){detailLibraryRemoveButton.hidden=true;detailLibraryRemoveButton.dataset.index='';}
+    renderSearchPreviewActions(options.payload||null);
+    detailSocialController.openForRecord(record,index,{searchPreview:true});
+  }else{
+    ratingController.renderDetail(index);
+    renderDetailShelfStatus(index);
+    renderDetailShelfActions(index);
+    detailSocialController.openForRecord(record,index);
+  }
+
   detailTracklistController.openForRecord(record,index);
 
-  albumOverlay.className='album-overlay visible';
+  albumOverlay.className='album-overlay visible'+(searchPreview?' search-preview':'');
   document.body.style.overflow='hidden';
   detailLayoutController.syncOpen();
+}
+
+function openAlbum(index){
+  var record=records[index];
+  if(!record)return;
+  detailPreviewRecord=null;
+  detailPreviewPayload=null;
+  renderAlbumDetail(record,index,{searchPreview:false});
+}
+
+async function hydrateSearchAlbumPreview(record){
+  var masterId=String(Record.discogsMasterId(record)||'').trim();
+  if(!masterId)return;
+
+  try{
+    var result=await supabaseClient
+      .from('albums')
+      .select('id,genre,cover_url,apple_collection_url,tracks(id,disc_side,track_number,title,duration)')
+      .eq('discogs_master_id',masterId)
+      .maybeSingle();
+
+    if(result.error)throw result.error;
+    if(detailPreviewRecord!==record||detailOpenRecordIndex!==SEARCH_PREVIEW_INDEX||!result.data)return;
+
+    var album=result.data;
+    Record.setValue(record,'albumId',album.id||null);
+    if(!Record.genre(record)&&album.genre)Record.setValue(record,'genre',album.genre);
+    if(!Record.appleUrl(record)&&album.apple_collection_url)Record.setValue(record,'appleUrl',album.apple_collection_url);
+    if(!Record.coverUrl(record)&&album.cover_url)Record.setValue(record,'coverUrl',album.cover_url);
+    if(Array.isArray(album.tracks)&&album.tracks.length){
+      Record.replaceTrackRows(record,album.tracks);
+      detailTracklistController.render(record);
+    }
+
+    var user=await currentSessionUser();
+    if(detailPreviewRecord!==record||detailOpenRecordIndex!==SEARCH_PREVIEW_INDEX)return;
+    var ratingMap=await ratingController.loadData([album.id],user&&user.id);
+    if(detailPreviewRecord!==record||detailOpenRecordIndex!==SEARCH_PREVIEW_INDEX)return;
+    Record.applyRatingMeta(record,ratingMap);
+    ratingController.renderPreview(record);
+
+    var genreLabel=Record.genre(record)||'Genre saknas';
+    detailGenre.textContent=genreLabel;
+    detailGenre.setAttribute('data-mobile-genre',genreLabel.split(' · ')[0]||genreLabel);
+  }catch(error){
+    console.warn('Could not hydrate search album preview:',error);
+  }
+}
+
+function openSearchAlbumPreview(payload){
+  if(!payload||!payload.master)return;
+  var masterId=String(payload.master.id||'').trim();
+  if(!masterId)return;
+
+  detailPreviewPayload=payload;
+  detailPreviewRecord=Record.fromSearchPreview({
+    artist:payload.artist,
+    title:payload.albumTitle,
+    year:payload.year,
+    genre:payload.genre,
+    coverUrl:payload.coverState&&payload.coverState.url?payload.coverState.url:'',
+    discogsMasterId:masterId,
+    appleUrl:payload.coverState&&payload.coverState.appleCollectionUrl?payload.coverState.appleCollectionUrl:''
+  });
+
+  renderAlbumDetail(detailPreviewRecord,SEARCH_PREVIEW_INDEX,{
+    searchPreview:true,
+    payload:payload
+  });
+  hydrateSearchAlbumPreview(detailPreviewRecord);
 }
 
 function closeAlbum(){
@@ -1361,6 +1518,8 @@ function closeAlbum(){
   document.body.style.overflow='';
   pressingController.closeDetails();
   detailOpenRecordIndex=-1;
+  detailPreviewRecord=null;
+  detailPreviewPayload=null;
   if(detailShelfActions){detailShelfActions.hidden=true;detailShelfActions.innerHTML='';}
   if(detailShelfStatus){detailShelfStatus.hidden=true;detailShelfStatus.innerHTML='';detailShelfStatus.classList.remove('unshelved');}
   detailSocialController.close();
@@ -1874,7 +2033,8 @@ var albumSearchController=AlbumSearch.create({
     albumSearchInput:albumSearchInput,
     albumSearchResults:albumSearchResults,
     appleSearchCore:AppleSearchCore,
-    pressingCore:PressingCore
+    pressingCore:PressingCore,
+    onPreview:openSearchAlbumPreview
 });
 
 function openAddAlbumSearch(user){return albumSearchController.open(user);}
