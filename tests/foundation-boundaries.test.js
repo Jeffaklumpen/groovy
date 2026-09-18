@@ -77,3 +77,32 @@ test('wishlist to collection is one authenticated database transaction',()=>{
   assert.match(sql,/row_number\(\) over/i);
   assert.match(sql,/grant execute on function public\.move_wishlist_to_collection/i);
 });
+
+test('notes album persistence uses a service-role-only verified catalog writer',()=>{
+  const sql=fs.readFileSync(
+    'supabase/migrations/20260918100500_verified_album_library_save.sql',
+    'utf8'
+  );
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  assert.match(sql,/function public\.save_album_to_library_verified\(/i);
+  assert.match(sql,/p_user_id uuid/i);
+  assert.match(sql,/revoke all on function public\.save_album_to_library_verified[\s\S]*authenticated/i);
+  assert.match(sql,/grant execute on function public\.save_album_to_library_verified[\s\S]*service_role/i);
+  assert.match(edge,/action === 'saveAlbum'/);
+  assert.match(edge,/auth\.getUser\(\)/);
+  assert.match(edge,/save_album_to_library_verified/);
+  assert.match(edge,/itunes\.apple\.com\/lookup/);
+});
+
+test('detail compatibility layers use app state and the shared library mutation owner',()=>{
+  const app=fs.readFileSync('js/app.js','utf8');
+  const detail=fs.readFileSync('js/detail-enhancements-v2.js','utf8');
+  const rating=fs.readFileSync('js/album-rating-layout-v4.js','utf8');
+  assert.match(app,/window\.groovyGetOpenRecordIndex/);
+  assert.match(app,/window\.groovyMoveWishlistToCollection/);
+  assert.match(detail,/groovyGetOpenRecordIndex/);
+  assert.match(detail,/groovyMoveWishlistToCollection/);
+  assert.doesNotMatch(detail,/async function addWishlistToCollection/);
+  assert.doesNotMatch(detail,/\.from\(['"]collections['"]\)\s*\.insert/);
+  assert.match(rating,/groovyGetOpenRecordIndex/);
+});
