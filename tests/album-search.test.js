@@ -21,6 +21,20 @@ test('album search owns search, artwork enrichment and Discogs save flow',()=>{
   assert.equal(source.includes('async function renderCurrentRoute()'),false);
 });
 
+test('search results expose a detail-preview callback without moving save ownership into app.js',()=>{
+  const source=fs.readFileSync('js/album-search.js','utf8');
+  const app=fs.readFileSync('js/app.js','utf8');
+  assert.match(source,/var onPreview=typeof options\.onPreview===['"]function['"]/);
+  assert.match(source,/div\.addEventListener\(['"]click['"]/);
+  assert.match(source,/onPreview\(\{/);
+  assert.match(source,/save:saveFromPreview/);
+  assert.match(app,/onPreview:openSearchAlbumPreview/);
+  assert.match(app,/Record\.fromSearchPreview/);
+  assert.match(app,/searchPreview:true/);
+  assert.match(app,/renderSearchPreviewActions/);
+  assert.equal(app.includes('async function saveAlbumFromDiscogs('),false);
+});
+
 test('persisted Apple artwork is used before the visible search result render',()=>{
   const source=fs.readFileSync('js/album-search.js','utf8');
   const lookup=source.indexOf('await getPersistentAppleArtworkCache(searchResults)');
