@@ -148,3 +148,49 @@ test('mutations are blocked while viewing another users library',async()=>{
   assert.equal(await controller.deleteWishlist(0),false);
   assert.equal(await controller.moveWishlistToCollection(0,{textContent:'Move',disabled:false}),false);
 });
+
+
+test('bulk collection delete delegates to one atomic RPC and reloads',async()=>{
+  const calls=[];let reloads=0;let invalidated=0;
+  const api={
+    auth:{async getSession(){return {data:{session:{user:{id:'user-1'}}}};}},
+    from(){throw new Error('not used');},
+    async rpc(name,payload){calls.push({name,payload});return {data:2,error:null};}
+  };
+  const controller=Controller.create({
+    api,recordModel:recordModel(),getRecords:()=>[],getViewedUserId:()=>null,getLibraryView:()=> 'collection',
+    invalidateSearchState:()=>invalidated++,loadCollection:async()=>{reloads++;}
+  });
+  assert.equal(await controller.deleteCollectionRecords(['entry-2','entry-1','entry-2']),true);
+  assert.deepEqual(calls,[{name:'delete_collection_records',payload:{p_collection_ids:['entry-2','entry-1']}}]);
+  assert.equal(invalidated,1);
+  assert.equal(reloads,1);
+});
+
+test('bulk shelf move delegates to one atomic RPC and reloads',async()=>{
+  const calls=[];let reloads=0;
+  const api={
+    auth:{async getSession(){return {data:{session:{user:{id:'user-1'}}}};}},
+    from(){throw new Error('not used');},
+    async rpc(name,payload){calls.push({name,payload});return {data:2,error:null};}
+  };
+  const controller=Controller.create({
+    api,recordModel:recordModel(),getRecords:()=>[],getViewedUserId:()=>null,getLibraryView:()=> 'collection',
+    loadCollection:async()=>{reloads++;}
+  });
+  assert.equal(await controller.moveCollectionRecordsToShelf(['entry-1','entry-2'],'shelf-9'),true);
+  assert.deepEqual(calls,[{name:'move_collection_records_to_shelf',payload:{p_collection_ids:['entry-1','entry-2'],p_shelf_id:'shelf-9'}}]);
+  assert.equal(reloads,1);
+});
+
+test('bulk collection mutations are blocked outside the owners collection',async()=>{
+  const api={
+    auth:{getSession(){throw new Error('should not authenticate');}},
+    from(){throw new Error('should not query');}
+  };
+  const controller=Controller.create({
+    api,recordModel:recordModel(),getRecords:()=>[],getViewedUserId:()=> 'other-user',getLibraryView:()=> 'collection'
+  });
+  assert.equal(await controller.deleteCollectionRecords(['entry-1']),false);
+  assert.equal(await controller.moveCollectionRecordsToShelf(['entry-1'],'shelf-1'),false);
+});
