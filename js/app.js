@@ -565,33 +565,11 @@ window.libraryView=GroovyRouteState.libraryViewFromSearch(window.location.search
 window.albumIdentityKey=GroovyRouteState.albumIdentityKey;
 
 window.emptyRecordSides=Record.emptySides;
-var wishlistRecord=Record.fromWishlist;
-
 window.loadWishlist=async function(userId){
   var loadVersion=++window.collectionLoadVersion;
-  var {data,error}=await supabaseClient
-    .from('wishlists')
-    .select(`
-      id,
-      added_at,
-      sort_order,
-      cover_url,
-      discogs_style,
-      albums(
-        id,
-        title,
-        release_year,
-        genre,
-        cover_url,
-        apple_collection_url,
-        discogs_master_id,
-        artists(id,name),
-        tracks(id,disc_side,track_number,title)
-      )
-    `)
-    .eq('user_id',userId)
-    .order('sort_order',{ascending:true,nullsFirst:false})
-    .order('added_at',{ascending:true});
+  var wishlistResult=await libraryData.fetchWishlist(userId);
+  var data=wishlistResult.data;
+  var error=wishlistResult.error;
 
   if(error){
     console.error('Kunde inte hämta önskelistan:',error);
@@ -600,9 +578,7 @@ window.loadWishlist=async function(userId){
 
   if(loadVersion!==window.collectionLoadVersion)return;
 
-  records=(data||[])
-    .filter(function(item){return item.albums;})
-    .map(wishlistRecord);
+  records=libraryData.mapWishlistRows(data);
 
   document.getElementById('collectionCount').textContent=records.length+' RECORDS ON WISHLIST';
   buildGrid();
