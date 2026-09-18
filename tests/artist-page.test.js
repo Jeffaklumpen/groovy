@@ -218,6 +218,16 @@ test('artist Wikipedia about enrichment runs section and image work in parallel'
   assert.match(service,/var enriched=await Promise\.all\(\[sectionPromise,imagePromise\]\)/);
 });
 
+test('first artist profile fetch does not block on a second Discogs genre search',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'artistProfile')");
+  const end=edge.indexOf("if (action === 'master')",start);
+  const block=edge.slice(start,end);
+  assert.match(block,/\/artists\/\' \+ encodeURIComponent\(String\(resolvedArtistId\)\)/);
+  assert.doesNotMatch(block,/database\/search\?artist=/);
+  assert.match(block,/const genres:string\[\]=\[\]/);
+});
+
 test('artist navigation resolves missing Discogs identity without loading the full profile first',()=>{
   const controller=fs.readFileSync('js/artist-controller.js','utf8');
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
