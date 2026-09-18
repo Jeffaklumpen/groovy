@@ -93,45 +93,13 @@ test('deleteWishlist removes only the current users wishlist row then reloads',a
   assert.equal(reloaded,1);
 });
 
-test('moveWishlistToCollection inserts at the end then removes wishlist row',async()=>{
+test('moveWishlistToCollection delegates the whole transition to one atomic RPC',async()=>{
   const records=[[1,'A','One',2020,'Prog',0,'cover.jpg',{},99,'wish-1']];
-  const operations=[];
+  const calls=[];
   const api={
-    auth:{async getUser(){return {data:{user:{id:'user-1'}},error:null};}},
-    from(table){
-      if(table==='collections'){
-        return {
-          select(column){
-            if(column==='id'){
-              return {
-                eq(){return this;},
-                limit(){operations.push('check-existing');return Promise.resolve({data:[],error:null});}
-              };
-            }
-            if(column==='sort_order'){
-              return {
-                eq(){return this;},
-                order(){return this;},
-                limit(){operations.push('last-sort');return Promise.resolve({data:[{sort_order:7}],error:null});}
-              };
-            }
-            throw new Error('unexpected select '+column);
-          },
-          async insert(payload){operations.push({insert:payload});return {error:null};}
-        };
-      }
-      if(table==='wishlists'){
-        return {
-          delete(){
-            return {
-              error:null,
-              eq(column,value){operations.push(['delete-eq',column,value]);return this;}
-            };
-          }
-        };
-      }
-      throw new Error('unexpected table '+table);
-    }
+    auth:{async getSession(){return {data:{session:{user:{id:'user-1'}}}};}},
+    from(){throw new Error('move must not issue direct table writes');},
+    async rpc(name,payload){calls.push({name,payload});return {data:{status:'collection',inserted:true},error:null};}
   };
   let invalidated=0;
   let reloaded=0;
@@ -143,51 +111,28 @@ test('moveWishlistToCollection inserts at the end then removes wishlist row',asy
   });
 
   assert.equal(await controller.moveWishlistToCollection(0,button),true);
-  assert.deepEqual(operations[0],'check-existing');
-  assert.deepEqual(operations[1],'last-sort');
-  assert.deepEqual(operations[2],{insert:{
-    user_id:'user-1',
-    album_id:99,
-    cover_url:'cover.jpg',
-    discogs_style:'Prog',
-    sort_order:8
-  }});
-  assert.deepEqual(operations.slice(3),[
-    ['delete-eq','id','wish-1'],
-    ['delete-eq','user_id','user-1']
-  ]);
+  assert.deepEqual(calls,[{name:'move_wishlist_to_collection',payload:{p_wishlist_id:'wish-1'}}]);
   assert.equal(invalidated,1);
   assert.equal(reloaded,1);
 });
 
-test('moveWishlistToCollection does not insert duplicate collection membership',async()=>{
+test('moveWishlistToCollection restores the button when the atomic RPC fails',async()=>{
   const records=[[1,'A','One',2020,'Rock',0,'',{},99,'wish-1']];
-  let insertCalls=0;
+  const alerts=[];
   const api={
-    auth:{async getUser(){return {data:{user:{id:'user-1'}},error:null};}},
-    from(table){
-      if(table==='collections'){
-        return {
-          select(){
-            return {
-              eq(){return this;},
-              limit(){return Promise.resolve({data:[{id:'already-there'}],error:null});}
-            };
-          },
-          async insert(){insertCalls++;return {error:null};}
-        };
-      }
-      return {
-        delete(){return {error:null,eq(){return this;}};}
-      };
-    }
+    auth:{async getSession(){return {data:{session:{user:{id:'user-1'}}}};}},
+    from(){throw new Error('not used');},
+    async rpc(){return {error:new Error('move failed')};}
   };
+  const button={textContent:'Move',disabled:false};
   const controller=Controller.create({
     api,recordModel:recordModel(),getRecords:()=>records,getViewedUserId:()=>null,
-    getLibraryView:()=> 'wishlist',loadCollection:async()=>{}
+    getLibraryView:()=> 'wishlist',loadCollection:async()=>{},onAlert:message=>alerts.push(message)
   });
-  assert.equal(await controller.moveWishlistToCollection(0,{textContent:'Move',disabled:false}),true);
-  assert.equal(insertCalls,0);
+  assert.equal(await controller.moveWishlistToCollection(0,button),false);
+  assert.equal(button.textContent,'Move');
+  assert.equal(button.disabled,false);
+  assert.equal(alerts.length,1);
 });
 
 test('mutations are blocked while viewing another users library',async()=>{
