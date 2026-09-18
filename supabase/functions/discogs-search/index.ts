@@ -1657,7 +1657,7 @@ export default {
             })
           }
 
-          return candidates
+          const best=candidates
             .map((row: any)=>{
               const secondary=String(row?.secondary_types||'').toLowerCase()
               const rowYear=Number(row?.first_release_year)||0
@@ -1673,7 +1673,12 @@ export default {
               if (/compilation|live|remix|dj-mix|mixtape/.test(secondary)) score-=100
               return {row,score}
             })
-            .sort((left: any,right: any)=>right.score-left.score)[0]?.row||null
+            .sort((left: any,right: any)=>right.score-left.score)[0]
+
+          // An exact title alone is not enough. A distant compilation/reissue
+          // must not override a Wikipedia-owned core album just because no better
+          // same-artist row exists locally (ABBA's 1973 Ring Ring is a real case).
+          return best&&best.score>=60?best.row:null
         }
 
         async function uniqueGlobalCatalogMatch(album: any) {
