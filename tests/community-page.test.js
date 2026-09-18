@@ -1,0 +1,50 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+
+test('community page has its own route, tab and feature modules',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const app=fs.readFileSync('js/app.js','utf8');
+  assert.match(html,/id="communityTabButton"/);
+  assert.match(html,/id="communityPage"/);
+  assert.match(html,/\/css\/community\.css\?v=/);
+  assert.match(html,/\/js\/community-core\.js\?v=/);
+  assert.match(html,/\/js\/community-view\.js\?v=/);
+  assert.match(html,/\/js\/community-controller\.js\?v=/);
+  assert.ok(app.includes("if(/^\\/community\\/?$/.test(window.location.pathname)){"));
+});
+
+test('community controller owns overview loading and social interactions',()=>{
+  const app=fs.readFileSync('js/app.js','utf8');
+  const controller=fs.readFileSync('js/community-controller.js','utf8');
+  assert.match(controller,/api\.rpc\('get_community_overview'/);
+  assert.match(controller,/socialController\.followUser/);
+  assert.match(controller,/socialController\.unfollowUser/);
+  assert.doesNotMatch(app,/\.rpc\('get_community_overview'/);
+  assert.doesNotMatch(app,/\.from\('community_activity'\)/);
+});
+
+test('community view keeps Apple Music and Spotify links attached to album artwork',()=>{
+  const view=fs.readFileSync('js/community-view.js','utf8');
+  const css=fs.readFileSync('css/community.css','utf8');
+  assert.match(view,/apple-music-badge-small\.svg/);
+  assert.match(view,/spotify-logo\.svg/);
+  assert.match(view,/community-cover-services/);
+  assert.match(css,/\.community-cover-services/);
+  assert.match(css,/\.community-cover-service-apple/);
+  assert.match(css,/\.community-cover-service-spotify/);
+});
+
+test('community migration owns global activity and read-only overview aggregation',()=>{
+  const sql=fs.readFileSync('supabase/migrations/20260918170131_community_page_foundation.sql','utf8');
+  assert.match(sql,/create table public\.community_activity/i);
+  assert.match(sql,/enable row level security/i);
+  assert.match(sql,/Authenticated users can read community activity/);
+  assert.match(sql,/function public\.get_community_overview/i);
+  assert.match(sql,/function public\.log_community_activity/i);
+  assert.match(sql,/after insert on public\.collections/i);
+  assert.match(sql,/after insert on public\.wishlists/i);
+  assert.match(sql,/after update of rating on public\.album_ratings/i);
+  assert.match(sql,/grant execute on function public\.get_community_overview[\s\S]*authenticated/i);
+  assert.match(sql,/revoke all on table public\.community_activity from anon, authenticated/i);
+});

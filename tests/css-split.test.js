@@ -10,6 +10,7 @@ const CSS_FILES=[
   'css/shelves-streaming.css',
   'css/album-detail-extras.css',
   'css/landing-social.css',
+  'css/community.css',
   'css/ratings-detail.css'
 ];
 
@@ -44,5 +45,6 @@ test('split stylesheet boundaries keep major domains in their intended files',()
   assert.match(fs.readFileSync('css/shelves-streaming.css','utf8'),/\/\* SHELVES \*\//);
   assert.match(fs.readFileSync('css/album-detail-extras.css','utf8'),/\/\* PROFILE NAV V1/);
   assert.match(fs.readFileSync('css/landing-social.css','utf8'),/\/\* LOGGED OUT LANDING \*\//);
+  assert.match(fs.readFileSync('css/community.css','utf8'),/\/\* COMMUNITY PAGE \*\//);
   assert.match(fs.readFileSync('css/ratings-detail.css','utf8'),/\/\* GLOBAL ALBUM RATING \+ TRACK DURATIONS V11 \*\//);
 });

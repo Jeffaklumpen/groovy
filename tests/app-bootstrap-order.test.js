@@ -380,3 +380,18 @@ test('username validation core loads before both app and profile integrations',(
   assert.match(fs.readFileSync('js/app.js','utf8'),/UserProfileCore\.validUsername\(username\)/);
   assert.match(fs.readFileSync('js/profile.js','utf8'),/UserProfileCore\.validUsername\(username\)/);
 });
+
+
+test('community feature modules load before app.js and app only composes them',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const app=fs.readFileSync('js/app.js','utf8');
+  const core=html.indexOf('/js/community-core.js?v=');
+  const view=html.indexOf('/js/community-view.js?v=');
+  const controller=html.indexOf('/js/community-controller.js?v=');
+  const appScript=html.indexOf('/js/app.js?v=');
+  assert.ok(core>=0&&view>core&&controller>view&&appScript>controller);
+  assert.match(app,/var CommunityView=window\.GroovyCommunityView;/);
+  assert.match(app,/var CommunityController=window\.GroovyCommunityController;/);
+  assert.match(app,/CommunityController\.create\(\{/);
+  assert.doesNotMatch(app,/function similarCollectors|function activityFeed|function topCollectors|function wishlistedAlbums/);
+});

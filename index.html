@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="/css/shelves-streaming.css?v=3">
   <link rel="stylesheet" href="/css/album-detail-extras.css?v=1">
   <link rel="stylesheet" href="/css/landing-social.css?v=3">
+  <link rel="stylesheet" href="/css/community.css?v=1">
   <link rel="stylesheet" href="/css/ratings-detail.css?v=8">
   <link rel="stylesheet" href="/css/detail-enhancements.css?v=18">
   <link rel="stylesheet" href="/css/profile.css?v=11">
@@ -50,6 +51,7 @@
     <nav id="libraryTabs" class="library-tabs" aria-label="My library" style="display:none;">
       <button id="collectionTabButton" class="library-tab active" type="button"><span class="record-icon" aria-hidden="true"></span>My Shelf</button>
       <button id="wishlistTabButton" class="library-tab" type="button"><span class="wishlist-icon" aria-hidden="true"></span>My Wishlist</button>
+      <button id="communityTabButton" class="library-tab community-tab" type="button" hidden><span class="community-tab-icon" aria-hidden="true"></span>Community</button>
     </nav>
 
     <div class="header-tools">
@@ -183,6 +185,10 @@
       </div>
     </div>
   </div>
+</section>
+
+<section id="communityPage" class="community-page" aria-label="Community" aria-hidden="true" hidden>
+  <div id="communityContent" class="community-content" aria-live="polite"></div>
 </section>
 
 <div id="selectionActionBar" class="selection-action-bar" hidden>
@@ -588,7 +594,7 @@
 <script src="/js/album-search.js?v=5"></script>
 <script src="/js/wikipedia-service.js?v=1"></script>
 <script src="/js/wikipedia-about-controller.js?v=1"></script>
-<script src="/js/app.js?v=187"></script>
+<script src="/js/app.js?v=188"></script>
 <script src="/js/detail-enhancements-v2.js?v=14"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=13"></script>

@@ -51,6 +51,12 @@ Future migrations that create a client-facing table must include both:
 
 Do not assume a new public table is automatically reachable through `supabase-js`.
 
+## Community page
+
+The authenticated `/community` page reads `public.get_community_overview(...)`, which returns totals, taste matches, rankings and recent activity as one read model. Cross-user aggregation stays in PostgreSQL instead of downloading full tables to the browser.
+
+`public.community_activity` is the global activity-feed source. It is populated by database triggers for collection adds, wishlist adds and album rating changes. Authenticated clients have SELECT only; browser code must not insert or update feed events directly. This is intentionally separate from recipient-specific `notifications`.
+
 ## Edge Functions
 
 The source for every live Edge Function belongs in `supabase/functions/<function-name>/` before or together with deployment.

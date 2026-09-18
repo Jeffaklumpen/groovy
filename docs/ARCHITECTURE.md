@@ -17,7 +17,8 @@ GroovyShelves remains a vanilla JavaScript application. There is deliberately no
 - `js/library-render-controller.js` — library card/pagination rendering.
 - `js/library-actions-controller.js` — user-library mutations.
 - `js/grid-sort-controller.js` — drag/reorder state and batched order RPCs.
-- `js/pressing-core.js`, `js/marketplace-core.js`, `js/rating-core.js`, `js/shelf-core.js`, `js/library-core.js`, `js/notification-core.js`, `js/statistics-core.js`, `js/apple-search-core.js` — pure/testable domain helpers.
+- `js/pressing-core.js`, `js/marketplace-core.js`, `js/rating-core.js`, `js/shelf-core.js`, `js/library-core.js`, `js/notification-core.js`, `js/statistics-core.js`, `js/apple-search-core.js`, `js/community-core.js` — pure/testable domain helpers.
+- `js/community-controller.js` / `js/community-view.js` — own the `/community` overview, its Supabase read model, rendering and follow/profile interactions. `app.js` only wires the feature into routing.
 - feature controllers/views own their respective DOM/data behavior.
 - `js/pwa.js` — PWA installation and service-worker registration only.
 
@@ -25,7 +26,7 @@ Application scripts and styles are still loaded explicitly from `index.html`. Do
 
 ## Routing
 
-Canonical shelf URLs use `/shelf/:username`. `/user/:username` remains accepted only as a legacy route. Public profile pages use `/profile/:username`.
+Canonical shelf URLs use `/shelf/:username`. `/user/:username` remains accepted only as a legacy route. Public profile pages use `/profile/:username`. The authenticated community overview uses `/community`.
 
 Browser navigation is centralized in `js/router.js`. It is the only application module allowed to call `history.pushState`, `history.replaceState`, `history.back` or listen for `popstate`.
 
@@ -66,6 +67,12 @@ PostgreSQL then owns the consistency-sensitive part:
 Authenticated clients cannot directly INSERT/UPDATE shared `artists`, `albums` or `tracks` rows. The older authenticated `save_album_to_library` RPC remains temporarily for compatibility with the stable `main` client and should have authenticated EXECUTE removed when that client is upgraded.
 
 Wishlist-to-collection moves are separately atomic through `move_wishlist_to_collection`; UI surfaces must delegate that mutation to `library-actions-controller.js` rather than reimplementing table writes.
+
+## Community read model
+
+The Community page reads one aggregated payload from `get_community_overview(...)`. Cross-user totals, taste matches and rankings belong in that database read model instead of being rebuilt from full browser table scans.
+
+Global feed events are persisted in `community_activity` by database triggers on collection adds, wishlist adds and album rating changes. Browser clients can read this feed but cannot write it directly. Personal `notifications` remain a separate recipient-specific feature and must not be reused as a global feed.
 
 ## Supabase
 

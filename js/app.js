@@ -8,6 +8,10 @@ var NotificationController=window.GroovyNotificationController;
 if(!NotificationController)throw new Error('GroovyNotificationController must load before app.js');
 var SocialController=window.GroovySocialController;
 if(!SocialController)throw new Error('GroovySocialController must load before app.js');
+var CommunityView=window.GroovyCommunityView;
+if(!CommunityView)throw new Error('GroovyCommunityView must load before app.js');
+var CommunityController=window.GroovyCommunityController;
+if(!CommunityController)throw new Error('GroovyCommunityController must load before app.js');
 var UserSearchController=window.GroovyUserSearchController;
 if(!UserSearchController)throw new Error('GroovyUserSearchController must load before app.js');
 var DetailSocialController=window.GroovyDetailSocialController;
@@ -62,6 +66,7 @@ const registerUsername=document.getElementById('registerUsername');
 const registerButton=document.getElementById('registerButton');
 const authSwitchButton=document.getElementById('authSwitchButton');
 const viewedUserFollowButton=document.getElementById('viewedUserFollowButton');
+var communityController=null;
 
 // A blurred header becomes a containing block for fixed descendants in mobile
 // browsers. Put the dialog at body level after capturing its controls, so it
@@ -150,6 +155,42 @@ var socialController=SocialController.create({
   onBackHome:function(){return Router.navigate('/');},
   onRequireAuth:function(){openAuthPanel('login');Router.replace('/',{}, {render:false});},
   onBeforeFollowingOpen:function(){profileMenu.classList.remove('open');},
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
+
+var communityView=CommunityView.create({
+  window:window,
+  document:document,
+  elements:{
+    page:document.getElementById('communityPage'),
+    content:document.getElementById('communityContent')
+  },
+  escapeHtml:escapeSocialHtml
+});
+
+communityController=CommunityController.create({
+  api:supabaseClient,
+  view:communityView,
+  socialController:socialController,
+  window:window,
+  elements:{
+    page:document.getElementById('communityPage'),
+    tabs:document.getElementById('libraryTabs'),
+    tabButton:document.getElementById('communityTabButton'),
+    communityTab:document.getElementById('communityTabButton'),
+    collectionTab:document.getElementById('collectionTabButton'),
+    wishlistTab:document.getElementById('wishlistTabButton')
+  },
+  getCurrentUser:currentSessionUser,
+  onOpenRoute:function(){return Router.navigate('/community');},
+  onNavigateProfile:function(username){return openCollectorRoute(username,'profile');},
+  onNavigateShelf:function(username){return openCollectorRoute(username,'collection');},
+  onRequireAuth:function(){openAuthPanel('login');return Router.replace('/',{}, {render:false});},
+  onBeforeOpen:function(){profileMenu.classList.remove('open');notificationController.closePanel();},
   onLog:function(level,message,error){
     if(level==='error')console.error(message,error||'');
     else if(level==='warn')console.warn(message,error||'');
@@ -307,6 +348,7 @@ async function updateAuthUI(){
         UserProfileCore.applyAvatar(profileImageMenu,'/assets/images/avatar-placeholder.png','');
         notificationController.syncUser(null);
     }
+    if(communityController)communityController.syncUser(user);
 }
 
 profileAvatarButton.addEventListener('click',function(){
@@ -2438,6 +2480,7 @@ async function renderCurrentRoute(){
         window.libraryView='collection';
     }
     if(!routeUser){
+        communityController.hidePage();
         socialController.hideFollowingPage();
         viewedUserId=null;
         window.loginRequiredForViewedCollection=false;
@@ -2445,6 +2488,12 @@ async function renderCurrentRoute(){
         await window.loadCollection();
         return;
     }
+    if(/^\/community\/?$/.test(window.location.pathname)){
+        socialController.hideFollowingPage();
+        await communityController.renderPage();
+        return;
+    }
+    communityController.hidePage();
     if(/^\/following\/?$/.test(window.location.pathname)){
         await socialController.renderFollowingPage();
         return;
