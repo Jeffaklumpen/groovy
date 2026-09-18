@@ -440,10 +440,20 @@ export default {
           const released=String(container||'').match(
             /Released\s*:[\s\S]{0,240}?\b((?:19|20)\d{2})\b/i
           )
-          const inlineYear=String(container||'').match(/\b((?:19|20)\d{2})\b/)
+          const parentheticalYear=String(container||'').match(
+            /\([^)]*\b((?:19|20)\d{2})\b[^)]*\)/
+          )
+          const inlineYears=Array.from(
+            String(container||'').matchAll(/\b((?:19|20)\d{2})\b/g)
+          )
+          const inlineYear=inlineYears.length
+            ?inlineYears[inlineYears.length-1]
+            :null
           const year=released
             ?Number(released[1])||null
-            :(inlineYear?Number(inlineYear[1])||null:null)
+            :(parentheticalYear
+              ?Number(parentheticalYear[1])||null
+              :(inlineYear?Number(inlineYear[1])||null:null))
           const identity=normalizeIdentity(articleTitle||title)+'|'+String(year||index+1)
           if (!identity || seen.has(identity)) return
           seen.add(identity)
