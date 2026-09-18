@@ -56,6 +56,16 @@ test.describe('authenticated read-only smoke flows',()=>{
     await expect(page.locator('#wishlistTabButton')).toHaveClass(/active/);
     await expect(page.locator('#libraryTitle')).toHaveText('My Wishlist');
 
+    await page.goBack();
+    await expect(page).toHaveURL('http://127.0.0.1:4173/');
+    await expect(page.locator('#collectionTabButton')).toHaveClass(/active/);
+    await expect(page.locator('#libraryTitle')).toHaveText('All Records');
+
+    await page.goForward();
+    await expect(page).toHaveURL('http://127.0.0.1:4173/?view=wishlist');
+    await expect(page.locator('#wishlistTabButton')).toHaveClass(/active/);
+    await expect(page.locator('#libraryTitle')).toHaveText('My Wishlist');
+
     await page.locator('.header-brand .logo').click();
     await expect(page).toHaveURL('http://127.0.0.1:4173/');
     await expect(page.locator('#collectionTabButton')).toHaveClass(/active/);
