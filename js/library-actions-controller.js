@@ -115,51 +115,14 @@ function create(options){
     }
 
     try{
-      var userResult=await api.auth.getUser();
-      var user=userResult&&userResult.data&&userResult.data.user;
-      if(userResult.error||!user)throw new Error('Du måste vara inloggad.');
+      var sessionResult=await api.auth.getSession();
+      var session=sessionResult&&sessionResult.data&&sessionResult.data.session;
+      if(!session||!session.user)throw new Error('Du måste vara inloggad.');
 
-      var existingResult=await api
-        .from('collections')
-        .select('id')
-        .eq('user_id',user.id)
-        .eq('album_id',recordModel.albumId(record))
-        .limit(1);
-      if(existingResult.error)throw existingResult.error;
-
-      var alreadyCollected=!!(existingResult.data&&existingResult.data.length);
-
-      if(!alreadyCollected){
-        var lastResult=await api
-          .from('collections')
-          .select('sort_order')
-          .eq('user_id',user.id)
-          .order('sort_order',{ascending:false})
-          .limit(1);
-        if(lastResult.error)throw lastResult.error;
-
-        var nextSortOrder=lastResult.data&&lastResult.data.length
-          ?lastResult.data[0].sort_order+1
-          :1;
-
-        var insertResult=await api
-          .from('collections')
-          .insert({
-            user_id:user.id,
-            album_id:recordModel.albumId(record),
-            cover_url:recordModel.coverUrl(record)||null,
-            discogs_style:recordModel.genre(record)||null,
-            sort_order:nextSortOrder
-          });
-        if(insertResult.error)throw insertResult.error;
-      }
-
-      var deleteResult=await api
-        .from('wishlists')
-        .delete()
-        .eq('id',recordModel.entryId(record))
-        .eq('user_id',user.id);
-      if(deleteResult.error)throw deleteResult.error;
+      var result=await api.rpc('move_wishlist_to_collection',{
+        p_wishlist_id:String(recordModel.entryId(record))
+      });
+      if(result.error)throw result.error;
 
       invalidateSearchState();
       await loadCollection();
