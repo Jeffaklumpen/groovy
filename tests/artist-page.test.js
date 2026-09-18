@@ -157,3 +157,51 @@ test('returning from artist restores the album before the underlying route is re
   assert.ok(routeStart>=0&&earlyRestore>routeStart&&hideArtist>earlyRestore);
   assert.match(app,/if\(!restoredAlbumEarly\)await restoreAlbumFromHistoryState\(\)/);
 });
+
+
+test('artist Wikipedia exposes Wikidata identity for structured discography verification',()=>{
+  const source=fs.readFileSync('js/artist-wikipedia-service.js','utf8');
+  assert.match(source,/pageprops/);
+  assert.match(source,/wikibase_item/);
+  assert.match(source,/wikidata_id/);
+});
+
+test('artist overview is prefetched from album detail and reused by artist routes',()=>{
+  const controller=fs.readFileSync('js/artist-controller.js','utf8');
+  const app=fs.readFileSync('js/app.js','utf8');
+  assert.match(controller,/var overviewCache=new Map\(\)/);
+  assert.match(controller,/function prefetch\(input\)/);
+  assert.match(controller,/loadOverview\(name,false\)/);
+  assert.match(app,/window\.groovyPrefetchArtist/);
+  assert.match(app,/groovyPrefetchArtist\(\{id:previewArtistId,name:artist\}\)/);
+});
+
+test('verified artist discography uses Wikidata studio albums and stable catalog IDs',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
+  const end=edge.indexOf("if (action === 'artistProfile')",start);
+  assert.ok(start>=0&&end>start);
+  const block=edge.slice(start,end);
+  assert.match(block,/Q208569/);
+  assert.match(block,/P436/);
+  assert.match(block,/P1954/);
+  assert.match(block,/artist_discography_cache/);
+  assert.match(block,/wikidataCoverage>=0\.55/);
+  assert.match(block,/baselineCoverage>=0\.55/);
+});
+
+test('verified discography cache replaces the loose fallback only when populated',()=>{
+  const sql=fs.readFileSync('supabase/migrations/20260918190526_verified_artist_discography_cache.sql','utf8');
+  assert.match(sql,/create table if not exists public\.artist_discography_cache/i);
+  assert.match(sql,/v_discography_verified/i);
+  assert.match(sql,/verified_rows/i);
+  assert.match(sql,/where not v_discography_verified/i);
+  assert.match(sql,/discography_verified/i);
+});
+
+test('auth UI profile read is cached across ordinary route changes',()=>{
+  const app=fs.readFileSync('js/app.js','utf8');
+  assert.match(app,/authUiProfileCache/);
+  assert.match(app,/Date\.now\(\)-authUiProfileCache\.loadedAt<60000/);
+  assert.match(app,/loadAuthUiProfile\(user,!!options\.forceProfile\)/);
+});

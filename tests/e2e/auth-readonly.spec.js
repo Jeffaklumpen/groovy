@@ -207,6 +207,13 @@ test.describe('authenticated read-only smoke flows',()=>{
           })
         });
       }
+      if(body.action==='verifyArtistDiscography'){
+        return route.fulfill({
+          status:200,
+          contentType:'application/json',
+          body:JSON.stringify({verified:true,changed:false,count:15})
+        });
+      }
       if(body.action==='cacheArtistArtwork'){
         return route.fulfill({
           status:200,
@@ -237,7 +244,7 @@ test.describe('authenticated read-only smoke flows',()=>{
       const prop=url.searchParams.get('prop')||'';
       if(url.searchParams.get('generator')==='search'){
         return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
-          query:{pages:[{pageid:1,title:'Pink Floyd',extract:'Pink Floyd are an English rock band formed in London.',fullurl:'https://en.wikipedia.org/wiki/Pink_Floyd',pageimage:'Pink_Floyd_test.jpg'}]}
+          query:{pages:[{pageid:1,title:'Pink Floyd',extract:'Pink Floyd are an English rock band formed in London.',fullurl:'https://en.wikipedia.org/wiki/Pink_Floyd',pageimage:'Pink_Floyd_test.jpg',pageprops:{wikibase_item:'Q2306'}}]}
         })});
       }
       if(prop==='sections'){

@@ -46,7 +46,8 @@
       gsrsearch:'"'+name+'" musician OR band',
       gsrnamespace:'0',
       gsrlimit:'6',
-      prop:'extracts|info|pageimages',
+      prop:'extracts|info|pageimages|pageprops',
+      ppprop:'wikibase_item',
       exintro:'1',
       explaintext:'1',
       inprop:'url',
@@ -148,6 +149,7 @@
       try{image=await freeImage(page);}catch(error){}
       return {
         title:String(page.title||name),
+        wikidata_id:String(page&&page.pageprops&&page.pageprops.wikibase_item||''),
         url:String(page.fullurl||'https://en.wikipedia.org/wiki/'+encodeURIComponent(page.title||name)),
         introduction:String(page.extract||'').replace(/\s+/g,' ').trim(),
         sections:sectionData,

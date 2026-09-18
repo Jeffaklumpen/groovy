@@ -214,6 +214,11 @@ artistController=ArtistController.create({
   }
 });
 
+window.groovyPrefetchArtist=function(input){
+  if(!artistController||typeof artistController.prefetch!=='function')return;
+  artistController.prefetch(input||{});
+};
+
 communityController=CommunityController.create({
   api:supabaseClient,
   view:communityView,
@@ -351,7 +356,42 @@ authSwitchButton.addEventListener('click',function(){
     });
 });
 
-async function updateAuthUI(){
+var authUiProfileCache={userId:'',profile:null,loadedAt:0,promise:null};
+
+async function loadAuthUiProfile(user,force){
+    if(!user)return null;
+    var sameUser=authUiProfileCache.userId===user.id;
+    var fresh=sameUser&&authUiProfileCache.profile&&Date.now()-authUiProfileCache.loadedAt<60000;
+    if(!force&&fresh)return authUiProfileCache.profile;
+    if(!force&&sameUser&&authUiProfileCache.promise)return authUiProfileCache.promise;
+
+    if(!sameUser){
+        authUiProfileCache={userId:user.id,profile:null,loadedAt:0,promise:null};
+    }
+
+    var promise=supabaseClient
+        .from('profiles')
+        .select('username,avatar_url')
+        .eq('id',user.id)
+        .maybeSingle()
+        .then(function(result){
+            if(result.error)throw result.error;
+            authUiProfileCache.profile=result.data||null;
+            authUiProfileCache.loadedAt=Date.now();
+            authUiProfileCache.promise=null;
+            return authUiProfileCache.profile;
+        })
+        .catch(function(error){
+            authUiProfileCache.promise=null;
+            throw error;
+        });
+
+    authUiProfileCache.promise=promise;
+    return promise;
+}
+
+async function updateAuthUI(options){
+    options=options||{};
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
     userSearchController.syncUser(user);
@@ -361,13 +401,10 @@ async function updateAuthUI(){
         profileMenu.classList.remove('open');
         loginPanel.classList.remove('open');
 
-        const {data:profile,error:profileError}=await supabaseClient
-            .from('profiles')
-            .select('username,avatar_url')
-            .eq('id',user.id)
-            .maybeSingle();
-
-        if(profileError){
+        var profile=null;
+        try{
+            profile=await loadAuthUiProfile(user,!!options.forceProfile);
+        }catch(profileError){
             console.error('Kunde inte hämta profil:',profileError);
         }
 
@@ -388,6 +425,7 @@ async function updateAuthUI(){
         registerUsername.value='';
         notificationController.syncUser(user);
     }else{
+        authUiProfileCache={userId:'',profile:null,loadedAt:0,promise:null};
         profileButton.style.display='flex';
         profileMenu.classList.remove('open');
         loginPanel.classList.remove('open');
@@ -464,6 +502,10 @@ profileImageInput.addEventListener('change',async function(){
 
         UserProfileCore.applyAvatar(profileImage,avatarUrl,profileUsername.textContent);
         UserProfileCore.applyAvatar(profileImageMenu,avatarUrl,profileUsername.textContent);
+        if(authUiProfileCache.userId===user.id&&authUiProfileCache.profile){
+            authUiProfileCache.profile=Object.assign({},authUiProfileCache.profile,{avatar_url:avatarUrl});
+            authUiProfileCache.loadedAt=Date.now();
+        }
 
     }catch(error){
         console.error('Profilbild kunde inte laddas upp:',error);
@@ -502,7 +544,7 @@ loginButton.addEventListener('click',async function(){
     loginButton.disabled=false;
     loginButton.textContent='Log in';
 
-    await updateAuthUI();
+    await updateAuthUI({forceProfile:true});
 });
 
 registerButton.addEventListener('click',async function(){
@@ -548,7 +590,7 @@ registerButton.addEventListener('click',async function(){
 
     if(data.session){
         // The auth trigger handle_new_user creates the profile from signup metadata.
-        await updateAuthUI();
+        await updateAuthUI({forceProfile:true});
     }else{
         alert('Kontot är skapat. Kontrollera din e-post för att bekräfta kontot.');
     }
@@ -1524,6 +1566,16 @@ function renderAlbumDetail(record,index,options){
   detailArtist.textContent=artist;
   detailArtist.setAttribute('aria-label','Open '+artist+' artist page');
   detailAlbum.innerHTML=esc(title);
+
+  if(typeof window.groovyPrefetchArtist==='function'){
+    var previewArtistId=Number(
+      searchPreview&&options.payload&&(
+        options.payload.artistDiscogsId||
+        (options.payload.master&&options.payload.master.artists&&options.payload.master.artists[0]&&options.payload.master.artists[0].id)
+      )
+    )||null;
+    window.groovyPrefetchArtist({id:previewArtistId,name:artist});
+  }
   detailYear.innerHTML=esc(Record.year(record));
   var genreLabel=Record.genre(record)||'Genre saknas';
   detailGenre.textContent=genreLabel;

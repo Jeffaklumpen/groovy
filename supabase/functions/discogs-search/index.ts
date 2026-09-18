@@ -11,6 +11,7 @@ export default {
       const releaseId = body.releaseId
       const artistId = body.artistId
       const artistName = String(body.artistName || '').trim()
+      const wikidataId = String(body.wikidataId || '').trim()
       const token = Deno.env.get('DISCOGS_TOKEN')
 
       if (!token) {
@@ -217,6 +218,49 @@ export default {
         } catch (error) {
           console.warn('Apple request failed',error)
           return null
+        }
+      }
+
+      async function wikidataStudioAlbums(qid: string) {
+        if (!/^Q\d+$/.test(qid)) return []
+
+        const sparql = [
+          'SELECT DISTINCT ?album ?albumLabel ?mbid ?discogs ?date WHERE {',
+          '  ?album wdt:P175 wd:' + qid + '.',
+          '  { ?album wdt:P7937 wd:Q208569. } UNION { ?album wdt:P31 wd:Q208569. }',
+          '  OPTIONAL { ?album wdt:P436 ?mbid. }',
+          '  OPTIONAL { ?album wdt:P1954 ?discogs. }',
+          '  OPTIONAL { ?album wdt:P577 ?date. }',
+          '  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }',
+          '} ORDER BY ?date'
+        ].join('\n')
+
+        try {
+          const response = await fetch(
+            'https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(sparql),
+            {
+              headers:{
+                'Accept':'application/sparql-results+json',
+                'User-Agent':'GroovyShelves/1.0 (https://github.com/Jeffaklumpen/groovy)'
+              }
+            }
+          )
+          if (!response.ok) {
+            console.warn('Wikidata HTTP',response.status)
+            return []
+          }
+
+          const data=await response.json()
+          const rows=Array.isArray(data?.results?.bindings)?data.results.bindings:[]
+          return rows.map((row: any)=>({
+            title:String(row?.albumLabel?.value||'').trim(),
+            mbid:String(row?.mbid?.value||'').trim(),
+            discogs_master_id:Number(row?.discogs?.value)||0,
+            year:Number(String(row?.date?.value||'').slice(0,4))||0
+          })).filter((row: any)=>row.title||row.mbid||row.discogs_master_id)
+        } catch (error) {
+          console.warn('Wikidata studio album query failed',error)
+          return []
         }
       }
 
@@ -678,6 +722,220 @@ export default {
           cached_total:cachedTotal,
           cached_added:matches.length,
           complete:cachedTotal===catalog.length
+        })
+      }
+
+      if (action === 'verifyArtistDiscography') {
+        const resolvedArtistId=Number(artistId)||0
+        const resolvedArtistName=cleanArtistName(artistName)
+        const resolvedWikidataId=/^Q\d+$/.test(wikidataId)?wikidataId:''
+
+        if (!resolvedArtistId || !resolvedArtistName || !resolvedWikidataId) {
+          return Response.json({ error:'Artist ID, name and Wikidata ID are required' },{status:400})
+        }
+
+        const admin=getServiceClient()
+        if (!admin) {
+          return Response.json({ error:'Discography cache configuration is incomplete' },{status:500})
+        }
+
+        const { data:profileState,error:profileStateError } = await admin
+          .from('artist_profile_cache')
+          .select('wikidata_id,discography_checked_at,discography_source,discography_count')
+          .eq('discogs_artist_id',resolvedArtistId)
+          .maybeSingle()
+
+        if (profileStateError) {
+          console.warn('Could not read discography verification state',profileStateError)
+        }
+
+        const checkedAt=profileState?.discography_checked_at
+          ?Date.parse(String(profileState.discography_checked_at))
+          :0
+        if (
+          checkedAt &&
+          Date.now()-checkedAt<30*24*60*60*1000 &&
+          String(profileState?.wikidata_id||'')===resolvedWikidataId
+        ) {
+          return Response.json({
+            verified:profileState?.discography_source==='wikidata',
+            cached:true,
+            count:Number(profileState?.discography_count)||0,
+            changed:false
+          })
+        }
+
+        const studioAlbums=await wikidataStudioAlbums(resolvedWikidataId)
+        const { data:catalogRows,error:catalogError } = await admin
+          .from('musicbrainz_catalog')
+          .select('mbid,discogs_master_id,artist_name,album_title,first_release_year,secondary_types,match_type')
+          .ilike('artist_name',resolvedArtistName)
+          .limit(1000)
+
+        if (catalogError) {
+          console.warn('Could not load MusicBrainz catalog for discography verification',catalogError)
+          return Response.json({error:'Could not load local artist catalog'},{status:500})
+        }
+
+        const catalog=Array.isArray(catalogRows)?catalogRows:[]
+        const byMbid=new Map<string,any>()
+        const byMaster=new Map<string,any>()
+        const byTitle=new Map<string,any[]>()
+
+        catalog.forEach((row: any)=>{
+          const mbid=String(row?.mbid||'').toLowerCase()
+          const master=String(row?.discogs_master_id||'')
+          const titleKey=normalizeIdentity(row?.album_title)
+          if (mbid) byMbid.set(mbid,row)
+          if (master) byMaster.set(master,row)
+          if (titleKey) {
+            if (!byTitle.has(titleKey)) byTitle.set(titleKey,[])
+            byTitle.get(titleKey)!.push(row)
+          }
+        })
+
+        const matched:any[]=[]
+        const seenMbids=new Set<string>()
+
+        studioAlbums.forEach((album: any)=>{
+          let row:any=null
+          if (album.mbid) row=byMbid.get(String(album.mbid).toLowerCase())||null
+          if (!row&&album.discogs_master_id) row=byMaster.get(String(album.discogs_master_id))||null
+
+          if (!row&&album.title) {
+            const candidates=byTitle.get(normalizeIdentity(album.title))||[]
+            row=candidates
+              .filter((candidate: any)=>candidate?.match_type==='direct')
+              .sort((left: any,right: any)=>{
+                const wantedYear=Number(album.year)||0
+                const leftYear=Number(left?.first_release_year)||0
+                const rightYear=Number(right?.first_release_year)||0
+                const leftDiff=wantedYear&&leftYear?Math.abs(wantedYear-leftYear):99
+                const rightDiff=wantedYear&&rightYear?Math.abs(wantedYear-rightYear):99
+                return leftDiff-rightDiff
+              })[0]||null
+          }
+
+          if (!row) return
+          const mbid=String(row.mbid||'').toLowerCase()
+          if (!mbid||seenMbids.has(mbid)) return
+          seenMbids.add(mbid)
+
+          matched.push({
+            discogs_artist_id:resolvedArtistId,
+            mbid:String(row.mbid),
+            discogs_master_id:Number(row.discogs_master_id),
+            album_title:String(row.album_title||album.title||'').trim(),
+            first_release_year:Number(row.first_release_year)||null,
+            source:'wikidata',
+            verified_at:new Date().toISOString()
+          })
+        })
+
+        const baselineKeys=new Set(
+          catalog
+            .filter((row: any)=>{
+              const secondary=String(row?.secondary_types||'').trim()
+              const title=String(row?.album_title||'').toLowerCase()
+              return row?.match_type==='direct' &&
+                (!secondary||secondary==='Soundtrack') &&
+                !title.includes('film soundtrack') &&
+                !title.includes('motion picture soundtrack')
+            })
+            .map((row: any)=>String(row.mbid||''))
+            .filter(Boolean)
+        )
+
+        const wikidataCoverage=studioAlbums.length
+          ?matched.length/studioAlbums.length
+          :0
+        const baselineCoverage=baselineKeys.size
+          ?matched.length/baselineKeys.size
+          :(matched.length?1:0)
+
+        const verified=matched.length>0 &&
+          wikidataCoverage>=0.55 &&
+          (baselineKeys.size<=2||baselineCoverage>=0.55)
+
+        const now=new Date().toISOString()
+
+        if (!verified) {
+          await admin.from('artist_profile_cache').upsert({
+            discogs_artist_id:resolvedArtistId,
+            artist_name:resolvedArtistName,
+            wikidata_id:resolvedWikidataId,
+            discography_checked_at:now,
+            discography_source:'fallback',
+            discography_count:matched.length,
+            updated_at:now
+          },{onConflict:'discogs_artist_id'})
+
+          return Response.json({
+            verified:false,
+            changed:false,
+            count:matched.length,
+            wikidata_count:studioAlbums.length,
+            baseline_count:baselineKeys.size,
+            wikidata_coverage:wikidataCoverage,
+            baseline_coverage:baselineCoverage
+          })
+        }
+
+        const { data:existingRows,error:existingError } = await admin
+          .from('artist_discography_cache')
+          .select('mbid')
+          .eq('discogs_artist_id',resolvedArtistId)
+
+        if (existingError) {
+          console.warn('Could not inspect verified artist discography',existingError)
+        }
+
+        const existingSet=new Set(
+          (Array.isArray(existingRows)?existingRows:[])
+            .map((row: any)=>String(row.mbid||'').toLowerCase())
+            .filter(Boolean)
+        )
+        const nextSet=new Set(matched.map((row: any)=>String(row.mbid||'').toLowerCase()))
+        const changed=existingSet.size!==nextSet.size ||
+          Array.from(nextSet).some((value)=>!existingSet.has(value))
+
+        if (changed) {
+          const { error:deleteError } = await admin
+            .from('artist_discography_cache')
+            .delete()
+            .eq('discogs_artist_id',resolvedArtistId)
+          if (deleteError) {
+            console.warn('Could not replace verified artist discography',deleteError)
+            return Response.json({error:'Could not replace verified discography'},{status:500})
+          }
+
+          const { error:insertError } = await admin
+            .from('artist_discography_cache')
+            .insert(matched)
+          if (insertError) {
+            console.warn('Could not persist verified artist discography',insertError)
+            return Response.json({error:'Could not persist verified discography'},{status:500})
+          }
+        }
+
+        await admin.from('artist_profile_cache').upsert({
+          discogs_artist_id:resolvedArtistId,
+          artist_name:resolvedArtistName,
+          wikidata_id:resolvedWikidataId,
+          discography_checked_at:now,
+          discography_source:'wikidata',
+          discography_count:matched.length,
+          updated_at:now
+        },{onConflict:'discogs_artist_id'})
+
+        return Response.json({
+          verified:true,
+          changed,
+          count:matched.length,
+          wikidata_count:studioAlbums.length,
+          baseline_count:baselineKeys.size,
+          wikidata_coverage:wikidataCoverage,
+          baseline_coverage:baselineCoverage
         })
       }
 
