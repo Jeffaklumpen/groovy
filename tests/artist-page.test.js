@@ -176,7 +176,7 @@ test('artist overview is prefetched from album detail and reused by artist route
   assert.match(app,/groovyPrefetchArtist\(\{id:previewArtistId,name:artist\}\)/);
 });
 
-test('verified artist discography resolves trusted identity while Wikipedia alone owns membership',()=>{
+test('verified artist discography resolves trusted identity and requires Discogs Vinyl verification',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
   const end=edge.indexOf("if (action === 'artistProfile')",start);
@@ -187,10 +187,12 @@ test('verified artist discography resolves trusted identity while Wikipedia alon
   assert.match(edge,/wikipediaStudioAlbumsFromHtml/);
   assert.match(edge,/standardised studio albums/);
   assert.match(edge,/function wikipediaSectionHtml/);
-  assert.match(block,/Wikipedia alone decides which releases belong to Main Discography/);
+  assert.match(block,/Wikipedia proposes the curated core catalogue/);
+  assert.match(block,/verifyDiscogsVinylMasters/);
   assert.match(block,/const catalogResult=await admin/);
   assert.doesNotMatch(block,/wikidataStudioAlbums\(resolvedWikidataId\)/);
-  assert.match(block,/source:'wikipedia'/);
+  assert.match(block,/source:'wikipedia_vinyl'/);
+  assert.match(block,/discography_source:'vinyl'/);
   assert.match(block,/discogs_master_id:master/);
   assert.doesNotMatch(block,/function wikidataRows/);
   assert.doesNotMatch(block,/source:'wikidata'/);
@@ -390,7 +392,7 @@ test('Discogs vinyl verification is globally cached by master ID',()=>{
   assert.match(edge,/function verifyDiscogsVinylMasters/);
   assert.match(edge,/discogs_master_vinyl_cache/);
   assert.match(edge,/database\/search\?type=master&format=Vinyl/);
-  assert.match(edge,/masters\/.*\/versions\?format=Vinyl&per_page=1/);
+  assert.match(edge,/\/versions\?format=Vinyl&per_page=1/);
   assert.match(sql,/discogs_master_id bigint primary key/);
   assert.match(sql,/has_vinyl boolean not null/);
   assert.match(sql,/enable row level security/);
