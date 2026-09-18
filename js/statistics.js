@@ -262,7 +262,8 @@
     else hideStatistics();
   });
 
-  supabaseClient.auth.onAuthStateChange(function(){
+  supabaseClient.auth.onAuthStateChange(function(event){
+    if(event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED'||event==='SIGNED_IN')return;
     if(GroovyRouteState.statisticsFromSearch(window.location.search))setTimeout(openStatisticsFromUrl,0);
   });
 

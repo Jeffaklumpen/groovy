@@ -532,7 +532,22 @@ logoutButton.addEventListener('click',async function(){
     await Router.replace('/');
 });
 
-supabaseClient.auth.onAuthStateChange(function(){
+var authRouteUserId='';
+var authRouteStateInitialized=false;
+
+supabaseClient.auth.onAuthStateChange(function(event,session){
+    var nextUserId=session&&session.user&&session.user.id?String(session.user.id):'';
+    var sameUser=authRouteStateInitialized&&nextUserId===authRouteUserId;
+
+    authRouteStateInitialized=true;
+    authRouteUserId=nextUserId;
+
+    // Supabase may refresh or re-announce the same session when a browser tab
+    // becomes active again. That must not reload the current Groovy route.
+    if(event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED'||(event==='SIGNED_IN'&&sameUser)){
+        return;
+    }
+
     setTimeout(function(){
         renderCurrentRoute();
     },0);
@@ -2129,7 +2144,7 @@ logo.addEventListener('click',async function(event){
     }
     libraryPage=1;
     setDeleteMode(false);
-    await Router.navigate('/',{}, {scroll:'top'});
+    await Router.navigate('/');
 });
 
 myCollectionButton.addEventListener('click',async function(event){
@@ -2144,7 +2159,7 @@ myCollectionButton.addEventListener('click',async function(event){
 
     libraryPage=1;
     setDeleteMode(false);
-    await Router.navigate('/',{}, {scroll:'top'});
+    await Router.navigate('/');
 });
 
 async function navigateOwnLibrary(nextView){

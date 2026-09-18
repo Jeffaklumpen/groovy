@@ -869,7 +869,10 @@
   deleteButton.addEventListener('click',deleteAccount);
 
   window.addEventListener('groovy-route-change',syncRoute);
-  supabaseClient.auth.onAuthStateChange(function(){setTimeout(syncRoute,0);});
+  supabaseClient.auth.onAuthStateChange(function(event){
+    if(event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED'||event==='SIGNED_IN')return;
+    setTimeout(syncRoute,0);
+  });
 
   syncRoute();
 })();

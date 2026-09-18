@@ -142,7 +142,7 @@ body.community-page-open .library-overview,body.community-page-open #selectionAc
 .community-loading small{font-size:10px}
 .community-error .community-loading-disc{animation:none;border-color:#63311d}
 @media (max-width:1150px){.community-primary-grid,.community-lower-grid{grid-template-columns:1fr}}
-@media (max-width:820px){.community-summary-card{padding:17px}.community-stat-grid{grid-template-columns:1fr}.community-album-strip{grid-template-columns:repeat(5,150px);overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}.community-album-card{scroll-snap-align:start}}
+@media (max-width:820px){.community-summary-card{padding:17px}.community-stat-grid{grid-template-columns:1fr}.community-album-strip{grid-template-columns:repeat(5,150px);overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}.community-album-card{scroll-snap-align:start}.community-album-copy .community-streaming-row{grid-column:1/-1;justify-content:center;gap:5px;max-width:100%;min-width:0}.community-streaming-card .streaming-service{height:21px}.community-streaming-card .community-streaming-apple{height:21px}.community-streaming-card .apple-music-small-badge{height:21px}.community-streaming-card .community-streaming-spotify{height:21px;padding:0 5px}.community-streaming-card .spotify-service-logo{width:43px;max-width:43px}}
 @media (max-width:700px){
 #libraryTabs{width:100%;margin-bottom:16px}
 #libraryTabs .library-tab{flex:1;justify-content:center;min-width:0;padding:8px 7px;font-size:10px}

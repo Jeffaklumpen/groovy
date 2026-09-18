@@ -145,3 +145,21 @@ test('existing catalog fallback only mutates a user library entry',()=>{
   assert.match(sql,/revoke execute[\s\S]*anon/i);
   assert.match(sql,/grant execute[\s\S]*authenticated/i);
 });
+
+
+test('background auth refresh does not rerender the current route',()=>{
+  const app=fs.readFileSync('js/app.js','utf8');
+  const profile=fs.readFileSync('js/profile.js','utf8');
+  const statistics=fs.readFileSync('js/statistics.js','utf8');
+  assert.match(app,/event==='TOKEN_REFRESHED'/);
+  assert.match(app,/event==='SIGNED_IN'&&sameUser/);
+  assert.match(app,/event==='INITIAL_SESSION'/);
+  assert.match(profile,/event==='TOKEN_REFRESHED'/);
+  assert.match(statistics,/event==='TOKEN_REFRESHED'/);
+});
+
+test('Top Rated mobile streaming controls stay inside their album card',()=>{
+  const css=fs.readFileSync('css/community.css','utf8');
+  assert.match(css,/\.community-album-copy \.community-streaming-row\{grid-column:1\/-1/);
+  assert.match(css,/\.community-streaming-card \.spotify-service-logo\{width:43px;max-width:43px\}/);
+});

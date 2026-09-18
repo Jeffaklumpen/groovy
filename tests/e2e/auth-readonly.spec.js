@@ -145,24 +145,29 @@ test.describe('authenticated read-only smoke flows',()=>{
     await page.setViewportSize({width:390,height:844});
     await expect(page.locator('#communityPage')).toBeVisible();
 
-    await page.evaluate(()=>window.scrollTo(0,Math.min(420,document.body.scrollHeight-window.innerHeight)));
-    const communityScroll=await page.evaluate(()=>window.scrollY);
-    await page.evaluate(()=>document.getElementById('collectionTabButton').click());
-    await expect(page).toHaveURL('http://127.0.0.1:4173/');
-    await page.evaluate(()=>window.scrollTo(0,Math.min(360,document.body.scrollHeight-window.innerHeight)));
-    const shelfScroll=await page.evaluate(()=>window.scrollY);
-    await page.evaluate(()=>document.getElementById('communityTabButton').click());
-    await expect(page).toHaveURL('http://127.0.0.1:4173/community');
-    if(communityScroll>0){
-      await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBeGreaterThanOrEqual(Math.max(0,communityScroll-2));
+    const topRatedCard=page.locator('.community-featured-panel .community-album-card').first();
+    if(await topRatedCard.count()>0){
+      const spotify=topRatedCard.locator('.community-streaming-spotify');
+      await expect(spotify).toBeVisible();
+      const bounds=await page.evaluate(()=>{
+        const card=document.querySelector('.community-featured-panel .community-album-card');
+        const spotifyLink=card&&card.querySelector('.community-streaming-spotify');
+        if(!card||!spotifyLink)return null;
+        const cardBox=card.getBoundingClientRect();
+        const spotifyBox=spotifyLink.getBoundingClientRect();
+        return {
+          cardLeft:cardBox.left,
+          cardRight:cardBox.right,
+          spotifyLeft:spotifyBox.left,
+          spotifyRight:spotifyBox.right
+        };
+      });
+      expect(bounds).not.toBeNull();
+      expect(bounds.spotifyLeft).toBeGreaterThanOrEqual(bounds.cardLeft-1);
+      expect(bounds.spotifyRight).toBeLessThanOrEqual(bounds.cardRight+1);
     }
-    await page.evaluate(()=>document.getElementById('collectionTabButton').click());
-    await expect(page).toHaveURL('http://127.0.0.1:4173/');
-    if(shelfScroll>0){
-      await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBeGreaterThanOrEqual(Math.max(0,shelfScroll-2));
-    }
-    await page.evaluate(()=>document.getElementById('communityTabButton').click());
-    await expect(page).toHaveURL('http://127.0.0.1:4173/community');
+
+
 
     const mobileGeometry=await page.evaluate(()=>({
       viewport:document.documentElement.clientWidth,

@@ -61,11 +61,8 @@ test('profile and statistics react to route changes without owning history',()=>
 });
 
 
-test('router remembers per-route scroll and restores it after async rendering',()=>{
+
+test('router does not own page scroll restoration',()=>{
   const source=fs.readFileSync('js/router.js','utf8');
-  assert.match(source,/routeScrollPositions/);
-  assert.match(source,/history\.scrollRestoration='manual'/);
-  assert.match(source,/rememberScroll\(current\(\)\)/);
-  assert.match(source,/await Promise\.resolve\(runRouteHandler\(\)\)/);
-  assert.match(source,/windowObject\.scrollTo\(\{top:top,left:0,behavior:'auto'\}\)/);
+  assert.doesNotMatch(source,/scrollRestoration|routeScrollPositions|windowObject\.scrollTo/);
 });
