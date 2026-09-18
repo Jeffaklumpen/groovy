@@ -79,7 +79,11 @@ function patchCard(card,record){
   var marker=average+'|'+(Record.communityCount(record)||0);
   if(target.dataset.communityMarker===marker&&target.querySelector('.cover-rating-inner'))return;
   target.dataset.communityMarker=marker;
-  target.innerHTML='<span class="cover-rating-inner">'+starMeter(average,'is-compact')+'<span class="cover-rating-number">'+ratingText(average)+'</span></span>';
+  if(typeof window.groovyRenderGridRating==='function'){
+    target.innerHTML=window.groovyRenderGridRating(average);
+  }else{
+    target.innerHTML='<span class="cover-rating-inner">'+starMeter(average,'is-compact')+'<span class="cover-rating-number"><span class="cover-rating-value">'+ratingText(average)+'</span></span></span>';
+  }
 }
 
 function patchCardsForAlbum(albumId){

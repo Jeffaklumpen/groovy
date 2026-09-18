@@ -216,3 +216,18 @@ test('base rating panels have identical three-row structure',()=>{
   assert.equal((html.match(/class="rating-panel-footer"/g)||[]).length,2);
   assert.doesNotMatch(html,/rating-panel-community-main|rating-panel-stars/);
 });
+
+
+test('grid rating markup consistently renders /5 and a narrow empty dash',()=>{
+  const controller=Controller.create({
+    api:{from(){throw new Error('not used');}},
+    ratingCore:RatingCore,
+    recordModel:makeRecordModel()
+  });
+  const rated=controller.renderGridRating(3.5);
+  assert.match(rated,/cover-rating-value">3\.5</);
+  assert.match(rated,/cover-rating-max">\/5</);
+  const empty=controller.renderGridRating(0);
+  assert.match(empty,/cover-rating-value is-empty">-</);
+  assert.doesNotMatch(empty,/cover-rating-max/);
+});

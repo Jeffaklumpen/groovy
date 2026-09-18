@@ -27,7 +27,11 @@ function makeHarness(overrides){
   const controller=Controller.create({
     window:win,document:doc,libraryCore:LibraryCore,recordModel:recordModel(),
     pressingView:{conditionMeta(value){return value?{className:'near-mint',label:'Near Mint'}:null;},hasCopyDetails(details){return !!(details&&details.country);}},
-    ratingRenderer:{renderStaticStarMeter(value){return '<span class="stars">'+value+'</span>';},formatCommunityRating(value){return Number(value).toFixed(1);}},
+    ratingRenderer:{
+      renderStaticStarMeter(value){return '<span class="stars">'+value+'</span>';},
+      formatCommunityRating(value){return Number(value).toFixed(1);},
+      renderGridRating(value){return '<span class="cover-rating-inner"><span class="stars">'+value+'</span><span class="cover-rating-number"><span class="cover-rating-value">'+Number(value).toFixed(1)+'</span><span class="cover-rating-max">/5</span></span></span>';}
+    },
     elements,getState:()=>state,setPage:page=>{state.page=page;calls.page.push(page);},setSearchQuery:q=>{state.searchQuery=q;calls.search.push(q);},
     shelfById:id=>id==='shelf-1'?{id,name:'Favorites',icon:'star'}:null,shelfIconSvg:()=>'<svg></svg>',
     escapeHtml:value=>String(value==null?'':value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'),

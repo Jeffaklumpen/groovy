@@ -298,8 +298,8 @@ async function updateAuthUI(){
         profileMenu.classList.remove('open');
         loginPanel.classList.remove('open');
 
-        UserProfileCore.applyAvatar(profileImage,'','');
-        UserProfileCore.applyAvatar(profileImageMenu,'','');
+        UserProfileCore.applyAvatar(profileImage,'/assets/images/avatar-placeholder.png','');
+        UserProfileCore.applyAvatar(profileImageMenu,'/assets/images/avatar-placeholder.png','');
         notificationController.syncUser(null);
     }
 }
@@ -700,6 +700,7 @@ var ratingController=AlbumRatingController.create({
 window.loadAlbumRatingData=ratingController.loadData;
 window.applyAlbumRatingMeta=Record.applyRatingMeta;
 window.groovyRenderAlbumRating=ratingController.renderDetail;
+window.groovyRenderGridRating=ratingController.renderGridRating;
 var detailTracks=document.getElementById('detailTracks');
 var detailAboutAlbum=document.getElementById('detailAboutAlbum');
 var detailInfoCard=document.querySelector('.detail-info-card');

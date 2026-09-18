@@ -69,6 +69,16 @@
       '</strong>';
     }
 
+    function renderGridRating(value){
+      var text=formatCommunityRating(value);
+      var empty=text==='—';
+      var shown=empty?'-':text;
+      return '<span class="cover-rating-inner">'+renderStaticStarMeter(value,'is-compact')+
+        '<span class="cover-rating-number"><span class="cover-rating-value'+(empty?' is-empty':'')+'">'+escapeHtml(shown)+'</span>'+
+        (empty?'':'<span class="cover-rating-max">/5</span>')+
+        '</span></span>';
+    }
+
     function trashIcon(){
       return '<svg class="groovy-remove-rating-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"></path></svg>';
     }
@@ -222,7 +232,7 @@
           if(!cardRecord||recordModel.albumId(cardRecord)!==albumId)continue;
           var coverRating=cards[c].querySelector('.cover-rating');
           if(coverRating){
-            coverRating.innerHTML='<span class="cover-rating-inner">'+renderStaticStarMeter(nextAverage,'is-compact')+'<span class="cover-rating-number">'+escapeHtml(formatCommunityRating(nextAverage))+'</span></span>';
+            coverRating.innerHTML=renderGridRating(nextAverage);
           }
         }
       }
@@ -236,6 +246,7 @@
       renderDetail:renderDetail,
       save:save,
       renderStaticStarMeter:renderStaticStarMeter,
+      renderGridRating:renderGridRating,
       formatCommunityRating:formatCommunityRating
     });
   }
