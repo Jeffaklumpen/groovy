@@ -70,7 +70,7 @@ function fixture(options){
     ebayListingsStatus:elementMock(),
     ebayListingsGrid:elementMock()
   };
-  const records=options.records||[['01','Pink Floyd','Animals']];
+  const records=options.records||[{artist:'Pink Floyd',title:'Animals'}];
   const calls=[];
   const storageData=new Map();
   const storage={
@@ -86,8 +86,7 @@ function fixture(options){
     api,
     elements,
     getRecord:index=>records[index]||null,
-    getArtist:record=>record&&record[1]||'',
-    getTitle:record=>record&&record[2]||'',
+    recordModel:{artist:record=>record&&record.artist||'',title:record=>record&&record.title||''},
     storage,
     navigator:{languages:['sv-SE'],language:'sv-SE'},
     Intl,
