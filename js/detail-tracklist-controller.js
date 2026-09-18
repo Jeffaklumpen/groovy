@@ -104,8 +104,16 @@
       if(!Array.isArray(tracklist)||!tracklist.length)return {changed:false,rows:rows};
       var incoming=pressingCore.discogsTrackRows(recordModel.albumId(record),tracklist,true);
       if(!incoming.length)return {changed:false,rows:rows};
+
+      var changed=false;
+      if(!recordModel.hasTracks(record)){
+        changed=recordModel.replaceTrackRows(record,incoming);
+      }else{
+        changed=recordModel.applyTrackDurations(record,incoming,false);
+      }
+
       return {
-        changed:recordModel.applyTrackDurations(record,incoming,false),
+        changed:changed,
         rows:mergeDurationRows(rows,incoming)
       };
     }
@@ -145,14 +153,16 @@
 
     async function openForRecord(record,index){
       render(record);
-      if(!recordModel.albumId(record))return;
+
+      var albumId=recordModel.albumId(record);
+      var masterId=String(recordModel.discogsMasterId(record)||'').trim();
+      if(!albumId&&!masterId)return;
 
       var durationRows=loadCachedDurations(record);
       if(getOpenRecordIndex()===index)render(record);
-      if(!recordModel.hasMissingTrackDurations(record))return;
+      if(recordModel.hasTracks(record)&&!recordModel.hasMissingTrackDurations(record))return;
 
       var releaseId=exactReleaseId(record);
-      var masterId=String(recordModel.discogsMasterId(record)||'').trim();
 
       if(releaseId){
         var releaseTracklist=await fetchTracklist('release',releaseId);
@@ -161,14 +171,14 @@
         if(releaseResult.changed&&getOpenRecordIndex()===index)render(record);
       }
 
-      if(recordModel.hasMissingTrackDurations(record)&&masterId){
+      if((!recordModel.hasTracks(record)||recordModel.hasMissingTrackDurations(record))&&masterId){
         var masterTracklist=await fetchTracklist('master',masterId);
         var masterResult=applyTracklist(record,masterTracklist,durationRows);
         durationRows=masterResult.rows;
         if(masterResult.changed&&getOpenRecordIndex()===index)render(record);
       }
 
-      if(recordModel.hasMissingTrackDurations(record)&&masterId){
+      if((!recordModel.hasTracks(record)||recordModel.hasMissingTrackDurations(record))&&masterId){
         var vinylTracklist=await fetchTracklist('vinylRelease',masterId);
         var vinylResult=applyTracklist(record,vinylTracklist,durationRows);
         durationRows=vinylResult.rows;
