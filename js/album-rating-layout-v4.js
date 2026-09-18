@@ -37,17 +37,9 @@ function esc(value){
 }
 
 function currentRecord(){
-  var album=String((document.getElementById('detailAlbum')||{}).textContent||'').trim();
-  var artist=String((document.getElementById('detailArtist')||{}).textContent||'').trim();
-  if(!album||!Array.isArray(window.records))return null;
-
-  for(var i=0;i<window.records.length;i++){
-    var record=window.records[i];
-    if(!record||String(Record.title(record)||'').trim()!==album)continue;
-    if(artist&&String(Record.artist(record)||'').trim()!==artist)continue;
-    return record;
-  }
-  return null;
+  if(typeof window.groovyGetOpenRecordIndex!=='function'||!Array.isArray(window.records))return null;
+  var index=parseInt(window.groovyGetOpenRecordIndex(),10);
+  return !isNaN(index)&&index>=0?window.records[index]||null:null;
 }
 
 async function currentUser(){
