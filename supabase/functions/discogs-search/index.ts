@@ -2185,7 +2185,7 @@ export default {
             discogs_master_id:master,
             album_title:title,
             first_release_year:year,
-            source:'wikipedia_vinyl',
+            source:'wikipedia',
             verified_at:now
           }
         })
