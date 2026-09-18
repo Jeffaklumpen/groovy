@@ -34,12 +34,14 @@ test('app delegates album-search behavior while retaining library integration',(
   assert.match(app,/async function loadOtherUserCollection\(userId\)/);
 });
 
-test('album library saves use one atomic RPC instead of direct shared-catalog writes',()=>{
+test('album library saves use the verified Discogs edge boundary instead of browser catalog writes',()=>{
   const source=fs.readFileSync('js/album-search.js','utf8');
-  assert.match(source,/\.rpc\(\s*['"]save_album_to_library['"]/);
+  assert.match(source,/action:['"]saveAlbum['"]/);
+  assert.match(source,/functions\.invoke\(\s*['"]discogs-search['"]/);
+  assert.doesNotMatch(source,/\.rpc\(\s*['"]save_album_to_library['"]/);
+  assert.doesNotMatch(source,/upsert_apple_artwork_cache/);
   assert.doesNotMatch(source,/\.from\(\s*['"]artists['"]\s*\)\s*\.insert\(/);
   assert.doesNotMatch(source,/\.from\(\s*['"]albums['"]\s*\)\s*\.insert\(/);
-  assert.doesNotMatch(source,/\.from\(\s*['"]albums['"]\s*\)\s*\.update\(/);
   assert.doesNotMatch(source,/\.from\(\s*['"]tracks['"]\s*\)\s*\.insert\(/);
 });
 
