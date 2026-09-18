@@ -69,6 +69,8 @@ test('renders detail rating panels from named record fields',()=>{
   assert.match(detailElement.innerHTML,/Community rating/);
   assert.match(detailElement.innerHTML,/data-rating="3"/);
   assert.match(detailElement.innerHTML,/4\.5/);
+  assert.match(detailElement.innerHTML,/groovy-score-max/);
+  assert.match(detailElement.innerHTML,/>\/5<\/span>/);
   assert.match(detailElement.innerHTML,/2 ratings/);
 });
 

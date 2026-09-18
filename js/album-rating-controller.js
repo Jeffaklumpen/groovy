@@ -42,6 +42,14 @@
       '</span>';
     }
 
+    function renderScore(value){
+      var text=formatCommunityRating(value);
+      return '<strong class="groovy-rating-score" data-score="'+escapeHtml(text)+'">'+
+        '<span class="groovy-score-main">'+escapeHtml(text)+'</span>'+
+        (text==='—'?'':'<span class="groovy-score-max">/5</span>')+
+      '</strong>';
+    }
+
     async function loadData(albumIds,ownUserId){
       var ids=Array.from(new Set((albumIds||[]).filter(Boolean)));
       if(!ids.length)return {};
@@ -99,12 +107,12 @@
       detailElement.innerHTML='<div class="rating-panels">'+
         '<section class="rating-panel rating-panel-your">'+
           '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-user">'+personIcon+'</span><span>Your rating</span></div>'+
-          '<div class="rating-panel-stars" aria-label="Your rating">'+ownStars+'</div>'+
+          '<div class="groovy-rating-value-row"><div class="rating-panel-stars" aria-label="Your rating">'+ownStars+'</div>'+renderScore(ownRating)+'</div>'+
           (ownRating?'':'<div class="rating-panel-footer"><span class="rating-panel-empty-note">Not rated yet</span></div>')+
         '</section>'+
         '<section class="rating-panel rating-panel-community">'+
           '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-group">'+communityIcon+'</span><span>Community rating</span></div>'+
-          '<div class="rating-panel-community-main">'+renderStaticStarMeter(communityAverage,'is-community')+'<strong>'+escapeHtml(formatCommunityRating(communityAverage))+'</strong></div>'+
+          '<div class="rating-panel-community-main">'+renderStaticStarMeter(communityAverage,'is-community')+renderScore(communityAverage)+'</div>'+
           '<div class="rating-panel-footer"><span class="rating-panel-meta">'+escapeHtml(String(communityCount||0))+' rating'+(communityCount===1?'':'s')+'</span></div>'+
         '</section>'+
       '</div>';

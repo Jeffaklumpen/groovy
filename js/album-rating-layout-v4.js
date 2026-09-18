@@ -2,8 +2,9 @@
 'use strict';
 
 var Record=window.GroovyRecord;
+var RatingCore=window.GroovyRatingCore;
 var UserProfileCore=window.GroovyUserProfileCore;
-if(!Record||!UserProfileCore)return;
+if(!Record||!RatingCore||!UserProfileCore)return;
 
 var overlay=document.getElementById('albumOverlay');
 var ratingRoot=document.getElementById('detailRating');
@@ -12,18 +13,16 @@ var viewedToken=0;
 var queued=false;
 
 function clamp(value){
-  var n=Number(value);
-  return isFinite(n)?Math.max(0,Math.min(5,n)):0;
+  return RatingCore.clamp(value);
 }
 
 function scoreText(value){
-  var n=Math.round(clamp(value)*10)/10;
-  if(!n)return '—';
-  return Math.round(n)===n?String(n):n.toFixed(1);
+  return RatingCore.format(value);
 }
 
 function scoreMarkup(value){
-  return '<span class="groovy-score-main">'+scoreText(value)+'</span><span class="groovy-score-max">/5</span>';
+  var text=scoreText(value);
+  return '<span class="groovy-score-main">'+text+'</span>'+(text==='—'?'':'<span class="groovy-score-max">/5</span>');
 }
 
 function esc(value){
@@ -46,7 +45,7 @@ async function currentUser(){
 }
 
 function fill(value){
-  return (clamp(value)/5*100).toFixed(1)+'%';
+  return RatingCore.fillPercent(value);
 }
 
 function staticStars(value){
@@ -54,20 +53,6 @@ function staticStars(value){
     '<span class="groovy-rating-stars-base">★★★★★</span>'+
     '<span class="groovy-rating-stars-fill">★★★★★</span>'+
   '</span>';
-}
-
-function ensureHeading(){
-  if(!ratingRoot)return;
-  var panels=ratingRoot.querySelector('.rating-panels');
-  if(!panels)return;
-
-  var heading=ratingRoot.querySelector('.groovy-rating-section-heading');
-  if(!heading){
-    heading=document.createElement('div');
-    heading.className='groovy-rating-section-heading';
-    ratingRoot.insertBefore(heading,panels);
-  }
-  if(heading.textContent!=='Album Ratings')heading.innerHTML='<strong>Album Ratings</strong>';
 }
 
 function trashIcon(){
@@ -171,7 +156,6 @@ function decorateCommunity(record){
 
 function decorateBase(){
   if(!ratingRoot)return;
-  ensureHeading();
   var record=currentRecord();
   decorateYour(record);
   decorateCommunity(record);

@@ -117,8 +117,11 @@ function create(options){
     if(isWishlist){
       html+='<span class="wishlist-cover-label"><span class="wishlist-icon" aria-hidden="true"></span>Wishlisted</span>';
     }else{
+      var communityRatingText=ratingRenderer.formatCommunityRating(recordModel.communityRating(record)||0);
       html+='<span class="cover-rating-inner">'+ratingRenderer.renderStaticStarMeter(recordModel.communityRating(record)||0,'is-compact')+
-        '<span class="cover-rating-number">'+escapeHtml(ratingRenderer.formatCommunityRating(recordModel.communityRating(record)||0))+'</span></span>';
+        '<span class="cover-rating-number"><span class="cover-rating-value">'+escapeHtml(communityRatingText)+'</span>'+
+        (communityRatingText==='—'?'':'<span class="cover-rating-max">/5</span>')+
+        '</span></span>';
     }
 
     html+='</span></div></div>'+
