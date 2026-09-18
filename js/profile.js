@@ -388,7 +388,10 @@
     statusBox.className='profile-settings-status'+(type?' '+type:'');
   }
 
-  function setAvatar(url){avatarButton.style.backgroundImage='url("'+(url||'/assets/images/avatar-placeholder.png').replace(/"/g,'%22')+'")';}
+  function setAvatar(url){
+    var username=state.profile&&state.profile.username?state.profile.username:(state.user&&state.user.user_metadata&&state.user.user_metadata.username)||'';
+    UserProfileCore.applyAvatar(avatarButton,url,username);
+  }
   function updateBioCount(){bioCount.textContent=bioInput.value.length+' / 500';}
   function updateDeleteState(){deleteButton.disabled=!state.profile||deleteConfirmInput.value.trim()!==safeText(state.profile.username);}
 
@@ -479,7 +482,7 @@
 
       publicContent.innerHTML=
         '<section class="collector-profile-hero">'+
-          '<div class="collector-profile-avatar" style="background-image:url(&quot;'+escapeHtml(profile.avatar_url||'/assets/images/avatar-placeholder.png')+'&quot;)"></div>'+
+          UserProfileCore.avatarMarkup('collector-profile-avatar',profile.avatar_url,profile.username)+
           '<div class="collector-profile-hero-copy">'+
             '<span class="collector-profile-kicker">VINYL COLLECTOR</span>'+
             '<h1>'+escapeHtml(profile.username)+'</h1>'+

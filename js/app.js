@@ -286,23 +286,8 @@ async function updateAuthUI(){
 
         profileUsername.textContent=username;
 
-        if(profile&&profile.avatar_url){
-            profileImage.style.backgroundImage='url("'+profile.avatar_url+'")';
-            profileImage.style.backgroundSize='cover';
-            profileImage.style.backgroundPosition='center';
-
-            profileImageMenu.style.backgroundImage='url("'+profile.avatar_url+'")';
-            profileImageMenu.style.backgroundSize='cover';
-            profileImageMenu.style.backgroundPosition='center';
-        }else{
-            profileImage.style.backgroundImage='url("/assets/images/avatar-placeholder.png")';
-            profileImage.style.backgroundSize='cover';
-            profileImage.style.backgroundPosition='center';
-        
-            profileImageMenu.style.backgroundImage='url("/assets/images/avatar-placeholder.png")';
-            profileImageMenu.style.backgroundSize='cover';
-            profileImageMenu.style.backgroundPosition='center';
-        }
+        UserProfileCore.applyAvatar(profileImage,profile&&profile.avatar_url,username);
+        UserProfileCore.applyAvatar(profileImageMenu,profile&&profile.avatar_url,username);
 
         loginEmail.value='';
         loginPassword.value='';
@@ -313,13 +298,8 @@ async function updateAuthUI(){
         profileMenu.classList.remove('open');
         loginPanel.classList.remove('open');
 
-        profileImage.style.backgroundImage='url("/assets/images/avatar-placeholder.png")';
-        profileImage.style.backgroundSize='cover';
-        profileImage.style.backgroundPosition='center';
-        
-        profileImageMenu.style.backgroundImage='url("/assets/images/avatar-placeholder.png")';
-        profileImageMenu.style.backgroundSize='cover';
-        profileImageMenu.style.backgroundPosition='center';
+        UserProfileCore.applyAvatar(profileImage,'','');
+        UserProfileCore.applyAvatar(profileImageMenu,'','');
         notificationController.syncUser(null);
     }
 }
@@ -387,13 +367,8 @@ profileImageInput.addEventListener('change',async function(){
         
         if(updateError)throw updateError;
 
-        profileImage.style.backgroundImage='url("'+avatarUrl+'")';
-        profileImage.style.backgroundSize='cover';
-        profileImage.style.backgroundPosition='center';
-        
-        profileImageMenu.style.backgroundImage='url("'+avatarUrl+'")';
-        profileImageMenu.style.backgroundSize='cover';
-        profileImageMenu.style.backgroundPosition='center';
+        UserProfileCore.applyAvatar(profileImage,avatarUrl,profileUsername.textContent);
+        UserProfileCore.applyAvatar(profileImageMenu,avatarUrl,profileUsername.textContent);
 
     }catch(error){
         console.error('Profilbild kunde inte laddas upp:',error);
@@ -598,29 +573,30 @@ async function renderOwnLibraryHeader(user){
   viewedUserHeader.style.display='flex';
   if(viewedUserFollowButton)viewedUserFollowButton.style.display='none';
 
-  var avatarUrl='/assets/images/avatar-placeholder.png';
+  var ownProfile=null;
   try{
     var profileResult=await supabaseClient
       .from('profiles')
       .select('username,avatar_url')
       .eq('id',user.id)
       .maybeSingle();
-    if(!profileResult.error&&profileResult.data&&profileResult.data.avatar_url)avatarUrl=profileResult.data.avatar_url;
+    if(!profileResult.error&&profileResult.data)ownProfile=profileResult.data;
   }catch(error){
-    console.warn('Kunde inte hämta profilbild för egen hylla:',error);
+    console.warn('Kunde inte hämta profil för egen hylla:',error);
   }
 
-  viewedUserAvatar.style.backgroundImage='url("'+avatarUrl+'")';
-  viewedUserAvatar.style.backgroundSize='cover';
-  viewedUserAvatar.style.backgroundPosition='center';
+  var ownUsername=ownProfile&&ownProfile.username
+    ?ownProfile.username
+    :(user.user_metadata&&user.user_metadata.username
+      ?user.user_metadata.username
+      :(user.email?user.email.split('@')[0]:'User'));
+  UserProfileCore.applyAvatar(viewedUserAvatar,ownProfile&&ownProfile.avatar_url,ownUsername);
   viewedUserName.textContent='Your Shelf';
   viewedUserContext.textContent=window.libraryView==='wishlist'?'Wishlist':'Collection';
   window.groovyViewedStatisticsProfile={
     id:user.id,
-    username:profileResult&&!profileResult.error&&profileResult.data&&profileResult.data.username
-      ?profileResult.data.username
-      :(user.user_metadata&&user.user_metadata.username?user.user_metadata.username:''),
-    avatar_url:avatarUrl
+    username:ownUsername,
+    avatar_url:ownProfile&&ownProfile.avatar_url?ownProfile.avatar_url:''
   };
   if(typeof window.groovySyncViewedProfileButtonLabel==='function')window.groovySyncViewedProfileButtonLabel(true);
   viewedUserShelfButton.classList.toggle('active',window.libraryView!=='wishlist');
@@ -1940,18 +1916,11 @@ async function loadOtherUserCollection(userId){
     viewedUserHeader.style.display='flex';
     if(typeof window.groovySyncViewedProfileButtonLabel==='function')window.groovySyncViewedProfileButtonLabel(false);
 
-    viewedUserAvatar.style.backgroundImage='url("'+
-        (profile&&profile.avatar_url
-            ?profile.avatar_url
-            :'/assets/images/avatar-placeholder.png')+
-        '")';
-
-    viewedUserAvatar.style.backgroundSize='cover';
-    viewedUserAvatar.style.backgroundPosition='center';
-
-    viewedUserName.textContent=profile&&profile.username
+    var viewedUsername=profile&&profile.username
         ?profile.username
         :'Unknown user';
+    UserProfileCore.applyAvatar(viewedUserAvatar,profile&&profile.avatar_url,viewedUsername);
+    viewedUserName.textContent=viewedUsername;
     document.getElementById('viewedUserContext').textContent=window.libraryView==='wishlist'?'Wishlist':'Shelf';
     viewedUserShelfButton.classList.toggle('active',window.libraryView!=='wishlist');
     viewedUserWishlistButton.classList.toggle('active',window.libraryView==='wishlist');

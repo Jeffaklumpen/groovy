@@ -1,10 +1,10 @@
 (function(root,factory){
   if(typeof module==='object'&&module.exports){
-    module.exports=factory();
+    module.exports=factory(require('./user-profile-core.js'));
   }else{
-    root.GroovyUserSearchController=factory();
+    root.GroovyUserSearchController=factory(root.GroovyUserProfileCore);
   }
-})(typeof window!=='undefined'?window:null,function(){
+})(typeof window!=='undefined'?window:null,function(UserProfileCore){
   function create(options){
     options=options||{};
 
@@ -31,6 +31,7 @@
 
     if(!api)throw new Error('User search controller requires an API client');
     if(!doc)throw new Error('User search controller requires a document');
+    if(!UserProfileCore)throw new Error('User search controller requires user profile core');
 
     function log(level,message,error){onLog(level,message,error);}
 
@@ -162,9 +163,7 @@
 
       var avatar=doc.createElement('div');
       avatar.className='user-search-avatar';
-      avatar.style.backgroundImage='url("'+(user.avatar_url||'/assets/images/avatar-placeholder.png')+'")';
-      avatar.style.backgroundSize='cover';
-      avatar.style.backgroundPosition='center';
+      UserProfileCore.applyAvatar(avatar,user.avatar_url,user.username);
       addPresenceDot(avatar,user.id);
 
       var info=doc.createElement('div');

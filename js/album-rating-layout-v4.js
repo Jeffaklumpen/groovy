@@ -2,7 +2,8 @@
 'use strict';
 
 var Record=window.GroovyRecord;
-if(!Record)return;
+var UserProfileCore=window.GroovyUserProfileCore;
+if(!Record||!UserProfileCore)return;
 
 var overlay=document.getElementById('albumOverlay');
 var ratingRoot=document.getElementById('detailRating');
@@ -23,11 +24,6 @@ function scoreText(value){
 
 function scoreMarkup(value){
   return '<span class="groovy-score-main">'+scoreText(value)+'</span><span class="groovy-score-max">/5</span>';
-}
-
-function firstLetter(value){
-  var text=String(value||'').trim();
-  return text?text.charAt(0).toUpperCase():'?';
 }
 
 function esc(value){
@@ -193,9 +189,7 @@ async function profileFor(userId){
 
 function avatarMarkup(profile){
   var username=profile&&profile.username?profile.username:'User';
-  var url=String(profile&&profile.avatar_url||'').trim();
-  if(url)return '<span class="groovy-rating-avatar has-image" style="background-image:url(&quot;'+esc(url)+'&quot;)" aria-hidden="true"></span>';
-  return '<span class="groovy-rating-avatar groovy-initial-avatar" aria-hidden="true"><span class="groovy-initial-avatar-letter">'+esc(firstLetter(username))+'</span></span>';
+  return UserProfileCore.avatarMarkup('groovy-rating-avatar',profile&&profile.avatar_url,username);
 }
 
 function renderViewed(profile,rating,albumId){
@@ -270,74 +264,22 @@ async function syncViewed(){
   }
 }
 
-function applyInitialAvatar(element,username){
-  if(!element)return;
-  var background=String(element.style.backgroundImage||'');
-  if(!background){
-    try{background=String(getComputedStyle(element).backgroundImage||'');}catch(error){}
-  }
-  var hasImage=background&&background!=='none'&&!/avatar_placeholder\.png/i.test(background);
-  var letter=element.querySelector('.groovy-initial-avatar-letter');
-
-  if(hasImage){
-    element.classList.remove('groovy-initial-avatar');
-    if(letter)letter.remove();
-    return;
-  }
-
-  element.style.backgroundImage='none';
-  element.classList.add('groovy-initial-avatar');
-  if(!letter){
-    letter=document.createElement('span');
-    letter.className='groovy-initial-avatar-letter';
-    element.insertBefore(letter,element.firstChild);
-  }
-  letter.textContent=firstLetter(username);
-}
-
-function scanAvatars(root){
-  root=root&&root.querySelectorAll?root:document;
-  root.querySelectorAll('.user-search-result').forEach(function(row){
-    var name=row.querySelector('.user-search-username');
-    applyInitialAvatar(row.querySelector('.user-search-avatar'),name&&name.textContent);
-  });
-
-  var header=document.getElementById('viewedUserHeader');
-  if(header){
-    var headerName=document.getElementById('viewedUserName');
-    applyInitialAvatar(document.getElementById('viewedUserAvatar'),headerName&&headerName.textContent);
-  }
-
-  root.querySelectorAll('.detail-social-person').forEach(function(person){
-    var name=person.querySelector('.detail-social-person-name');
-    applyInitialAvatar(person.querySelector('.detail-social-avatar'),name&&name.textContent);
-  });
-}
-
 function queueDecorate(){
   if(queued)return;
   queued=true;
   setTimeout(function(){
     queued=false;
     decorateBase();
-    scanAvatars(document);
   },25);
 }
 
 function install(){
   if(!overlay||!ratingRoot)return;
   decorateBase();
-  scanAvatars(document);
 
   new MutationObserver(function(){
     queueDecorate();
   }).observe(ratingRoot,{childList:true,subtree:true});
-
-  new MutationObserver(function(mutations){
-    mutations.forEach(function(mutation){
-      mutation.addedNodes.forEach(function(node){if(node&&node.nodeType===1)scanAvatars(node);});
-    });
-  }).observe(document.body,{childList:true,subtree:true});
 
   new MutationObserver(function(){
     if(overlay.classList.contains('visible')){

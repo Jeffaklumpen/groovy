@@ -1,6 +1,8 @@
 (function(){
   var Router=window.GroovyRouter;
   if(!Router)throw new Error('GroovyRouter must load before statistics.js');
+  var UserProfileCore=window.GroovyUserProfileCore;
+  if(!UserProfileCore)throw new Error('GroovyUserProfileCore must load before statistics.js');
   var page=document.getElementById('statisticsPage');
   var content=document.getElementById('statisticsContent');
   var closeButton=document.getElementById('closeStatisticsPage');
@@ -79,7 +81,7 @@
     var valueLabel=type==='taste'?'genre match':'records in common';
     var note=type==='taste'?'Closest music taste among collectors you follow':'Most shared collected albums among collectors you follow';
     return '<article class="stats-community-card'+(type==='taste'?' stats-community-card-accent':'')+'">'+
-      '<img class="stats-community-avatar" src="'+escapeHtml(item.avatar_url||'/assets/images/avatar-placeholder.png')+'" alt="" onerror="this.src=\'/assets/images/avatar-placeholder.png\'">'+
+      UserProfileCore.avatarMarkup('stats-community-avatar',item.avatar_url,item.username||'Collector')+
       '<div class="stats-community-copy"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(item.username||'Collector')+'</strong><small>'+escapeHtml(note)+'</small></div>'+
       '<div class="stats-community-value"><strong>'+escapeHtml(value)+'</strong><span>'+escapeHtml(valueLabel)+'</span></div>'+
     '</article>';
@@ -124,10 +126,10 @@
     var topDecade=stats.topDecades[0];
     var topCountry=stats.topCountries[0];
     var rating=stats.averageAlbumRating?stats.averageAlbumRating.toFixed(1):'—';
-    var avatar=profile.avatar_url||'/assets/images/avatar-placeholder.png';
+    var username=profile.username||'Groovy listener';
 
     content.innerHTML=
-      '<section class="stats-hero"><div class="stats-hero-profile"><img src="'+escapeHtml(avatar)+'" alt=""><div><span class="stats-kicker">Collection insights</span><h1>'+escapeHtml(profile.username||'Groovy listener')+'</h1><p>A snapshot of the records, eras and sounds that shape this collection.</p></div></div><div class="stats-hero-groove" aria-hidden="true"></div></section>'+
+      '<section class="stats-hero"><div class="stats-hero-profile">'+UserProfileCore.avatarMarkup('stats-hero-avatar',profile.avatar_url,username)+'<div><span class="stats-kicker">Collection insights</span><h1>'+escapeHtml(username)+'</h1><p>A snapshot of the records, eras and sounds that shape this collection.</p></div></div><div class="stats-hero-groove" aria-hidden="true"></div></section>'+
       '<section class="stats-metric-grid">'+
         metric('Collection',stats.collectionCount,'records on the shelf',true)+
         metric('Wishlist',stats.wishlistCount,'records wanted next')+

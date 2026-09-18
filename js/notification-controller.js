@@ -1,13 +1,14 @@
 (function(root,factory){
   if(typeof module==='object'&&module.exports){
-    module.exports=factory(require('./notification-core.js'));
+    module.exports=factory(require('./notification-core.js'),require('./user-profile-core.js'));
   }else{
-    root.GroovyNotificationController=factory(root.GroovyNotificationCore);
+    root.GroovyNotificationController=factory(root.GroovyNotificationCore,root.GroovyUserProfileCore);
   }
-})(typeof window!=='undefined'?window:null,function(Core){
+})(typeof window!=='undefined'?window:null,function(Core,UserProfileCore){
   function create(options){
     options=options||{};
     if(!Core)throw new Error('GroovyNotificationCore is required');
+    if(!UserProfileCore)throw new Error('GroovyUserProfileCore is required');
 
     var elements=options.elements||{};
     var api=options.api;
@@ -50,7 +51,7 @@
       elements.list.innerHTML=notificationsCache.map(function(item){
         var actor=item.actor||{};
         return '<button class="notification-item'+(item.read_at?'':' unread')+'" type="button" data-notification-id="'+item.id+'" data-username="'+Core.escapeHtml(actor.username||'')+'" data-type="'+Core.escapeHtml(item.notification_type||'')+'">'+
-          '<span class="notification-avatar" style="background-image:url(&quot;'+Core.escapeHtml(actor.avatar_url||'/assets/images/avatar-placeholder.png')+'&quot;)"></span>'+
+          UserProfileCore.avatarMarkup('notification-avatar',actor.avatar_url,actor.username||'Collector')+
           '<span class="notification-item-copy"><span>'+Core.copy(item)+'</span><small>'+Core.escapeHtml(Core.relativeTime(item.updated_at||item.created_at))+'</small></span>'+
           '<i aria-hidden="true"></i>'+
         '</button>';

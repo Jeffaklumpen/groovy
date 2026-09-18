@@ -1,10 +1,10 @@
 (function(root,factory){
   if(typeof module==='object'&&module.exports){
-    module.exports=factory();
+    module.exports=factory(require('./user-profile-core.js'));
   }else{
-    root.GroovySocialController=factory();
+    root.GroovySocialController=factory(root.GroovyUserProfileCore);
   }
-})(typeof window!=='undefined'?window:null,function(){
+})(typeof window!=='undefined'?window:null,function(UserProfileCore){
   function create(options){
     options=options||{};
 
@@ -27,6 +27,7 @@
     var bound=false;
 
     if(!api)throw new Error('Social controller requires an API client');
+    if(!UserProfileCore)throw new Error('Social controller requires user profile core');
 
     function log(level,message,error){onLog(level,message,error);}
 
@@ -188,7 +189,7 @@
       grid.innerHTML=data.map(function(item){
         return '<article class="following-card">'+
           '<button class="following-identity" type="button" data-profile-username="'+escapeHtml(item.username||'')+'">'+
-            '<span class="following-avatar" style="background-image:url(&quot;'+escapeHtml(item.avatar_url||'/assets/images/avatar-placeholder.png')+'&quot;)"></span>'+
+            UserProfileCore.avatarMarkup('following-avatar',item.avatar_url,item.username||'Collector')+
             '<span><strong>'+escapeHtml(item.username||'Collector')+'</strong><small>Following since '+escapeHtml(new Date(item.followed_at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}))+'</small></span>'+
           '</button>'+
           '<div class="following-stats">'+

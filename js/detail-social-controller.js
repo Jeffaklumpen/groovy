@@ -1,10 +1,10 @@
 (function(root,factory){
   if(typeof module==='object'&&module.exports){
-    module.exports=factory();
+    module.exports=factory(require('./user-profile-core.js'));
   }else{
-    root.GroovyDetailSocialController=factory();
+    root.GroovyDetailSocialController=factory(root.GroovyUserProfileCore);
   }
-})(typeof window!=='undefined'?window:null,function(){
+})(typeof window!=='undefined'?window:null,function(UserProfileCore){
   function create(options){
     options=options||{};
 
@@ -31,6 +31,7 @@
 
     if(!api)throw new Error('Detail social controller requires an API client');
     if(!recordModel)throw new Error('Detail social controller requires record model');
+    if(!UserProfileCore)throw new Error('Detail social controller requires user profile core');
 
     function log(level,message,error){onLog(level,message,error);}
 
@@ -73,7 +74,7 @@
       function personButton(profile,extraClass){
         var username=profile.username||'Collector';
         return '<button class="detail-social-person'+(extraClass?' '+extraClass:'')+'" type="button" data-detail-social-username="'+escapeHtml(username)+'" data-tooltip="'+escapeHtml(username)+'" aria-label="View '+escapeHtml(username)+'">'+
-          '<span class="detail-social-avatar" style="background-image:url(&quot;'+escapeHtml(profile.avatar_url||'/assets/images/avatar-placeholder.png')+'&quot;)"></span>'+
+          UserProfileCore.avatarMarkup('detail-social-avatar',profile.avatar_url,username)+
           '<span class="detail-social-person-name">'+escapeHtml(username)+'</span>'+
         '</button>';
       }
