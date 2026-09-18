@@ -313,6 +313,20 @@ test('locally unmatched Wikipedia albums can recover stable IDs in one Wikidata 
   assert.match(block,/wikidataReleaseIdentifiersByArticleTitles/);
 });
 
+test('list-based discography parsing prefers a parenthetical release year over a numeric title',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf('function wikipediaStudioAlbumsFromHtml');
+  const end=edge.indexOf('function rankWikipediaStudioSection',start);
+  const block=edge.slice(start,end);
+  assert.match(block,/const parentheticalYear=/);
+  assert.match(block,/const inlineYears=Array\.from/);
+  assert.match(block,/inlineYears\[inlineYears\.length-1\]/);
+  assert.ok(
+    block.indexOf('parentheticalYear')<block.indexOf('inlineYear?Number'),
+    'parenthetical release year should win over a numeric title'
+  );
+});
+
 test('main article album parsing rejects obvious non-studio releases',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const start=edge.indexOf('function wikipediaStudioAlbumsFromHtml');
