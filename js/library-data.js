@@ -45,7 +45,8 @@ var COLLECTION_SELECT=`
       id,
       disc_side,
       track_number,
-      title
+      title,
+      duration
     )
   )
 `;
@@ -65,7 +66,7 @@ var WISHLIST_SELECT=`
     apple_collection_url,
     discogs_master_id,
     artists(id,name),
-    tracks(id,disc_side,track_number,title)
+    tracks(id,disc_side,track_number,title,duration)
   )
 `;
 

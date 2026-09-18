@@ -72,7 +72,8 @@ export default {
           return {
             disc_side: match[1],
             track_number: Number(match[2]) || null,
-            title: String(track.title || '').trim()
+            title: String(track.title || '').trim(),
+            duration: String(track.duration || '').trim() || null
           }
         }).filter((track: any) => track && track.title)
       }

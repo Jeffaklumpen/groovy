@@ -4,6 +4,8 @@
   if(typeof supabaseClient==='undefined')return;
   var Router=window.GroovyRouter;
   if(!Router)throw new Error('GroovyRouter must load before profile.js');
+  var UserProfileCore=window.GroovyUserProfileCore;
+  if(!UserProfileCore)throw new Error('GroovyUserProfileCore must load before profile.js');
 
   var profileMenu=document.getElementById('profileMenu');
   var myCollectionButton=document.getElementById('myCollectionButton');
@@ -376,8 +378,6 @@
     }
   }
 
-  function validUsername(value){return value.length>=3&&value.length<=30&&/^[\p{L}\p{N}._-]+$/u.test(value);}
-
   function formatDate(value){
     if(!value)return '';
     try{return new Intl.DateTimeFormat(undefined,{year:'numeric',month:'long'}).format(new Date(value));}catch(error){return '';}
@@ -603,7 +603,7 @@
   async function saveProfile(){
     if(!state.user)return;
     var username=usernameInput.value.trim();
-    if(!validUsername(username)){
+    if(!UserProfileCore.validUsername(username)){
       setStatus('Username must be 3–30 characters and may only contain letters, numbers, dots, dashes and underscores.','error');
       usernameInput.focus();
       return;

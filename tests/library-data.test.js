@@ -30,6 +30,7 @@ test('fetchCollection uses one shared ordered collection query',async()=>{
   assert.deepEqual(result,{data:[{id:'row-1'}],error:null});
   assert.match(capture.select,/matrix_runout_h/);
   assert.match(capture.select,/tracks\(/);
+  assert.match(capture.select,/duration/);
   assert.deepEqual(capture.eq,['user_id','user-1']);
   assert.deepEqual(capture.order,['sort_order',{ascending:true}]);
 });
@@ -62,7 +63,7 @@ test('mapCollectionRows uses Record.fromCollection for tracks sides pressing and
       artists:{name:'Artist (2)'},
       tracks:[
         {id:2,disc_side:'B',track_number:1,title:'Second'},
-        {id:1,disc_side:'A',track_number:1,title:'First'}
+        {id:1,disc_side:'A',track_number:1,title:'First',duration:'3:21'}
       ]
     }
   }];
@@ -81,6 +82,7 @@ test('mapCollectionRows uses Record.fromCollection for tracks sides pressing and
   assert.equal(Record.communityRating(records[0]),3.5);
   assert.equal(Record.communityCount(records[0]),8);
   assert.equal(Array.from(Record.sides(records[0]).A,function(track){return track.title;}).join('|'),'First');
+  assert.equal(Record.sides(records[0]).A[0].duration,'3:21');
   assert.equal(Array.from(Record.sides(records[0]).B,function(track){return track.title;}).join('|'),'Second');
 });
 
@@ -108,6 +110,7 @@ test('fetchWishlist uses shared ordered wishlist query',async()=>{
   assert.deepEqual(result,{data:[{id:'wish-1'}],error:null});
   assert.match(capture.select,/added_at/);
   assert.match(capture.select,/tracks\(/);
+  assert.match(capture.select,/duration/);
   assert.deepEqual(capture.eq,['user_id','user-1']);
   assert.equal(capture.orders.length,2);
   assert.deepEqual(capture.orders[0],['sort_order',{ascending:true,nullsFirst:false}]);

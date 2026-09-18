@@ -57,7 +57,12 @@ function fromWishlist(item,index){
       return sideCompare||((a.track_number||0)-(b.track_number||0))||((a.id||0)-(b.id||0));
     }).forEach(function(track){
       if(!sides[track.disc_side])return;
-      sides[track.disc_side].push({id:track.id,title:track.title||'Okänd låt',rating:0});
+      sides[track.disc_side].push({
+        id:track.id,
+        title:track.title||'Okänd låt',
+        trackNumber:track.track_number==null?null:track.track_number,
+        duration:track.duration||''
+      });
     });
   }
   return [

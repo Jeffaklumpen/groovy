@@ -128,3 +128,17 @@ test('verified saves seed library cover overrides from the final persisted album
   assert.match(sql,/insert into public\.wishlists\(user_id,album_id,cover_url/i);
   assert.match(sql,/insert into public\.collections\(user_id,album_id,cover_url/i);
 });
+
+
+test('final foundation hardening persists durations and enforces profile upload contracts',()=>{
+  const sql=fs.readFileSync('supabase/migrations/20260918110500_persist_track_durations_and_profile_constraints.sql','utf8');
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const library=fs.readFileSync('js/library-data.js','utf8');
+  assert.match(sql,/add column if not exists duration text/i);
+  assert.match(sql,/profiles_username_format_check/i);
+  assert.match(sql,/file_size_limit = 5242880/i);
+  assert.match(sql,/allowed_mime_types = ARRAY\['image\/\*'\]/i);
+  assert.match(sql,/set duration = coalesce/i);
+  assert.match(edge,/duration: String\(track\.duration \|\| ''\)\.trim\(\) \|\| null/);
+  assert.match(library,/tracks\([\s\S]*duration/);
+});

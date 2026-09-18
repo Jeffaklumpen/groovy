@@ -1,5 +1,7 @@
 var Router=window.GroovyRouter;
 if(!Router)throw new Error('GroovyRouter must load before app.js');
+var UserProfileCore=window.GroovyUserProfileCore;
+if(!UserProfileCore)throw new Error('GroovyUserProfileCore must load before app.js');
 var NotificationCore=window.GroovyNotificationCore;
 if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
 var NotificationController=window.GroovyNotificationController;
@@ -443,8 +445,8 @@ registerButton.addEventListener('click',async function(){
         return;
     }
 
-    if(username.length<3){
-        alert('Användarnamnet måste vara minst 3 tecken.');
+    if(!UserProfileCore.validUsername(username)){
+        alert('Användarnamnet måste vara 3–30 tecken och får bara innehålla bokstäver, siffror, punkt, bindestreck och understreck.');
         return;
     }
 

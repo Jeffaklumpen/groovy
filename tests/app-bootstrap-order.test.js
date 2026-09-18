@@ -15,7 +15,7 @@ test('dependency scripts load before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const app=html.indexOf('/js/app.js?v=');
   assert.ok(app>=0,'app.js script is missing');
-  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/pressing-view.js?v=','/js/pressing-picker.js?v=','/js/pressing-controller.js?v=','/js/detail-tracklist-controller.js?v=','/js/detail-layout-controller.js?v=','/js/rating-core.js?v=','/js/album-rating-controller.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/library-data.js?v=','/js/library-style-refresh.js?v=','/js/library-actions-controller.js?v=','/js/grid-sort-controller.js?v=','/js/library-render-controller.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
+  ['/js/user-profile-core.js?v=','/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/pressing-view.js?v=','/js/pressing-picker.js?v=','/js/pressing-controller.js?v=','/js/detail-tracklist-controller.js?v=','/js/detail-layout-controller.js?v=','/js/rating-core.js?v=','/js/album-rating-controller.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/library-data.js?v=','/js/library-style-refresh.js?v=','/js/library-actions-controller.js?v=','/js/grid-sort-controller.js?v=','/js/library-render-controller.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
     const pos=html.indexOf(script);assert.ok(pos>=0,script+' script is missing');assert.ok(pos<app,script+' must load before app.js');
   });
   assert.match(html,/\/js\/app\.js\?v=\d+/);
@@ -350,4 +350,15 @@ test('app delegates Discogs style refresh to library style module',()=>{
   assert.doesNotMatch(source,/functions\.invoke\('discogs-search'/);
   assert.match(style,/functions\.invoke\('discogs-search'/);
   assert.match(style,/30\*24\*60\*60\*1000/);
+});
+
+
+test('username validation core loads before both app and profile integrations',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const core=html.indexOf('/js/user-profile-core.js?v=');
+  const app=html.indexOf('/js/app.js?v=');
+  const profile=html.indexOf('/js/profile.js?v=');
+  assert.ok(core>=0&&core<app&&core<profile);
+  assert.match(fs.readFileSync('js/app.js','utf8'),/UserProfileCore\.validUsername\(username\)/);
+  assert.match(fs.readFileSync('js/profile.js','utf8'),/UserProfileCore\.validUsername\(username\)/);
 });

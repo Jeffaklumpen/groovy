@@ -70,7 +70,7 @@ test('record model builds wishlist tuples and empty sides consistently',function
   const Record=loadModel();
   const item={id:77,discogs_style:'Prog Rock',cover_url:'wish.jpg',albums:{id:42,title:'The Wall',release_year:1979,genre:'Rock',cover_url:'album.jpg',apple_collection_url:'https://music.apple.com/test',discogs_master_id:123,artists:{name:'Pink Floyd (2)'},tracks:[
     {id:2,disc_side:'B',track_number:1,title:'B One'},
-    {id:1,disc_side:'A',track_number:1,title:'A One'}
+    {id:1,disc_side:'A',track_number:1,title:'A One',duration:'3:33'}
   ]}};
   const record=Record.fromWishlist(item,3);
   assert.equal(record[0],4);
@@ -79,6 +79,8 @@ test('record model builds wishlist tuples and empty sides consistently',function
   assert.equal(Record.albumId(record),42);
   assert.equal(Record.discogsMasterId(record),123);
   assert.deepEqual(Array.from(Record.sides(record).A,function(track){return track.title;}),['A One']);
+  assert.equal(Record.sides(record).A[0].trackNumber,1);
+  assert.equal(Record.sides(record).A[0].duration,'3:33');
   assert.deepEqual(Array.from(Record.sides(record).B,function(track){return track.title;}),['B One']);
   assert.deepEqual(Object.keys(Record.emptySides()),['A','B','C','D','E','F','G','H']);
 });
