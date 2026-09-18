@@ -60,7 +60,7 @@ test('community summary uses wishlisted records and taste cards use the statisti
   assert.doesNotMatch(core,/connections:number\(summary\.connections\)/);
   assert.match(view,/Wishlisted Records/);
   assert.match(view,/taste_similarity/);
-  assert.match(view,/genre overlap/);
+  assert.match(view,/Genre overlap/);
   assert.doesNotMatch(view,/collection overlap/);
   assert.match(migration,/'wishlisted_records'/);
   assert.match(migration,/taste_similarity/);
@@ -83,7 +83,7 @@ test('similar collector cards render two separate taste metrics',()=>{
 test('community keeps Collection streaming assets outside album artwork',()=>{
   const view=fs.readFileSync('js/community-view.js','utf8');
   const css=fs.readFileSync('css/community.css','utf8');
-  assert.match(view,/apple-music-small-badge\.svg/);
+  assert.match(view,/apple-music-badge-small\.svg/);
   assert.match(view,/spotify-full-logo-green\.svg/);
   assert.match(view,/apple-music-small-badge/);
   assert.match(view,/spotify-service-logo/);
