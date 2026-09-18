@@ -251,3 +251,30 @@ test('discography source is exposed by the live read-model migration',()=>{
   assert.match(sql,/v_discography_source text := 'unchecked'/);
   assert.match(sql,/'discography_source',v_discography_source/);
 });
+
+
+test('Wikipedia studio tables own Main Discography independently of local Discogs enrichment',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const sql=fs.readFileSync('supabase/migrations/20260918203147_wikipedia_owned_artist_discography.sql','utf8');
+  const view=fs.readFileSync('js/artist-view.js','utf8');
+  const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
+  const end=edge.indexOf("if (action === 'artistProfile')",start);
+  const block=edge.slice(start,end);
+
+  assert.match(edge,/function wikipediaStudioAlbumsFromHtml/);
+  assert.match(edge,/Released\\s\*:/);
+  assert.match(edge,/wikipediaParse\([\s\S]*?'text'/);
+  assert.match(block,/local MusicBrainz↔Discogs catalog is enrichment only/i);
+  assert.match(block,/source_key:sourceKey/);
+  assert.match(block,/mbid:match\?\.mbid\?String\(match\.mbid\):null/);
+  assert.match(block,/discogs_master_id:match\?\.discogs_master_id[\s\S]*?:null/);
+
+  assert.match(sql,/alter column mbid drop not null/i);
+  assert.match(sql,/alter column discogs_master_id drop not null/i);
+  assert.match(sql,/primary key \(discogs_artist_id, source_key\)/i);
+  assert.match(sql,/adc\.position::bigint as sort_position/i);
+  assert.match(sql,/delete from public\.artist_discography_cache/i);
+
+  assert.match(view,/item\.mbid\?\('https:\/\/coverartarchive\.org\/release-group\//);
+  assert.match(view,/aria-disabled="true"/);
+});

@@ -64,12 +64,13 @@
       return '<div class="artist-discography-grid">'+items.map(function(item){
         var albumId=Core.number(item.album_id);
         var masterId=Core.number(item.discogs_master_id);
-        var cover=item.cover_url||('https://coverartarchive.org/release-group/'+encodeURIComponent(item.mbid||'')+'/front-500');
+        var cover=item.cover_url||(item.mbid?('https://coverartarchive.org/release-group/'+encodeURIComponent(item.mbid)+'/front-500'):'');
         var status=item.is_collected?'In collection':(item.is_wishlisted?'Wishlisted':'');
-        var attrs=(albumId?' data-artist-album-id="'+albumId+'"':'')+(masterId?' data-artist-master-id="'+masterId+'"':'');
-        return '<button class="artist-discography-card" type="button"'+attrs+' aria-label="Open '+escapeHtml(item.title||'album')+' by '+escapeHtml(artistName)+'">'+
+        var interactive=!!(albumId||masterId);
+        var attrs=(albumId?' data-artist-album-id="'+albumId+'"':'')+(masterId?' data-artist-master-id="'+masterId+'"':'')+(interactive?'':' aria-disabled="true" tabindex="-1"');
+        return '<button class="artist-discography-card" type="button"'+attrs+' aria-label="'+escapeHtml((interactive?'Open ':'')+(item.title||'album')+' by '+artistName)+'">'+
           '<span class="artist-discography-cover"><span class="artist-discography-fallback"><span class="record-icon"></span></span>'+
-            '<img src="'+escapeHtml(cover)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'+
+            (cover?'<img src="'+escapeHtml(cover)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'')+
             (status?'<span class="artist-discography-status">'+escapeHtml(status)+'</span>':'')+
           '</span>'+
           '<span class="artist-discography-copy"><strong>'+escapeHtml(item.title||'Unknown album')+'</strong><small>'+escapeHtml(String(item.year||''))+(item.secondary_types?' · '+escapeHtml(item.secondary_types):'')+'</small></span>'+
