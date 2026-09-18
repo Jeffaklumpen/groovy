@@ -1,0 +1,324 @@
+/* ADD ALBUM MODAL */
+.add-album-modal{display:none;position:fixed;z-index:9999;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.8);align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
+.add-album-box{position:relative;width:100%;max-width:650px;max-height:85vh;overflow-y:auto;background:#181818;color:#fff;border-radius:10px;padding:25px;box-sizing:border-box}
+.add-album-box h2{margin-top:0;margin-bottom:20px}
+.close-add-album{position:absolute;top:10px;right:15px;background:none;border:0;color:#fff;font-size:30px;cursor:pointer}
+
+.add-album-search{display:flex;gap:10px;margin-bottom:20px}
+.add-album-search input{flex:1;padding:12px;background:#252525;color:#fff;border:1px solid #555;border-radius:6px;font-size:16px;box-sizing:border-box}
+.add-album-search button{padding:12px 18px;background:#333;color:#fff;border:1px solid #555;border-radius:6px;cursor:pointer}
+
+.mb-result{display:flex;align-items:center;gap:15px;padding:12px;margin-bottom:8px;background:#242424;border-radius:8px}
+.mb-info{flex:1}
+.mb-title{font-size:16px;font-weight:bold}
+.mb-artist{margin-top:4px;opacity:.8}
+.mb-year{margin-top:3px;opacity:.6}
+.mb-add-button{flex-shrink:0;background:#E85301;color:#fff;border:0;padding:9px 16px;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer}
+.mb-add-button:hover{background:#F06A24}
+.mb-added{background:#555;color:#ccc;cursor:default}
+
+@media screen and (min-width:601px) and (max-width:1000px){
+body{padding:20px}
+.header{margin-bottom:24px}
+.title{font-size:28px;padding-right:0}
+.header-controls{position:relative;left:auto;top:auto;right:auto;margin-top:14px;padding-top:2px;justify-content:flex-end;flex-wrap:wrap;row-gap:8px}
+.grid .record{width:24%;margin-right:1.3333%;margin-bottom:30px}
+.grid .add-album-card{width:24%;margin-right:1.3333%;margin-bottom:30px}
+.grid .artist{font-size:15px}
+.grid .album{font-size:13px}
+.grid .year{font-size:12px}
+.album-overlay{padding:20px}
+.album-detail{min-height:620px}
+.album-detail-main{padding:28px 30px 30px}
+.detail-artist{font-size:25px}
+.detail-album{font-size:19px}
+.album-tracks{padding:50px 28px 25px}
+.track-side{margin-bottom:18px}
+.tracks-list li{font-size:12px;padding-top:6px;padding-bottom:6px}
+}
+
+@media screen and (max-width:600px){
+html{scroll-behavior:auto}
+body{padding:15px}
+.header{padding-bottom:16px;margin-bottom:20px}
+.viewed-user-header{width:100%;gap:8px}
+.viewed-user-name{flex:1;font-size:13px}
+.viewed-user-header .back-to-my-collection{display:none}
+.back-to-my-collection-mobile.active{display:inline-flex;margin-left:auto;padding:6px 9px;font-size:10px}
+.title{font-size:23px;padding-right:0;letter-spacing:2px}
+.subtitle{font-size:12px}
+.header-controls{position:relative;left:auto;top:auto;right:auto;margin-top:12px;display:flex;flex-wrap:wrap;justify-content:flex-start;gap:6px}
+.add-album-button{padding:7px 11px;font-size:12px}
+.grid .record{width:48%;margin-right:4%;margin-bottom:28px}
+.grid .record:nth-child(4n){margin-right:4%}
+.grid .record:nth-child(2n){margin-right:0}
+.grid .add-album-card{width:48%;margin-right:4%;margin-bottom:28px;padding:12px}
+.grid .add-album-card:nth-child(4n){margin-right:4%}
+.grid .add-album-card:nth-child(2n){margin-right:0}
+.add-album-card-icon{width:52px;height:52px;font-size:34px;margin-bottom:12px}
+.add-album-card-title{font-size:15px}
+.add-album-card-text{font-size:11px}
+.album-overlay{padding:10px}
+.album-detail{display:flex;flex-direction:column;min-height:0;height:auto}
+.album-detail-main{order:1;position:relative;width:100%;left:auto;bottom:auto;padding:20px 20px 18px;background:#111113}
+.album-detail-main:before{display:none}
+.album-detail-cover{order:2;position:relative;width:100%;height:auto;aspect-ratio:1/1;min-height:0;max-height:none;overflow:hidden;background:#080808}
+.album-detail-cover img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;display:block}
+.album-detail-cover:after{display:none}
+.detail-artist{font-size:22px}
+.detail-album{font-size:17px}
+.album-tracks{order:3;position:relative;width:100%;right:auto;top:auto;bottom:auto;padding:25px 20px 30px;overflow:visible}
+.tracks-list{max-height:none;overflow:visible}
+.tracks-list li{font-size:13px}
+.track-side{margin-bottom:22px}
+.add-album-modal{padding:12px}
+.add-album-box{padding:20px;max-height:90vh}
+.add-album-search{display:flex;margin-bottom:8px}
+.add-album-search input{width:100%}
+#albumSearchResults{max-height:55vh;overflow-y:auto;scroll-behavior:smooth}
+.add-album-search button{padding:11px}
+.mb-result{gap:10px;padding:10px}
+.mb-add-button{padding:8px 11px;font-size:12px}
+}
+
+@media screen and (max-width:400px){
+.header-controls{gap:4px}
+.add-album-button{padding:6px 9px;font-size:11px}
+.install-shortcut-button{width:30px;height:30px}
+.menu-button{padding:6px 8px;font-size:10px}
+.menu-panel{min-width:110px}
+.menu-panel button{padding:7px 8px;font-size:10px}
+}
+
+.mb-result{display:flex;align-items:center;gap:12px;padding:9px;margin-bottom:6px;background:#242424;border-radius:8px;cursor:pointer;transition:filter .15s ease,background .15s ease}
+.mb-result:hover{filter:brightness(1.18);background:#2b2b2b}
+.mb-result:active{filter:brightness(.92)}
+.mb-cover{width:52px;height:52px;flex-shrink:0;object-fit:cover;border-radius:4px;background:#181818}
+.mb-info{flex:1;min-width:0}
+.mb-title{font-size:14px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mb-artist{margin-top:3px;font-size:12px;color:#bbb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mb-year{margin-top:2px;font-size:11px;color:#777}
+.mb-add-button{flex-shrink:0;background:#E85301;color:#fff;border:0;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer}
+.mb-add-button:hover{background:#F06A24}
+.mb-added{background:#555;color:#ccc;cursor:default}
+
+.install-shortcut-button{display:none;width:34px;height:34px;border:0;border-radius:50%;background:#242426;color:#e85301;font-size:18px;font-weight:700;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0}
+.install-shortcut-button svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.delete-cover-button{position:absolute;right:8px;top:8px;z-index:10;width:34px;height:34px;border:0;border-radius:50%;background:rgba(0,0,0,.78);color:#fff;font-size:24px;font-weight:300;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .15s ease,background .15s ease;-webkit-tap-highlight-color:transparent}
+.delete-cover-button:hover{background:#c62828}
+@media screen and (min-width:601px){.cover-wrapper:hover .delete-cover-button{opacity:1;pointer-events:auto}}
+@media screen and (max-width:600px){
+body{padding:15px}
+.header{padding-bottom:14px;margin-bottom:18px}
+.title{font-size:23px;padding-right:0;letter-spacing:2px}
+.subtitle{font-size:12px}
+.header-controls{position:relative;left:auto;top:auto;right:auto;width:100%;margin-top:11px;display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:5px}
+#filterButton{order:4}
+#viewButton{order:5}
+#installAppShortcutButton{order:6}
+.add-album-button{padding:7px 10px;font-size:12px;border-radius:7px}
+.install-shortcut-button{display:flex;width:32px;height:32px;font-size:17px}
+.menu-button{padding:7px 9px;font-size:11px;border-radius:8px}
+.menu-panel{top:calc(100% + 5px);min-width:120px}
+.menu-panel button{padding:8px 9px;font-size:11px}
+.delete-cover-button{opacity:0;pointer-events:none}
+.delete-mode-active .delete-cover-button{opacity:1;pointer-events:auto}
+}
+@media screen and (max-width:400px){
+.header-controls{gap:4px}
+.add-album-button{padding:6px 9px;font-size:11px}
+.install-shortcut-button{width:30px;height:30px}
+.menu-button{padding:6px 8px;font-size:10px}
+.menu-panel{min-width:110px}
+.menu-panel button{padding:7px 8px;font-size:10px}
+}
+
+#authBox{position:absolute;top:0;right:10px;z-index:900}
+#legacyAuthBox{display:none}
+#profileButton{width:36px;height:36px;padding:0;border:1px solid #3a3a3d;border-radius:50%;background:#242426;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#profileButton:hover{background:#303033}
+#profileImage{width:100%;height:100%;display:block;border-radius:50%}
+#profileMenu{display:none;position:absolute;top:calc(100% + 8px);right:0;width:220px;padding:8px;background:#18181a;border:1px solid #303033;border-radius:10px;box-shadow:0 15px 40px rgba(0,0,0,.55);box-sizing:border-box}
+#profileMenu.open{display:block}
+.profile-header{display:flex;align-items:center;gap:10px;padding:8px}
+.profile-avatar{width:32px;height:32px;flex:0 0 32px;border-radius:50%;background:#242426;border:1px solid #3a3a3d;overflow:hidden}
+#profileAvatarButton{padding:0;cursor:pointer}
+#profileAvatarButton:hover{opacity:.8}
+#profileImageMenu{width:100%;height:100%;display:block;border-radius:50%}
+#profileUsername{color:#fff;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.profile-divider{height:1px;background:#303033;margin:6px 0}
+#logoutButton{width:100%;background:none;color:#fff;border:0;border-radius:6px;padding:8px;text-align:left;font-family:inherit;font-size:12px;cursor:pointer}
+#logoutButton:hover{background:#242426}
+#loginPanel{display:none;position:fixed;inset:0;z-index:1000;background:rgba(3,3,4,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;box-sizing:border-box;animation:modal-backdrop-in .18s ease-out}
+#loginPanel.open{display:flex}
+.login-modal{position:relative;width:100%;max-width:430px;max-height:calc(100dvh - 40px);overflow:auto;padding:34px;background:linear-gradient(155deg,#1d1d20 0%,#151517 58%,#121214 100%);border:1px solid rgba(255,255,255,.11);border-radius:20px;box-shadow:0 28px 80px rgba(0,0,0,.72),inset 0 1px rgba(255,255,255,.035);box-sizing:border-box;animation:modal-panel-in .22s cubic-bezier(.2,.8,.2,1)}
+.auth-modal-heading{margin-bottom:24px;padding-right:42px}
+.auth-mark{display:flex;align-items:center;justify-content:center;width:44px;height:44px;margin-bottom:17px;border:1px solid rgba(232,83,1,.35);border-radius:13px;background:rgba(232,83,1,.12);color:#ff6a1a;box-shadow:0 8px 22px rgba(232,83,1,.1)}
+.auth-mark .record-icon{width:22px;height:22px;flex-basis:22px}
+.auth-kicker{display:block;margin-bottom:7px;color:#f36a22;font-size:10px;font-weight:750;letter-spacing:.14em;text-transform:uppercase}
+.login-title{margin:0 0 7px;color:#fff;font-size:30px;font-weight:720;line-height:1.08;letter-spacing:-.035em;text-align:left}
+.auth-modal-heading p{max-width:330px;margin:0;color:#8f8f95;font-size:13px;line-height:1.55}
+#loginClose{position:absolute;top:17px;right:17px;z-index:2;width:36px;height:36px;padding:0;border:1px solid rgba(255,255,255,.09);border-radius:50%;background:rgba(255,255,255,.045);color:#99999f;font-size:24px;line-height:32px;cursor:pointer;transition:color .15s ease,background .15s ease,transform .15s ease}
+#loginClose:hover{background:rgba(255,255,255,.09);color:#fff}
+#loginClose:active{transform:scale(.93)}
+.auth-field{display:block;margin-bottom:14px;color:#aaaab0;font-size:11px;font-weight:650;letter-spacing:.02em}
+.auth-field>span{display:block;margin:0 0 7px 2px}
+#loginPanel input{width:100%;height:50px;margin:0;background:#101012;color:#fff;border:1px solid #333337;border-radius:12px;padding:0 14px;font-family:inherit;font-size:14px;outline:none;box-sizing:border-box;transition:border-color .15s ease,box-shadow .15s ease,background .15s ease}
+#loginPanel input::placeholder{color:#626268}
+#loginPanel input:hover{border-color:#45454a}
+#loginPanel input:focus{border-color:#e85301;background:#121214;box-shadow:0 0 0 3px rgba(232,83,1,.14)}
+#loginPanel .auth-primary-button{width:100%;height:50px;margin-top:4px;border:0;border-radius:12px;background:#e85301;color:#fff;font-family:inherit;font-size:14px;font-weight:750;cursor:pointer;box-shadow:0 10px 24px rgba(232,83,1,.2);transition:background .15s ease,transform .15s ease,box-shadow .15s ease}
+#loginPanel .auth-primary-button:hover{background:#f06a24;box-shadow:0 12px 28px rgba(232,83,1,.27)}
+#loginPanel .auth-primary-button:active{transform:scale(.985)}
+#loginPanel .auth-primary-button:disabled{opacity:.6;cursor:wait;transform:none}
+.auth-switch-row{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:19px;color:#7f7f85;font-size:12px}
+#authSwitchButton{width:auto;margin:0;padding:5px;border:0;background:none;color:#f36a22;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+#authSwitchButton:hover{color:#ff8240;text-decoration:underline;text-underline-offset:3px}
+@media screen and (max-width:600px){
+#authBox{top:8px;right:8px}
+#profileButton{width:34px;height:34px}
+#profileMenu{width:205px}
+#loginPanel{align-items:flex-end;padding:0;background:rgba(3,3,4,.76)}
+.login-modal{max-width:none;max-height:calc(100dvh - 12px);padding:28px 18px calc(22px + env(safe-area-inset-bottom));border-width:1px 0 0;border-radius:22px 22px 0 0;animation:modal-sheet-in .26s cubic-bezier(.2,.8,.2,1)}
+.auth-modal-heading{margin-bottom:21px;padding-right:44px}
+.auth-mark{width:40px;height:40px;margin-bottom:14px}
+.login-title{font-size:27px}
+#loginClose{top:15px;right:15px}
+#loginPanel input{height:50px;font-size:16px}
+}
+@media screen and (max-width:900px) and (orientation:landscape){
+.album-overlay{padding:10px}
+.album-detail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto 1fr;min-height:0;height:auto;width:100%;max-width:none}
+.album-detail-main{grid-column:1;grid-row:1;position:relative;left:auto;bottom:auto;width:100%;padding:20px}
+.album-detail-cover{grid-column:1;grid-row:2;position:relative;left:auto;top:auto;width:100%;height:auto;aspect-ratio:1/1;min-height:0;max-height:none}
+.album-detail-cover img{object-fit:contain}
+.album-tracks{grid-column:2;grid-row:1 / span 2;position:relative;right:auto;top:auto;bottom:auto;width:100%;height:100%;padding:30px 25px;overflow-y:auto}
+}
+
+.grid .record{cursor:grab;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease}
+.grid-sort-enabled .record{touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.grid .record:active{cursor:grabbing}
+.grid .record.dragging{opacity:.22;transform:scale(.97);-webkit-transform:scale(.97);filter:brightness(1.08);box-shadow:0 16px 35px rgba(0,0,0,.25);z-index:20;cursor:grabbing;touch-action:none}
+.drag-preview{position:fixed!important;z-index:9999!important;pointer-events:none!important;margin:0!important;opacity:1;transform:rotate(2deg) scale(1.045)!important;-webkit-transform:rotate(2deg) scale(1.045)!important;transform-origin:center center;filter:brightness(1.08);box-shadow:0 24px 45px rgba(0,0,0,.48),0 5px 12px rgba(0,0,0,.36);transition:transform .14s ease-out;will-change:left,top,transform}
+.grid .record img{-webkit-user-drag:none;user-select:none}
+
+.album-rating-star{border:0;background:none;padding:0;margin:0;cursor:pointer;font-size:28px;line-height:1;color:inherit;touch-action:manipulation}
+.album-rating-star.empty{opacity:.25}
+.album-rating-star.hover-filled{opacity:1}
+
+@media screen and (min-width:601px){
+.grid .record:hover{transform:scale(1.015);z-index:2}
+.grid .add-album-card:hover{transform:scale(1.015);border-color:#E85301;background:#171719}
+.cover-wrapper{transition:transform .18s ease;transform-style:preserve-3d;will-change:transform}
+}
+
+@media (prefers-reduced-motion:reduce){
+html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
+}
+
+.user-search-result{display:flex;align-items:center;gap:10px}
+.user-search-avatar{position:relative;width:40px;height:40px;border-radius:50%;flex-shrink:0;background-size:cover;background-position:center}
+.user-presence-dot{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border:2px solid #18181a;border-radius:50%;background:#2fd477;box-shadow:0 0 0 2px rgba(47,212,119,.12),0 0 10px rgba(47,212,119,.55);opacity:0;transform:scale(.65);transition:opacity .16s ease,transform .16s ease}
+.user-presence-dot.online{opacity:1;transform:scale(1)}
+
+.user-search-info{display:flex;flex-direction:column;gap:2px}
+.user-search-username{font-size:14px;color:#fff}
+.user-search-count{font-size:11px;color:#777}
+
+.user-search-result{padding:8px;border-radius:8px;cursor:pointer;transition:background .15s ease}
+.user-search-result:hover{background:#242426}
+
+.empty-collection{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+.empty-collection-title{font-size:32px;font-weight:600;letter-spacing:-.5px;color:#fff}
+.empty-collection-text{margin-top:8px;font-size:14px;color:#777}
+.empty-collection button{margin-top:22px;padding:11px 22px;border:0;border-radius:8px;background:#E85301;color:#fff;font-size:14px;font-weight:600;cursor:pointer;pointer-events:auto;transition:background .15s ease,transform .15s ease}
+.empty-collection button:hover{background:#F06A24;transform:translateY(-1px)}
+
+.remove-album-box{text-align:center}
+.remove-album-box h2{margin-bottom:12px}
+.remove-album-box p{margin:0 auto 24px;max-width:320px;color:#aaa;font-size:14px;line-height:1.5}
+.remove-album-buttons{display:flex;gap:10px}
+.remove-album-buttons button{flex:1;padding:10px;border:0;border-radius:6px;font-size:14px;cursor:pointer}
+
+/* SEARCH MODALS */
+.add-album-modal{background:rgba(3,3,4,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);animation:modal-backdrop-in .18s ease-out;overscroll-behavior:contain}
+.search-modal-box{width:min(680px,100%);max-width:680px;max-height:min(82vh,760px);overflow:hidden;display:flex;flex-direction:column;padding:32px;background:linear-gradient(145deg,#1a1a1d 0%,#111113 72%);border:1px solid rgba(255,255,255,.11);border-radius:20px;box-shadow:0 30px 90px rgba(0,0,0,.68),0 1px 0 rgba(255,255,255,.05) inset;animation:modal-panel-in .22s cubic-bezier(.2,.8,.2,1)}
+.search-modal-heading{padding-right:48px;margin-bottom:22px}
+.search-modal-kicker{display:block;margin-bottom:7px;color:#E85301;font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase}
+.search-modal-box .search-modal-heading h2{margin:0;color:#fff;font-size:29px;font-weight:650;letter-spacing:-.7px;line-height:1.12}
+.search-modal-heading p{margin:8px 0 0;color:#8f8f95;font-size:13px;line-height:1.45}
+.search-modal-box .close-add-album{top:20px;right:20px;width:38px;height:38px;padding:0;border:1px solid #323236;border-radius:50%;background:#202023;color:#aaa;font-size:25px;line-height:34px;text-align:center;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease;-webkit-tap-highlight-color:transparent}
+.search-modal-box .close-add-album:hover{background:#2a2a2e;border-color:#46464c;color:#fff;transform:rotate(4deg)}
+.search-modal-box .close-add-album:active{transform:scale(.94)}
+.search-modal-box .add-album-search{position:relative;display:block;margin:0 0 16px}
+.search-modal-box .add-album-search:before{content:"";position:absolute;z-index:2;left:17px;top:50%;width:12px;height:12px;border:2px solid #777;border-radius:50%;transform:translateY(-62%);pointer-events:none;transition:border-color .15s ease}
+.search-modal-box .add-album-search:after{content:"";position:absolute;z-index:2;left:29px;top:55%;width:7px;height:2px;border-radius:2px;background:#777;transform:rotate(45deg);pointer-events:none;transition:background .15s ease}
+.search-modal-box .add-album-search:focus-within:before{border-color:#E85301}
+.search-modal-box .add-album-search:focus-within:after{background:#E85301}
+.search-modal-box .add-album-search input{display:block;width:100%;height:52px;padding:0 18px 0 48px;border:1px solid #303034;border-radius:13px;background:#0d0d0f;color:#fff;font-family:inherit;font-size:15px;outline:none;box-shadow:0 1px 0 rgba(255,255,255,.025) inset;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}
+.search-modal-box .add-album-search input::placeholder{color:#66666c}
+.search-modal-box .add-album-search input:focus{border-color:rgba(232,83,1,.82);background:#101012;box-shadow:0 0 0 3px rgba(232,83,1,.13)}
+#albumSearchResults,#userSearchResults{min-height:0;max-height:min(50vh,470px);overflow-y:auto;padding-right:4px;scrollbar-gutter:stable;overscroll-behavior:contain}
+#albumSearchResults:empty,#userSearchResults:empty{display:none}
+#albumSearchResults>p,#userSearchResults>p{margin:12px 4px;color:#8f8f95;font-size:13px;text-align:center}
+.search-modal-box .mb-result{min-height:72px;margin:0 0 8px;padding:10px;border:1px solid #29292d;border-radius:13px;background:rgba(255,255,255,.035);gap:13px;transition:background .15s ease,border-color .15s ease,transform .15s ease;filter:none}
+.search-modal-box .mb-result:last-child{margin-bottom:0}
+.search-modal-box .mb-result:hover{background:#212124;border-color:#3a3a3f;filter:none;transform:translateY(-1px)}
+.search-modal-box .mb-result:active{transform:scale(.995);filter:none}
+.search-modal-box .mb-cover{width:52px;height:52px;border-radius:8px;border:1px solid rgba(255,255,255,.08);box-shadow:0 5px 14px rgba(0,0,0,.32)}
+.search-modal-box .mb-title{font-size:14px;font-weight:650;color:#fff}
+.search-modal-box .mb-artist{color:#aaa;font-size:12px}
+.search-modal-box .mb-year{color:#68686e;font-size:11px}
+.search-modal-box .mb-add-button{min-width:62px;padding:9px 14px;border-radius:9px;background:#E85301;box-shadow:0 5px 14px rgba(232,83,1,.18);transition:background .15s ease,transform .15s ease,box-shadow .15s ease}
+.search-modal-box .mb-add-button:hover{background:#f06418;box-shadow:0 7px 18px rgba(232,83,1,.28)}
+.search-modal-box .mb-add-button:active{transform:scale(.96)}
+.search-modal-box .mb-add-button.mb-added{background:#29292d;color:#9a9aa0;box-shadow:none}
+.mb-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
+#addAlbumModal .mb-wishlist-button,.search-modal-box .mb-wishlist-button{display:flex;align-items:center;gap:6px;min-width:92px;justify-content:center;padding:8px 11px;border:1px solid #4a4a50;border-radius:9px;background:#19191c;color:#ddd;font-family:inherit;font-size:12px;font-weight:650;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+#addAlbumModal .mb-wishlist-button:hover,.search-modal-box .mb-wishlist-button:hover{background:#252529;border-color:#666;color:#fff}
+#addAlbumModal .mb-wishlist-button:active,.search-modal-box .mb-wishlist-button:active{transform:scale(.96)}
+#addAlbumModal .mb-wishlist-button.mb-wishlisted,.search-modal-box .mb-wishlist-button.mb-wishlisted{background:#29292d;border-color:#29292d;color:#9a9aa0;cursor:default}
+.search-modal-box .user-search-result{min-height:66px;margin-bottom:7px;padding:10px 12px;border:1px solid #29292d;border-radius:13px;background:rgba(255,255,255,.035);gap:13px;transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.search-modal-box .user-search-result:last-child{margin-bottom:0}
+.search-modal-box .user-search-result:hover{background:#212124;border-color:#3a3a3f;transform:translateY(-1px)}
+.search-modal-box .user-search-result:active{transform:scale(.995)}
+.search-modal-box .user-search-avatar{width:46px;height:46px;border:1px solid rgba(255,255,255,.12);box-shadow:0 5px 14px rgba(0,0,0,.28)}
+.search-modal-box .user-search-username{font-size:14px;font-weight:650}
+.search-modal-box .user-search-count{margin-top:2px;color:#77777d;font-size:11px}
+@keyframes modal-backdrop-in{from{opacity:0}to{opacity:1}}
+@keyframes modal-panel-in{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+@media screen and (max-width:600px){
+.library-tabs{margin:-7px auto 20px}
+.library-tab{padding:8px 13px;font-size:12px}
+.wishlist-remove-button{opacity:1;pointer-events:auto}
+.move-to-collection-button{margin-top:10px;padding:8px 7px;font-size:11px}
+.move-to-collection-button .record-icon{width:13px;height:13px;flex-basis:13px}
+.add-album-modal{top:var(--groovy-visual-top,0);bottom:auto;height:var(--groovy-visual-height,100dvh);align-items:flex-end;padding:0;background:rgba(3,3,4,.76)}
+.search-modal-box{width:100%;max-width:none;max-height:calc(var(--groovy-visual-height,100dvh) - max(8px,env(safe-area-inset-top)));padding:24px 16px calc(18px + env(safe-area-inset-bottom));border-width:1px 0 0;border-radius:22px 22px 0 0;animation:modal-sheet-in .26s cubic-bezier(.2,.8,.2,1)}
+.search-modal-heading{margin-bottom:18px;padding-right:44px}
+.search-modal-box .search-modal-heading h2{font-size:25px}
+.search-modal-heading p{max-width:290px;font-size:12px}
+.search-modal-box .close-add-album{top:15px;right:15px;width:36px;height:36px;font-size:24px;line-height:32px}
+.search-modal-box .add-album-search{margin-bottom:12px}
+.search-modal-box .add-album-search input{height:50px;border-radius:12px;font-size:16px}
+#albumSearchResults,#userSearchResults{max-height:none;flex:1;padding-right:2px}
+#addAlbumModal:has(.search-modal-box:focus-within),#searchUserModal:has(.search-modal-box:focus-within){top:0;height:100vh;height:100lvh;max-height:none;align-items:flex-start;overflow-y:auto;padding-top:8px}
+#addAlbumModal .search-modal-box:focus-within,#searchUserModal .search-modal-box:focus-within{max-height:none;overflow:visible}
+#addAlbumModal .search-modal-box:focus-within #albumSearchResults,#searchUserModal .search-modal-box:focus-within #userSearchResults{flex:0 0 auto;max-height:none;overflow:visible}
+.search-modal-box .mb-result{min-height:68px;padding:8px;gap:10px}
+.search-modal-box .mb-cover{width:50px;height:50px}
+.search-modal-box .mb-add-button{min-width:56px;padding:8px 11px}
+.mb-actions{flex-direction:column;align-items:stretch;gap:5px}
+#addAlbumModal .mb-wishlist-button,.search-modal-box .mb-wishlist-button{min-width:88px;padding:7px 9px;font-size:11px}
+.search-modal-box .user-search-result{min-height:62px;padding:8px 10px}
+.search-modal-box .user-search-avatar{width:44px;height:44px}
+@keyframes modal-sheet-in{from{opacity:.6;transform:translateY(45px)}to{opacity:1;transform:translateY(0)}}
+}
+
+@media screen and (min-width:601px){.cover-wrapper:hover .wishlist-remove-button{opacity:1}}
+
+@media (prefers-reduced-motion:reduce){
+.add-album-modal,.search-modal-box,#loginPanel,.login-modal{animation:none}
+}
+
