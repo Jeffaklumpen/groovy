@@ -49,10 +49,16 @@ function fill(value){
 }
 
 function staticStars(value){
-  return '<span class="groovy-rating-stars" style="--rating-fill:'+fill(value)+'" aria-hidden="true">'+
-    '<span class="groovy-rating-stars-base">★★★★★</span>'+
-    '<span class="groovy-rating-stars-fill">★★★★★</span>'+
-  '</span>';
+  var numeric=clamp(value);
+  var stars='';
+  for(var i=1;i<=5;i++){
+    var starFill=Math.max(0,Math.min(1,numeric-(i-1)))*100;
+    stars+='<span class="groovy-rating-star-cell" style="--star-fill:'+starFill.toFixed(1)+'%;" aria-hidden="true">'+
+      '<span class="groovy-rating-star-base">★</span>'+
+      '<span class="groovy-rating-star-fill">★</span>'+
+    '</span>';
+  }
+  return '<span class="groovy-rating-stars">'+stars+'</span>';
 }
 
 function trashIcon(){
@@ -141,6 +147,7 @@ function decorateCommunity(record){
   var marker=average+'|'+count;
   if(main&&panel.dataset.groovyCommunityV4!==marker){
     panel.dataset.groovyCommunityV4=marker;
+    main.classList.add('groovy-rating-value-row');
     main.innerHTML=staticStars(average)+'<strong class="groovy-rating-score" data-score="'+esc(scoreText(average))+'">'+scoreMarkup(average)+'</strong>';
   }
 

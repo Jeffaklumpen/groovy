@@ -145,3 +145,19 @@ test('static star meter preserves compact fill markup',()=>{
   assert.match(html,/is-compact/);
   assert.match(html,/2\.5 out of 5/);
 });
+
+
+test('community detail rating uses five fixed star cells and the shared value row',()=>{
+  const record={albumId:1,ownRating:2,communityRating:3.2,communityCount:2};
+  const detailElement=makeDetailElement();
+  const controller=Controller.create({
+    api:{from(){throw new Error('not used');}},
+    ratingCore:RatingCore,
+    recordModel:makeRecordModel(),
+    detailElement,
+    getRecords:()=>[record]
+  });
+  controller.renderDetail(0);
+  assert.match(detailElement.innerHTML,/groovy-rating-value-row rating-panel-community-main/);
+  assert.equal((detailElement.innerHTML.match(/groovy-rating-star-cell/g)||[]).length,5);
+});

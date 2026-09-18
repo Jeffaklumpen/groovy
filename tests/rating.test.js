@@ -50,3 +50,17 @@ test('mobile rating panels share star markup and footer alignment',function(){
   assert.match(css,/rating-panel-footer\{margin-top:auto!important;padding-top:6px!important/);
   assert.match(searchCss,/user-search-avatar\.groovy-user-avatar\{overflow:visible\}/);
 });
+
+
+test('mobile rating cards use identical grid geometry for own and community values',function(){
+  const controller=fs.readFileSync(path.join(root,'js','album-rating-controller.js'),'utf8');
+  const layout=fs.readFileSync(path.join(root,'js','album-rating-layout-v4.js'),'utf8');
+  const css=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
+  assert.match(controller,/groovy-rating-value-row rating-panel-community-main/);
+  assert.match(controller,/groovy-rating-star-cell/);
+  assert.match(layout,/groovy-rating-star-cell/);
+  assert.match(css,/grid-template-rows:16px 30px 24px/);
+  assert.match(css,/grid-template-columns:repeat\(5,1em\)/);
+  assert.match(css,/groovy-score-main,html body \.detail-rating \.groovy-score-max\{font-size:21px/);
+  assert.match(css,/rating-panel-footer\{display:flex!important;align-items:center!important;width:100%!important;height:24px/);
+});

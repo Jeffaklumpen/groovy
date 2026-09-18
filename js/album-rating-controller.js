@@ -37,10 +37,16 @@
     function renderStaticStarMeter(value,extraClass){
       var label=(ratingCore.clamp(value)||0).toFixed(1)+' out of 5';
       if(extraClass==='is-community'){
-        return '<span class="groovy-rating-stars is-community" style="--rating-fill:'+ratingCore.fillPercent(value)+';" aria-label="'+escapeHtml(label)+'">'+
-          '<span class="groovy-rating-stars-base" aria-hidden="true">★★★★★</span>'+
-          '<span class="groovy-rating-stars-fill" aria-hidden="true">★★★★★</span>'+
-        '</span>';
+        var numeric=ratingCore.clamp(value);
+        var stars='';
+        for(var i=1;i<=5;i++){
+          var fill=Math.max(0,Math.min(1,numeric-(i-1)))*100;
+          stars+='<span class="groovy-rating-star-cell" style="--star-fill:'+fill.toFixed(1)+'%;" aria-hidden="true">'+
+            '<span class="groovy-rating-star-base">★</span>'+
+            '<span class="groovy-rating-star-fill">★</span>'+
+          '</span>';
+        }
+        return '<span class="groovy-rating-stars is-community" aria-label="'+escapeHtml(label)+'">'+stars+'</span>';
       }
       return '<span class="groovy-star-meter'+(extraClass?' '+extraClass:'')+'" style="--rating-fill:'+ratingCore.fillPercent(value)+';" aria-label="'+escapeHtml(label)+'">'+
         '<span class="groovy-star-meter-base" aria-hidden="true">★★★★★</span>'+
@@ -118,7 +124,7 @@
         '</section>'+
         '<section class="rating-panel rating-panel-community">'+
           '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-group">'+communityIcon+'</span><span>Community rating</span></div>'+
-          '<div class="rating-panel-community-main">'+renderStaticStarMeter(communityAverage,'is-community')+renderScore(communityAverage)+'</div>'+
+          '<div class="groovy-rating-value-row rating-panel-community-main">'+renderStaticStarMeter(communityAverage,'is-community')+renderScore(communityAverage)+'</div>'+
           '<div class="rating-panel-footer"><span class="rating-panel-meta">'+escapeHtml(String(communityCount||0))+' rating'+(communityCount===1?'':'s')+'</span></div>'+
         '</section>'+
       '</div>';
