@@ -508,9 +508,15 @@ export default {
       function rankWikipediaStudioSection(item: any) {
         const label=String(item?.line||'').trim()
         const normalized=normalizeIdentity(label)
-        if (normalized==='standardised studio albums'||normalized==='standardized studio albums') return 120
+        // Dedicated discography pages may put solo/core releases and band-side
+        // projects under one broad "Studio albums" parent. Prefer an explicit
+        // Primary studio albums subsection so projects "as a member of" another
+        // group are not promoted into the artist's Main Discography.
+        if (normalized==='primary studio albums') return 140
+        if (normalized==='standardised studio albums'||normalized==='standardized studio albums') return 130
+        if (/primary studio albums$/i.test(label)) return 125
+        if (/studio albums$/i.test(label)&&/original/i.test(label)) return 120
         if (normalized==='studio albums') return 110
-        if (/studio albums$/i.test(label)&&/original/i.test(label)) return 100
         if (/studio albums$/i.test(label)) return 90
         return 0
       }
