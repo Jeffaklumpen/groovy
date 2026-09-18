@@ -67,13 +67,6 @@ body.logged-out-home .library-overview{display:none!important}
   .detail-social-context:not(.own-match) .detail-social-people>.detail-social-person .detail-social-person-name{display:block!important;min-width:0!important;max-width:116px!important;flex:0 1 auto!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
   .detail-social-context:not(.own-match) .detail-social-more{width:30px!important;min-width:30px!important;flex:0 0 30px!important}
 
-  /* Grid cards: stars stay inside the card; rating number is desktop-only. */
-  .cover-rating{min-width:0!important;max-width:96px!important;flex:0 1 96px!important;overflow:hidden!important}
-  .cover-rating-inner{min-width:0!important;max-width:100%!important;gap:4px!important;overflow:hidden!important}
-  .cover-rating-number{display:inline-flex!important;flex:0 0 auto!important;font-size:11px!important}
-  .cover-rating-max{display:none!important}
-  .cover-rating .groovy-star-meter.is-compact{font-size:11px!important;letter-spacing:.045em!important;max-width:100%!important;overflow:hidden!important}
-
   .detail-shelf-actions{grid-row:3!important}
   .detail-social-context,.detail-social-context:not(.own-match),.detail-social-context.own-match{grid-row:4!important}
   .album-tracks{grid-row:5!important}
@@ -106,7 +99,5 @@ body.logged-out-home .library-overview{display:none!important}
 
   .detail-social-context:not(.own-match) .detail-social-people>.detail-social-person{max-width:145px!important;padding-right:8px!important}
   .detail-social-context:not(.own-match) .detail-social-people>.detail-social-person .detail-social-person-name{max-width:104px!important}
-  .cover-rating{max-width:66px!important;flex-basis:66px!important}
-  .cover-rating .groovy-star-meter.is-compact{font-size:10px!important;letter-spacing:.035em!important}
 }
 

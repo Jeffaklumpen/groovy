@@ -114,11 +114,7 @@ function create(options){
         (showPressingPrompt?'<span class="pressing-prompt-badge" title="Add pressing details">Add pressing</span>':'')+
         '<span class="cover-rating">';
 
-    if(isWishlist){
-      html+='<span class="wishlist-cover-label"><span class="wishlist-icon" aria-hidden="true"></span>Wishlisted</span>';
-    }else{
-      html+=ratingRenderer.renderGridRating(recordModel.communityRating(record)||0);
-    }
+    html+=ratingRenderer.renderGridRating(recordModel.ownRating(record)||0);
 
     html+='</span></div></div>'+
       (isWishlist&&state.viewedUserId===null

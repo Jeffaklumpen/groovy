@@ -5,7 +5,6 @@ var Record=window.GroovyRecord;
 if(!Record)return;
 
 var currentDetailIndex=-1;
-var wishlistRatingTimer=null;
 var socialToken=0;
 var ratingHome=null;
 
@@ -75,14 +74,14 @@ function patchCard(card,record){
   if(!card||!record)return;
   var target=card.querySelector('.cover-rating');
   if(!target)return;
-  var average=clamp(Record.communityRating(record));
-  var marker=average+'|'+(Record.communityCount(record)||0);
-  if(target.dataset.communityMarker===marker&&target.querySelector('.cover-rating-inner'))return;
-  target.dataset.communityMarker=marker;
+  var own=clamp(Record.ownRating(record));
+  var marker=String(own);
+  if(target.dataset.ownRatingMarker===marker&&target.querySelector('.cover-rating-inner'))return;
+  target.dataset.ownRatingMarker=marker;
   if(typeof window.groovyRenderGridRating==='function'){
-    target.innerHTML=window.groovyRenderGridRating(average);
+    target.innerHTML=window.groovyRenderGridRating(own);
   }else{
-    target.innerHTML='<span class="cover-rating-inner">'+starMeter(average,'is-compact')+'<span class="cover-rating-number"><span class="cover-rating-value">'+ratingText(average)+'</span></span></span>';
+    target.innerHTML='<span class="cover-rating-inner">'+starMeter(own,'is-compact')+'<span class="cover-rating-number"><span class="cover-rating-value">'+ratingText(own)+'</span></span></span>';
   }
 }
 
@@ -95,57 +94,6 @@ function patchCardsForAlbum(albumId){
     if(!record||String(Record.albumId(record))!==String(albumId))return;
     patchCard(card,record);
   });
-}
-
-function patchAllWishlistCards(){
-  if(window.libraryView!=='wishlist')return;
-  var collection=document.getElementById('collection');
-  if(!collection)return;
-  collection.querySelectorAll('.record[data-index]').forEach(function(card){
-    var index=parseInt(card.getAttribute('data-index'),10);
-    if(!isNaN(index))patchCard(card,recordAt(index));
-  });
-}
-
-/* Wishlist records do not receive rating metadata from app.js. Hydrate only the
-   wishlist here. Normal collections keep app.js as their single source of truth. */
-async function refreshWishlistRatings(){
-  if(window.libraryView!=='wishlist')return;
-  var records=Array.isArray(window.records)?window.records:[];
-  if(!records.length)return;
-  var user=await sessionUser();
-  if(!user)return;
-
-  var albumIds=Array.from(new Set(records.map(function(record){return record&&Record.albumId(record);}).filter(Boolean)));
-  if(!albumIds.length)return;
-
-  var result=await supabaseClient.from('album_ratings')
-    .select('album_id,user_id,rating')
-    .in('album_id',albumIds);
-  if(result.error){
-    console.warn('Could not load wishlist ratings:',result.error);
-    return;
-  }
-
-  var map=ratingMap(result.data||[],user.id);
-  records.forEach(function(record){
-    if(!record)return;
-    var entry=map[String(Record.albumId(record))]||{own:0,average:0,count:0};
-    Record.setRatings(record,entry.own||0,entry.average||0,entry.count||0);
-  });
-
-  patchAllWishlistCards();
-  var index=detailIndex();
-  var overlay=document.getElementById('albumOverlay');
-  if(index>=0&&overlay&&overlay.classList.contains('visible')&&typeof window.groovyRenderAlbumRating==='function')window.groovyRenderAlbumRating(index);
-
-  window.dispatchEvent(new CustomEvent('groovy-rating-updated',{detail:{source:'wishlist-hydrate'}}));
-}
-
-function scheduleWishlistRatings(delay){
-  if(window.libraryView!=='wishlist')return;
-  clearTimeout(wishlistRatingTimer);
-  wishlistRatingTimer=setTimeout(refreshWishlistRatings,delay==null?100:delay);
 }
 
 async function removeRating(index,button){
@@ -187,7 +135,6 @@ async function removeRating(index,button){
 
   if(typeof window.groovyRenderAlbumRating==='function')window.groovyRenderAlbumRating(index);
   patchCardsForAlbum(albumId);
-  if(window.libraryView==='wishlist')scheduleWishlistRatings(150);
 
   window.dispatchEvent(new CustomEvent('groovy-rating-updated',{detail:{albumId:albumId,index:index,source:'remove'}}));
 }
@@ -339,9 +286,8 @@ function onDetailOpen(){
   currentDetailIndex=index;
   ensureWishlistAction();
 
-  if(window.libraryView==='wishlist'){
-    refreshWishlistRatings();
-    if(window.viewedUserId===null)setTimeout(function(){refreshWishlistCollectedBy(index);},80);
+  if(window.libraryView==='wishlist'&&window.viewedUserId===null){
+    setTimeout(function(){refreshWishlistCollectedBy(index);},80);
   }
 }
 
@@ -381,10 +327,6 @@ function install(){
   },false);
 
   new MutationObserver(function(){
-    if(window.libraryView==='wishlist')scheduleWishlistRatings(100);
-  }).observe(collection,{childList:true,subtree:true});
-
-  new MutationObserver(function(){
     if(overlay.classList.contains('visible'))setTimeout(onDetailOpen,0);
     else socialToken++;
   }).observe(overlay,{attributes:true,attributeFilter:['class']});
@@ -395,7 +337,6 @@ function install(){
     if(overlay.classList.contains('visible'))setTimeout(onDetailOpen,0);
   },{passive:true});
 
-  if(window.libraryView==='wishlist')scheduleWishlistRatings(60);
   if(overlay.classList.contains('visible'))onDetailOpen();
 }
 

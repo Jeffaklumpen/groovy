@@ -232,7 +232,7 @@
           if(!cardRecord||recordModel.albumId(cardRecord)!==albumId)continue;
           var coverRating=cards[c].querySelector('.cover-rating');
           if(coverRating){
-            coverRating.innerHTML=renderGridRating(nextAverage);
+            coverRating.innerHTML=renderGridRating(rating);
           }
         }
       }

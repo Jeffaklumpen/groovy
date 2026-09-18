@@ -231,3 +231,25 @@ test('grid rating markup consistently renders /5 and a narrow empty dash',()=>{
   assert.match(empty,/cover-rating-value is-empty">-</);
   assert.doesNotMatch(empty,/cover-rating-max/);
 });
+
+
+test('saving a rating refreshes thumbnail with the own score, not community average',async()=>{
+  const record={albumId:1,ownRating:2,communityRating:4,communityCount:2};
+  const coverRating={innerHTML:''};
+  const card={
+    getAttribute(){return '0';},
+    querySelector(selector){return selector==='.cover-rating'?coverRating:null;}
+  };
+  const collectionElement={querySelectorAll(){return [card];}};
+  const api={
+    auth:{getUser:async()=>({data:{user:{id:'me'}},error:null})},
+    from(){return {upsert:async()=>({error:null})};}
+  };
+  const model=makeRecordModel();
+  const controller=Controller.create({
+    api,ratingCore:RatingCore,recordModel:model,collectionElement,
+    getRecords:()=>[record],onRatingUpdated(){},onAlert(){throw new Error('unexpected alert');}
+  });
+  await controller.save(0,3.5);
+  assert.match(coverRating.innerHTML,/cover-rating-value">3\.5</);
+});

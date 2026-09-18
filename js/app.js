@@ -554,9 +554,15 @@ window.loadWishlist=async function(userId){
     return;
   }
 
+  var albumIds=libraryData.albumIds(data);
+  var userResult=await supabaseClient.auth.getUser();
+  var sessionUser=userResult&&userResult.data?userResult.data.user:null;
+  var ownRatingUserId=sessionUser&&sessionUser.id?sessionUser.id:null;
+  var ratingMeta=await ratingController.loadData(albumIds,ownRatingUserId);
+
   if(loadVersion!==window.collectionLoadVersion)return;
 
-  records=libraryData.mapWishlistRows(data);
+  records=libraryData.mapWishlistRows(data,ratingMeta);
 
   document.getElementById('collectionCount').textContent=records.length+' RECORDS ON WISHLIST';
   buildGrid();

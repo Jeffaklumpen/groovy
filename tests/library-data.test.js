@@ -117,17 +117,20 @@ test('fetchWishlist uses shared ordered wishlist query',async()=>{
   assert.deepEqual(capture.orders[1],['added_at',{ascending:true}]);
 });
 
-test('mapWishlistRows delegates tuple construction to Record.fromWishlist',()=>{
+test('mapWishlistRows applies own and community rating metadata',()=>{
   const api={from(){throw new Error('not used');}};
   const data=LibraryData.create({api,recordModel:Record});
   const rows=[
     {id:'wish-1',cover_url:'wish.jpg',discogs_style:'Prog Rock',albums:{id:42,title:'Album',release_year:1979,genre:'Rock',cover_url:'album.jpg',artists:{name:'Artist (2)'},tracks:[]}},
     {id:'ignored',albums:null}
   ];
-  const records=data.mapWishlistRows(rows);
+  const records=data.mapWishlistRows(rows,{42:{ownRating:3.5,communityAverage:4.1,communityCount:7}});
   assert.equal(records.length,1);
   assert.equal(Record.artist(records[0]),'Artist');
   assert.equal(Record.title(records[0]),'Album');
   assert.equal(Record.entryId(records[0]),'wish-1');
   assert.equal(Record.coverUrl(records[0]),'wish.jpg');
+  assert.equal(Record.ownRating(records[0]),3.5);
+  assert.equal(Record.communityRating(records[0]),4.1);
+  assert.equal(Record.communityCount(records[0]),7);
 });

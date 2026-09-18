@@ -11,7 +11,7 @@ function element(){
   };
 }
 function recordModel(){
-  const fields={order:0,artist:1,title:2,year:3,genre:4,coverUrl:6,albumId:8,entryId:9,pressing:11,shelfId:13,shelfSortOrder:14,communityRating:15};
+  const fields={order:0,artist:1,title:2,year:3,genre:4,ownRating:5,coverUrl:6,albumId:8,entryId:9,pressing:11,shelfId:13,shelfSortOrder:14,communityRating:15};
   const model={};Object.keys(fields).forEach(name=>{model[name]=record=>record&&record[fields[name]];});return model;
 }
 function makeHarness(overrides){
@@ -20,7 +20,7 @@ function makeHarness(overrides){
   const elements={collection,paginationTop,paginationBottom,searchInput:element(),mobileAddRecordButton:element(),emptyCollection:element(),loginToViewCollection:element(),profileNotFound:element(),emptyViewedCollection:element(),emptyWishlist:element(),emptyWishlistTitle:element(),emptyWishlistText:element(),emptyWishlistAddButton:element(),libraryTabs:element(),libraryTitle:element(),collectionTabButton:element(),wishlistTabButton:element(),addAlbumButton,filterButton:element(),collectionCount:element()};
   const doc={body:{classList:{toggle(){}}},querySelectorAll(){return [];}};
   const win={innerHeight:800,innerWidth:1200,requestAnimationFrame(fn){fn();},setTimeout(fn){fn();},scrollTo(){}};
-  const baseRecord=[1,'Pink Floyd','The Wall','1979','Progressive Rock',0,'cover.jpg',{},1,'entry-1',10,{},null,'shelf-1',2,4.5];
+  const baseRecord=[1,'Pink Floyd','The Wall','1979','Progressive Rock',3.5,'cover.jpg',{},1,'entry-1',10,{},null,'shelf-1',2,4.5];
   let state={records:[baseRecord],viewedUserId:null,libraryView:'collection',loginRequiredForViewedCollection:false,profileNotFound:false,hasAuthenticatedUser:true,viewedUsername:null,activeShelfId:'all',selectedRating:'all',searchQuery:'',sort:'added',page:1};
   if(overrides)Object.assign(state,overrides);
   const calls={page:[],search:[],hooks:0};
@@ -44,11 +44,16 @@ function makeHarness(overrides){
 test('record cards preserve shelf rating and streaming presentation',()=>{
   const h=makeHarness({activeShelfId:'shelf-1'});const html=h.controller.recordHTML(h.baseRecord,'');
   assert.match(html,/record-shelf-status/);assert.match(html,/Favorites/);assert.match(html,/data-index="0"/);assert.match(html,/class="number">2</);
-  assert.match(html,/streaming-service apple-service/);assert.match(html,/streaming-service spotify-service/);assert.match(html,/cover-rating-value">4\.5</);assert.match(html,/cover-rating-max">\/5</);
+  assert.match(html,/streaming-service apple-service/);assert.match(html,/streaming-service spotify-service/);assert.match(html,/cover-rating-value">3\.5</);assert.match(html,/cover-rating-max">\/5</);
 });
-test('wishlist cards keep remove and add-to-collection controls',()=>{
+test('wishlist cards show own rating plus remove and add-to-collection controls',()=>{
   const h=makeHarness({libraryView:'wishlist'});const html=h.controller.recordHTML(h.baseRecord,'');
-  assert.match(html,/wishlist-remove-button/);assert.match(html,/wishlist-cover-label/);assert.match(html,/move-to-collection-button/);assert.doesNotMatch(html,/record-action-menu/);
+  assert.match(html,/wishlist-remove-button/);
+  assert.match(html,/cover-rating-value">3\.5</);
+  assert.match(html,/cover-rating-max">\/5</);
+  assert.doesNotMatch(html,/wishlist-cover-label/);
+  assert.match(html,/move-to-collection-button/);
+  assert.doesNotMatch(html,/record-action-menu/);
 });
 test('pagination items preserve compact ellipsis behavior',()=>{
   const h=makeHarness();assert.deepEqual(h.controller.paginationItems(1,3),[1,2,3]);assert.deepEqual(h.controller.paginationItems(5,10),[1,'…',4,5,6,'…',10]);

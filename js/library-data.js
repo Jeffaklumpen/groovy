@@ -127,10 +127,15 @@ function create(options){
     };
   }
 
-  function mapWishlistRows(rows){
+  function mapWishlistRows(rows,ratingMeta){
     return (rows||[])
       .filter(function(item){return item&&item.albums;})
-      .map(recordModel.fromWishlist);
+      .map(function(item,index){
+        return recordModel.applyRatingMeta(
+          recordModel.fromWishlist(item,index),
+          ratingMeta
+        );
+      });
   }
 
   function albumIds(rows){

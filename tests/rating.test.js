@@ -114,3 +114,15 @@ test('base rating DOM has one owner and detail enhancements do not rewrite it',f
   assert.match(ratingCss,/grid-row:2!important/);
   assert.match(ratingCss,/grid-row:3!important/);
 });
+
+
+test('thumbnail ratings have one responsive owner and mobile stacks score below stars',function(){
+  const ratingCss=fs.readFileSync(path.join(root,'css','ratings-detail.css'),'utf8');
+  const detailCss=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
+  const renderer=fs.readFileSync(path.join(root,'js','library-render-controller.js'),'utf8');
+  assert.match(renderer,/recordModel\.ownRating\(record\)/);
+  assert.doesNotMatch(renderer,/recordModel\.communityRating\(record\)/);
+  assert.match(ratingCss,/@media screen and \(max-width:760px\)\{[\s\S]*cover-rating-inner\{[\s\S]*flex-direction:column!important/);
+  assert.match(ratingCss,/cover-rating-max\{display:inline!important/);
+  assert.doesNotMatch(detailCss,/cover-rating/);
+});
