@@ -281,6 +281,27 @@ test('Apple artwork cache never reuses one Apple collection for two Main Discogr
   assert.match(block,/usedAppleCollectionIds\.add\(String\(best\.item\.collectionId\|\|\'\'\)\)/);
 });
 
+test('artist album cards with a Discogs master stay clickable through the shared preview flow',()=>{
+  const view=fs.readFileSync('js/artist-view.js','utf8');
+  const controller=fs.readFileSync('js/artist-controller.js','utf8');
+  const app=fs.readFileSync('js/app.js','utf8');
+  assert.match(view,/data-artist-master-id/);
+  assert.match(view,/interactive=!!\(albumId\|\|masterId\)/);
+  assert.match(controller,/masterId:album\.getAttribute\('data-artist-master-id'\)/);
+  assert.match(app,/if\(info&&info\.masterId\)return albumSearchController\.openDiscogsMasterPreview\(info\.masterId\)/);
+});
+
+test('duplicate Apple cache cleanup also clears the matching stale album fallback',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'cacheArtistArtwork')");
+  const end=edge.indexOf("if (action === 'verifyArtistDiscography')",start);
+  const block=edge.slice(start,end);
+  assert.match(block,/duplicateRows=/);
+  assert.match(block,/\.from\('albums'\)/);
+  assert.match(block,/\.update\(\{cover_url:null,apple_collection_url:null\}\)/);
+  assert.match(block,/\.eq\('apple_collection_url',appleUrl\)/);
+});
+
 test('verified discography cache replaces the loose fallback only when populated',()=>{
   const sql=fs.readFileSync('supabase/migrations/20260918190526_verified_artist_discography_cache.sql','utf8');
   assert.match(sql,/create table if not exists public\.artist_discography_cache/i);
