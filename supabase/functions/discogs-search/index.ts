@@ -153,11 +153,14 @@ export default {
         let parsed: URL
         try { parsed = new URL(input) } catch (_error) { return null }
         if (!/(^|\.)apple\.com$/i.test(parsed.hostname)) return null
-        const idMatch = parsed.pathname.match(/\/id(\d+)/i)
-        if (!idMatch) return null
+        const idMatch =
+          parsed.pathname.match(/\/id(\d+)(?:\/|$)/i) ||
+          parsed.pathname.match(/\/(\d+)(?:\/)?$/)
+        const collectionId = idMatch?.[1] || ''
+        if (!collectionId) return null
 
         const response = await fetch(
-          'https://itunes.apple.com/lookup?id=' + encodeURIComponent(idMatch[1]) +
+          'https://itunes.apple.com/lookup?id=' + encodeURIComponent(collectionId) +
           '&country=SE'
         )
         if (!response.ok) return null
@@ -181,7 +184,7 @@ export default {
 
         if (!album) {
           console.warn('Apple album identity verification failed',{
-            collectionId:idMatch[1],
+            collectionId:collectionId,
             identities:candidates
           })
           return null
