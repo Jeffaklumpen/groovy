@@ -263,7 +263,8 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 #albumSearchResults,#userSearchResults{min-height:0;max-height:min(50vh,470px);overflow-y:auto;padding-right:4px;scrollbar-gutter:stable;overscroll-behavior:contain}
 #albumSearchResults:empty,#userSearchResults:empty{display:none}
 #albumSearchResults>p,#userSearchResults>p{margin:12px 4px;color:#8f8f95;font-size:13px;text-align:center}
-.search-modal-box .mb-result{min-height:72px;margin:0 0 8px;padding:10px;border:1px solid #29292d;border-radius:13px;background:rgba(255,255,255,.035);gap:13px;transition:background .15s ease,border-color .15s ease,transform .15s ease;filter:none}
+.search-modal-box .mb-result{min-height:72px;margin:0 0 8px;padding:10px;border:1px solid #29292d;border-radius:13px;background:rgba(255,255,255,.035);gap:13px;transition:background .15s ease,border-color .15s ease,transform .15s ease;cursor:pointer;filter:none}
+.search-modal-box .mb-result:focus-visible{outline:0;border-color:rgba(232,83,1,.72);box-shadow:0 0 0 3px rgba(232,83,1,.12)}
 .search-modal-box .mb-result:last-child{margin-bottom:0}
 .search-modal-box .mb-result:hover{background:#212124;border-color:#3a3a3f;filter:none;transform:translateY(-1px)}
 .search-modal-box .mb-result:active{transform:scale(.995);filter:none}
