@@ -91,10 +91,11 @@
     return (shelves||[]).find(function(shelf){return String(shelf.id)===String(id);})||null;
   }
 
-  function recordCount(records,id){
+  function recordCount(records,id,getShelfId){
     var list=records||[];
     if(id==='all')return list.length;
-    return list.filter(function(record){return String(record&&record[13]||'')===String(id);}).length;
+    var readShelfId=typeof getShelfId==='function'?getShelfId:function(){return '';};
+    return list.filter(function(record){return String(readShelfId(record)||'')===String(id);}).length;
   }
 
   return Object.freeze({
