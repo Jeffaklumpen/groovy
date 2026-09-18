@@ -17,6 +17,7 @@ function create(options){
 
   var loadedUserId='';
   var pickerRecordIndex=-1;
+  var pickerRecordIds=[];
   var createReturnRecordIndex=-1;
   var selectedIcon='record';
   var selectedColor=colors[0];
@@ -31,6 +32,8 @@ function create(options){
   function libraryView(){return typeof options.getLibraryView==='function'?options.getLibraryView():'collection';}
   function detailOpenIndex(){return typeof options.getDetailOpenRecordIndex==='function'?options.getDetailOpenRecordIndex():-1;}
   function detailActionsRendered(index){if(typeof options.onDetailActionsRendered==='function')options.onDetailActionsRendered(index,elements.detailActions);}
+  function bulkAssign(entryIds,shelfId){return typeof options.onBulkAssign==='function'?options.onBulkAssign(entryIds,shelfId):Promise.resolve(false);}
+  function bulkAssigned(){if(typeof options.onBulkAssigned==='function')options.onBulkAssigned();}
   function resetLibraryPage(){if(typeof options.onLibraryPageReset==='function')options.onLibraryPageReset();}
   function renderGrid(){if(typeof options.onGridChange==='function')options.onGridChange();}
   function isMobile(){return typeof options.isMobile==='function'&&options.isMobile();}
@@ -225,7 +228,9 @@ function create(options){
   function closePicker(){
     if(elements.pickerModal)elements.pickerModal.style.display='none';
     pickerRecordIndex=-1;
+    pickerRecordIds=[];
     if(elements.pickerStatus)elements.pickerStatus.textContent='';
+    if(elements.createFromPicker)elements.createFromPicker.hidden=false;
   }
 
   function renderPicker(index){
@@ -252,9 +257,44 @@ function create(options){
 
   function openPicker(index){
     if(viewedUserId()!==null||libraryView()==='wishlist'||!getRecords()[index])return false;
+    pickerRecordIds=[];
     pickerRecordIndex=index;
     if(elements.pickerStatus)elements.pickerStatus.textContent='';
     renderPicker(index);
+    if(elements.createFromPicker)elements.createFromPicker.hidden=false;
+    if(elements.pickerModal)elements.pickerModal.style.display='flex';
+    return true;
+  }
+
+  function openBulkPicker(entryIds){
+    if(viewedUserId()!==null||libraryView()==='wishlist')return false;
+    var valid={};
+    getRecords().forEach(function(record){
+      var id=String(Record.entryId(record)||'');
+      if(id)valid[id]=true;
+    });
+    var seen={};
+    var ids=(Array.isArray(entryIds)?entryIds:[])
+      .map(function(value){return String(value==null?'':value).trim();})
+      .filter(function(value){
+        if(!value||!valid[value]||seen[value])return false;
+        seen[value]=true;
+        return true;
+      });
+    if(!ids.length)return false;
+
+    pickerRecordIndex=-1;
+    pickerRecordIds=ids;
+    if(elements.pickerStatus)elements.pickerStatus.textContent='';
+    if(elements.pickerTitle)elements.pickerTitle.textContent='Move '+ids.length+' Record'+(ids.length===1?'':'s');
+    if(elements.pickerSubtitle)elements.pickerSubtitle.textContent='Choose a shelf for the selected record'+(ids.length===1?'':'s')+'.';
+    if(elements.pickerList){
+      elements.pickerList.innerHTML=View.pickerMarkup({shelves:getShelves(),currentShelfId:'',colors:colors});
+      elements.pickerList.querySelectorAll('input[name="recordShelf"]').forEach(function(input){
+        input.addEventListener('change',function(){View.syncPickerSelection(elements.pickerList);});
+      });
+    }
+    if(elements.createFromPicker)elements.createFromPicker.hidden=true;
     if(elements.pickerModal)elements.pickerModal.style.display='flex';
     return true;
   }
@@ -387,13 +427,27 @@ function create(options){
   }
 
   async function confirmPicker(){
-    if(pickerRecordIndex<0)return false;
+    var isBulk=pickerRecordIds.length>0;
+    if(pickerRecordIndex<0&&!isBulk)return false;
     var selected=elements.pickerList&&elements.pickerList.querySelector('input[name="recordShelf"]:checked');
     if(!selected){if(elements.pickerStatus)elements.pickerStatus.textContent='Choose a shelf.';return false;}
     var index=pickerRecordIndex;
+    var bulkIds=pickerRecordIds.slice();
     if(elements.confirmPicker)elements.confirmPicker.disabled=true;
     if(elements.pickerStatus)elements.pickerStatus.textContent='Saving…';
-    try{await assignRecord(index,selected.value);refreshDetail(index);closePicker();return true;}
+    try{
+      if(isBulk){
+        var moved=await bulkAssign(bulkIds,selected.value);
+        if(!moved)throw new Error('Bulk shelf move failed');
+        closePicker();
+        bulkAssigned();
+        return true;
+      }
+      await assignRecord(index,selected.value);
+      refreshDetail(index);
+      closePicker();
+      return true;
+    }
     catch(error){report('error','Kunde inte flytta albumet till shelf:',error);if(elements.pickerStatus)elements.pickerStatus.textContent='Could not save shelf.';return false;}
     finally{if(elements.confirmPicker)elements.confirmPicker.disabled=false;}
   }
@@ -427,11 +481,11 @@ function create(options){
   return Object.freeze({
     renderStrip:renderStrip,updateScrollArrows:updateScrollArrows,loadForUser:loadForUser,
     openCreate:openCreate,closeCreate:closeCreate,openEdit:openEdit,
-    openPicker:openPicker,closePicker:closePicker,renderPicker:renderPicker,
+    openPicker:openPicker,openBulkPicker:openBulkPicker,closePicker:closePicker,renderPicker:renderPicker,
     renderDetailStatus:renderDetailStatus,renderDetailActions:renderDetailActions,
     assignRecord:assignRecord,openDelete:openDelete,closeDelete:closeDelete,deleteActive:deleteActive,
     confirmCreate:confirmCreate,confirmPicker:confirmPicker,
-    state:function(){return {loadedUserId:loadedUserId,pickerRecordIndex:pickerRecordIndex,createReturnRecordIndex:createReturnRecordIndex,editingShelfId:editingShelfId,selectedIcon:selectedIcon,selectedColor:selectedColor};}
+    state:function(){return {loadedUserId:loadedUserId,pickerRecordIndex:pickerRecordIndex,pickerRecordIds:pickerRecordIds.slice(),createReturnRecordIndex:createReturnRecordIndex,editingShelfId:editingShelfId,selectedIcon:selectedIcon,selectedColor:selectedColor};}
   });
 }
 
