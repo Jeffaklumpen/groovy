@@ -532,6 +532,7 @@ var ShelfCore=window.GroovyShelfCore;
 var ShelfView=window.GroovyShelfView;
 var ShelfController=window.GroovyShelfController;
 var LibraryCore=window.GroovyLibraryCore;
+var LibraryStyleRefresh=window.GroovyLibraryStyleRefresh;
 var LibraryActionsController=window.GroovyLibraryActionsController;
 var LibraryRenderController=window.GroovyLibraryRenderController;
 var GridSortController=window.GroovyGridSortController;
@@ -550,6 +551,7 @@ if(!ShelfCore)throw new Error('GroovyShelfCore must load before app.js');
 if(!ShelfView)throw new Error('GroovyShelfView must load before app.js');
 if(!ShelfController)throw new Error('GroovyShelfController must load before app.js');
 if(!LibraryCore)throw new Error('GroovyLibraryCore must load before app.js');
+if(!LibraryStyleRefresh)throw new Error('GroovyLibraryStyleRefresh must load before app.js');
 if(!LibraryActionsController)throw new Error('GroovyLibraryActionsController must load before app.js');
 if(!LibraryRenderController)throw new Error('GroovyLibraryRenderController must load before app.js');
 if(!GridSortController)throw new Error('GroovyGridSortController must load before app.js');
@@ -803,8 +805,6 @@ var librarySortMenu=document.getElementById('librarySortMenu');
 var mobileAddRecordButton=document.getElementById('mobileAddRecordButton');
 var librarySearchQuery='';
 var librarySort='added';
-var refreshedStyleMasters=new Set();
-
 var shelves=[];
 var activeShelfId='all';
 var SHELF_COLORS=['#E85301','#FF3B45','#FF6B4A','#F43F8C','#8B5CF6','#6366F1','#3B82F6','#14B8D4','#10B981','#84CC16','#F5C542','#6B7280','#14B8A6','#F59E0B'];
@@ -1089,71 +1089,25 @@ function esc(value){
 var discogsStyleLabel=PressingCore.discogsStyleLabel;
 window.discogsStyleLabel=discogsStyleLabel;
 
-async function refreshLibraryStyles(rows,loadVersion){
-  var styleTableAtLoad=window.libraryView==='wishlist'?'wishlists':'collections';
-  var canPersistStyles=viewedUserId===null;
-  var candidates=(rows||[]).filter(function(item){
-    var album=item&&item.albums;
-    var masterId=album&&String(album.discogs_master_id||'');
-    var refreshKey=styleTableAtLoad+':'+String(item&&item.id||'');
-    if(!album||!masterId||!item.id||refreshedStyleMasters.has(refreshKey))return false;
-
-    var storageKey='groovy-style-v2-refresh-'+refreshKey;
-    try{
-      var refreshedAt=parseInt(localStorage.getItem(storageKey),10)||0;
-      if(Date.now()-refreshedAt<30*24*60*60*1000){
-        refreshedStyleMasters.add(refreshKey);
-        return false;
-      }
-    }catch(error){}
-
-    refreshedStyleMasters.add(refreshKey);
-    return true;
-  });
-
-  if(!candidates.length)return;
-  var changed=false;
-  var nextIndex=0;
-
-  async function refreshNext(){
-    while(nextIndex<candidates.length){
-      var item=candidates[nextIndex++];
-      var album=item.albums;
-      var masterId=String(album.discogs_master_id||'');
-      var refreshKey=styleTableAtLoad+':'+String(item.id);
-      var shouldCache=true;
-      try{
-        var response=await supabaseClient.functions.invoke('discogs-search',{body:{action:'master',masterId:masterId}});
-        if(response.error)throw response.error;
-        var style=window.discogsStyleLabel(response.data||{});
-        if(style){
-          if(style!==item.discogs_style&&canPersistStyles){
-            var updateResult=await supabaseClient.from(styleTableAtLoad)
-              .update({discogs_style:style})
-              .eq('id',item.id);
-            if(updateResult.error){
-              shouldCache=false;
-              console.warn('Could not refresh Discogs styles:',updateResult.error);
-            }
-            else item.discogs_style=style;
-          }
-          if(loadVersion===window.collectionLoadVersion){
-            records.forEach(function(record){
-              if(record[8]===album.id&&record[4]!==style){record[4]=style;changed=true;}
-            });
-          }
-        }
-        if(shouldCache){
-          try{localStorage.setItem('groovy-style-v2-refresh-'+refreshKey,String(Date.now()));}catch(error){}
-        }
-      }catch(error){
-        console.warn('Could not load updated Discogs styles for '+masterId+':',error);
-      }
-    }
+var libraryStyleRefresh=LibraryStyleRefresh.create({
+  api:supabaseClient,
+  storage:localStorage,
+  recordModel:Record,
+  discogsStyleLabel:discogsStyleLabel,
+  getRecords:function(){return records;},
+  getLibraryView:function(){return window.libraryView;},
+  getViewedUserId:function(){return viewedUserId;},
+  getLoadVersion:function(){return window.collectionLoadVersion;},
+  renderGrid:function(){buildGrid();},
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
   }
+});
 
-  await Promise.all([refreshNext(),refreshNext(),refreshNext()]);
-  if(changed&&loadVersion===window.collectionLoadVersion)buildGrid();
+function refreshLibraryStyles(rows,loadVersion){
+  return libraryStyleRefresh.refresh(rows,loadVersion);
 }
 window.refreshLibraryStyles=refreshLibraryStyles;
 
