@@ -63,3 +63,17 @@ test('CI dependencies are reproducible and current action runtimes are used',()=
   assert.doesNotMatch(e2eWorkflow,/npm install --no-audit --no-fund/);
 });
 
+
+test('wishlist to collection is one authenticated database transaction',()=>{
+  const sql=fs.readFileSync(
+    'supabase/migrations/20260918095600_atomic_wishlist_to_collection.sql',
+    'utf8'
+  );
+  assert.match(sql,/function public\.move_wishlist_to_collection\(/i);
+  assert.match(sql,/auth\.uid\(\)/);
+  assert.match(sql,/for update/i);
+  assert.match(sql,/insert into public\.collections/i);
+  assert.match(sql,/delete from public\.wishlists/i);
+  assert.match(sql,/row_number\(\) over/i);
+  assert.match(sql,/grant execute on function public\.move_wishlist_to_collection/i);
+});
