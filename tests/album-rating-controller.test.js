@@ -65,8 +65,8 @@ test('renders detail rating panels from named record fields',()=>{
     getRecords:()=>[record]
   });
   controller.renderDetail(0);
-  assert.match(detailElement.innerHTML,/Your rating/);
-  assert.match(detailElement.innerHTML,/Community rating/);
+  assert.match(detailElement.innerHTML,/Your Rating/);
+  assert.match(detailElement.innerHTML,/Community Rating/);
   assert.match(detailElement.innerHTML,/data-rating="3"/);
   assert.match(detailElement.innerHTML,/4\.5/);
   assert.match(detailElement.innerHTML,/groovy-score-max/);

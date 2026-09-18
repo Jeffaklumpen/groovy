@@ -11,7 +11,8 @@ test('album rating state is event-driven instead of repeatedly refetched',functi
   const layout=fs.readFileSync(path.join(root,'js','album-rating-layout-v4.js'),'utf8');
 
   assert.match(app,/groovy-rating-updated/);
-  assert.match(detail,/addEventListener\('groovy-rating-updated'/);
+  assert.doesNotMatch(detail,/addEventListener\('groovy-rating-updated'/);
+  assert.match(detail,/groovyRenderAlbumRating/);
   assert.match(layout,/addEventListener\('groovy-rating-updated'/);
   assert.doesNotMatch(layout,/refreshGlobal|scheduleRefresh|ratingToken|160,420,850,1400|220,600,1200,1700/);
   assert.doesNotMatch(detail,/180,550,1300/);
@@ -84,7 +85,7 @@ test('filled and empty detail stars share one centered glyph geometry',function(
   assert.match(css,/\.groovy-rating-star-glyph\{[\s\S]*align-items:center!important;[\s\S]*justify-content:center!important/);
   assert.match(css,/\.groovy-rating-star-fill\{[\s\S]*width:var\(--star-fill\)!important/);
   assert.doesNotMatch(css,/groovy-rating-star-fill\{[\s\S]{0,180}text-align:left!important/);
-  assert.match(css,/rating-panel-stars,\nhtml body \.detail-rating \.groovy-rating-stars\{\n  align-self:center!important/);
+  assert.match(css,/html body \.detail-rating \.groovy-rating-stars\{\n  align-self:center!important/);
 });
 
 
