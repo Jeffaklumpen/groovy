@@ -89,7 +89,10 @@ function create(options){
           avatar(item,'community-similar-avatar')+
           '<span><strong>'+escapeHtml(item.username||'Collector')+'</strong><small>'+escapeHtml(Core.formatCount(item.collection_count))+' records</small></span>'+
         '</button>'+
-        '<div class="community-taste-score"><strong>'+escapeHtml(Core.formatCount(item.common_count))+'</strong><span>records in common</span><small><b>'+escapeHtml(String(Math.round(Core.number(item.taste_similarity))))+'%</b> genre overlap</small></div>'+
+        '<div class="community-taste-score">'+
+  '<div class="community-taste-metric"><strong>'+escapeHtml(Core.formatCount(item.common_count))+'</strong><span>Records in common</span></div>'+
+  '<div class="community-taste-metric"><strong>'+escapeHtml(String(Math.round(Core.number(item.taste_similarity))))+'%</strong><span>Genre overlap</span></div>'+
+'</div>'+
         '<div class="community-similar-actions">'+
           '<button class="community-follow-button'+(following?' following':'')+'" type="button" data-community-follow data-user-id="'+escapeHtml(item.user_id||'')+'" data-following="'+(following?'true':'false')+'">'+(following?'Following':'Follow')+'</button>'+
           '<button class="community-secondary-button" type="button" data-community-shelf="'+escapeHtml(item.username||'')+'">View Shelf</button>'+

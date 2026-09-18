@@ -67,3 +67,14 @@ test('community summary uses wishlisted records and taste cards use the statisti
   assert.match(migration,/regexp_split_to_table/);
   assert.match(migration,/least\(/);
 });
+
+
+test('similar collector cards render two separate taste metrics',()=>{
+  const view=fs.readFileSync('js/community-view.js','utf8');
+  const css=fs.readFileSync('css/community.css','utf8');
+  assert.match(view,/community-taste-metric/);
+  assert.match(view,/Records in common/);
+  assert.match(view,/Genre overlap/);
+  assert.match(css,/grid-template-columns:1fr 1fr/);
+  assert.match(css,/community-taste-metric\+\.community-taste-metric/);
+});

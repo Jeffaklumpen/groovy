@@ -34,10 +34,11 @@ body.community-page-open .library-overview,body.community-page-open #selectionAc
 .community-person>span:last-child{display:flex;min-width:0;flex-direction:column;gap:3px}
 .community-person strong{overflow:hidden;color:#fff;font-size:13px;font-weight:740;text-overflow:ellipsis;white-space:nowrap}
 .community-person small{color:#74747b;font-size:9px;font-weight:620}
-.community-taste-score{display:grid;grid-template-columns:auto 1fr;align-items:baseline;column-gap:6px;margin-top:13px;padding:11px 0;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
-.community-taste-score strong{color:#ff6a21;font-size:23px;font-weight:800}
-.community-taste-score span{color:#d0d0d4;font-size:9px;font-weight:700}
-.community-taste-score small{grid-column:1/-1;margin-top:3px;color:#68686f;font-size:8px}
+.community-taste-score{display:grid;grid-template-columns:1fr 1fr;margin-top:13px;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
+.community-taste-metric{display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:11px 8px;text-align:center}
+.community-taste-metric+.community-taste-metric{border-left:1px solid rgba(255,255,255,.06)}
+.community-taste-metric strong{color:#ff6a21;font-size:21px;font-weight:800;line-height:1}
+.community-taste-metric span{color:#8b8b92;font-size:8px;font-weight:700;line-height:1.25}
 .community-similar-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px}
 .community-follow-button,.community-secondary-button{height:34px;border-radius:8px;font-family:inherit;font-size:9px;font-weight:750;cursor:pointer;transition:background .14s ease,border-color .14s ease,color .14s ease,transform .14s ease}
 .community-follow-button{border:1px solid #ed641b;background:linear-gradient(145deg,#f0661d,#d94a00);color:#fff;box-shadow:0 6px 14px rgba(232,83,1,.14)}
