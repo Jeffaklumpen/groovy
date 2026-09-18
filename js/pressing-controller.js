@@ -18,7 +18,6 @@ function create(options){
   var getViewedUsername=typeof options.getViewedUsername==='function'?options.getViewedUsername:function(){return '';};
   var getLibraryView=typeof options.getLibraryView==='function'?options.getLibraryView:function(){return 'collection';};
   var renderGrid=typeof options.renderGrid==='function'?options.renderGrid:function(){};
-  var confirmAction=typeof options.confirm==='function'?options.confirm:function(){return true;};
   var onLog=typeof options.onLog==='function'?options.onLog:function(){};
 
   var rootElement=elements.root||null;
@@ -27,10 +26,15 @@ function create(options){
   var summary=elements.summary||null;
   var saved=elements.saved||null;
   var albumOverlay=elements.albumOverlay||null;
+  var clearPressingModal=elements.clearPressingModal||null;
+  var clearPressingMessage=elements.clearPressingMessage||null;
+  var cancelClearPressing=elements.cancelClearPressing||null;
+  var confirmClearPressing=elements.confirmClearPressing||null;
 
   var expanded=false;
   var recordKey='';
   var picker=null;
+  var pendingClearIndex=null;
 
   if(!api||typeof api.from!=='function')throw new Error('Pressing controller requires Supabase');
   if(!recordModel)throw new Error('Pressing controller requires record model');
@@ -83,7 +87,7 @@ function create(options){
         saved:saved
       },
       onIdentifyPressing:function(){openPicker(index);},
-      onClearPressing:function(){clearPressing(index);},
+      onClearPressing:function(){requestClearPressing(index);},
       onConditionChange:function(){saveCondition(index);}
     });
     expanded=result.expanded;
@@ -132,13 +136,39 @@ function create(options){
     return true;
   }
 
+  function closeClearPressingConfirm(){
+    if(clearPressingModal)clearPressingModal.style.display='none';
+    pendingClearIndex=null;
+    if(confirmClearPressing){
+      confirmClearPressing.disabled=false;
+      confirmClearPressing.textContent='Clear pressing';
+    }
+  }
+
+  function requestClearPressing(index){
+    var record=recordAt(index);
+    if(!record||getViewedUserId()!==null)return false;
+
+    var details=detailsFor(record);
+    if(!View.hasPressingDetails(details))return false;
+
+    pendingClearIndex=index;
+    if(clearPressingMessage){
+      var title=typeof recordModel.title==='function'?String(recordModel.title(record)||'').trim():'';
+      clearPressingMessage.textContent=title
+        ?'Clear the saved pressing details for "'+title+'"? Record and sleeve condition will be kept.'
+        :'Clear the saved pressing details for this record? Record and sleeve condition will be kept.';
+    }
+    if(clearPressingModal)clearPressingModal.style.display='flex';
+    return true;
+  }
+
   async function clearPressing(index){
     var record=recordAt(index);
     if(!record||getViewedUserId()!==null)return false;
 
     var details=detailsFor(record);
     if(!View.hasPressingDetails(details))return false;
-    if(!confirmAction('Clear the saved pressing for this record?'))return false;
 
     if(saved)saved.textContent='Clearing…';
 
@@ -325,11 +355,38 @@ function create(options){
     toggle.addEventListener('click',function(){setExpanded(!expanded);});
   }
 
+  if(cancelClearPressing&&cancelClearPressing.addEventListener){
+    cancelClearPressing.addEventListener('click',closeClearPressingConfirm);
+  }
+
+  if(clearPressingModal&&clearPressingModal.addEventListener){
+    clearPressingModal.addEventListener('click',function(event){
+      if(event.target===clearPressingModal)closeClearPressingConfirm();
+    });
+  }
+
+  if(confirmClearPressing&&confirmClearPressing.addEventListener){
+    confirmClearPressing.addEventListener('click',async function(){
+      if(pendingClearIndex===null)return;
+      var index=pendingClearIndex;
+      confirmClearPressing.disabled=true;
+      confirmClearPressing.textContent='Clearing…';
+      var cleared=await clearPressing(index);
+      if(cleared)closeClearPressingConfirm();
+      else{
+        confirmClearPressing.disabled=false;
+        confirmClearPressing.textContent='Clear pressing';
+      }
+    });
+  }
+
   return Object.freeze({
     render:render,
     resetRecord:resetRecord,
     closeDetails:closeDetails,
     saveCondition:saveCondition,
+    requestClearPressing:requestClearPressing,
+    closeClearPressingConfirm:closeClearPressingConfirm,
     clearPressing:clearPressing,
     saveSelection:saveSelection,
     openPicker:openPicker,
