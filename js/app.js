@@ -1180,6 +1180,10 @@ var pressingController=PressingController.create({
   },
   getRecords:function(){return records;},
   getViewedUserId:function(){return viewedUserId;},
+  getViewedUsername:function(){
+    var profile=window.groovyViewedStatisticsProfile;
+    return profile&&profile.username?profile.username:'';
+  },
   getLibraryView:function(){return window.libraryView;},
   renderGrid:function(){buildGrid();},
   onLog:function(level,message,error){
