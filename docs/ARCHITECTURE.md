@@ -19,6 +19,7 @@ GroovyShelves remains a vanilla JavaScript application. There is deliberately no
 - `js/grid-sort-controller.js` — drag/reorder state and batched order RPCs.
 - `js/pressing-core.js`, `js/marketplace-core.js`, `js/rating-core.js`, `js/shelf-core.js`, `js/library-core.js`, `js/notification-core.js`, `js/statistics-core.js`, `js/apple-search-core.js`, `js/community-core.js` — pure/testable domain helpers.
 - `js/community-controller.js` / `js/community-view.js` — own the `/community` overview, its Supabase read model, rendering and follow/profile interactions. `app.js` only wires the feature into routing.
+- `js/artist-core.js`, `js/artist-wikipedia-service.js`, `js/artist-view.js`, `js/artist-controller.js` — own artist profile normalization, Wikipedia artist content, `/artist/:discogs-id-:slug` rendering and artist-page interactions.
 - feature controllers/views own their respective DOM/data behavior.
 - `js/pwa.js` — PWA installation and service-worker registration only.
 
@@ -26,7 +27,7 @@ Application scripts and styles are still loaded explicitly from `index.html`. Do
 
 ## Routing
 
-Canonical shelf URLs use `/shelf/:username`. `/user/:username` remains accepted only as a legacy route. Public profile pages use `/profile/:username`. The authenticated community overview uses `/community`.
+Canonical shelf URLs use `/shelf/:username`. `/user/:username` remains accepted only as a legacy route. Public profile pages use `/profile/:username`. The authenticated community overview uses `/community`. Artist profiles use `/artist/:discogs-artist-id-:slug`.
 
 Browser navigation is centralized in `js/router.js`. It is the only application module allowed to call `history.pushState`, `history.replaceState`, `history.back` or listen for `popstate`.
 

@@ -325,3 +325,16 @@ html,.album-overlay,.album-tracks,#albumSearchResults{scroll-behavior:auto}
 .add-album-modal,.search-modal-box,#loginPanel,.login-modal{animation:none}
 }
 
+
+.search-result-section-title{margin:13px 2px 7px;color:#e85301;font-size:8px;font-weight:850;letter-spacing:.16em}
+.artist-search-results{margin-bottom:8px}
+.artist-search-result{display:grid;width:100%;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:11px;margin-bottom:6px;padding:9px;border:1px solid rgba(255,255,255,.07);border-radius:9px;background:#202022;color:#fff;font-family:inherit;text-align:left;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.artist-search-result:hover{border-color:rgba(232,83,1,.28);background:#28282a}
+.artist-search-mark{position:relative;display:block;width:42px;height:42px;border:1px solid rgba(232,83,1,.24);border-radius:50%;background:radial-gradient(circle,#2b2b2f 0 28%,#111113 29% 44%,#26262a 45% 54%,#101012 55%);color:#e85301}
+.artist-search-mark:after{content:"";position:absolute;left:50%;top:50%;width:7px;height:7px;border-radius:50%;background:#e85301;transform:translate(-50%,-50%)}
+.artist-search-mark span{display:none}
+.artist-search-copy{display:flex;min-width:0;flex-direction:column;gap:3px}
+.artist-search-copy strong{overflow:hidden;color:#f4f4f5;font-size:13px;font-weight:750;text-overflow:ellipsis;white-space:nowrap}
+.artist-search-copy small{color:#77777e;font-size:9px}
+.artist-search-chevron{color:#707078;font-size:24px;font-weight:300}
+@media(max-width:600px){.artist-search-result{grid-template-columns:40px minmax(0,1fr) auto}.artist-search-mark{width:38px;height:38px}.artist-search-copy strong{font-size:12px}}

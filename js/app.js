@@ -12,6 +12,11 @@ var CommunityView=window.GroovyCommunityView;
 if(!CommunityView)throw new Error('GroovyCommunityView must load before app.js');
 var CommunityController=window.GroovyCommunityController;
 if(!CommunityController)throw new Error('GroovyCommunityController must load before app.js');
+var ArtistCore=window.GroovyArtistCore;
+var ArtistWikipedia=window.GroovyArtistWikipedia;
+var ArtistView=window.GroovyArtistView;
+var ArtistController=window.GroovyArtistController;
+if(!ArtistCore||!ArtistWikipedia||!ArtistView||!ArtistController)throw new Error('Artist page modules must load before app.js');
 var UserSearchController=window.GroovyUserSearchController;
 if(!UserSearchController)throw new Error('GroovyUserSearchController must load before app.js');
 var DetailSocialController=window.GroovyDetailSocialController;
@@ -67,6 +72,8 @@ const registerButton=document.getElementById('registerButton');
 const authSwitchButton=document.getElementById('authSwitchButton');
 const viewedUserFollowButton=document.getElementById('viewedUserFollowButton');
 var communityController=null;
+var artistController=null;
+var artistAlbumPreviewHandler=null;
 
 // A blurred header becomes a containing block for fixed descendants in mobile
 // browsers. Put the dialog at body level after capturing its controls, so it
@@ -174,6 +181,39 @@ var communityView=CommunityView.create({
   escapeHtml:escapeSocialHtml
 });
 
+var artistView=ArtistView.create({
+  window:window,
+  document:document,
+  page:document.getElementById('artistPage'),
+  content:document.getElementById('artistPageContent'),
+  escapeHtml:escapeSocialHtml
+});
+
+artistController=ArtistController.create({
+  api:supabaseClient,
+  view:artistView,
+  wikipedia:ArtistWikipedia,
+  window:window,
+  elements:{
+    page:document.getElementById('artistPage'),
+    collectionTab:document.getElementById('collectionTabButton'),
+    wishlistTab:document.getElementById('wishlistTabButton'),
+    communityTab:document.getElementById('communityTabButton')
+  },
+  getCurrentUser:currentSessionUser,
+  onNavigate:function(url,state){return Router.navigate(url,state);},
+  onBack:function(){return Router.back();},
+  onOpenAlbum:function(info){
+    if(typeof artistAlbumPreviewHandler==='function')return artistAlbumPreviewHandler(info);
+  },
+  onRequireAuth:function(){openAuthPanel('login');return Router.replace('/',{}, {render:false});},
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
+
 communityController=CommunityController.create({
   api:supabaseClient,
   view:communityView,
@@ -196,6 +236,7 @@ communityController=CommunityController.create({
       return communityAlbumPreviewHandler(albumId);
     }
   },
+  onNavigateArtist:function(name){return artistController.navigateByName(name,{artistSource:'community'});},
   onRequireAuth:function(){openAuthPanel('login');return Router.replace('/',{}, {render:false});},
   onBeforeOpen:function(){profileMenu.classList.remove('open');notificationController.closePanel();},
   onLog:function(level,message,error){
@@ -750,6 +791,7 @@ var filterMenu=document.getElementById('filterMenu');
 var albumOverlay=document.getElementById('albumOverlay');
 var albumClose=document.getElementById('albumClose');
 var detailCover=document.getElementById('detailCover');
+var detailContextBack=document.getElementById('detailContextBack');
 var detailNumber=document.getElementById('detailNumber');
 var detailArtist=document.getElementById('detailArtist');
 var detailAlbum=document.getElementById('detailAlbum');
@@ -1480,7 +1522,8 @@ function renderAlbumDetail(record,index,options){
 
   var artist=Record.artist(record);
   var title=Record.title(record);
-  detailArtist.innerHTML=esc(artist);
+  detailArtist.textContent=artist;
+  detailArtist.setAttribute('aria-label','Open '+artist+' artist page');
   detailAlbum.innerHTML=esc(title);
   detailYear.innerHTML=esc(Record.year(record));
   var genreLabel=Record.genre(record)||'Genre saknas';
@@ -1505,6 +1548,13 @@ function renderAlbumDetail(record,index,options){
   detailSpotifyLink.href=spotifyAlbumLink(record);
   detailSpotifyLink.setAttribute('aria-label','Find '+title+' by '+artist+' on Spotify');
   wikipediaAboutController.openForRecord(record);
+
+  var navigationContext=searchPreview&&options.payload?options.payload.navigationContext:null;
+  if(detailContextBack){
+    var backToArtist=navigationContext&&navigationContext.source==='artist';
+    detailContextBack.hidden=!backToArtist;
+    detailContextBack.textContent=backToArtist?'← Back to '+String(navigationContext.label||artist):'← Back to artist';
+  }
 
   if(searchPreview){
     ratingController.renderPreview(record);
@@ -1612,6 +1662,7 @@ function closeAlbum(){
   detailPreviewRecord=null;
   detailPreviewPayload=null;
   if(detailShelfActions){detailShelfActions.hidden=true;detailShelfActions.innerHTML='';}
+  if(detailContextBack){detailContextBack.hidden=true;}
   if(detailShelfStatus){detailShelfStatus.hidden=true;detailShelfStatus.innerHTML='';detailShelfStatus.classList.remove('unshelved');}
   detailSocialController.close();
   if(detailInfoCard)detailInfoCard.style.height='';
@@ -2232,11 +2283,64 @@ var albumSearchController=AlbumSearch.create({
     albumSearchResults:albumSearchResults,
     appleSearchCore:AppleSearchCore,
     pressingCore:PressingCore,
-    onPreview:function(payload){return window.groovyOpenSearchAlbumPreview(payload);}
+    onPreview:function(payload){return window.groovyOpenSearchAlbumPreview(payload);},
+    onArtistNavigate:function(artist){return artistController.navigateResolved(artist,{artistSource:'search'});}
 });
 communityAlbumPreviewHandler=function(albumId){
     return albumSearchController.openCatalogPreview(albumId);
 };
+artistAlbumPreviewHandler=function(info){
+    var navigationContext={source:'artist',label:info&&info.artistName?info.artistName:'Artist'};
+    if(info&&info.albumId)return albumSearchController.openCatalogPreview(info.albumId,{navigationContext:navigationContext});
+    if(info&&info.masterId)return albumSearchController.openDiscogsMasterPreview(info.masterId,{navigationContext:navigationContext});
+};
+
+if(detailContextBack){
+    detailContextBack.addEventListener('click',function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        closeAlbum();
+    });
+}
+
+function currentAlbumNavigationContext(){
+    var record=detailPreviewRecord||(detailOpenRecordIndex>=0?records[detailOpenRecordIndex]:null);
+    if(!record)return null;
+    return {
+      source:detailPreviewRecord?'preview':'library',
+      albumId:Number(Record.albumId(record))||null,
+      masterId:String(Record.discogsMasterId(record)||''),
+      artist:String(Record.artist(record)||''),
+      title:String(Record.title(record)||'')
+    };
+}
+
+detailArtist.addEventListener('click',async function(event){
+    event.preventDefault();
+    event.stopPropagation();
+    var context=currentAlbumNavigationContext();
+    if(!context||!context.artist)return;
+
+    if(artistController&&artistController.isActive()){
+      closeAlbum();
+      return;
+    }
+
+    var previousState=Object.assign({},window.history.state||{});
+    previousState.groovyReopenAlbum=context;
+    Router.replace(Router.current(),previousState,{render:false});
+    albumSearchController.close();
+    closeAlbum();
+
+    try{
+      await artistController.navigateByName(context.artist,{
+        artistSource:'album',
+        artistBackLabel:context.title||'album'
+      });
+    }catch(error){
+      console.error('Could not open artist from album:',error);
+    }
+});
 
 function openAddAlbumSearch(user){return albumSearchController.open(user);}
 function invalidateSearchLibraryState(){return albumSearchController.invalidateLibraryState();}
@@ -2479,6 +2583,33 @@ async function loadUserFromUrl(){
     await loadOtherUserCollection(user.id);
 }
 
+async function restoreAlbumFromHistoryState(){
+    var state=window.history.state||{};
+    var context=state.groovyReopenAlbum;
+    if(!context)return;
+
+    var cleaned=Object.assign({},state);
+    delete cleaned.groovyReopenAlbum;
+    Router.replace(Router.current(),cleaned,{render:false});
+
+    if(context.source==='library'&&context.albumId){
+      var matchIndex=records.findIndex(function(record){
+        return Number(Record.albumId(record))===Number(context.albumId);
+      });
+      if(matchIndex>=0){
+        openAlbum(matchIndex);
+        return;
+      }
+    }
+    if(context.albumId){
+      await albumSearchController.openCatalogPreview(context.albumId);
+      return;
+    }
+    if(context.masterId){
+      await albumSearchController.openDiscogsMasterPreview(context.masterId);
+    }
+}
+
 const scrollTopButton=document.getElementById('scrollTopButton');
 let scrollTopUpdatePending=false;
 
@@ -2518,18 +2649,29 @@ async function renderCurrentRoute(){
         await window.loadCollection();
         return;
     }
+    var artistRoute=GroovyRouteState.artistFromPath(window.location.pathname);
+    if(artistRoute){
+        communityController.hidePage();
+        socialController.hideFollowingPage();
+        await artistController.renderPage(artistRoute,window.history.state||{});
+        return;
+    }
+    artistController.hidePage();
     if(/^\/community\/?$/.test(window.location.pathname)){
         socialController.hideFollowingPage();
         await communityController.renderPage();
+        await restoreAlbumFromHistoryState();
         return;
     }
     communityController.hidePage();
     if(/^\/following\/?$/.test(window.location.pathname)){
         await socialController.renderFollowingPage();
+        await restoreAlbumFromHistoryState();
         return;
     }
     socialController.hideFollowingPage();
     await loadUserFromUrl();
+    await restoreAlbumFromHistoryState();
 }
 
 Router.setHandler(renderCurrentRoute);

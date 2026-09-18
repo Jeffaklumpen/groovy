@@ -171,12 +171,12 @@ function create(options){
   function artistRows(items){
     if(!items.length)return '<div class="community-empty compact"><strong>Not enough data yet</strong></div>';
     return '<div class="community-stat-list">'+items.map(function(item,index){
-      return '<article class="community-stat-row community-artist-row">'+
+      return '<button class="community-stat-row community-artist-row community-artist-link" type="button" data-community-artist="'+escapeHtml(item.artist_name||'')+'">'+
         '<span class="community-stat-rank">'+(index+1)+'</span>'+
         '<span class="community-artist-disc" aria-hidden="true"><span></span></span>'+
         '<div class="community-stat-copy"><strong>'+escapeHtml(item.artist_name||'Unknown artist')+'</strong><small>Collected across the community</small></div>'+
         '<span class="community-stat-count">'+escapeHtml(Core.formatCount(item.collection_count))+'</span>'+
-      '</article>';
+      '</button>';
     }).join('')+'</div>';
   }
 
