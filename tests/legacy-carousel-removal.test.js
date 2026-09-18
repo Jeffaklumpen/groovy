@@ -31,5 +31,5 @@ test('legacy carousel runtime and styles stay removed',()=>{
 
   assert.equal(/\.carousel(?:-|\{)/.test(css),false,'carousel CSS should remain removed');
   assert.equal(/carousel/i.test(html),false,'carousel controls should not exist in the document');
-  assert.match(gridSort,/if\(selectedRating!=='all'\|\|librarySearchQuery\|\|librarySort!=='added'\)/);
+  assert.match(gridSort,/if\(selectionMode\|\|selectedRating!=='all'\|\|librarySearchQuery\|\|librarySort!=='standard'\)/);
 });
