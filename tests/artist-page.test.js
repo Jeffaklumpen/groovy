@@ -218,8 +218,36 @@ test('unverified artist discography fallback only accepts direct MusicBrainz-to-
 
 
 test('old unvalidated artist discography verification is reset before trusted identity matching',()=>{
-  const sql=fs.readFileSync('supabase/migrations/20260918192100_reset_untrusted_artist_discography_verification.sql','utf8');
+  const sql=fs.readFileSync('supabase/migrations/20260918192036_reset_untrusted_artist_discography_verification.sql','utf8');
   assert.match(sql,/delete from public\.artist_discography_cache/i);
   assert.match(sql,/wikidata_id=null/i);
   assert.match(sql,/source in \('wikipedia','wikidata','manual'\)/i);
+});
+
+
+test('artist overview preserves discography verification state and hides unchecked fallback albums',()=>{
+  const core=fs.readFileSync('js/artist-core.js','utf8');
+  const view=fs.readFileSync('js/artist-view.js','utf8');
+  assert.match(core,/discography_verified:!!raw\.discography_verified/);
+  assert.match(core,/discography_source:String\(raw\.discography_source\|\|'unchecked'\)/);
+  assert.match(view,/overview\.discography_source==='unchecked'/);
+  assert.match(view,/Checking main discography/);
+});
+
+test('discography verifier always resolves the pending UI state even when verification falls back',()=>{
+  const controller=fs.readFileSync('js/artist-controller.js','utf8');
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const verifyStart=controller.indexOf('function verifyDiscographyInBackground');
+  const verifyEnd=controller.indexOf('function loadWikipediaInBackground',verifyStart);
+  const verifyBlock=controller.slice(verifyStart,verifyEnd);
+  assert.match(verifyBlock,/loadOverview\(name,true\)/);
+  assert.doesNotMatch(verifyBlock,/!result\.data\.verified\|\|!result\.data\.changed/);
+  assert.match(edge,/reason:'wikidata_identity_missing'/);
+  assert.match(edge,/discography_source:'fallback'/);
+});
+
+test('discography source is exposed by the live read-model migration',()=>{
+  const sql=fs.readFileSync('supabase/migrations/20260918192457_expose_artist_discography_verification_state.sql','utf8');
+  assert.match(sql,/v_discography_source text := 'unchecked'/);
+  assert.match(sql,/'discography_source',v_discography_source/);
 });

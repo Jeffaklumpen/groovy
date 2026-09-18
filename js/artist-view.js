@@ -105,6 +105,11 @@
       var current=Array.isArray(profile.current_members)?profile.current_members:[];
       var past=Array.isArray(profile.past_members)?profile.past_members:[];
       var official=profile.official_url||'';
+      var checkingDiscography=overview.discography_source==='unchecked';
+      var discographyMeta=checkingDiscography?'Checking catalog…':String(overview.discography.length)+' albums';
+      var discographyBody=checkingDiscography
+        ?'<div class="artist-empty artist-discography-loading">Checking main discography…</div>'
+        :discography(overview.discography,profile.name||'Artist');
 
       content.innerHTML=
         (nav.backToAlbum?'<button class="artist-context-back" type="button" data-artist-back-album>← Back to '+escapeHtml(nav.backLabel||'album')+'</button>':'')+
@@ -121,7 +126,7 @@
           metric(overview.summary.wishlisted_records,'Wishlisted Records')+
         '</div>'+
         ((current.length||past.length)?'<div class="artist-members-grid">'+members('Current members',current)+members('Past members',past)+'</div>':'')+
-        '<section class="artist-panel artist-discography-panel"><div class="artist-section-heading"><div><span>CATALOG</span><h2>Main Discography</h2></div><small>'+escapeHtml(String(overview.discography.length))+' albums</small></div>'+discography(overview.discography,profile.name||'Artist')+'</section>'+
+        '<section class="artist-panel artist-discography-panel"><div class="artist-section-heading"><div><span>CATALOG</span><h2>Main Discography</h2></div><small>'+escapeHtml(discographyMeta)+'</small></div>'+discographyBody+'</section>'+
         about(wiki);
     }
 

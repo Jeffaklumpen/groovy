@@ -265,13 +265,14 @@
         }
       }).then(async function(result){
         if(version!==requestVersion||!active||result.error||!result.data)return;
-        if(!result.data.verified||!result.data.changed)return;
 
         var refreshed=await loadOverview(name,true);
         if(version!==requestVersion||!active||!refreshed)return;
         currentOverview=refreshed;
         renderCurrent(version);
-        warmArtworkInBackground(id,name,currentOverview,version);
+        if(result.data.verified){
+          warmArtworkInBackground(id,name,currentOverview,version);
+        }
       }).catch(function(error){
         log('warn','Could not verify artist discography:',error);
       });

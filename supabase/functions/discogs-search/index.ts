@@ -886,7 +886,23 @@ export default {
         // Resolve the Wikidata artist from the Discogs artist ID we already trust.
         const resolvedWikidataId=await wikidataArtistQidByDiscogsId(resolvedArtistId)
         if (!resolvedWikidataId) {
-          return Response.json({verified:false,changed:false,count:0,reason:'wikidata_identity_missing'})
+          const now=new Date().toISOString()
+          await admin.from('artist_profile_cache').upsert({
+            discogs_artist_id:resolvedArtistId,
+            artist_name:resolvedArtistName,
+            wikidata_id:null,
+            discography_checked_at:now,
+            discography_source:'fallback',
+            discography_count:0,
+            updated_at:now
+          },{onConflict:'discogs_artist_id'})
+          return Response.json({
+            verified:false,
+            changed:false,
+            count:0,
+            source:'fallback',
+            reason:'wikidata_identity_missing'
+          })
         }
 
         const { data:profileState,error:profileStateError } = await admin

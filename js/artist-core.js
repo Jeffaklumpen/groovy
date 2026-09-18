@@ -40,7 +40,9 @@
         groovy_albums:number(summary.groovy_albums)
       },
       genres:Array.isArray(raw.genres)?raw.genres.filter(Boolean).slice(0,4):[],
-      discography:Array.isArray(raw.discography)?raw.discography:[]
+      discography:Array.isArray(raw.discography)?raw.discography:[],
+      discography_verified:!!raw.discography_verified,
+      discography_source:String(raw.discography_source||'unchecked')
     };
   }
 
