@@ -66,7 +66,7 @@ test('CI dependencies are reproducible and current action runtimes are used',()=
 
 test('wishlist to collection is one authenticated database transaction',()=>{
   const sql=fs.readFileSync(
-    'supabase/migrations/20260918095600_atomic_wishlist_to_collection.sql',
+    'supabase/migrations/20260918100143_atomic_wishlist_to_collection.sql',
     'utf8'
   );
   assert.match(sql,/function public\.move_wishlist_to_collection\(/i);
@@ -80,7 +80,7 @@ test('wishlist to collection is one authenticated database transaction',()=>{
 
 test('notes album persistence uses a service-role-only verified catalog writer',()=>{
   const sql=fs.readFileSync(
-    'supabase/migrations/20260918100500_verified_album_library_save.sql',
+    'supabase/migrations/20260918100258_verified_album_library_save.sql',
     'utf8'
   );
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
