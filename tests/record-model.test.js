@@ -59,7 +59,7 @@ test('record-card and Wikipedia rendering use named record accessors in their ex
   ['record[0]','record[1]','record[2]','record[3]','record[6]','record[11]','record[12]','record[13]','record[14]','record[15]'].forEach(function(token){assert.equal(card.includes(token),false,token+' should not remain in card rendering');});
   assert.match(card,/recordModel\.artist\(record\)/);
   assert.match(card,/recordModel\.title\(record\)/);
-  assert.match(card,/recordModel\.communityRating\(record\)/);
+  assert.match(card,/recordModel\.ownRating\(record\)/);
   ['record&&record[1]','record&&record[2]','record&&record[3]'].forEach(function(token){assert.equal(wiki.includes(token),false,token+' should not remain in Wikipedia identity');});
   assert.match(wiki,/recordModel\.title\(record\)/);
   assert.match(wiki,/recordModel\.artist\(record\)/);
