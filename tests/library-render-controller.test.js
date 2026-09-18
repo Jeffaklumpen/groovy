@@ -64,13 +64,14 @@ test('render filters through LibraryCore and shows matching card plus add-record
   const h=makeHarness({records:[pink,abba],searchQuery:'arrival'});const result=h.controller.render();
   assert.equal(result.visibleRecords.length,1);assert.equal(result.pageRecords[0][2],'Arrival');assert.match(h.collection.innerHTML,/Arrival/);assert.match(h.collection.innerHTML,/add-album-card/);assert.equal(h.elements.collectionCount.textContent,'2 RECORDS IN COLLECTION');
 });
-test('Select control only appears for an authenticated owners collection with records',()=>{
+test('Select control appears for the authenticated owners collection and wishlist',()=>{
   const h=makeHarness();
   h.controller.render();
   assert.equal(h.elements.selectButton.hidden,false);
   h.state.libraryView='wishlist';
   h.controller.render();
-  assert.equal(h.elements.selectButton.hidden,true);
+  assert.equal(h.elements.selectButton.hidden,false);
+  assert.match(h.collection.innerHTML,/record-select-toggle/);
   h.state.libraryView='collection';h.state.viewedUserId='other';
   h.controller.render();
   assert.equal(h.elements.selectButton.hidden,true);
