@@ -142,3 +142,14 @@ test('final foundation hardening persists durations and enforces profile upload 
   assert.match(edge,/duration: String\(track\.duration \|\| ''\)\.trim\(\) \|\| null/);
   assert.match(library,/tracks\([\s\S]*duration/);
 });
+
+
+test('server Apple verification ignores parenthetical edition labels like S&M (Live)',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const stripParenthetical=".replace(/\\([^)]*\\)/g,' ')";
+  const normalizePunctuation=".replace(/[^a-z0-9]+/g,' ')";
+  const stripPos=edge.indexOf(stripParenthetical);
+  const punctuationPos=edge.indexOf(normalizePunctuation,stripPos);
+  assert.ok(stripPos>=0,'server Apple identity normalization must strip parenthetical labels');
+  assert.ok(punctuationPos>stripPos,'parenthetical labels must be stripped before punctuation normalization');
+});
