@@ -74,6 +74,25 @@ test('renders detail rating panels from named record fields',()=>{
   assert.match(detailElement.innerHTML,/2 ratings/);
 });
 
+test('search preview keeps rating panels but makes own stars read-only',()=>{
+  const record={albumId:null,ownRating:0,communityRating:4.2,communityCount:7};
+  const detailElement=makeDetailElement();
+  const controller=Controller.create({
+    api:{from(){throw new Error('not used');}},
+    ratingCore:RatingCore,
+    recordModel:makeRecordModel(),
+    detailElement
+  });
+
+  controller.renderPreview(record);
+
+  assert.match(detailElement.innerHTML,/Your Rating/);
+  assert.match(detailElement.innerHTML,/Community Rating/);
+  assert.match(detailElement.innerHTML,/4\.2/);
+  assert.match(detailElement.innerHTML,/7 ratings/);
+  assert.doesNotMatch(detailElement.innerHTML,/class="album-rating-star/);
+});
+
 test('saving a rating updates matching records and emits one rating event',async()=>{
   const records=[
     {albumId:10,ownRating:0,communityRating:4,communityCount:2},
