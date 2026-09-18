@@ -283,6 +283,43 @@ test('Apple artwork warming is scoped to the verified Main Discography cache',()
   assert.match(block,/artwork_url/);
 });
 
+test('artist main article discography is preferred before a dedicated discography page',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf('async function wikipediaDiscographyCandidates');
+  const end=edge.indexOf('function wikipediaTitleKey',start);
+  const block=edge.slice(start,end);
+  const fastPath=block.indexOf('mainDiscographyHtml');
+  const dedicatedPage=block.indexOf("let discographyPage=''");
+  assert.ok(fastPath>=0&&dedicatedPage>fastPath);
+  assert.match(block,/mainDiscographyAlbums\.length>=2/);
+  assert.match(block,/strategy:'main_article'/);
+  assert.match(block,/studioMarker>=0/);
+});
+
+test('main article parser excludes explicitly labelled compilations from core discography',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf('function wikipediaStudioAlbumsFromHtml');
+  const end=edge.indexOf('function rankWikipediaStudioSection',start);
+  const block=edge.slice(start,end);
+  assert.match(block,/const containerText=wikipediaText\(container\)/);
+  assert.match(block,/\\bcompilation\\b/);
+  assert.match(block,/Do not promote that into Main Discography/);
+});
+
+test('local discography enrichment reconciles title aliases and changed artist credits safely',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
+  const end=edge.indexOf("if (action === 'artistProfile')",start);
+  const block=edge.slice(start,end);
+  assert.match(block,/function sameYearRemainder/);
+  assert.match(block,/rows\.length===1\?rows\[0\]:null/);
+  assert.match(block,/async function uniqueGlobalCatalogMatch/);
+  assert.match(block,/\.eq\('match_type','direct'\)/);
+  assert.match(block,/\.eq\('first_release_year',year\)/);
+  assert.match(block,/\.ilike\('album_title',title\)/);
+  assert.match(block,/return rows\.length===1\?rows\[0\]:null/);
+});
+
 test('Wikipedia year-first discography tables use the album details cell as the title',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const start=edge.indexOf('function wikipediaStudioAlbumsFromHtml');
