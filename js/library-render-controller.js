@@ -32,6 +32,7 @@ function create(options){
   var attachRecordActionMenus=typeof options.attachRecordActionMenus==='function'?options.attachRecordActionMenus:function(){};
   var attachAlbumClicks=typeof options.attachAlbumClicks==='function'?options.attachAlbumClicks:function(){};
   var enableGridSorting=typeof options.enableGridSorting==='function'?options.enableGridSorting:function(){};
+  var onRendered=typeof options.onRendered==='function'?options.onRendered:function(){};
   var recordsPerPage=parseInt(options.recordsPerPage,10)||52;
   var imageLoadScheduled=false;
 
@@ -319,6 +320,7 @@ function create(options){
     attachAlbumClicks();
     enableGridSorting();
     loadVisibleImages();
+    onRendered();
 
     return {visibleRecords:visibleRecords,pageRecords:pageRecords,page:pagination.page,totalPages:pagination.totalPages};
   }
