@@ -25,13 +25,13 @@ test('community controller owns overview loading and social interactions',()=>{
   assert.doesNotMatch(app,/\.from\('community_activity'\)/);
 });
 
-test('community view keeps Apple Music and Spotify links attached to album artwork',()=>{
+test('community view uses the Collection Apple Music and Spotify assets',()=>{
   const view=fs.readFileSync('js/community-view.js','utf8');
   const css=fs.readFileSync('css/community.css','utf8');
   assert.match(view,/apple-music-badge-small\.svg/);
-  assert.match(view,/spotify-full-logo-green\\.svg/);
+  assert.match(view,/spotify-full-logo-green\.svg/);
   assert.match(view,/community-streaming-row/);
-  assert.match(css,/\\.community-streaming-row/);
+  assert.match(css,/\.community-streaming-row/);
   assert.match(view,/apple-service community-streaming-apple/);
   assert.match(view,/spotify-service community-streaming-spotify/);
 });
