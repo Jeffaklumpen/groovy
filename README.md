@@ -34,7 +34,9 @@ Supabase JS laddas i webbläsaren från CDN och är pinnad till en exakt testad 
 
 Albumdata är gemensam katalogdata. En vanlig klient får läsa katalogen men får inte längre skriva direkt till `artists`, `albums` eller `tracks`.
 
-När ett Discogs-album läggs till används RPC:n `save_album_to_library`. Den skapar/återanvänder artist och album, kompletterar tracklist och lägger posten i collection eller wishlist i en enda databastransaktion.
+På utvecklingsbranchen `notes` går ett nytt album först genom den JWT-skyddade `discogs-search`-funktionen. Den hämtar albumidentitet och vinyl-tracklist från Discogs på serversidan, verifierar eventuell Apple-albumlänk och lämnar därefter över till service-role-only RPC:n `save_album_to_library_verified`. Den äldre `save_album_to_library` finns tills vidare kvar för bakåtkompatibilitet med `main` och tas bort från klientåtkomst när releasebranchen har flyttats över till den verifierade vägen.
+
+Flytt från wishlist till collection går genom `move_wishlist_to_collection`, så insert, delete och omnumrering sker i samma databastransaktion.
 
 Användarspecifika tabeller skyddas med RLS och ownership-regler.
 
