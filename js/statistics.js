@@ -1,4 +1,6 @@
 (function(){
+  var Router=window.GroovyRouter;
+  if(!Router)throw new Error('GroovyRouter must load before statistics.js');
   var page=document.getElementById('statisticsPage');
   var content=document.getElementById('statisticsContent');
   var closeButton=document.getElementById('closeStatisticsPage');
@@ -36,10 +38,10 @@
     if(GroovyRouteState.statisticsFromSearch(window.location.search)){
       if(openedWithHistory){
         openedWithHistory=false;
-        history.back();
+        Router.back();
         return;
       }
-      history.replaceState({},'',statisticsUrl(false));
+      Router.replace(statisticsUrl(false),{}, {render:false});
     }
     hideStatistics();
   }
@@ -171,7 +173,7 @@
 
   async function openStatistics(userId,profileHint,updateUrl){
     if(updateUrl!==false&&!GroovyRouteState.statisticsFromSearch(window.location.search)){
-      history.pushState({groovyStatistics:true},'',statisticsUrl(true));
+      Router.navigate(statisticsUrl(true),{groovyStatistics:true},{render:false});
       openedWithHistory=true;
     }
     var version=++requestVersion;
@@ -253,7 +255,7 @@
   closeButton.addEventListener('click',closeStatistics);
   page.addEventListener('click',function(event){if(event.target===page)closeStatistics();});
   document.addEventListener('keydown',function(event){if(event.key==='Escape'&&page.classList.contains('visible'))closeStatistics();});
-  window.addEventListener('popstate',function(){
+  window.addEventListener('groovy-route-change',function(){
     if(GroovyRouteState.statisticsFromSearch(window.location.search))openStatisticsFromUrl();
     else hideStatistics();
   });
