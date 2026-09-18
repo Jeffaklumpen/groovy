@@ -85,6 +85,33 @@ test('record model builds wishlist tuples and empty sides consistently',function
   assert.deepEqual(Object.keys(Record.emptySides()),['A','B','C','D','E','F','G','H']);
 });
 
+test('record model builds isolated search-preview records and can hydrate their tracks',function(){
+  const Record=loadModel();
+  const record=Record.fromSearchPreview({
+    artist:'Metallica',
+    title:'Kill Em All',
+    year:1983,
+    genre:'Heavy Metal',
+    coverUrl:'cover.jpg',
+    discogsMasterId:123,
+    appleUrl:'https://music.apple.com/test'
+  });
+
+  assert.equal(Record.artist(record),'Metallica');
+  assert.equal(Record.albumId(record),null);
+  assert.equal(Record.discogsMasterId(record),123);
+  assert.equal(Record.hasTracks(record),false);
+  assert.equal(Record.trackDurationCacheKey(record),'groovy-track-durations:123');
+
+  assert.equal(Record.replaceTrackRows(record,[
+    {disc_side:'A',track_number:1,title:'Hit the Lights',duration:'4:17'},
+    {disc_side:'B',track_number:1,title:'Whiplash',duration:'4:09'}
+  ]),true);
+  assert.equal(Record.hasTracks(record),true);
+  assert.equal(Record.sides(record).A[0].title,'Hit the Lights');
+  assert.equal(Record.sides(record).B[0].duration,'4:09');
+});
+
 test('record model owns track-duration identity and mutation rules',function(){
   const Record=loadModel();
   const record=[1,'Artist','Album',1973,'Rock',0,'',{A:[{trackNumber:1,title:'One',duration:''},{trackNumber:2,title:'Two',duration:'2:00'}],B:[]},42,9,123];
