@@ -90,7 +90,7 @@ function create(options){
          '<strong>'+escapeHtml(cardShelfName)+'</strong>'+
        '</span>'
       :'';
-    var canSelect=state.viewedUserId===null&&!isWishlist;
+    var canSelect=state.viewedUserId===null;
     var entryId=String(recordModel.entryId(record)||'');
     var selectToggle=canSelect
       ?'<button class="record-select-toggle" type="button" data-record-select data-record-title="'+escapeHtml(recordModel.title(record))+'" aria-pressed="false" aria-label="Select '+escapeHtml(recordModel.title(record))+'"><span aria-hidden="true">✓</span></button>'
@@ -262,7 +262,7 @@ function create(options){
     }
 
     if(elements.addAlbumButton)elements.addAlbumButton.style.display=isViewingProfile?'none':'';
-    if(elements.selectButton)elements.selectButton.hidden=!(isOwnCollection&&!isWishlist&&state.hasAuthenticatedUser&&records.length>0);
+    if(elements.selectButton)elements.selectButton.hidden=!(isOwnCollection&&state.hasAuthenticatedUser&&records.length>0);
     if(elements.filterButton&&elements.filterButton.parentElement){
       elements.filterButton.parentElement.style.display=(isWishlist||showLoggedOutLanding)?'none':'';
     }
