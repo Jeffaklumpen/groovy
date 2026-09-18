@@ -861,6 +861,7 @@ var detailTracklistController=DetailTracklistController.create({
 });
 var detailSocialController=DetailSocialController.create({
   api:supabaseClient,
+  recordModel:Record,
   window:window,
   document:document,
   element:detailSocialContext,
@@ -887,7 +888,7 @@ function shelfById(id){
 }
 
 function shelfRecordCount(id){
-  return ShelfCore.recordCount(records,id);
+  return ShelfCore.recordCount(records,id,Record.shelfId);
 }
 
 var recordMenuBackdrop=document.createElement('div');
@@ -1138,6 +1139,7 @@ var marketplaceController=MarketplaceController.create({
   storage:localStorage,
   navigator:navigator,
   Intl:Intl,
+  recordModel:Record,
   getRecord:function(index){return records[index]||null;},
   getArtist:function(record){return Record.artist(record);},
   getTitle:function(record){return Record.title(record);},
