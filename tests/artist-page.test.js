@@ -283,6 +283,21 @@ test('Apple artwork warming is scoped to the verified Main Discography cache',()
   assert.match(block,/artwork_url/);
 });
 
+test('dedicated discography fallback prefers Primary studio albums over broad Studio albums',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf('function rankWikipediaStudioSection');
+  const end=edge.indexOf('function wikipediaSectionHtml',start);
+  const block=edge.slice(start,end);
+  assert.match(block,/normalized==='primary studio albums'\) return 140/);
+  assert.match(block,/normalized==='studio albums'\) return 110/);
+  assert.ok(
+    block.indexOf("normalized==='primary studio albums'")<
+      block.indexOf("normalized==='studio albums'"),
+    'Primary studio albums must outrank the broad Studio albums parent section'
+  );
+  assert.match(block,/as a member of/);
+});
+
 test('artist main article discography is preferred before a dedicated discography page',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const start=edge.indexOf('async function wikipediaDiscographyCandidates');
