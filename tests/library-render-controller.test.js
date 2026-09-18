@@ -17,11 +17,11 @@ function recordModel(){
 function makeHarness(overrides){
   const collection=element();const paginationTop=element();const paginationBottom=element();const addAlbumButton=element();
   addAlbumButton.clickCount=0;addAlbumButton.click=function(){this.clickCount++;};
-  const elements={collection,paginationTop,paginationBottom,searchInput:element(),mobileAddRecordButton:element(),emptyCollection:element(),loginToViewCollection:element(),profileNotFound:element(),emptyViewedCollection:element(),emptyWishlist:element(),emptyWishlistTitle:element(),emptyWishlistText:element(),emptyWishlistAddButton:element(),libraryTabs:element(),libraryTitle:element(),collectionTabButton:element(),wishlistTabButton:element(),addAlbumButton,filterButton:element(),collectionCount:element()};
+  const elements={collection,paginationTop,paginationBottom,searchInput:element(),mobileAddRecordButton:element(),emptyCollection:element(),loginToViewCollection:element(),profileNotFound:element(),emptyViewedCollection:element(),emptyWishlist:element(),emptyWishlistTitle:element(),emptyWishlistText:element(),emptyWishlistAddButton:element(),libraryTabs:element(),libraryTitle:element(),collectionTabButton:element(),wishlistTabButton:element(),addAlbumButton,filterButton:element(),selectButton:element(),collectionCount:element()};
   const doc={body:{classList:{toggle(){}}},querySelectorAll(){return [];}};
   const win={innerHeight:800,innerWidth:1200,requestAnimationFrame(fn){fn();},setTimeout(fn){fn();},scrollTo(){}};
   const baseRecord=[1,'Pink Floyd','The Wall','1979','Progressive Rock',3.5,'cover.jpg',{},1,'entry-1',10,{},null,'shelf-1',2,4.5];
-  let state={records:[baseRecord],viewedUserId:null,libraryView:'collection',loginRequiredForViewedCollection:false,profileNotFound:false,hasAuthenticatedUser:true,viewedUsername:null,activeShelfId:'all',selectedRating:'all',searchQuery:'',sort:'added',page:1};
+  let state={records:[baseRecord],viewedUserId:null,libraryView:'collection',loginRequiredForViewedCollection:false,profileNotFound:false,hasAuthenticatedUser:true,viewedUsername:null,activeShelfId:'all',selectedRating:'all',searchQuery:'',sort:'standard',page:1};
   if(overrides)Object.assign(state,overrides);
   const calls={page:[],search:[],hooks:0};
   const controller=Controller.create({
@@ -63,6 +63,17 @@ test('render filters through LibraryCore and shows matching card plus add-record
   const abba=[2,'ABBA','Arrival','1976','Pop',0,'abba.jpg',{},2,'entry-2',11,{},null,'',0,3.2];
   const h=makeHarness({records:[pink,abba],searchQuery:'arrival'});const result=h.controller.render();
   assert.equal(result.visibleRecords.length,1);assert.equal(result.pageRecords[0][2],'Arrival');assert.match(h.collection.innerHTML,/Arrival/);assert.match(h.collection.innerHTML,/add-album-card/);assert.equal(h.elements.collectionCount.textContent,'2 RECORDS IN COLLECTION');
+});
+test('Select control only appears for an authenticated owners collection with records',()=>{
+  const h=makeHarness();
+  h.controller.render();
+  assert.equal(h.elements.selectButton.hidden,false);
+  h.state.libraryView='wishlist';
+  h.controller.render();
+  assert.equal(h.elements.selectButton.hidden,true);
+  h.state.libraryView='collection';h.state.viewedUserId='other';
+  h.controller.render();
+  assert.equal(h.elements.selectButton.hidden,true);
 });
 test('render exposes empty shelf messaging without changing interaction ownership',()=>{
   const h=makeHarness({activeShelfId:'shelf-1'});h.state.records=[[1,'ABBA','Arrival','1976','Pop',0,'abba.jpg',{},2,'entry-2',11,{},null,'other-shelf',1,3.2]];
