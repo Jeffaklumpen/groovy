@@ -205,3 +205,10 @@ test('auth UI profile read is cached across ordinary route changes',()=>{
   assert.match(app,/Date\.now\(\)-authUiProfileCache\.loadedAt<60000/);
   assert.match(app,/loadAuthUiProfile\(user,!!options\.forceProfile\)/);
 });
+
+
+test('unverified artist discography fallback only accepts direct MusicBrainz-to-Discogs matches',()=>{
+  const sql=fs.readFileSync('supabase/migrations/20260918190916_tighten_artist_discography_fallback.sql','utf8');
+  assert.match(sql,/mb\.match_type='direct'/);
+  assert.match(sql,/where not v_discography_verified/);
+});
