@@ -43,7 +43,7 @@ test('avatar fallback is rendered directly rather than fixed by a later DOM obse
 
 test('mobile rating panels share star geometry and footer alignment',function(){
   const controller=fs.readFileSync(path.join(root,'js','album-rating-controller.js'),'utf8');
-  const css=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
+  const css=fs.readFileSync(path.join(root,'css','ratings-detail.css'),'utf8');
   const searchCss=fs.readFileSync(path.join(root,'css','search-modals.css'),'utf8');
   assert.match(controller,/groovy-rating-star-cell/);
   assert.match(css,/grid-template-columns:repeat\(5,var\(--rating-star-size\)\)/);
@@ -55,8 +55,8 @@ test('mobile rating panels share star geometry and footer alignment',function(){
 test('mobile rating cards use identical grid geometry for own and community values',function(){
   const controller=fs.readFileSync(path.join(root,'js','album-rating-controller.js'),'utf8');
   const layout=fs.readFileSync(path.join(root,'js','album-rating-layout-v4.js'),'utf8');
-  const css=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
-  assert.match(controller,/groovy-rating-value-row rating-panel-community-main/);
+  const css=fs.readFileSync(path.join(root,'css','ratings-detail.css'),'utf8');
+  assert.doesNotMatch(controller,/rating-panel-community-main|rating-panel-stars/);
   assert.match(controller,/groovy-rating-star-cell/);
   assert.match(layout,/groovy-rating-star-cell/);
   assert.match(css,/grid-template-rows:16px var\(--rating-star-size\) 24px/);
@@ -68,7 +68,7 @@ test('mobile rating cards use identical grid geometry for own and community valu
 
 test('detail rating star geometry has one canonical owner across desktop and mobile',function(){
   const controller=fs.readFileSync(path.join(root,'js','album-rating-controller.js'),'utf8');
-  const css=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
+  const css=fs.readFileSync(path.join(root,'css','ratings-detail.css'),'utf8');
   assert.match(controller,/album-rating-star groovy-rating-star-cell/);
   assert.match(css,/--rating-star-size:24px/);
   assert.match(css,/grid-template-columns:repeat\(5,var\(--rating-star-size\)\)/);
@@ -80,7 +80,7 @@ test('detail rating star geometry has one canonical owner across desktop and mob
 
 
 test('filled and empty detail stars share one centered glyph geometry',function(){
-  const css=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
+  const css=fs.readFileSync(path.join(root,'css','ratings-detail.css'),'utf8');
   assert.match(css,/\.groovy-rating-star-glyph\{[\s\S]*align-items:center!important;[\s\S]*justify-content:center!important/);
   assert.match(css,/\.groovy-rating-star-fill\{[\s\S]*width:var\(--star-fill\)!important/);
   assert.doesNotMatch(css,/groovy-rating-star-fill\{[\s\S]{0,180}text-align:left!important/);
@@ -90,7 +90,24 @@ test('filled and empty detail stars share one centered glyph geometry',function(
 
 test('community score no longer has a separate line box size',function(){
   const legacy=fs.readFileSync(path.join(root,'css','ratings-detail.css'),'utf8');
-  const canonical=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
-  assert.doesNotMatch(legacy,/rating-panel-community-main strong\{[^}]*font-size/);
+  const canonical=fs.readFileSync(path.join(root,'css','ratings-detail.css'),'utf8');
+  assert.doesNotMatch(canonical,/rating-panel-community-main|rating-panel-stars/);
   assert.match(canonical,/groovy-rating-score\{[\s\S]*height:var\(--rating-star-size\)!important;[\s\S]*font-size:0!important;[\s\S]*line-height:var\(--rating-star-size\)!important/);
+});
+
+
+test('base rating DOM has one owner and detail enhancements do not rewrite it',function(){
+  const controller=fs.readFileSync(path.join(root,'js','album-rating-controller.js'),'utf8');
+  const layout=fs.readFileSync(path.join(root,'js','album-rating-layout-v4.js'),'utf8');
+  const enhancements=fs.readFileSync(path.join(root,'js','detail-enhancements-v2.js'),'utf8');
+  const ratingCss=fs.readFileSync(path.join(root,'css','ratings-detail.css'),'utf8');
+  const detailCss=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
+  assert.match(controller,/function renderDetail\(/);
+  assert.doesNotMatch(layout,/decorateYour|decorateCommunity|decorateBase|ensureOwnFooter|ensureScore/);
+  assert.doesNotMatch(enhancements,/updateDetailRating|ensureRatingFooter/);
+  assert.doesNotMatch(detailCss,/rating-panel|groovy-rating-value-row|groovy-rating-star-cell|groovy-rating-score/);
+  assert.match(ratingCss,/grid-template-rows:26px var\(--rating-star-size\) 24px/);
+  assert.match(ratingCss,/grid-row:1!important/);
+  assert.match(ratingCss,/grid-row:2!important/);
+  assert.match(ratingCss,/grid-row:3!important/);
 });

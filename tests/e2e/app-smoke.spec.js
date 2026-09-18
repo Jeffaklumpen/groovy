@@ -177,3 +177,63 @@ test('a rendered record card opens the album detail view',async({page})=>{
 
   expectNoPageErrors(pageErrors);
 });
+
+
+async function openRatingGeometryFixture(page,width,height){
+  await page.setViewportSize({width,height});
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+  await page.route(/^https:\/\//,route=>route.abort());
+
+  await page.evaluate(()=>{
+    window.hasAuthenticatedUser=true;
+    window.loginRequiredForViewedCollection=false;
+    window.profileNotFound=false;
+    window.viewedUserId=null;
+    window.libraryView='collection';
+    document.body.classList.remove('logged-out-home');
+    window.records=[[
+      1,'Geometry Artist','Geometry Album','2026','Rock',2,
+      'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',
+      {A:[],B:[],C:[],D:[],E:[],F:[],G:[],H:[]},
+      'geometry-album','geometry-entry','',{},'', '',null,3,2
+    ]];
+    window.buildGrid();
+  });
+
+  await page.locator('#collection .record').first().click();
+  await expect(page.locator('#albumOverlay')).toHaveClass(/visible/);
+  await page.waitForTimeout(120);
+}
+
+async function ratingGeometry(page){
+  return page.evaluate(()=>{
+    function box(selector){
+      var rect=document.querySelector(selector).getBoundingClientRect();
+      return {top:rect.top,height:rect.height,left:rect.left,width:rect.width};
+    }
+    return {
+      ownLabel:box('.rating-panel-your .rating-panel-label'),
+      communityLabel:box('.rating-panel-community .rating-panel-label'),
+      ownValue:box('.rating-panel-your .groovy-rating-value-row'),
+      communityValue:box('.rating-panel-community .groovy-rating-value-row'),
+      ownFooter:box('.rating-panel-your .rating-panel-footer'),
+      communityFooter:box('.rating-panel-community .rating-panel-footer'),
+      ownFirstStar:box('.rating-panel-your .groovy-rating-star-cell'),
+      communityFirstStar:box('.rating-panel-community .groovy-rating-star-cell')
+    };
+  });
+}
+
+for(const viewport of [{name:'mobile',width:390,height:844},{name:'desktop',width:1280,height:800}]){
+  test('rating panels are pixel-aligned on '+viewport.name,async({page})=>{
+    await openRatingGeometryFixture(page,viewport.width,viewport.height);
+    const geometry=await ratingGeometry(page);
+    const close=(a,b)=>Math.abs(a-b)<=0.5;
+
+    expect(close(geometry.ownLabel.top,geometry.communityLabel.top),JSON.stringify(geometry)).toBe(true);
+    expect(close(geometry.ownValue.top,geometry.communityValue.top),JSON.stringify(geometry)).toBe(true);
+    expect(close(geometry.ownFooter.top,geometry.communityFooter.top),JSON.stringify(geometry)).toBe(true);
+    expect(close(geometry.ownFirstStar.top,geometry.communityFirstStar.top),JSON.stringify(geometry)).toBe(true);
+    expect(close(geometry.ownFirstStar.height,geometry.communityFirstStar.height),JSON.stringify(geometry)).toBe(true);
+  });
+}

@@ -71,54 +71,6 @@ function ratingMap(rows,userId){
   return map;
 }
 
-function ensureRatingFooter(panel,own){
-  if(!panel)return;
-  var footer=panel.querySelector('.rating-panel-footer');
-  if(!footer){
-    footer=document.createElement('div');
-    footer.className='rating-panel-footer';
-    panel.appendChild(footer);
-  }
-
-  if(own>0){
-    if(!footer.querySelector('.groovy-remove-rating')){
-      footer.innerHTML='<button class="groovy-remove-rating" type="button">Remove Rating</button>';
-    }
-  }else if(!footer.querySelector('.rating-panel-empty-note')){
-    footer.innerHTML='<span class="rating-panel-empty-note">Not rated yet</span>';
-  }
-}
-
-function updateDetailRating(index){
-  var record=recordAt(index);
-  var root=document.getElementById('detailRating');
-  if(!record||!root)return;
-
-  var own=clamp(Record.ownRating(record));
-  var community=clamp(Record.communityRating(record));
-  var count=parseInt(Record.communityCount(record),10)||0;
-  var yours=root.querySelector('.rating-panel-your');
-  var communityPanel=root.querySelector('.rating-panel-community');
-
-  if(yours){
-    yours.querySelectorAll('.album-rating-star').forEach(function(star){
-      var value=parseInt(star.getAttribute('data-rating'),10)||0;
-      star.classList.toggle('filled',value<=own);
-      star.classList.toggle('empty',value>own);
-    });
-    ensureRatingFooter(yours,own);
-  }
-
-  if(communityPanel){
-    var meter=communityPanel.querySelector('.groovy-star-meter');
-    if(meter)meter.style.setProperty('--rating-fill',fill(community));
-    var number=communityPanel.querySelector('.rating-panel-community-main strong');
-    if(number)number.textContent=ratingText(community);
-    var meta=communityPanel.querySelector('.rating-panel-meta');
-    if(meta)meta.textContent=count+' rating'+(count===1?'':'s');
-  }
-}
-
 function patchCard(card,record){
   if(!card||!record)return;
   var target=card.querySelector('.cover-rating');
@@ -181,7 +133,7 @@ async function refreshWishlistRatings(){
   patchAllWishlistCards();
   var index=detailIndex();
   var overlay=document.getElementById('albumOverlay');
-  if(index>=0&&overlay&&overlay.classList.contains('visible'))updateDetailRating(index);
+  if(index>=0&&overlay&&overlay.classList.contains('visible')&&typeof window.groovyRenderAlbumRating==='function')window.groovyRenderAlbumRating(index);
 
   window.dispatchEvent(new CustomEvent('groovy-rating-updated',{detail:{source:'wishlist-hydrate'}}));
 }
@@ -229,7 +181,7 @@ async function removeRating(index,button){
     Record.setRatings(item,0,nextAverage,nextCount);
   });
 
-  updateDetailRating(index);
+  if(typeof window.groovyRenderAlbumRating==='function')window.groovyRenderAlbumRating(index);
   patchCardsForAlbum(albumId);
   if(window.libraryView==='wishlist')scheduleWishlistRatings(150);
 
@@ -382,7 +334,6 @@ function onDetailOpen(){
   if(index<0)return;
   currentDetailIndex=index;
   ensureWishlistAction();
-  updateDetailRating(index);
 
   if(window.libraryView==='wishlist'){
     refreshWishlistRatings();
@@ -424,16 +375,6 @@ function install(){
     }
 
   },false);
-
-  window.addEventListener('groovy-rating-updated',function(event){
-    if(!overlay.classList.contains('visible'))return;
-    var index=detailIndex();
-    if(index<0)return;
-    var albumId=event&&event.detail&&event.detail.albumId;
-    var record=recordAt(index);
-    if(albumId&&record&&String(Record.albumId(record))!==String(albumId))return;
-    updateDetailRating(index);
-  });
 
   new MutationObserver(function(){
     if(window.libraryView==='wishlist')scheduleWishlistRatings(100);

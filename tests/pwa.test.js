@@ -130,7 +130,7 @@ test('pressing matrices A-H use one schema path without compatibility hydration'
 
 test('album rating presentation lives in CSS instead of runtime style injection',function(){
   const layout=fs.readFileSync(path.join(root,'js','album-rating-layout-v4.js'),'utf8');
-  const css=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
+  const css=fs.readFileSync(path.join(root,'css','ratings-detail.css'),'utf8');
   assert.doesNotMatch(layout,/installStyles|groovyRatingLayoutV4Styles|createElement\(['"]style['"]\)/);
   assert.match(css,/Album rating layout \(moved from album-rating-layout-v4\.js\)/);
   assert.doesNotMatch(css,/\.groovy-rating-section-heading/);

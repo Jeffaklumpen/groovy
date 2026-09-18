@@ -699,6 +699,7 @@ var ratingController=AlbumRatingController.create({
 });
 window.loadAlbumRatingData=ratingController.loadData;
 window.applyAlbumRatingMeta=Record.applyRatingMeta;
+window.groovyRenderAlbumRating=ratingController.renderDetail;
 var detailTracks=document.getElementById('detailTracks');
 var detailAboutAlbum=document.getElementById('detailAboutAlbum');
 var detailInfoCard=document.querySelector('.detail-info-card');

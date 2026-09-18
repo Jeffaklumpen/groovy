@@ -34,20 +34,27 @@
       return ratingCore.format(value);
     }
 
-    function renderStaticStarMeter(value,extraClass){
-      var label=(ratingCore.clamp(value)||0).toFixed(1)+' out of 5';
-      if(extraClass==='is-community'){
-        var numeric=ratingCore.clamp(value);
-        var stars='';
-        for(var i=1;i<=5;i++){
-          var fill=Math.max(0,Math.min(1,numeric-(i-1)))*100;
-          stars+='<span class="groovy-rating-star-cell" style="--star-fill:'+fill.toFixed(1)+'%;" aria-hidden="true">'+
-            '<span class="groovy-rating-star-base"><span class="groovy-rating-star-glyph">★</span></span>'+
-            '<span class="groovy-rating-star-fill"><span class="groovy-rating-star-glyph">★</span></span>'+
-          '</span>';
+    function renderDetailStars(value,interactive){
+      var numeric=ratingCore.clamp(value);
+      var stars='';
+      for(var i=1;i<=5;i++){
+        var fill=Math.max(0,Math.min(1,numeric-(i-1)))*100;
+        var inner=
+          '<span class="groovy-rating-star-base" aria-hidden="true"><span class="groovy-rating-star-glyph">★</span></span>'+
+          '<span class="groovy-rating-star-fill" aria-hidden="true"><span class="groovy-rating-star-glyph">★</span></span>';
+        if(interactive){
+          stars+='<button class="album-rating-star groovy-rating-star-cell '+(fill>0?'filled':'empty')+'" style="--star-fill:'+fill.toFixed(1)+'%;" type="button" data-rating="'+i+'" aria-label="Rate '+i+' out of 5">'+inner+'</button>';
+        }else{
+          stars+='<span class="groovy-rating-star-cell" style="--star-fill:'+fill.toFixed(1)+'%;" aria-hidden="true">'+inner+'</span>';
         }
-        return '<span class="groovy-rating-stars is-community" aria-label="'+escapeHtml(label)+'">'+stars+'</span>';
       }
+      var label=(numeric||0).toFixed(1)+' out of 5';
+      return '<div class="groovy-rating-stars'+(interactive?' is-interactive':' is-community')+'" aria-label="'+escapeHtml(label)+'">'+stars+'</div>';
+    }
+
+    function renderStaticStarMeter(value,extraClass){
+      if(extraClass==='is-community')return renderDetailStars(value,false);
+      var label=(ratingCore.clamp(value)||0).toFixed(1)+' out of 5';
       return '<span class="groovy-star-meter'+(extraClass?' '+extraClass:'')+'" style="--rating-fill:'+ratingCore.fillPercent(value)+';" aria-label="'+escapeHtml(label)+'">'+
         '<span class="groovy-star-meter-base" aria-hidden="true">★★★★★</span>'+
         '<span class="groovy-star-meter-fill" aria-hidden="true">★★★★★</span>'+
@@ -60,6 +67,17 @@
         '<span class="groovy-score-main">'+escapeHtml(text)+'</span>'+
         (text==='—'?'':'<span class="groovy-score-max">/5</span>')+
       '</strong>';
+    }
+
+    function trashIcon(){
+      return '<svg class="groovy-remove-rating-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"></path></svg>';
+    }
+
+    function renderOwnFooter(ownRating){
+      if(ownRating){
+        return '<button class="groovy-remove-rating" type="button">'+trashIcon()+'<span>Remove Rating</span></button>';
+      }
+      return '<span class="rating-panel-empty-note">Not rated yet</span>';
     }
 
     async function loadData(albumIds,ownUserId){
@@ -108,27 +126,18 @@
       var ownRating=ratingCore.clamp(recordModel.ownRating(record));
       var communityAverage=ratingCore.clamp(recordModel.communityRating(record));
       var communityCount=parseInt(recordModel.communityCount(record),10)||0;
-      var ownStars='';
       var personIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.2"></circle><path d="M5.8 19.3c.4-4 2.8-6.2 6.2-6.2s5.8 2.2 6.2 6.2"></path></svg>';
       var communityIcon='<svg viewBox="0 0 28 24" aria-hidden="true"><circle cx="14" cy="6.2" r="2.8"></circle><circle cx="6.6" cy="8.1" r="2.3"></circle><circle cx="21.4" cy="8.1" r="2.3"></circle><path d="M8.4 19.4c.35-4.1 2.45-6.4 5.6-6.4s5.25 2.3 5.6 6.4"></path><path d="M1.9 19.4c.25-3.2 1.9-5.1 4.7-5.1 1.1 0 2 .25 2.8.75M26.1 19.4c-.25-3.2-1.9-5.1-4.7-5.1-1.1 0-2 .25-2.8.75"></path></svg>';
 
-      for(var i=1;i<=5;i++){
-        var ownFill=i<=ownRating?'100%':'0%';
-        ownStars+='<button class="album-rating-star groovy-rating-star-cell '+(i<=ownRating?'filled':'empty')+'" style="--star-fill:'+ownFill+'" type="button" data-rating="'+i+'" aria-label="Rate '+i+' out of 5">'+
-          '<span class="groovy-rating-star-base" aria-hidden="true"><span class="groovy-rating-star-glyph">★</span></span>'+
-          '<span class="groovy-rating-star-fill" aria-hidden="true"><span class="groovy-rating-star-glyph">★</span></span>'+
-        '</button>';
-      }
-
       detailElement.innerHTML='<div class="rating-panels">'+
         '<section class="rating-panel rating-panel-your">'+
-          '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-user">'+personIcon+'</span><span>Your rating</span></div>'+
-          '<div class="groovy-rating-value-row"><div class="rating-panel-stars" aria-label="Your rating">'+ownStars+'</div>'+renderScore(ownRating)+'</div>'+
-          (ownRating?'':'<div class="rating-panel-footer"><span class="rating-panel-empty-note">Not rated yet</span></div>')+
+          '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-user">'+personIcon+'</span><span>Your Rating</span></div>'+
+          '<div class="groovy-rating-value-row">'+renderDetailStars(ownRating,true)+renderScore(ownRating)+'</div>'+
+          '<div class="rating-panel-footer">'+renderOwnFooter(ownRating)+'</div>'+
         '</section>'+
         '<section class="rating-panel rating-panel-community">'+
-          '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-group">'+communityIcon+'</span><span>Community rating</span></div>'+
-          '<div class="groovy-rating-value-row rating-panel-community-main">'+renderStaticStarMeter(communityAverage,'is-community')+renderScore(communityAverage)+'</div>'+
+          '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-group">'+communityIcon+'</span><span>Community Rating</span></div>'+
+          '<div class="groovy-rating-value-row">'+renderDetailStars(communityAverage,false)+renderScore(communityAverage)+'</div>'+
           '<div class="rating-panel-footer"><span class="rating-panel-meta">'+escapeHtml(String(communityCount||0))+' rating'+(communityCount===1?'':'s')+'</span></div>'+
         '</section>'+
       '</div>';

@@ -10,7 +10,6 @@ var overlay=document.getElementById('albumOverlay');
 var ratingRoot=document.getElementById('detailRating');
 var profileCache=new Map();
 var viewedToken=0;
-var queued=false;
 
 function clamp(value){
   return RatingCore.clamp(value);
@@ -44,10 +43,6 @@ async function currentUser(){
   }catch(error){return null;}
 }
 
-function fill(value){
-  return RatingCore.fillPercent(value);
-}
-
 function staticStars(value){
   var numeric=clamp(value);
   var stars='';
@@ -59,115 +54,6 @@ function staticStars(value){
     '</span>';
   }
   return '<span class="groovy-rating-stars">'+stars+'</span>';
-}
-
-function trashIcon(){
-  return '<svg class="groovy-remove-rating-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"></path></svg>';
-}
-
-function ensureOwnFooter(panel,own){
-  if(!panel)return;
-  var footer=panel.querySelector('.rating-panel-footer');
-  if(!footer){
-    footer=document.createElement('div');
-    footer.className='rating-panel-footer';
-    panel.appendChild(footer);
-  }
-
-  if(clamp(own)>0){
-    var button=footer.querySelector('.groovy-remove-rating');
-    if(!button){
-      footer.innerHTML='<button class="groovy-remove-rating" type="button">'+trashIcon()+'<span>Remove Rating</span></button>';
-    }else if(!button.querySelector('.groovy-remove-rating-icon')){
-      button.innerHTML=trashIcon()+'<span>Remove Rating</span>';
-    }
-  }else if(footer.firstChild){
-    footer.innerHTML='';
-  }
-}
-
-function ensureScore(row,value){
-  if(!row)return;
-  var score=row.querySelector('.groovy-rating-score');
-  if(!score){
-    score=document.createElement('strong');
-    score.className='groovy-rating-score';
-    row.appendChild(score);
-  }
-  var marker=scoreText(value);
-  if(score.dataset.score!==marker){
-    score.dataset.score=marker;
-    score.innerHTML=scoreMarkup(value);
-  }
-}
-
-function decorateYour(record){
-  var panel=ratingRoot&&ratingRoot.querySelector('.rating-panel-your');
-  if(!panel)return;
-
-  panel.querySelectorAll('.groovy-rating-helper').forEach(function(node){node.remove();});
-  var label=panel.querySelector('.rating-panel-label span:last-child');
-  if(label&&label.textContent!=='Your Rating')label.textContent='Your Rating';
-
-  var own=clamp(record&&Record.ownRating(record));
-  var stars=panel.querySelector('.rating-panel-stars');
-  if(stars){
-    stars.querySelectorAll('.album-rating-star').forEach(function(star){
-      var rating=parseInt(star.getAttribute('data-rating'),10)||0;
-      var filled=own>0&&rating<=own;
-      star.classList.toggle('filled',filled);
-      star.classList.toggle('empty',!filled);
-      star.style.setProperty('--star-fill',filled?'100%':'0%');
-    });
-
-    var row=panel.querySelector('.groovy-rating-value-row');
-    if(!row){
-      row=document.createElement('div');
-      row.className='groovy-rating-value-row';
-      stars.parentNode.insertBefore(row,stars);
-      row.appendChild(stars);
-    }else if(stars.parentNode!==row){
-      row.insertBefore(stars,row.firstChild);
-    }
-    ensureScore(row,own);
-  }
-
-  ensureOwnFooter(panel,own);
-}
-
-function decorateCommunity(record){
-  var panel=ratingRoot&&ratingRoot.querySelector('.rating-panel-community');
-  if(!panel)return;
-
-  panel.querySelectorAll('.groovy-rating-helper').forEach(function(node){node.remove();});
-  var label=panel.querySelector('.rating-panel-label span:last-child');
-  if(label&&label.textContent!=='Community Rating')label.textContent='Community Rating';
-
-  var average=clamp(record&&Record.communityRating(record));
-  var count=parseInt(record&&Record.communityCount(record),10)||0;
-  var main=panel.querySelector('.rating-panel-community-main');
-  var marker=average+'|'+count;
-  if(main&&panel.dataset.groovyCommunityV4!==marker){
-    panel.dataset.groovyCommunityV4=marker;
-    main.classList.add('groovy-rating-value-row');
-    main.innerHTML=staticStars(average)+'<strong class="groovy-rating-score" data-score="'+esc(scoreText(average))+'">'+scoreMarkup(average)+'</strong>';
-  }
-
-  var footer=panel.querySelector('.rating-panel-footer');
-  if(!footer){
-    footer=document.createElement('div');
-    footer.className='rating-panel-footer';
-    panel.appendChild(footer);
-  }
-  var text=count+' rating'+(count===1?'':'s');
-  if(footer.textContent!==text)footer.innerHTML='<span class="rating-panel-meta">'+text+'</span>';
-}
-
-function decorateBase(){
-  if(!ratingRoot)return;
-  var record=currentRecord();
-  decorateYour(record);
-  decorateCommunity(record);
 }
 
 async function profileFor(userId){
@@ -257,26 +143,12 @@ async function syncViewed(){
   }
 }
 
-function queueDecorate(){
-  if(queued)return;
-  queued=true;
-  setTimeout(function(){
-    queued=false;
-    decorateBase();
-  },25);
-}
-
 function install(){
   if(!overlay||!ratingRoot)return;
-  decorateBase();
-
-  new MutationObserver(function(){
-    queueDecorate();
-  }).observe(ratingRoot,{childList:true,subtree:true});
 
   new MutationObserver(function(){
     if(overlay.classList.contains('visible')){
-      setTimeout(function(){decorateBase();syncViewed();},40);
+      setTimeout(syncViewed,40);
     }else{
       viewedToken++;
     }
@@ -287,14 +159,14 @@ function install(){
     var record=currentRecord();
     var albumId=event&&event.detail&&event.detail.albumId;
     if(albumId&&record&&String(Record.albumId(record))!==String(albumId))return;
-    setTimeout(decorateBase,0);
+    setTimeout(syncViewed,0);
   });
 
   window.addEventListener('groovy-route-change',function(){
-    if(overlay.classList.contains('visible'))setTimeout(function(){decorateBase();syncViewed();},0);
+    if(overlay.classList.contains('visible'))setTimeout(syncViewed,0);
   });
 
-  if(overlay.classList.contains('visible'))setTimeout(function(){decorateBase();syncViewed();},35);
+  if(overlay.classList.contains('visible'))setTimeout(syncViewed,35);
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});

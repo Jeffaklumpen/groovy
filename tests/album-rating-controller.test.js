@@ -158,7 +158,7 @@ test('community detail rating uses five fixed star cells and the shared value ro
     getRecords:()=>[record]
   });
   controller.renderDetail(0);
-  assert.match(detailElement.innerHTML,/groovy-rating-value-row rating-panel-community-main/);
+  assert.equal((detailElement.innerHTML.match(/class="groovy-rating-value-row"/g)||[]).length,2);
   assert.equal((detailElement.innerHTML.match(/groovy-rating-star-cell/g)||[]).length,10);
 });
 
@@ -196,4 +196,23 @@ test('detail star fill uses a full-size inner glyph in both panels',()=>{
   const html=detailElement.innerHTML;
   assert.equal((html.match(/groovy-rating-star-glyph/g)||[]).length,20);
   assert.match(html,/--star-fill:50\.0%/);
+});
+
+
+test('base rating panels have identical three-row structure',()=>{
+  const record={albumId:1,ownRating:2,communityRating:3.5,communityCount:2};
+  const detailElement=makeDetailElement();
+  const controller=Controller.create({
+    api:{from(){throw new Error('not used');}},
+    ratingCore:RatingCore,
+    recordModel:makeRecordModel(),
+    detailElement,
+    getRecords:()=>[record]
+  });
+  controller.renderDetail(0);
+  const html=detailElement.innerHTML;
+  assert.equal((html.match(/class="rating-panel-label"/g)||[]).length,2);
+  assert.equal((html.match(/class="groovy-rating-value-row"/g)||[]).length,2);
+  assert.equal((html.match(/class="rating-panel-footer"/g)||[]).length,2);
+  assert.doesNotMatch(html,/rating-panel-community-main|rating-panel-stars/);
 });
