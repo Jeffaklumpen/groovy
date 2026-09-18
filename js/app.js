@@ -1510,6 +1510,7 @@ function openSearchAlbumPreview(payload){
   });
   hydrateSearchAlbumPreview(detailPreviewRecord);
 }
+window.groovyOpenSearchAlbumPreview=openSearchAlbumPreview;
 
 function closeAlbum(){
   wikipediaAboutController.close();
@@ -2034,7 +2035,7 @@ var albumSearchController=AlbumSearch.create({
     albumSearchResults:albumSearchResults,
     appleSearchCore:AppleSearchCore,
     pressingCore:PressingCore,
-    onPreview:openSearchAlbumPreview
+    onPreview:function(payload){return window.groovyOpenSearchAlbumPreview(payload);}
 });
 
 function openAddAlbumSearch(user){return albumSearchController.open(user);}
