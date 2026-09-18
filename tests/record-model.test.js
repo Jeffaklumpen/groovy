@@ -225,3 +225,16 @@ test('library data delegates collection tuple construction and rating mutation t
   assert.match(libraryData,/recordModel\.applyRatingMeta\(/);
   assert.equal(app.includes('Record.fromCollection(item,index,copyDetailsFromRow(item))'),false);
 });
+
+
+test('app orchestration uses named accessors instead of raw record tuple indexes',function(){
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  ['record[1]','record[2]','record[3]','record[4]','record[6]','records[index][2]','records[wishlistIndex][2]'].forEach(function(token){
+    assert.equal(app.includes(token),false,token+' should not remain in app orchestration');
+  });
+  assert.match(app,/Record\.artist\(record\)/);
+  assert.match(app,/Record\.title\(record\)/);
+  assert.match(app,/Record\.year\(record\)/);
+  assert.match(app,/Record\.genre\(record\)/);
+  assert.match(app,/Record\.coverUrl\(record\)/);
+});
