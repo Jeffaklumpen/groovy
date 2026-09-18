@@ -250,6 +250,19 @@ test('Apple artwork warming is scoped to the verified Main Discography cache',()
   assert.match(block,/artwork_url/);
 });
 
+test('Wikipedia year-first discography tables use the album details cell as the title',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf('function wikipediaStudioAlbumsFromHtml');
+  const end=edge.indexOf('function rankWikipediaStudioSection',start);
+  const block=edge.slice(start,end);
+  assert.match(block,/const cells=Array\.from/);
+  assert.match(block,/\^\(\?:19\|20\)\\d\{2\}\$/);
+  assert.match(block,/const albumCell=cells\.find/);
+  assert.match(block,/Released\\s\*:/);
+  assert.match(block,/\/wiki\\\//);
+  assert.match(block,/if \(albumCell\) firstCell=albumCell/);
+});
+
 test('Wikipedia short album titles can enrich from a direct same-year catalog subtitle',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const start=edge.indexOf('function bestCatalogTitleMatch');
