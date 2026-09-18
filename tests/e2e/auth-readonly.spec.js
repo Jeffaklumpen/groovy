@@ -101,6 +101,55 @@ test.describe('authenticated read-only smoke flows',()=>{
     expectNoPageErrors(pageErrors);
   });
 
+
+  test('community overview renders on desktop and mobile',async({page})=>{
+    const pageErrors=watchPageErrors(page);
+
+    await loginWithTestAccount(page);
+
+    await expect(page.locator('#communityTabButton')).toBeVisible();
+    await page.locator('#communityTabButton').click();
+
+    await expect(page).toHaveURL('http://127.0.0.1:4173/community');
+    await expect(page.locator('body')).toHaveClass(/community-page-open/);
+    await expect(page.locator('#communityPage')).toBeVisible();
+    await expect(page.locator('#communityTabButton')).toHaveClass(/active/);
+    await expect(page.locator('.community-heading h1')).toHaveText('Where collections connect.');
+    await expect(page.locator('.community-summary-card')).toHaveCount(3);
+    await expect(page.locator('.community-panel-heading h2')).toContainText([
+      'Collectors with similar taste',
+      'Activity Feed',
+      'Top Collectors',
+      'Community Statistics',
+      'Most wishlisted albums'
+    ]);
+
+    const albumCovers=page.locator('.community-cover');
+    if(await albumCovers.count()>0){
+      await expect(albumCovers.first().locator('.community-cover-service-apple')).toBeAttached();
+      await expect(albumCovers.first().locator('.community-cover-service-spotify')).toBeAttached();
+    }
+
+    await page.setViewportSize({width:390,height:844});
+    await expect(page.locator('#communityPage')).toBeVisible();
+
+    const mobileGeometry=await page.evaluate(()=>({
+      viewport:document.documentElement.clientWidth,
+      pageWidth:document.getElementById('communityPage').getBoundingClientRect().width,
+      bodyScrollWidth:document.body.scrollWidth
+    }));
+
+    expect(mobileGeometry.pageWidth).toBeLessThanOrEqual(mobileGeometry.viewport+1);
+    expect(mobileGeometry.bodyScrollWidth).toBeLessThanOrEqual(mobileGeometry.viewport+1);
+
+    await page.locator('.header-brand .logo').click();
+    await expect(page).toHaveURL('http://127.0.0.1:4173/');
+    await expect(page.locator('body')).not.toHaveClass(/community-page-open/);
+    await expect(page.locator('#collectionTabButton')).toHaveClass(/active/);
+
+    expectNoPageErrors(pageErrors);
+  });
+
   test('authenticated read-only controls, search, sorting and shelving stay responsive',async({page})=>{
     const pageErrors=watchPageErrors(page);
 
