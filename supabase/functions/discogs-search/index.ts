@@ -428,12 +428,28 @@ export default {
           rows.forEach((row: string,index: number)=>{
             if (!/Released\s*:/i.test(row)) return
 
+            const cells=Array.from(
+              row.matchAll(/<(?:th|td)\b[^>]*>([\s\S]*?)<\/(?:th|td)>/gi)
+            ).map((match: any)=>String(match?.[1]||''))
+
             const header=row.match(
               /<th\b[^>]*scope=["']row["'][^>]*>([\s\S]*?)<\/th>/i
             )
-            const firstCell=header?.[1] || Array.from(
-              row.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)
-            )[0]?.[1] || ''
+            let firstCell=header?.[1] || cells[0] || ''
+
+            // Some discography tables use the first row-header cell for the
+            // release year and keep the actual album in the next "Album details"
+            // cell (Europe is one example). Never turn that year into the title.
+            if (/^(?:19|20)\d{2}$/.test(wikipediaText(firstCell))) {
+              const albumCell=cells.find((cell: string)=>{
+                const label=wikipediaText(cell)
+                if (!label || /^(?:19|20)\d{2}$/.test(label)) return false
+                return /Released\s*:/i.test(cell) ||
+                  /<a\b[^>]*href=["']\/wiki\//i.test(cell)
+              })
+              if (albumCell) firstCell=albumCell
+            }
+
             if (!firstCell) return
 
             const released=row.match(
