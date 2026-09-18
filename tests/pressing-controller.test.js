@@ -23,12 +23,14 @@ const Controller=require('../js/pressing-controller.js');
 require.cache[pickerPath].exports=originalPicker;
 
 function makeRecordModel(){
-  const INDEX={pressing:11};
   return {
-    INDEX,
-    entryId(record){return record[9];},
-    discogsMasterId(record){return record[10];},
-    pressing(record){return record[11];}
+    entryId(record){return record.entryId;},
+    discogsMasterId(record){return record.masterId;},
+    pressing(record){return record.pressing;},
+    ensurePressing(record){
+      if(!record.pressing)record.pressing={};
+      return record.pressing;
+    }
   };
 }
 
@@ -113,19 +115,19 @@ function createHarness(record){
 }
 
 test('saves record and sleeve condition through the controller',async()=>{
-  const record=[1,'Artist','Album','2026','Rock',0,'',{},'album-1','entry-1','master-1',{}];
+  const record={artist:'Artist',title:'Album',albumId:'album-1',entryId:'entry-1',masterId:'master-1',pressing:{}};
   const h=createHarness(record);
   assert.equal(await h.controller.saveCondition(0),true);
   assert.deepEqual(h.apiData.updates[0].payload,{media_condition:'NM',sleeve_condition:'VG+'});
   assert.deepEqual(h.apiData.updates[0].eqs,[['id','entry-1'],['user_id','user-1']]);
-  assert.equal(record[11].mediaCondition,'NM');
-  assert.equal(record[11].sleeveCondition,'VG+');
+  assert.equal(record.pressing.mediaCondition,'NM');
+  assert.equal(record.pressing.sleeveCondition,'VG+');
   assert.equal(h.renderCount,1);
   assert.equal(h.elements.saved.textContent,'Saved');
 });
 
 test('saves a selected Discogs pressing and all matrix sides',async()=>{
-  const record=[1,'Artist','Album','2026','Rock',0,'',{},'album-1','entry-1','master-1',{}];
+  const record={artist:'Artist',title:'Album',albumId:'album-1',entryId:'entry-1',masterId:'master-1',pressing:{}};
   const h=createHarness(record);
   const button={disabled:false,textContent:'Save this pressing'};
   assert.equal(await h.controller.saveSelection({
@@ -141,15 +143,15 @@ test('saves a selected Discogs pressing and all matrix sides',async()=>{
   assert.equal(payload.matrix_runout_a,'A-1');
   assert.equal(payload.matrix_runout_b,'B-2');
   assert.equal(payload.matrix_runout_h,'H-8');
-  assert.equal(record[11].discogsReleaseId,123);
-  assert.equal(record[11].matrixH,'H-8');
-  assert.equal(record[11].matchStatus,'discogs');
+  assert.equal(record.pressing.discogsReleaseId,123);
+  assert.equal(record.pressing.matrixH,'H-8');
+  assert.equal(record.pressing.matchStatus,'discogs');
   assert.equal(h.picker.closeCalls,1);
   assert.equal(h.elements.saved.textContent,'Saved');
 });
 
 test('Discogs fetch helpers keep versions and release actions separate',async()=>{
-  const record=[1,'Artist','Album','2026','Rock',0,'',{},'album-1','entry-1','master-1',{}];
+  const record={artist:'Artist',title:'Album',albumId:'album-1',entryId:'entry-1',masterId:'master-1',pressing:{}};
   const h=createHarness(record);
   await h.controller.fetchVersions('master-1',3);
   await h.controller.fetchRelease('release-2');
@@ -160,7 +162,7 @@ test('Discogs fetch helpers keep versions and release actions separate',async()=
 });
 
 test('picker receives named record-model accessors and controller owns open/close',async()=>{
-  const record=[1,'Artist','Album','2026','Rock',0,'',{},'album-1','entry-1','master-1',{}];
+  const record={artist:'Artist',title:'Album',albumId:'album-1',entryId:'entry-1',masterId:'master-1',pressing:{}};
   const h=createHarness(record);
   assert.equal(h.picker.options.getMasterId(record),'master-1');
   assert.equal(await h.controller.openPicker(0),true);
