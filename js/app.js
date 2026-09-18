@@ -2120,6 +2120,7 @@ let deleteMode=false;
 function setDeleteMode(active){
   deleteMode=Boolean(active);
   document.body.classList.toggle('delete-mode-active',deleteMode);
+  if(!deleteMode&&window.groovyExitSelectionMode)window.groovyExitSelectionMode();
 }
 
 document.addEventListener('click',function(event){
