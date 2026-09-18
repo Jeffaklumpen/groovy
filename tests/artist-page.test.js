@@ -262,6 +262,7 @@ test('Wikipedia studio tables own Main Discography independently of local Discog
   const block=edge.slice(start,end);
 
   assert.match(edge,/function wikipediaStudioAlbumsFromHtml/);
+  assert.match(edge,/const firstList=html\.match\(\/<ul/);
   assert.match(edge,/Released\\s\*:/);
   assert.match(edge,/wikipediaParse\([\s\S]*?'text'/);
   assert.match(block,/local MusicBrainz↔Discogs catalog is enrichment only/i);

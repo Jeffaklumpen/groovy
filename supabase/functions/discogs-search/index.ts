@@ -386,14 +386,45 @@ export default {
         const html=String(data?.parse?.text||'')
         if (!html) return []
 
-        const tables=(html.match(/<table\b[\s\S]*?<\/table>/gi)||[])
-          .filter((table: string)=>/\bwikitable\b/i.test(table))
         const albums:any[]=[]
         const seen=new Set<string>()
 
+        function addAlbum(container: string,index: number) {
+          const articleTitle=wikipediaArticleTitleFromCell(container)
+          const link=String(container||'').match(
+            /<a\b[^>]*href=["']\/wiki\/[^"']+["'][^>]*>([\s\S]*?)<\/a>/i
+          )
+          const linkedLabel=link?wikipediaText(link[1]):''
+          const fullLabel=wikipediaText(container)
+            .replace(/\s*\[[^\]]+\]\s*$/,'')
+            .trim()
+          const title=wikipediaDisplayTitle(linkedLabel||fullLabel||articleTitle)
+          if (!title || /^(title|album|studio albums?)$/i.test(title)) return
+
+          const released=String(container||'').match(
+            /Released\s*:[\s\S]{0,240}?\b((?:19|20)\d{2})\b/i
+          )
+          const inlineYear=String(container||'').match(/\b((?:19|20)\d{2})\b/)
+          const year=released
+            ?Number(released[1])||null
+            :(inlineYear?Number(inlineYear[1])||null:null)
+          const identity=normalizeIdentity(articleTitle||title)+'|'+String(year||index+1)
+          if (!identity || seen.has(identity)) return
+          seen.add(identity)
+
+          albums.push({
+            title,
+            article_title:articleTitle,
+            year
+          })
+        }
+
+        const tables=(html.match(/<table\b[\s\S]*?<\/table>/gi)||[])
+          .filter((table: string)=>/\bwikitable\b/i.test(table))
+
         tables.forEach((table: string)=>{
           const rows=table.match(/<tr\b[\s\S]*?<\/tr>/gi)||[]
-          rows.forEach((row: string)=>{
+          rows.forEach((row: string,index: number)=>{
             if (!/Released\s*:/i.test(row)) return
 
             const header=row.match(
@@ -404,27 +435,23 @@ export default {
             )[0]?.[1] || ''
             if (!firstCell) return
 
-            const title=wikipediaText(firstCell)
-              .replace(/\s*\[[^\]]+\]\s*$/,'')
-              .trim()
-            if (!title || /^(title|album)$/i.test(title)) return
-
-            const articleTitle=wikipediaArticleTitleFromCell(firstCell)
             const released=row.match(
               /Released\s*:[\s\S]{0,240}?\b((?:19|20)\d{2})\b/i
             )
-            const year=released?Number(released[1])||null:null
-            const identity=normalizeIdentity(articleTitle||title)+'|'+String(year||'')
-            if (!identity || seen.has(identity)) return
-            seen.add(identity)
-
-            albums.push({
-              title:wikipediaDisplayTitle(title)||wikipediaDisplayTitle(articleTitle),
-              article_title:articleTitle,
-              year
-            })
+            const combined=firstCell+
+              (released?'<span>Released: '+released[1]+'</span>':'')
+            addAlbum(combined,index)
           })
         })
+
+        if (albums.length) return albums
+
+        // Some canonical discographies (notably The Beatles) use a simple list
+        // instead of a wikitable. Only inspect the first list in the selected
+        // Studio albums section so notes/references cannot become albums.
+        const firstList=html.match(/<ul\b[\s\S]*?<\/ul>/i)?.[0]||''
+        const listItems=firstList.match(/<li\b[\s\S]*?<\/li>/gi)||[]
+        listItems.forEach((item: string,index: number)=>addAlbum(item,index))
 
         return albums
       }
@@ -480,21 +507,40 @@ export default {
           .filter((entry: any)=>entry.score>0)
           .sort((left: any,right: any)=>right.score-left.score)[0]?.item
 
-        if (!studioSection) {
-          return {artistPage,discographyPage,studioAlbums:[]}
+        if (studioSection) {
+          const studioData=await wikipediaParse(
+            catalogPage,
+            'text',
+            String(studioSection.index||'')
+          )
+          const studioAlbums=wikipediaStudioAlbumsFromHtml(studioData)
+          if (studioAlbums.length) {
+            return {artistPage,discographyPage,studioAlbums}
+          }
         }
 
-        const studioData=await wikipediaParse(
-          catalogPage,
-          'text',
-          String(studioSection.index||'')
-        )
-
-        return {
-          artistPage,
-          discographyPage,
-          studioAlbums:wikipediaStudioAlbumsFromHtml(studioData)
+        // Smaller artist pages often keep "Studio albums" as plain text inside
+        // the main Discography section instead of a real subsection heading.
+        if (!discographyPage && discographySection) {
+          const discographyData=await wikipediaParse(
+            artistPage,
+            'text',
+            String(discographySection.index||'')
+          )
+          const html=String(discographyData?.parse?.text||'')
+          const marker=html.search(/Studio\s+albums?/i)
+          if (marker>=0) {
+            const studioHtml=html.slice(marker)
+            const studioAlbums=wikipediaStudioAlbumsFromHtml({
+              parse:{text:studioHtml}
+            })
+            if (studioAlbums.length) {
+              return {artistPage,discographyPage:'',studioAlbums}
+            }
+          }
         }
+
+        return {artistPage,discographyPage,studioAlbums:[]}
       }
 
       function wikipediaTitleKey(value: unknown) {
