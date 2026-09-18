@@ -677,6 +677,71 @@ export default {
         return Array.from(keys)
       }
 
+
+      async function wikidataReleaseIdentifiersByArticleTitles(titles: string[]) {
+        const unique=Array.from(new Set(
+          (Array.isArray(titles)?titles:[])
+            .map((value)=>String(value||'').trim())
+            .filter(Boolean)
+        )).slice(0,50)
+
+        if (!unique.length) return new Map<string,any>()
+
+        const params=new URLSearchParams({
+          action:'wbgetentities',
+          format:'json',
+          sites:'enwiki',
+          titles:unique.join('|'),
+          props:'claims|sitelinks'
+        })
+
+        try {
+          const response=await fetch(
+            'https://www.wikidata.org/w/api.php?'+params.toString(),
+            {headers:{'User-Agent':'GroovyShelves/1.0 (https://github.com/Jeffaklumpen/groovy)'}}
+          )
+          if (!response.ok) return new Map<string,any>()
+
+          const data=await response.json()
+          const entities=data?.entities&&typeof data.entities==='object'
+            ?Object.values(data.entities)
+            :[]
+          const result=new Map<string,any>()
+
+          function claimValue(entity: any,property: string) {
+            const claims=Array.isArray(entity?.claims?.[property])
+              ?entity.claims[property]
+              :[]
+            for (const claim of claims) {
+              const value=claim?.mainsnak?.datavalue?.value
+              if (value!==undefined && value!==null && String(value).trim()) {
+                return String(value).trim()
+              }
+            }
+            return ''
+          }
+
+          entities.forEach((entity: any)=>{
+            const title=String(entity?.sitelinks?.enwiki?.title||'').trim()
+            if (!title) return
+
+            const mbid=claimValue(entity,'P436')
+            const master=Number(claimValue(entity,'P1954'))||null
+            if (!mbid && !master) return
+
+            result.set(normalizeIdentity(title),{
+              mbid:mbid||null,
+              discogs_master_id:master
+            })
+          })
+
+          return result
+        } catch (error) {
+          console.warn('Could not enrich unmatched albums from Wikidata',error)
+          return new Map<string,any>()
+        }
+      }
+
       async function verifiedAppleAlbum(
         urlValue: unknown,
         identities: Array<{ artist: string, title: string }>
@@ -1012,7 +1077,7 @@ export default {
         const catalog=(Array.isArray(discographyRows)?discographyRows:[])
           .map((row: any)=>({
             discogs_master_id:row.discogs_master_id,
-            artist_name:resolvedArtistName,
+            artist_name:canonicalArtistName,
             album_title:row.album_title,
             first_release_year:row.first_release_year,
             position:row.position
@@ -1283,15 +1348,29 @@ export default {
         // Wikipedia alone decides which releases belong to Main Discography.
         // The persisted cache is intentionally checked before any external lookup:
         // once one user has verified an artist, later users can render it immediately.
-        const { data:profileState,error:profileStateError } = await admin
-          .from('artist_profile_cache')
-          .select('wikidata_id,discography_checked_at,discography_source,discography_count')
-          .eq('discogs_artist_id',resolvedArtistId)
-          .maybeSingle()
+        const [profileStateResult,localArtistResult]=await Promise.all([
+          admin
+            .from('artist_profile_cache')
+            .select('wikidata_id,discography_checked_at,discography_source,discography_count')
+            .eq('discogs_artist_id',resolvedArtistId)
+            .maybeSingle(),
+          admin
+            .from('artists')
+            .select('name')
+            .eq('discogs_artist_id',resolvedArtistId)
+            .maybeSingle()
+        ])
 
+        const { data:profileState,error:profileStateError }=profileStateResult
         if (profileStateError) {
           console.warn('Could not read discography verification state',profileStateError)
         }
+
+        if (localArtistResult.error) {
+          console.warn('Could not read canonical Groovy artist identity',localArtistResult.error)
+        }
+        const canonicalArtistName=cleanArtistName(localArtistResult.data?.name)||
+          resolvedArtistName
 
         const checkedAt=profileState?.discography_checked_at
           ?Date.parse(String(profileState.discography_checked_at))
@@ -1356,7 +1435,7 @@ export default {
           const now=new Date().toISOString()
           await admin.from('artist_profile_cache').upsert({
             discogs_artist_id:resolvedArtistId,
-            artist_name:resolvedArtistName,
+            artist_name:canonicalArtistName,
             wikidata_id:null,
             discography_checked_at:now,
             discography_source:'fallback',
@@ -1374,7 +1453,7 @@ export default {
 
         const wikipedia=await wikipediaDiscographyCandidates(
           resolvedWikidataId,
-          resolvedArtistName,
+          canonicalArtistName,
           resolvedWikipediaTitle
         )
         const wikipediaAlbums=Array.isArray(wikipedia.studioAlbums)
@@ -1403,7 +1482,7 @@ export default {
           const now=new Date().toISOString()
           await admin.from('artist_profile_cache').upsert({
             discogs_artist_id:resolvedArtistId,
-            artist_name:resolvedArtistName,
+            artist_name:canonicalArtistName,
             wikidata_id:resolvedWikidataId,
             discography_checked_at:now,
             discography_source:'fallback',
@@ -1426,7 +1505,7 @@ export default {
         const catalogResult=await admin
           .from('musicbrainz_catalog')
           .select('mbid,discogs_master_id,album_title,first_release_year,secondary_types,match_type')
-          .ilike('artist_name',resolvedArtistName)
+          .ilike('artist_name',canonicalArtistName)
           .limit(1000)
 
         const { data:catalogRows,error:catalogError } = catalogResult
@@ -1451,7 +1530,7 @@ export default {
           if (master) byMaster.set(master,row)
           if (row?.match_type!=='direct') return
 
-          wikipediaAlbumKeys(row?.album_title,resolvedArtistName).forEach((key: string)=>{
+          wikipediaAlbumKeys(row?.album_title,canonicalArtistName).forEach((key: string)=>{
             if (!byTitle.has(key)) byTitle.set(key,[])
             byTitle.get(key)!.push(row)
           })
@@ -1462,8 +1541,8 @@ export default {
           const seen=new Set<string>()
           const keys=wikipediaAlbumKeys(
             album?.article_title||album?.title,
-            resolvedArtistName
-          ).concat(wikipediaAlbumKeys(album?.title,resolvedArtistName))
+            canonicalArtistName
+          ).concat(wikipediaAlbumKeys(album?.title,canonicalArtistName))
 
           function addCandidate(row: any) {
             const identity=String(row?.mbid||row?.discogs_master_id||'')
@@ -1590,6 +1669,32 @@ export default {
           entry.local=await uniqueGlobalCatalogMatch(entry.album)
         }))
 
+        const unresolved=prelim.filter((entry: any)=>!entry.local)
+        if (unresolved.length) {
+          const identifiers=await wikidataReleaseIdentifiersByArticleTitles(
+            unresolved.map((entry: any)=>
+              String(entry.album?.article_title||entry.title||'').trim()
+            )
+          )
+
+          unresolved.forEach((entry: any)=>{
+            const keys=[
+              normalizeIdentity(entry.album?.article_title),
+              normalizeIdentity(entry.title)
+            ].filter(Boolean)
+            const match=keys
+              .map((key: string)=>identifiers.get(key))
+              .find(Boolean)
+            if (!match) return
+
+            entry.local={
+              mbid:match.mbid||null,
+              discogs_master_id:match.discogs_master_id||null,
+              first_release_year:Number(entry.album?.year)||null
+            }
+          })
+        }
+
         const now=new Date().toISOString()
         const sourcePage=wikipedia.discographyPage||wikipedia.artistPage||''
         const matched=prelim.map((entry: any)=>{
@@ -1671,7 +1776,7 @@ export default {
 
         await admin.from('artist_profile_cache').upsert({
           discogs_artist_id:resolvedArtistId,
-          artist_name:resolvedArtistName,
+          artist_name:canonicalArtistName,
           wikidata_id:resolvedWikidataId,
           discography_checked_at:now,
           discography_source:'wikipedia',
