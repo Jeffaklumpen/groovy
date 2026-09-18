@@ -263,12 +263,18 @@ export default {
         }
       }
 
-      async function wikidataArtistQidByDiscogsId(discogsArtistId: number) {
-        if (!discogsArtistId) return ''
+      async function wikidataArtistIdentityByDiscogsId(discogsArtistId: number) {
+        if (!discogsArtistId) return {qid:'',wikipedia_title:''}
         const sparql=[
-          'SELECT DISTINCT ?artist WHERE {',
+          'PREFIX wdt: <http://www.wikidata.org/prop/direct/>',
+          'PREFIX schema: <http://schema.org/>',
+          'SELECT DISTINCT ?artist ?article WHERE {',
           '  ?artist wdt:P1953 "'+String(discogsArtistId).replace(/"/g,'')+'".',
-          '} LIMIT 2'
+          '  OPTIONAL {',
+          '    ?article schema:about ?artist;',
+          '             schema:isPartOf <https://en.wikipedia.org/>.',
+          '  }',
+          '} LIMIT 4'
         ].join('\n')
 
         try {
@@ -281,19 +287,39 @@ export default {
               }
             }
           )
-          if (!response.ok) return ''
+          if (!response.ok) return {qid:'',wikipedia_title:''}
           const data=await response.json()
           const rows=Array.isArray(data?.results?.bindings)?data.results.bindings:[]
-          const ids=rows.map((row: any)=>{
+          const qids=Array.from(new Set(rows.map((row: any)=>{
             const value=String(row?.artist?.value||'')
             const match=value.match(/\/(Q\d+)$/)
             return match?match[1]:''
-          }).filter(Boolean)
-          return ids.length===1?ids[0]:''
+          }).filter(Boolean)))
+
+          if (qids.length!==1)return {qid:'',wikipedia_title:''}
+
+          const article=rows
+            .map((row: any)=>String(row?.article?.value||''))
+            .find((value: string)=>/^https:\/\/en\.wikipedia\.org\/wiki\//i.test(value))||''
+          let wikipediaTitle=''
+          if (article) {
+            try {
+              wikipediaTitle=decodeURIComponent(
+                new URL(article).pathname.replace(/^\/wiki\//,'').replace(/_/g,' ')
+              ).trim()
+            } catch (_error) {}
+          }
+
+          return {qid:String(qids[0]),wikipedia_title:wikipediaTitle}
         } catch (error) {
           console.warn('Could not resolve Wikidata artist by Discogs ID',error)
-          return ''
+          return {qid:'',wikipedia_title:''}
         }
+      }
+
+      async function wikidataArtistQidByDiscogsId(discogsArtistId: number) {
+        const identity=await wikidataArtistIdentityByDiscogsId(discogsArtistId)
+        return identity.qid
       }
 
       async function wikidataEnglishWikipediaTitle(qid: string) {
@@ -483,15 +509,68 @@ export default {
         return 0
       }
 
-      async function wikipediaDiscographyCandidates(qid: string,artistName: string) {
-        const artistPage=await wikidataEnglishWikipediaTitle(qid)
+      function wikipediaSectionHtml(data: any,section: any) {
+        const html=String(data?.parse?.text||'')
+        if (!html||!section)return ''
+
+        const wantedAnchor=String(section?.anchor||'').trim()
+        const wantedLine=normalizeIdentity(section?.line)
+        const wantedLevel=Math.max(1,Math.min(6,Number(section?.level)||2))
+        const headings=Array.from(html.matchAll(/<h([1-6])\b[^>]*>[\s\S]*?<\/h\1>/gi))
+        let heading:any=null
+
+        for (const candidate of headings) {
+          const markup=String(candidate?.[0]||'')
+          const level=Number(candidate?.[1])||0
+          if (level!==wantedLevel)continue
+
+          const anchorMatch=markup.match(/\bid=["']([^"']+)["']/i)
+          const anchor=String(anchorMatch?.[1]||'')
+          if (
+            (wantedAnchor&&anchor===wantedAnchor) ||
+            (!wantedAnchor&&normalizeIdentity(wikipediaText(markup))===wantedLine)
+          ) {
+            heading=candidate
+            break
+          }
+        }
+
+        if (!heading && wantedLine) {
+          heading=headings.find((candidate: any)=>
+            normalizeIdentity(wikipediaText(candidate?.[0]))===wantedLine
+          )||null
+        }
+        if (!heading)return ''
+
+        const start=Number(heading.index||0)+String(heading[0]||'').length
+        let end=html.length
+        for (const candidate of headings) {
+          if (Number(candidate.index||0)<=start)continue
+          const level=Number(candidate?.[1])||6
+          if (level<=wantedLevel) {
+            end=Number(candidate.index||html.length)
+            break
+          }
+        }
+        return html.slice(start,end)
+      }
+
+      async function wikipediaDiscographyCandidates(
+        qid: string,
+        artistName: string,
+        knownArtistPage?: string
+      ) {
+        const artistPage=String(knownArtistPage||'').trim()||
+          await wikidataEnglishWikipediaTitle(qid)
         if (!artistPage) {
           return {artistPage:'',discographyPage:'',studioAlbums:[]}
         }
 
-        const artistSectionsData=await wikipediaParse(artistPage,'sections')
-        const artistSections=Array.isArray(artistSectionsData?.parse?.sections)
-          ?artistSectionsData.parse.sections
+        // One parse request gives us sections, links and full HTML together.
+        // This avoids the old sections -> links -> section text request chain.
+        const artistData=await wikipediaParse(artistPage,'sections|links|text')
+        const artistSections=Array.isArray(artistData?.parse?.sections)
+          ?artistData.parse.sections
           :[]
         const discographySection=artistSections.find((item: any)=>
           normalizeIdentity(item?.line)==='discography'
@@ -499,13 +578,8 @@ export default {
 
         let discographyPage=''
         if (discographySection) {
-          const mainData=await wikipediaParse(
-            artistPage,
-            'links',
-            String(discographySection.index||'')
-          )
           const artistKey=normalizeIdentity(artistName)
-          discographyPage=wikipediaLinkTitles(mainData).find((title: string)=>{
+          discographyPage=wikipediaLinkTitles(artistData).find((title: string)=>{
             const normalized=normalizeIdentity(title)
             return /discography/i.test(title) &&
               (!artistKey||normalized.includes(artistKey))
@@ -513,11 +587,11 @@ export default {
         }
 
         const catalogPage=discographyPage||artistPage
-        const sectionsData=catalogPage===artistPage
-          ?artistSectionsData
-          :await wikipediaParse(catalogPage,'sections')
-        const sections=Array.isArray(sectionsData?.parse?.sections)
-          ?sectionsData.parse.sections
+        const catalogData=discographyPage
+          ?await wikipediaParse(discographyPage,'sections|links|text')
+          :artistData
+        const sections=Array.isArray(catalogData?.parse?.sections)
+          ?catalogData.parse.sections
           :[]
         const studioSection=sections
           .map((item: any)=>({item,score:rankWikipediaStudioSection(item)}))
@@ -525,12 +599,10 @@ export default {
           .sort((left: any,right: any)=>right.score-left.score)[0]?.item
 
         if (studioSection) {
-          const studioData=await wikipediaParse(
-            catalogPage,
-            'text',
-            String(studioSection.index||'')
-          )
-          const studioAlbums=wikipediaStudioAlbumsFromHtml(studioData)
+          const studioHtml=wikipediaSectionHtml(catalogData,studioSection)
+          const studioAlbums=wikipediaStudioAlbumsFromHtml({
+            parse:{text:studioHtml}
+          })
           if (studioAlbums.length) {
             return {artistPage,discographyPage,studioAlbums}
           }
@@ -539,17 +611,11 @@ export default {
         // Smaller artist pages often keep "Studio albums" as plain text inside
         // the main Discography section instead of a real subsection heading.
         if (!discographyPage && discographySection) {
-          const discographyData=await wikipediaParse(
-            artistPage,
-            'text',
-            String(discographySection.index||'')
-          )
-          const html=String(discographyData?.parse?.text||'')
+          const html=wikipediaSectionHtml(artistData,discographySection)
           const marker=html.search(/Studio\s+albums?/i)
           if (marker>=0) {
-            const studioHtml=html.slice(marker)
             const studioAlbums=wikipediaStudioAlbumsFromHtml({
-              parse:{text:studioHtml}
+              parse:{text:html.slice(marker)}
             })
             if (studioAlbums.length) {
               return {artistPage,discographyPage:'',studioAlbums}
@@ -1231,8 +1297,11 @@ export default {
         // Reuse the stable Wikidata identity when it is already known. Only the
         // first uncached verification needs the comparatively slow SPARQL lookup.
         let resolvedWikidataId=cachedWikidataId
+        let resolvedWikipediaTitle=''
         if (!resolvedWikidataId) {
-          resolvedWikidataId=await wikidataArtistQidByDiscogsId(resolvedArtistId)
+          const resolvedIdentity=await wikidataArtistIdentityByDiscogsId(resolvedArtistId)
+          resolvedWikidataId=String(resolvedIdentity?.qid||'')
+          resolvedWikipediaTitle=String(resolvedIdentity?.wikipedia_title||'')
         }
 
         if (!resolvedWikidataId) {
@@ -1272,7 +1341,8 @@ export default {
 
         const wikipedia=await wikipediaDiscographyCandidates(
           resolvedWikidataId,
-          resolvedArtistName
+          resolvedArtistName,
+          resolvedWikipediaTitle
         )
         const wikipediaAlbums=Array.isArray(wikipedia.studioAlbums)
           ?wikipedia.studioAlbums
@@ -1318,14 +1388,13 @@ export default {
           })
         }
 
-        const [catalogResult,structuredAlbums]=await Promise.all([
-          admin
-            .from('musicbrainz_catalog')
-            .select('mbid,discogs_master_id,album_title,first_release_year,secondary_types,match_type')
-            .ilike('artist_name',resolvedArtistName)
-            .limit(1000),
-          wikidataStudioAlbums(resolvedWikidataId)
-        ])
+        // Wikipedia already owns membership. Enrichment should stay local and
+        // must not add another network dependency to the first artist visit.
+        const catalogResult=await admin
+          .from('musicbrainz_catalog')
+          .select('mbid,discogs_master_id,album_title,first_release_year,secondary_types,match_type')
+          .ilike('artist_name',resolvedArtistName)
+          .limit(1000)
 
         const { data:catalogRows,error:catalogError } = catalogResult
         if (catalogError) {
@@ -1349,50 +1418,6 @@ export default {
             byTitle.get(key)!.push(row)
           })
         })
-
-        const structuredByTitle=new Map<string,any[]>()
-
-        ;(Array.isArray(structuredAlbums)?structuredAlbums:[]).forEach((album: any)=>{
-          wikipediaAlbumKeys(album?.title,resolvedArtistName).forEach((key: string)=>{
-            if (!structuredByTitle.has(key)) structuredByTitle.set(key,[])
-            structuredByTitle.get(key)!.push(album)
-          })
-        })
-
-        function bestStructuredMatch(album: any) {
-          const candidates:any[]=[]
-          const seen=new Set<string>()
-          const keys=wikipediaAlbumKeys(
-            album?.article_title||album?.title,
-            resolvedArtistName
-          ).concat(wikipediaAlbumKeys(album?.title,resolvedArtistName))
-
-          keys.forEach((key: string)=>{
-            ;(structuredByTitle.get(key)||[]).forEach((row: any)=>{
-              const identity=String(
-                row?.mbid||
-                row?.discogs_master_id||
-                normalizeIdentity(row?.title)
-              )
-              if (!identity||seen.has(identity)) return
-              seen.add(identity)
-              candidates.push(row)
-            })
-          })
-
-          const wantedYear=Number(album?.year)||0
-          return candidates
-            .map((row: any)=>{
-              const rowYear=Number(row?.year)||0
-              let score=0
-              if (wantedYear&&rowYear===wantedYear) score+=100
-              else if (wantedYear&&rowYear) {
-                score-=Math.min(Math.abs(wantedYear-rowYear),20)
-              }
-              return {row,score}
-            })
-            .sort((left: any,right: any)=>right.score-left.score)[0]?.row||null
-        }
 
         function bestCatalogTitleMatch(album: any) {
           const candidates:any[]=[]
@@ -1465,23 +1490,12 @@ export default {
           const title=wikipediaDisplayTitle(album?.title||album?.article_title)
           if (!title) return null
 
-          const structured=bestStructuredMatch(album)
-          let local:any=null
+          const local=bestCatalogTitleMatch(album)
 
-          if (structured?.mbid) {
-            local=byMbid.get(String(structured.mbid).toLowerCase())||null
-          }
-          if (!local&&structured?.discogs_master_id) {
-            local=byMaster.get(String(structured.discogs_master_id))||null
-          }
-          if (!local) local=bestCatalogTitleMatch(album)
-
-          const mbid=String(local?.mbid||structured?.mbid||'').trim()||null
-          const master=Number(
-            local?.discogs_master_id||structured?.discogs_master_id
-          )||null
+          const mbid=String(local?.mbid||'').trim()||null
+          const master=Number(local?.discogs_master_id)||null
           const year=Number(
-            album?.year||structured?.year||local?.first_release_year
+            album?.year||local?.first_release_year
           )||null
 
           const articleTitle=String(album?.article_title||'').trim()
