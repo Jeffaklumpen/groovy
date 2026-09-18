@@ -131,7 +131,6 @@ export default {
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g,'')
           .toLowerCase()
-          .replace(/\([^)]*\)/g,' ')
           .replace(/\b(the|deluxe|edition|remaster(?:ed)?|anniversary|expanded|super|special)\b/g,' ')
           .replace(/[^a-z0-9]+/g,' ')
           .replace(/\s+/g,' ')
