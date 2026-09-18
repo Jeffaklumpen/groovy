@@ -30,13 +30,15 @@ The baseline is for rebuilding a fresh Supabase project. It is not a migration a
 
 `artists`, `albums` and `tracks` are shared catalog data.
 
-Authenticated browser clients have SELECT access only. Album persistence goes through:
+Authenticated browser clients have SELECT access only. On `notes`, new album persistence goes through the JWT-protected `discogs-search` Edge Function first. The function reloads canonical Discogs metadata, verifies an optional Apple album identity and then invokes:
 
-- `public.save_album_to_library(...)`
+- `public.save_album_to_library_verified(...)`
 
-That RPC validates the authenticated user and input, serializes concurrent album/library ordering work with transaction-scoped advisory locks, creates or reuses shared catalog rows, completes missing tracks and inserts the user's collection/wishlist row inside one PostgreSQL transaction.
+That RPC is executable by `service_role` only. It serializes concurrent catalog/library ordering work with transaction-scoped advisory locks, creates or reuses shared catalog rows, completes missing tracks and inserts the user's collection/wishlist row inside one PostgreSQL transaction.
 
-This prevents partial catalog writes and removes direct shared-catalog write permissions from browser clients.
+The older `public.save_album_to_library(...)` remains executable by `authenticated` temporarily so the stable `main` client keeps working against the shared production project. Once `main` is upgraded to the verified Edge Function path, remove authenticated EXECUTE from the legacy function in a follow-up migration.
+
+Wishlist-to-collection transitions use `public.move_wishlist_to_collection(text)`, keeping collection insert, wishlist delete and wishlist order compaction in one authenticated transaction.
 
 ## Explicit Data API grants
 
@@ -68,14 +70,9 @@ RLS is enabled on all user-facing/public-schema tables.
 
 Ownership policies use `(select auth.uid())` so PostgreSQL can evaluate the authenticated user once per statement.
 
-Most client RPCs run as `SECURITY INVOKER`. Two RPCs intentionally use `SECURITY DEFINER` because they perform narrowly controlled writes that the client cannot perform directly:
+Most client RPCs run as `SECURITY INVOKER`. The legacy `upsert_apple_artwork_cache(jsonb)` and `save_album_to_library(...)` functions remain authenticated `SECURITY DEFINER` compatibility surfaces for the stable client. The `notes` client no longer calls either one for new album persistence; verified saves use `save_album_to_library_verified(...)`, whose EXECUTE permission is restricted to `service_role`.
 
-- `upsert_apple_artwork_cache(jsonb)`
-- `save_album_to_library(...)`
-
-Both validate authentication and input and have EXECUTE restricted to `authenticated`.
-
-Supabase Security Advisor will therefore continue to report these two SECURITY DEFINER functions as warnings by design. Any new SECURITY DEFINER function requires the same explicit review.
+Supabase Security Advisor will continue to report the two legacy authenticated SECURITY DEFINER functions until `main` is upgraded and their authenticated EXECUTE permission can be removed. Any new SECURITY DEFINER function requires explicit review.
 
 ## Album identity
 
