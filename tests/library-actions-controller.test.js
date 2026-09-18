@@ -194,3 +194,50 @@ test('bulk collection mutations are blocked outside the owners collection',async
   assert.equal(await controller.deleteCollectionRecords(['entry-1']),false);
   assert.equal(await controller.moveCollectionRecordsToShelf(['entry-1'],'shelf-1'),false);
 });
+
+
+test('bulk wishlist delete delegates to one atomic RPC and reloads',async()=>{
+  const calls=[];let reloads=0;let invalidated=0;
+  const api={
+    auth:{async getSession(){return {data:{session:{user:{id:'user-1'}}}};}},
+    from(){throw new Error('not used');},
+    async rpc(name,payload){calls.push({name,payload});return {data:2,error:null};}
+  };
+  const controller=Controller.create({
+    api,recordModel:recordModel(),getRecords:()=>[],getViewedUserId:()=>null,getLibraryView:()=> 'wishlist',
+    invalidateSearchState:()=>invalidated++,loadCollection:async()=>{reloads++;}
+  });
+  assert.equal(await controller.deleteWishlistRecords(['wish-2','wish-1','wish-2']),true);
+  assert.deepEqual(calls,[{name:'delete_wishlist_records',payload:{p_wishlist_ids:['wish-2','wish-1']}}]);
+  assert.equal(invalidated,1);
+  assert.equal(reloads,1);
+});
+
+test('bulk wishlist add-to-collection delegates to one atomic RPC and reloads',async()=>{
+  const calls=[];let reloads=0;let invalidated=0;
+  const api={
+    auth:{async getSession(){return {data:{session:{user:{id:'user-1'}}}};}},
+    from(){throw new Error('not used');},
+    async rpc(name,payload){calls.push({name,payload});return {data:2,error:null};}
+  };
+  const controller=Controller.create({
+    api,recordModel:recordModel(),getRecords:()=>[],getViewedUserId:()=>null,getLibraryView:()=> 'wishlist',
+    invalidateSearchState:()=>invalidated++,loadCollection:async()=>{reloads++;}
+  });
+  assert.equal(await controller.moveWishlistRecordsToCollection(['wish-1','wish-2']),true);
+  assert.deepEqual(calls,[{name:'move_wishlist_records_to_collection',payload:{p_wishlist_ids:['wish-1','wish-2']}}]);
+  assert.equal(invalidated,1);
+  assert.equal(reloads,1);
+});
+
+test('bulk wishlist mutations are blocked outside the owners wishlist',async()=>{
+  const api={
+    auth:{getSession(){throw new Error('should not authenticate');}},
+    from(){throw new Error('should not query');}
+  };
+  const controller=Controller.create({
+    api,recordModel:recordModel(),getRecords:()=>[],getViewedUserId:()=> 'other-user',getLibraryView:()=> 'wishlist'
+  });
+  assert.equal(await controller.deleteWishlistRecords(['wish-1']),false);
+  assert.equal(await controller.moveWishlistRecordsToCollection(['wish-1']),false);
+});
