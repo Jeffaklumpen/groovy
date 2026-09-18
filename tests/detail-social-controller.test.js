@@ -111,6 +111,33 @@ test('own shelf renders followed collectors and reuses cache until follow state 
   assert.equal(followCalls,2,'follow change should clear the album-social cache');
 });
 
+test('search preview matches followed collectors by master id and labels the box Collected by',async()=>{
+  const el=element();
+  const trace=[];
+  const results={
+    user_follows:{data:[{followed_id:'u2'}],error:null},
+    collections:{data:[{user_id:'u2'}],error:null},
+    profiles:{data:[{id:'u2',username:'Jeff',avatar_url:'jeff.jpg'}],error:null}
+  };
+  const api={from(table){return query(results[table],trace,table);}};
+  const controller=DetailSocialController.create({
+    api,recordModel,window:makeWindow(),document:makeDocument(),element:el,
+    getCurrentUser:async()=>({id:'me'}),
+    getViewedUserId:()=>null,
+    getLibraryView:()=> 'wishlist',
+    getOpenRecordIndex:()=>99,
+    escapeHtml:(value)=>String(value)
+  });
+
+  await controller.openForRecord({albumId:null,masterId:'master-77'},99,{searchPreview:true});
+
+  assert.equal(el.hidden,false);
+  assert.match(el.innerHTML,/Collected by/);
+  assert.doesNotMatch(el.innerHTML,/Also collected by/);
+  assert.match(el.innerHTML,/Jeff/);
+  assert.ok(trace.some(call=>call[0]==='collections'&&call[1]==='eq'&&call[2]==='albums.discogs_master_id'&&call[3]==='master-77'));
+});
+
 test('viewing another collector renders collection match from own collection',async()=>{
   const el=element();
   const trace=[];
