@@ -216,10 +216,12 @@ test('record model applies album rating metadata through named tuple fields',fun
   assert.equal(Record.communityCount(record),0);
 });
 
-test('app delegates owned collection tuple construction and rating mutation to record model',function(){
+test('library data delegates collection tuple construction and rating mutation to record model',function(){
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const libraryData=fs.readFileSync(path.join(root,'js','library-data.js'),'utf8');
   assert.equal(app.includes('function applyAlbumRatingMeta('),false);
   assert.equal(app.includes('window.applyAlbumRatingMeta=Record.applyRatingMeta;'),true);
-  assert.equal(app.includes('Record.fromCollection(item,index,copyDetailsFromRow(item))'),true);
-  assert.equal(app.includes('Record.applyRatingMeta('),true);
+  assert.match(libraryData,/recordModel\.fromCollection\(item,index,copyDetailsFromRow\(item\)\)/);
+  assert.match(libraryData,/recordModel\.applyRatingMeta\(/);
+  assert.equal(app.includes('Record.fromCollection(item,index,copyDetailsFromRow(item))'),false);
 });

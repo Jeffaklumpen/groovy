@@ -109,12 +109,12 @@ test('notification realtime channel is subscribed before the first awaited reloa
 });
 
 
-test('viewed shelf loader uses public rating facades across the app IIFE boundary',function(){
+test('viewed shelf loader stays outside the app IIFE and uses shared library data mapping',function(){
   const fs=require('node:fs');
   const path=require('node:path');
   const app=fs.readFileSync(path.resolve(__dirname,'..','js','app.js'),'utf8');
 
-  const iifeStart=app.indexOf('(function(){',app.indexOf('function copyDetailsFromRow'));
+  const iifeStart=app.indexOf('(function(){');
   const iifeEnd=app.indexOf('})();',iifeStart);
   const start=app.indexOf('async function loadOtherUserCollection(userId){');
   const end=app.indexOf('async function loadUserFromUrl(){',start);
@@ -122,7 +122,9 @@ test('viewed shelf loader uses public rating facades across the app IIFE boundar
   assert.ok(iifeStart>=0&&iifeEnd>iifeStart&&start>iifeEnd&&end>start,'viewed shelf loader should remain outside the main app IIFE');
   const block=app.slice(start,end);
   assert.match(block,/window\.loadAlbumRatingData\(albumIds,ownRatingUserId\)/);
-  assert.match(block,/window\.applyAlbumRatingMeta\(\[/);
+  assert.match(block,/libraryData\.fetchCollection\(userId\)/);
+  assert.match(block,/libraryData\.mapCollectionRows\(data,albumRatingsMeta\)/);
   assert.doesNotMatch(block,/\bratingController\b/);
   assert.doesNotMatch(block,/\bRecord\./);
+  assert.doesNotMatch(block,/window\.applyAlbumRatingMeta\(\[/);
 });

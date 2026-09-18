@@ -508,26 +508,12 @@ supabaseClient.auth.onAuthStateChange(function(){
     },0);
 });
 
-function copyDetailsFromRow(item){
-  return {
-    discogsReleaseId:item.discogs_release_id||null,
-    mediaCondition:item.media_condition||'',
-    sleeveCondition:item.sleeve_condition||'',
-    country:item.pressing_country||'',
-    year:item.pressing_year||'',
-    label:item.pressing_label||'',
-    catalogNumber:item.catalog_number||'',
-    matrixA:item.matrix_runout_a||'',
-    matrixB:item.matrix_runout_b||'',
-    matrixC:item.matrix_runout_c||'',
-    matrixD:item.matrix_runout_d||'',
-    matrixE:item.matrix_runout_e||'',
-    matrixF:item.matrix_runout_f||'',
-    matrixG:item.matrix_runout_g||'',
-    matrixH:item.matrix_runout_h||'',
-    matchStatus:item.pressing_match_status||''
-  };
-}
+var LibraryData=window.GroovyLibraryData;
+if(!LibraryData)throw new Error('GroovyLibraryData must load before app.js');
+var libraryData=LibraryData.create({
+  api:supabaseClient,
+  recordModel:window.GroovyRecord
+});
 
 (function(){
 
@@ -702,54 +688,9 @@ window.loadCollection=async function(){
 
   await window.loadShelvesForUser(user.id);
 
-  var {data:collectionData,error:collectionError}=await supabaseClient
-    .from('collections')
-    .select(`
-      id,
-      collection_number,
-      sort_order,
-      shelf_id,
-      shelf_sort_order,
-      cover_url,
-      discogs_style,
-      discogs_release_id,
-      media_condition,
-      sleeve_condition,
-      pressing_country,
-      pressing_year,
-      pressing_label,
-      catalog_number,
-      matrix_runout_a,
-      matrix_runout_b,
-      matrix_runout_c,
-      matrix_runout_d,
-      matrix_runout_e,
-      matrix_runout_f,
-      matrix_runout_g,
-      matrix_runout_h,
-      pressing_match_status,
-      albums(
-        id,
-        title,
-        release_year,
-        genre,
-        cover_url,
-        apple_collection_url,
-        discogs_master_id,
-        artists(
-          id,
-          name
-        ),
-        tracks(
-          id,
-          disc_side,
-          track_number,
-          title
-        )
-      )
-    `)
-    .eq('user_id',user.id)
-    .order('sort_order',{ascending:true});
+  var collectionResult=await libraryData.fetchCollection(user.id);
+  var collectionData=collectionResult.data;
+  var collectionError=collectionResult.error;
 
     if(collectionError){
         console.error('Kunde inte hämta samlingen:',collectionError);
@@ -758,22 +699,13 @@ window.loadCollection=async function(){
 
 
     
-  var albumIds=collectionData.map(function(item){
-    return item.albums&&item.albums.id;
-  }).filter(Boolean);
+  var albumIds=libraryData.albumIds(collectionData);
 
   var ratingMeta=await ratingController.loadData(albumIds,user.id);
 
   if(loadVersion!==window.collectionLoadVersion)return;
 
-  records=collectionData
-    .filter(function(item){return item.albums;})
-    .map(function(item,index){
-      return Record.applyRatingMeta(
-        Record.fromCollection(item,index,copyDetailsFromRow(item)),
-        ratingMeta
-      );
-    });
+  records=libraryData.mapCollectionRows(collectionData,ratingMeta);
 
   document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';
   buildGrid();
@@ -2105,54 +2037,9 @@ async function loadOtherUserCollection(userId){
 
     await window.loadShelvesForUser(userId);
 
-    const {data,error}=await supabaseClient
-        .from('collections')
-        .select(`
-            id,
-            collection_number,
-            sort_order,
-            shelf_id,
-            shelf_sort_order,
-            cover_url,
-            discogs_style,
-            discogs_release_id,
-            media_condition,
-            sleeve_condition,
-            pressing_country,
-            pressing_year,
-            pressing_label,
-            catalog_number,
-            matrix_runout_a,
-            matrix_runout_b,
-            matrix_runout_c,
-            matrix_runout_d,
-            matrix_runout_e,
-            matrix_runout_f,
-            matrix_runout_g,
-            matrix_runout_h,
-            pressing_match_status,
-            albums(
-                id,
-                title,
-                release_year,
-                genre,
-                cover_url,
-                apple_collection_url,
-                discogs_master_id,
-                artists(
-                    id,
-                    name
-                ),
-                tracks(
-                    id,
-                    disc_side,
-                    track_number,
-                    title
-                )
-            )
-        `)
-        .eq('user_id',userId)
-        .order('sort_order',{ascending:true});
+    var collectionResult=await libraryData.fetchCollection(userId);
+    var data=collectionResult.data;
+    var error=collectionResult.error;
 
     if(error){
         console.error('Kunde inte hämta användarens samling:',error);
@@ -2161,11 +2048,7 @@ async function loadOtherUserCollection(userId){
 
 
 
-    var albumIds=data
-        .map(function(item){
-            return item.albums&&item.albums.id;
-        })
-        .filter(Boolean);
+    var albumIds=libraryData.albumIds(data);
 
     var {data:{user:sessionUser}}=await supabaseClient.auth.getUser();
     var ownRatingUserId=sessionUser&&sessionUser.id?sessionUser.id:null;
@@ -2173,60 +2056,7 @@ async function loadOtherUserCollection(userId){
 
      if(loadVersion!==window.collectionLoadVersion)return;
 
-    records=data
-        .filter(function(item){
-            return item.albums;
-        })
-        .map(function(item,index){
-            var album=item.albums;
-
-            var artist=
-                album.artists&&album.artists.name
-                    ?album.artists.name.replace(/\s*\(\d+\)$/,'')
-                    :'Okänd artist';
-
-            var sides=window.emptyRecordSides();
-
-            if(Array.isArray(album.tracks)){
-                album.tracks
-                    .sort(function(a,b){
-                        var sideCompare=String(a.disc_side||'').localeCompare(String(b.disc_side||''));
-                        return sideCompare||((a.track_number||0)-(b.track_number||0))||((a.id||0)-(b.id||0));
-                    })
-                    .forEach(function(track){
-                        var side=track.disc_side;
-
-                        if(!sides[side])return;
-
-                        sides[side].push({
-                            id:track.id,
-                            title:track.title||'Okänd låt',
-                            trackNumber:track.track_number==null?null:track.track_number,
-                            duration:track.duration||''
-                        });
-                    });
-            }
-
-            return window.applyAlbumRatingMeta([
-                index+1,
-                artist,
-                album.title||'Okänd titel',
-                album.release_year||'',
-                item.discogs_style||album.genre||'',
-                0,
-                item.cover_url||album.cover_url||'',
-                sides,
-                album.id,
-                item.id,
-                album.discogs_master_id||'',
-                copyDetailsFromRow(item),
-                album.apple_collection_url||'',
-                item.shelf_id||'',
-                item.shelf_sort_order==null?null:item.shelf_sort_order,
-                0,
-                0
-            ],albumRatingsMeta);
-        });
+    records=libraryData.mapCollectionRows(data,albumRatingsMeta);
 
     document.getElementById('collectionCount').textContent=records.length+' RECORDS IN COLLECTION';
 

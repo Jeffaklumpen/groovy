@@ -15,7 +15,7 @@ test('dependency scripts load before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const app=html.indexOf('/js/app.js?v=');
   assert.ok(app>=0,'app.js script is missing');
-  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/pressing-view.js?v=','/js/pressing-picker.js?v=','/js/pressing-controller.js?v=','/js/detail-tracklist-controller.js?v=','/js/detail-layout-controller.js?v=','/js/rating-core.js?v=','/js/album-rating-controller.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/library-actions-controller.js?v=','/js/grid-sort-controller.js?v=','/js/library-render-controller.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
+  ['/js/notification-core.js?v=','/js/notification-controller.js?v=','/js/social-controller.js?v=','/js/user-search-controller.js?v=','/js/detail-social-controller.js?v=','/js/pressing-core.js?v=','/js/pressing-view.js?v=','/js/pressing-picker.js?v=','/js/pressing-controller.js?v=','/js/detail-tracklist-controller.js?v=','/js/detail-layout-controller.js?v=','/js/rating-core.js?v=','/js/album-rating-controller.js?v=','/js/marketplace-core.js?v=','/js/marketplace-view.js?v=','/js/marketplace-controller.js?v=','/js/shelf-core.js?v=','/js/shelf-view.js?v=','/js/shelf-controller.js?v=','/js/library-core.js?v=','/js/library-data.js?v=','/js/library-actions-controller.js?v=','/js/grid-sort-controller.js?v=','/js/library-render-controller.js?v=','/js/apple-search-core.js?v=','/js/album-search.js?v=','/js/wikipedia-about-controller.js?v='].forEach((script)=>{
     const pos=html.indexOf(script);assert.ok(pos>=0,script+' script is missing');assert.ok(pos<app,script+' must load before app.js');
   });
   assert.match(html,/\/js\/app\.js\?v=\d+/);
@@ -309,4 +309,24 @@ test('grid sort controller owns drag interactions reorder state and save queue',
   assert.match(controller,/set_collection_display_order/);
   assert.match(controller,/set_wishlist_display_order/);
   assert.doesNotMatch(source,/function enableGridSorting|pendingGridOrderSaves|function queueGridOrderSave|function flushGridOrderSaveQueue/);
+});
+
+
+test('library data loads after record model/core and before app.js',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const record=html.indexOf('/js/record-model.js?v=');
+  const core=html.indexOf('/js/library-core.js?v=');
+  const data=html.indexOf('/js/library-data.js?v=');
+  const app=html.indexOf('/js/app.js?v=');
+  assert.ok(record>=0&&core>record&&data>core&&app>data);
+});
+
+test('own and viewed collection loaders share library data mapping',()=>{
+  const source=fs.readFileSync('js/app.js','utf8');
+  assert.match(source,/var LibraryData=window\.GroovyLibraryData;/);
+  assert.match(source,/libraryData\.fetchCollection\(user\.id\)/);
+  assert.match(source,/libraryData\.fetchCollection\(userId\)/);
+  assert.ok((source.match(/libraryData\.mapCollectionRows\(/g)||[]).length>=2);
+  assert.doesNotMatch(source,/function copyDetailsFromRow/);
+  assert.doesNotMatch(source,/window\.applyAlbumRatingMeta\(\[/);
 });
