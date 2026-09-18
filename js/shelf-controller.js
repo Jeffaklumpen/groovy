@@ -52,7 +52,7 @@ function create(options){
     return result&&result.data&&result.data.session&&result.data.session.user||null;
   }
   function shelfById(id){return Core.findById(getShelves(),id);}
-  function recordCount(id){return Core.recordCount(getRecords(),id);}
+  function recordCount(id){return Core.recordCount(getRecords(),id,Record.shelfId);}
 
   function updateScrollArrows(){
     var strip=elements.strip;
@@ -230,11 +230,12 @@ function create(options){
   function renderPicker(index){
     var record=getRecords()[index];
     if(!record)return false;
-    var current=String(record[13]||'');
+    var current=String(Record.shelfId(record)||'');
+    var title=Record.title(record)||'record';
     if(elements.pickerTitle)elements.pickerTitle.textContent=current?'Move to Shelf':'Add to Shelf';
     if(elements.pickerSubtitle)elements.pickerSubtitle.textContent=current
-      ?'Choose a new shelf for “'+record[2]+'”.'
-      :'Choose a shelf for “'+record[2]+'”.';
+      ?'Choose a new shelf for “'+title+'”.'
+      :'Choose a shelf for “'+title+'”.';
     if(elements.pickerList){
       elements.pickerList.innerHTML=View.pickerMarkup({shelves:getShelves(),currentShelfId:current,colors:colors});
       elements.pickerList.querySelectorAll('input[name="recordShelf"]').forEach(function(input){
@@ -262,7 +263,7 @@ function create(options){
     var record=getRecords()[index];
     View.renderDetailStatus(elements.detailStatus,{
       record:record,
-      shelf:record?shelfById(record[13]):null,
+      shelf:record?shelfById(Record.shelfId(record)):null,
       isWishlist:libraryView()==='wishlist'
     });
   }
@@ -277,7 +278,7 @@ function create(options){
       return;
     }
     elements.detailActions.hidden=false;
-    elements.detailActions.innerHTML=View.detailActionsMarkup(!!record[13]);
+    elements.detailActions.innerHTML=View.detailActionsMarkup(!!Record.shelfId(record));
     var pick=elements.detailActions.querySelector('[data-detail-shelf-action="pick"]');
     if(pick)pick.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();openPicker(index);});
     var remove=elements.detailActions.querySelector('[data-detail-shelf-action="remove"]');
@@ -299,22 +300,21 @@ function create(options){
     var user=await sessionUser();
     if(!user)throw new Error('Du måste vara inloggad.');
     var normalized=shelfId||null;
-    var old=record[13]||'';
+    var old=Record.shelfId(record)||'';
     if(String(old||'')===String(normalized||''))return true;
-    var snapshot=records.map(function(item){return {record:item,shelfId:item[13]||'',shelfOrder:item[14]==null?null:item[14]};});
+    var snapshot=records.map(function(item){return {record:item,shelfId:Record.shelfId(item)||'',shelfOrder:Record.shelfSortOrder(item)==null?null:Record.shelfSortOrder(item)};});
     var nextOrder=normalized?Record.nextShelfOrder(records,normalized,record):null;
-    record[13]=normalized||'';
-    record[14]=nextOrder;
+    Record.setShelf(record,normalized||'',nextOrder);
     if(old&&String(old)!==String(normalized||''))Record.compactShelfOrder(records,old);
     resetLibraryPage();renderStrip();renderGrid();refreshDetail(index);
     try{
-      var result=await api.rpc('move_collection_to_shelf',{p_collection_id:String(record[9]),p_shelf_id:normalized});
+      var result=await api.rpc('move_collection_to_shelf',{p_collection_id:String(Record.entryId(record)),p_shelf_id:normalized});
       if(result.error)throw result.error;
-      if(result.data&&result.data.shelf_sort_order!=null)record[14]=parseInt(result.data.shelf_sort_order,10)||record[14];
-      else if(!normalized)record[14]=null;
+      if(result.data&&result.data.shelf_sort_order!=null)Record.setValue(record,'shelfSortOrder',parseInt(result.data.shelf_sort_order,10)||Record.shelfSortOrder(record));
+      else if(!normalized)Record.setValue(record,'shelfSortOrder',null);
       return true;
     }catch(error){
-      snapshot.forEach(function(item){item.record[13]=item.shelfId;item.record[14]=item.shelfOrder;});
+      snapshot.forEach(function(item){Record.setShelf(item.record,item.shelfId,item.shelfOrder);});
       renderStrip();renderGrid();refreshDetail(index);
       throw error;
     }
@@ -376,7 +376,7 @@ function create(options){
     try{
       var user=await sessionUser();if(!user)throw new Error('Du måste vara inloggad.');
       var result=await api.rpc('delete_shelf_and_unshelve',{p_shelf_id:shelf.id});if(result.error)throw result.error;
-      getRecords().forEach(function(record){if(String(record[13]||'')===String(shelf.id)){record[13]='';record[14]=null;}});
+      getRecords().forEach(function(record){if(String(Record.shelfId(record)||'')===String(shelf.id))Record.setShelf(record,'',null);});
       setShelves(getShelves().filter(function(item){return String(item.id)!==String(shelf.id);}));
       setActiveShelfId('all');resetLibraryPage();closeDelete();renderStrip();renderGrid();return true;
     }catch(error){report('error','Kunde inte radera shelf:',error);if(elements.deleteStatus)elements.deleteStatus.textContent='Could not delete shelf.';return false;}
