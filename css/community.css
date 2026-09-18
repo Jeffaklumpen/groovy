@@ -47,83 +47,93 @@ body.community-page-open .library-overview,body.community-page-open #selectionAc
 .community-follow-button:hover,.community-secondary-button:hover{transform:translateY(-1px)}
 .community-follow-button:disabled{opacity:.6;cursor:wait;transform:none}
 .community-feed-list{display:flex;flex-direction:column}
-.community-feed-item{display:grid;grid-template-columns:38px 54px minmax(0,1fr) auto;align-items:center;gap:9px;min-height:66px;padding:8px 2px;border-top:1px solid rgba(255,255,255,.06)}
-.community-feed-item:first-child{border-top:0;padding-top:2px}
-.community-feed-avatar-button{width:38px;height:38px;padding:0;border:0;border-radius:50%;background:transparent;cursor:pointer}
-.community-feed-avatar{width:38px;height:38px;border:1px solid rgba(255,255,255,.12)}
-.community-feed-avatar .groovy-initial-avatar-letter{font-size:13px}
-.community-feed-copy{min-width:0}
-.community-feed-copy p{margin:0;color:#bfbfc4;font-size:10px;line-height:1.42}
-.community-feed-copy p button{padding:0;border:0;background:transparent;color:#fff;font:inherit;font-weight:750;cursor:pointer}
-.community-feed-copy p strong{color:#f0f0f2;font-weight:700}
-.community-feed-copy small{display:block;overflow:hidden;margin-top:2px;color:#6f6f76;font-size:8px;text-overflow:ellipsis;white-space:nowrap}
-.community-feed-rating{margin-left:3px;color:#ff681e;font-weight:800;white-space:nowrap}
-.community-feed-item time{align-self:start;padding-top:5px;color:#64646b;font-size:8px;white-space:nowrap}
+.community-feed-item{display:grid;grid-template-columns:44px 66px minmax(0,1fr) auto;align-items:center;gap:13px;min-height:88px;padding:12px 3px;border-top:1px solid rgba(255,255,255,.065)}
+.community-feed-item:first-child{border-top:0;padding-top:4px}
+.community-feed-avatar-button{width:44px;height:44px;padding:0;border:0;border-radius:50%;background:transparent;cursor:pointer}
+.community-feed-avatar{width:44px;height:44px;border:1px solid rgba(255,255,255,.13)}
+.community-feed-avatar .groovy-initial-avatar-letter{font-size:15px}
+.community-feed-copy{display:flex;min-width:0;flex-direction:column;align-items:flex-start}
+.community-feed-copy p{margin:0;color:#c9c9ce;font-size:12px;font-weight:500;line-height:1.48}
+.community-feed-copy p button{padding:0;border:0;background:transparent;color:#fff;font:inherit;font-weight:780;cursor:pointer}
+.community-feed-copy p strong{color:#f3f3f5;font-weight:720}
+.community-feed-copy>small{display:block;max-width:100%;overflow:hidden;margin-top:3px;color:#85858c;font-size:10px;font-weight:520;text-overflow:ellipsis;white-space:nowrap}
+.community-feed-rating{margin-left:4px;color:#ff6a21;font-weight:820;white-space:nowrap}
+.community-feed-item time{align-self:start;padding-top:5px;color:#7a7a81;font-size:9px;font-weight:620;white-space:nowrap}
+
 .community-cover{position:relative;display:block;overflow:hidden;border:1px solid rgba(255,255,255,.09);border-radius:8px;background:#0b0b0d;box-shadow:0 6px 16px rgba(0,0,0,.28)}
 .community-cover>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .community-cover-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#242428,#101012);color:#55555c}
 .community-cover-fallback .record-icon{width:26px;height:26px;flex-basis:26px}
-.community-cover-services{position:absolute;right:4px;bottom:4px;z-index:2;display:flex;align-items:center;gap:3px;padding:3px 4px;border:1px solid rgba(255,255,255,.13);border-radius:7px;background:rgba(7,7,9,.88);box-shadow:0 3px 10px rgba(0,0,0,.35);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.community-cover-service{display:flex;align-items:center;justify-content:center;height:15px;text-decoration:none;opacity:.92;transition:opacity .13s ease,transform .13s ease}
-.community-cover-service:hover{opacity:1;transform:scale(1.06)}
-.community-cover-service-apple img{display:block;width:35px;height:auto}
-.community-cover-service-spotify img{display:block;width:13px;height:13px}
-.community-feed-cover{width:54px;height:54px;border-radius:7px}
-.community-feed-cover .community-cover-services{right:2px;bottom:2px;gap:2px;padding:2px 3px;border-radius:5px}
-.community-feed-cover .community-cover-service-apple img{width:27px}
-.community-feed-cover .community-cover-service-spotify img{width:10px;height:10px}
-.community-feed-cover .community-cover-service{height:11px}
+.community-feed-cover{width:66px;height:66px;border-radius:8px}
+
+.community-streaming-row{display:flex;min-width:0;align-items:center;gap:6px;margin-top:7px}
+.community-streaming-row .streaming-service{height:24px}
+.community-streaming-row .community-streaming-apple{height:24px;padding:0}
+.community-streaming-row .apple-music-small-badge{height:24px;width:auto;max-width:none}
+.community-streaming-row .community-streaming-spotify{height:24px;padding:0 7px;border-radius:6px}
+.community-streaming-row .spotify-service-logo{width:53px;max-width:53px;height:auto}
+.community-streaming-compact{gap:5px;margin-top:6px}
+.community-streaming-compact .streaming-service{height:21px}
+.community-streaming-compact .community-streaming-apple{height:21px}
+.community-streaming-compact .apple-music-small-badge{height:21px}
+.community-streaming-compact .community-streaming-spotify{height:21px;padding:0 6px;border-radius:5px}
+.community-streaming-compact .spotify-service-logo{width:46px;max-width:46px}
+
 .community-ranking-list{display:flex;flex-direction:column}
-.community-collector-rank{display:grid;grid-template-columns:30px 32px minmax(0,1fr) auto 10px;align-items:center;gap:8px;width:100%;min-height:47px;padding:6px 3px;border:0;border-top:1px solid rgba(255,255,255,.06);background:transparent;color:#fff;font-family:inherit;text-align:left;cursor:pointer}
+.community-collector-rank{display:grid;grid-template-columns:34px 40px minmax(0,1fr) auto 12px;align-items:center;gap:10px;width:100%;min-height:58px;padding:8px 5px;border:0;border-top:1px solid rgba(255,255,255,.06);background:transparent;color:#fff;font-family:inherit;text-align:left;cursor:pointer}
 .community-collector-rank:first-child{border-top:0}
 .community-collector-rank:hover{background:rgba(255,255,255,.025)}
-.community-rank-number{display:flex;align-items:center;justify-content:center;width:25px;height:25px;border-radius:50%;background:#2a2a2e;color:#a9a9af;font-size:10px;font-weight:800}
+.community-rank-number{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#2a2a2e;color:#a9a9af;font-size:11px;font-weight:800}
 .community-rank-number.rank-1{background:#efc45f;color:#211600}
 .community-rank-number.rank-2{background:#c7cbd0;color:#202124}
 .community-rank-number.rank-3{background:#bd7a4e;color:#24150e}
-.community-rank-avatar{width:31px;height:31px;border:1px solid rgba(255,255,255,.11)}
-.community-rank-avatar .groovy-initial-avatar-letter{font-size:11px}
-.community-rank-name{overflow:hidden;font-size:10px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
-.community-rank-value{display:flex;flex-direction:column;align-items:flex-end}
-.community-rank-value strong{font-size:11px}
-.community-rank-value small{color:#696970;font-size:7px}
-.community-chevron{color:#6f6f75;font-size:17px}
-.community-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-.community-stat-card{min-width:0;padding:10px;border:1px solid rgba(255,255,255,.065);border-radius:12px;background:rgba(255,255,255,.015)}
-.community-stat-title{display:flex;align-items:center;gap:7px;min-height:25px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.06);color:#ff671d}
-.community-stat-title>span{display:flex;align-items:center;justify-content:center;min-width:17px;font-size:18px}
-.community-stat-title .record-icon{width:16px;height:16px;flex-basis:16px}
-.community-stat-title .community-icon{width:18px;height:18px}
-.community-stat-title strong{color:#e8e8eb;font-size:9px;font-weight:760}
+.community-rank-avatar{width:39px;height:39px;border:1px solid rgba(255,255,255,.11)}
+.community-rank-avatar .groovy-initial-avatar-letter{font-size:13px}
+.community-rank-name{overflow:hidden;font-size:12px;font-weight:720;text-overflow:ellipsis;white-space:nowrap}
+.community-rank-value{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.community-rank-value strong{font-size:13px}
+.community-rank-value small{color:#7b7b82;font-size:9px}
+.community-chevron{color:#77777e;font-size:19px}
+
+.community-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.community-stat-card{min-width:0;padding:13px;border:1px solid rgba(255,255,255,.075);border-radius:13px;background:rgba(255,255,255,.018)}
+.community-stat-title{display:flex;align-items:center;gap:8px;min-height:31px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.07);color:#ff671d}
+.community-stat-title>span{display:flex;align-items:center;justify-content:center;min-width:20px;font-size:20px}
+.community-stat-title .record-icon{width:18px;height:18px;flex-basis:18px}
+.community-stat-title .community-icon{width:19px;height:19px}
+.community-stat-title strong{color:#ededf0;font-size:11px;font-weight:780}
 .community-stat-list{display:flex;flex-direction:column}
-.community-stat-row{display:grid;grid-template-columns:16px 38px minmax(0,1fr) auto;align-items:center;gap:7px;min-height:48px;border-top:1px solid rgba(255,255,255,.05)}
+.community-stat-row{display:grid;grid-template-columns:20px 52px minmax(0,1fr) auto;align-items:center;gap:9px;min-height:74px;padding:8px 0;border-top:1px solid rgba(255,255,255,.055)}
 .community-stat-row:first-child{border-top:0}
-.community-stat-rank{color:#77777d;font-size:8px;font-weight:800;text-align:center}
-.community-mini-cover{width:36px;height:36px;border-radius:5px}
-.community-mini-cover .community-cover-services{right:1px;bottom:1px;gap:1px;padding:1px 2px;border:0;border-radius:4px}
-.community-mini-cover .community-cover-service-apple img{width:20px}
-.community-mini-cover .community-cover-service-spotify img{width:8px;height:8px}
-.community-mini-cover .community-cover-service{height:9px}
-.community-stat-copy{display:flex;min-width:0;flex-direction:column;gap:2px}
-.community-stat-copy strong,.community-stat-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.community-stat-copy strong{color:#dadade;font-size:8.5px;font-weight:700}
-.community-stat-copy small{color:#64646b;font-size:7px}
-.community-stat-rating{color:#ff681f;font-size:9px;font-weight:800;white-space:nowrap}
-.community-stat-count{color:#9c9ca2;font-size:8px;font-weight:750}
-.community-artist-disc{position:relative;display:block;width:30px;height:30px;border-radius:50%;background:repeating-radial-gradient(circle,#252529 0 3px,#0b0b0d 4px 6px)}
-.community-artist-disc:after{content:"";position:absolute;inset:11px;border-radius:50%;background:#e85301}
-.community-artist-row{grid-template-columns:16px 38px minmax(0,1fr) auto}
-.community-wishlist-panel{padding-bottom:18px}
-.community-wishlist-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
-.community-wishlist-card{min-width:0;overflow:hidden;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:rgba(255,255,255,.017)}
+.community-stat-rank{color:#8a8a91;font-size:10px;font-weight:800;text-align:center}
+.community-mini-cover{width:50px;height:50px;border-radius:6px}
+.community-stat-copy{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:2px}
+.community-stat-copy>strong,.community-stat-copy>small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.community-stat-copy>strong{color:#eeeeF1;font-size:11.5px;font-weight:740;line-height:1.25}
+.community-stat-copy>small{color:#85858c;font-size:9.5px;font-weight:520}
+.community-stat-rating{padding:5px 7px;border:1px solid rgba(255,106,33,.24);border-radius:999px;background:rgba(255,106,33,.07);color:#ff762f;font-size:10.5px;font-weight:820;white-space:nowrap}
+.community-stat-count{color:#b2b2b7;font-size:11px;font-weight:780}
+.community-artist-disc{position:relative;display:block;width:42px;height:42px;margin-left:4px;border-radius:50%;background:repeating-radial-gradient(circle,#252529 0 4px,#0b0b0d 5px 8px)}
+.community-artist-disc:after{content:"";position:absolute;inset:15px;border-radius:50%;background:#e85301}
+.community-artist-row{grid-template-columns:20px 52px minmax(0,1fr) auto}
+
+.community-wishlist-panel{padding-bottom:19px}
+.community-wishlist-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:11px}
+.community-wishlist-card{min-width:0;overflow:hidden;border:1px solid rgba(255,255,255,.075);border-radius:12px;background:rgba(255,255,255,.019)}
 .community-wishlist-cover{width:100%;aspect-ratio:1/1;border:0;border-radius:0}
-.community-wishlist-cover .community-cover-services{right:7px;bottom:7px}
-.community-wishlist-copy{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 7px;padding:10px 11px 11px}
-.community-wishlist-rank{grid-row:1/3;align-self:start;color:#ff681f;font-size:9px;font-weight:850}
-.community-wishlist-copy strong,.community-wishlist-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.community-wishlist-copy strong{color:#efeff1;font-size:10px;font-weight:730}
-.community-wishlist-copy small{color:#707077;font-size:8px}
-.community-wishlist-count{grid-column:2;margin-top:3px;color:#9a9aa0;font-size:8px;font-weight:700}
+.community-wishlist-copy{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 8px;padding:12px}
+.community-wishlist-rank{grid-row:1/4;align-self:start;color:#ff681f;font-size:10px;font-weight:850}
+.community-wishlist-copy>strong,.community-wishlist-copy>small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.community-wishlist-copy>strong{color:#f0f0f2;font-size:12px;font-weight:740}
+.community-wishlist-copy>small{color:#85858c;font-size:10px}
+.community-wishlist-count{grid-column:2;margin-top:2px;color:#aaaab0;font-size:9.5px;font-weight:700}
+.community-wishlist-copy .community-streaming-row{grid-column:2;margin-top:6px}
+.community-streaming-card .streaming-service{height:25px}
+.community-streaming-card .community-streaming-apple{height:25px}
+.community-streaming-card .apple-music-small-badge{height:25px}
+.community-streaming-card .community-streaming-spotify{height:25px;padding:0 7px}
+.community-streaming-card .spotify-service-logo{width:55px;max-width:55px}
+
 .community-empty{display:flex;min-height:150px;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:20px;color:#6f6f76;text-align:center}
 .community-empty.compact{min-height:110px}
 .community-empty strong{color:#cfcfd3;font-size:11px}
@@ -136,5 +146,50 @@ body.community-page-open .library-overview,body.community-page-open #selectionAc
 .community-error .community-loading-disc{animation:none;border-color:#63311d}
 @media (max-width:1150px){.community-primary-grid,.community-lower-grid{grid-template-columns:1fr}}
 @media (max-width:820px){.community-summary-card{padding:17px}.community-stat-grid{grid-template-columns:1fr}.community-wishlist-strip{grid-template-columns:repeat(5,150px);overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}.community-wishlist-card{scroll-snap-align:start}}
-@media (max-width:700px){#libraryTabs{width:100%;margin-bottom:16px}#libraryTabs .library-tab{flex:1;justify-content:center;min-width:0;padding:8px 7px;font-size:10px}.community-page{padding-bottom:42px}.community-summary-grid{gap:7px;margin-bottom:11px}.community-summary-card{min-height:92px;flex-direction:column;align-items:flex-start;gap:9px;padding:13px 11px;border-radius:13px}.community-summary-icon{width:34px;height:34px;flex-basis:34px;border-radius:10px}.community-summary-icon .community-icon{width:18px;height:18px}.community-summary-card strong{font-size:22px}.community-summary-card span:not(.community-summary-icon){font-size:9px}.community-summary-card small{display:none}.community-primary-grid,.community-lower-grid{gap:11px;margin-bottom:11px}.community-panel{padding:13px;border-radius:14px}.community-panel-heading{margin-bottom:10px}.community-panel-heading h2{font-size:14px}.community-similar-list{display:flex;gap:9px;overflow-x:auto;margin-right:-13px;padding:0 13px 4px 0;scroll-snap-type:x proximity}.community-similar-card{flex:0 0 min(76vw,270px);scroll-snap-align:start}.community-feed-item{grid-template-columns:34px 48px minmax(0,1fr) auto;gap:7px;min-height:61px}.community-feed-avatar-button,.community-feed-avatar{width:34px;height:34px}.community-feed-cover{width:48px;height:48px}.community-feed-copy p{font-size:9px}.community-feed-item time{font-size:7px}.community-wishlist-strip{margin-right:-13px;padding-right:13px}.community-wishlist-cover .community-cover-services{right:5px;bottom:5px}}
-@media (max-width:430px){#libraryTabs .library-tab{font-size:9px}.community-summary-card{padding:12px 9px}.community-summary-card strong{font-size:20px}.community-feed-item{grid-template-columns:32px 46px minmax(0,1fr)}.community-feed-item time{grid-column:3;justify-self:start;padding-top:0;margin-top:-4px}.community-feed-avatar-button,.community-feed-avatar{width:32px;height:32px}.community-feed-cover{width:46px;height:46px}}
+@media (max-width:700px){
+#libraryTabs{width:100%;margin-bottom:16px}
+#libraryTabs .library-tab{flex:1;justify-content:center;min-width:0;padding:8px 7px;font-size:10px}
+.community-page{padding-bottom:42px}
+.community-summary-grid{gap:7px;margin-bottom:11px}
+.community-summary-card{min-height:92px;flex-direction:column;align-items:flex-start;gap:9px;padding:13px 11px;border-radius:13px}
+.community-summary-icon{width:34px;height:34px;flex-basis:34px;border-radius:10px}
+.community-summary-icon .community-icon{width:18px;height:18px}
+.community-summary-card strong{font-size:22px}
+.community-summary-card span:not(.community-summary-icon){font-size:9px}
+.community-summary-card small{display:none}
+.community-primary-grid,.community-lower-grid{gap:11px;margin-bottom:11px}
+.community-panel{padding:14px;border-radius:14px}
+.community-panel-heading{margin-bottom:11px}
+.community-panel-heading h2{font-size:15px}
+.community-similar-list{display:flex;gap:9px;overflow-x:auto;margin-right:-14px;padding:0 14px 4px 0;scroll-snap-type:x proximity}
+.community-similar-card{flex:0 0 min(76vw,270px);scroll-snap-align:start}
+.community-feed-item{grid-template-columns:36px 56px minmax(0,1fr) auto;gap:9px;min-height:79px;padding:10px 1px}
+.community-feed-avatar-button,.community-feed-avatar{width:36px;height:36px}
+.community-feed-cover{width:56px;height:56px}
+.community-feed-copy p{font-size:11px;line-height:1.42}
+.community-feed-copy>small{font-size:9px}
+.community-feed-item time{font-size:8px}
+.community-streaming-compact{margin-top:5px}
+.community-streaming-compact .streaming-service{height:20px}
+.community-streaming-compact .community-streaming-apple{height:20px}
+.community-streaming-compact .apple-music-small-badge{height:20px}
+.community-streaming-compact .community-streaming-spotify{height:20px}
+.community-streaming-compact .spotify-service-logo{width:43px;max-width:43px}
+.community-collector-rank{min-height:56px}
+.community-stat-row{grid-template-columns:18px 48px minmax(0,1fr) auto;min-height:70px;gap:8px}
+.community-mini-cover{width:46px;height:46px}
+.community-stat-copy>strong{font-size:11px}
+.community-stat-copy>small{font-size:9px}
+.community-wishlist-strip{margin-right:-14px;padding-right:14px}
+}
+@media (max-width:430px){
+#libraryTabs .library-tab{font-size:9px}
+.community-summary-card{padding:12px 9px}
+.community-summary-card strong{font-size:20px}
+.community-feed-item{grid-template-columns:34px 52px minmax(0,1fr)}
+.community-feed-item time{grid-column:3;justify-self:start;padding-top:0;margin-top:-3px}
+.community-feed-avatar-button,.community-feed-avatar{width:34px;height:34px}
+.community-feed-cover{width:52px;height:52px}
+.community-feed-copy p{font-size:10.5px}
+.community-stat-title strong{font-size:10.5px}
+}

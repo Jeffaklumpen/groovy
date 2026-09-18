@@ -29,11 +29,11 @@ test('community view keeps Apple Music and Spotify links attached to album artwo
   const view=fs.readFileSync('js/community-view.js','utf8');
   const css=fs.readFileSync('css/community.css','utf8');
   assert.match(view,/apple-music-badge-small\.svg/);
-  assert.match(view,/spotify-logo\.svg/);
-  assert.match(view,/community-cover-services/);
-  assert.match(css,/\.community-cover-services/);
-  assert.match(css,/\.community-cover-service-apple/);
-  assert.match(css,/\.community-cover-service-spotify/);
+  assert.match(view,/spotify-full-logo-green\\.svg/);
+  assert.match(view,/community-streaming-row/);
+  assert.match(css,/\\.community-streaming-row/);
+  assert.match(view,/apple-service community-streaming-apple/);
+  assert.match(view,/spotify-service community-streaming-spotify/);
 });
 
 test('community migration owns global activity and read-only overview aggregation',()=>{
@@ -77,4 +77,17 @@ test('similar collector cards render two separate taste metrics',()=>{
   assert.match(view,/Genre overlap/);
   assert.match(css,/grid-template-columns:1fr 1fr/);
   assert.match(css,/community-taste-metric\+\.community-taste-metric/);
+});
+
+
+test('community keeps Collection streaming assets outside album artwork',()=>{
+  const view=fs.readFileSync('js/community-view.js','utf8');
+  const css=fs.readFileSync('css/community.css','utf8');
+  assert.match(view,/apple-music-small-badge\.svg/);
+  assert.match(view,/spotify-full-logo-green\.svg/);
+  assert.match(view,/apple-music-small-badge/);
+  assert.match(view,/spotify-service-logo/);
+  const coverFunction=view.slice(view.indexOf('function coverMarkup'),view.indexOf('function avatar'));
+  assert.doesNotMatch(coverFunction,/serviceLinks/);
+  assert.doesNotMatch(css,/community-cover-services/);
 });

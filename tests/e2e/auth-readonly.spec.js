@@ -127,8 +127,10 @@ test.describe('authenticated read-only smoke flows',()=>{
 
     const albumCovers=page.locator('.community-cover');
     if(await albumCovers.count()>0){
-      await expect(albumCovers.first().locator('.community-cover-service-apple')).toBeAttached();
-      await expect(albumCovers.first().locator('.community-cover-service-spotify')).toBeAttached();
+      await expect(albumCovers.first().locator('.community-streaming-row')).toHaveCount(0);
+      await expect(page.locator('.community-streaming-row .apple-music-small-badge').first()).toBeAttached();
+      await expect(page.locator('.community-streaming-row .spotify-service-logo').first()).toBeAttached();
+      await expect(page.locator('.community-streaming-row .spotify-service-logo').first()).toHaveAttribute('src','/assets/brands/spotify-full-logo-green.svg');
     }
 
     await page.setViewportSize({width:390,height:844});

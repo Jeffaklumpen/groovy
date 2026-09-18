@@ -50,13 +50,17 @@ function create(options){
     };
   }
 
-  function serviceLinks(item){
+  function serviceLinks(item,extraClass){
     var identity=albumIdentity(item);
     var apple=Streaming.appleMusicSearchUrl(identity.artist,identity.title,identity.apple,'se');
     var spotify=Streaming.spotifySearchUrl(identity.artist,identity.title);
-    return '<span class="community-cover-services" aria-label="Listen on streaming services">'+
-      '<a class="community-cover-service community-cover-service-apple" href="'+escapeHtml(apple)+'" target="_blank" rel="noopener noreferrer" aria-label="Open '+escapeHtml(identity.title)+' on Apple Music" title="Apple Music"><img src="/assets/brands/apple-music-badge-small.svg" alt=""></a>'+
-      '<a class="community-cover-service community-cover-service-spotify" href="'+escapeHtml(spotify)+'" target="_blank" rel="noopener noreferrer" aria-label="Open '+escapeHtml(identity.title)+' on Spotify" title="Spotify"><img src="/assets/brands/spotify-logo.svg" alt=""></a>'+
+    return '<span class="community-streaming-row '+(extraClass||'')+'" aria-label="Listen on streaming services">'+
+      '<a class="streaming-link streaming-service apple-service community-streaming-apple" href="'+escapeHtml(apple)+'" target="_blank" rel="noopener noreferrer" aria-label="Listen to '+escapeHtml(identity.title)+' by '+escapeHtml(identity.artist)+' on Apple Music">'+
+        '<img class="apple-music-small-badge" src="/assets/brands/apple-music-badge-small.svg" alt="Listen on Apple Music">'+
+      '</a>'+
+      '<a class="streaming-link streaming-service spotify-service community-streaming-spotify" href="'+escapeHtml(spotify)+'" target="_blank" rel="noopener noreferrer" aria-label="Find '+escapeHtml(identity.title)+' by '+escapeHtml(identity.artist)+' on Spotify">'+
+        '<img class="spotify-service-logo" src="/assets/brands/spotify-full-logo-green.svg" alt="Spotify">'+
+      '</a>'+
     '</span>';
   }
 
@@ -65,7 +69,6 @@ function create(options){
     return '<span class="community-cover '+(extraClass||'')+'">'+
       '<span class="community-cover-fallback" aria-hidden="true"><span class="record-icon"></span></span>'+
       (identity.cover?'<img src="'+escapeHtml(identity.cover)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'')+
-      serviceLinks(item)+
     '</span>';
   }
 
@@ -115,7 +118,7 @@ function create(options){
       return '<article class="community-feed-item">'+
         '<button class="community-feed-avatar-button" type="button" data-community-profile="'+escapeHtml(item.username||'')+'" aria-label="Open '+escapeHtml(item.username||'Collector')+' profile">'+avatar(item,'community-feed-avatar')+'</button>'+
         coverMarkup(item,'community-feed-cover')+
-        '<div class="community-feed-copy"><p>'+activityCopy(item)+'</p><small>'+escapeHtml(item.artist_name||'')+'</small></div>'+
+        '<div class="community-feed-copy"><p>'+activityCopy(item)+'</p><small>'+escapeHtml(item.artist_name||'')+'</small>'+serviceLinks(item,'community-streaming-compact')+'</div>'+
         '<time datetime="'+escapeHtml(item.created_at||'')+'">'+escapeHtml(Core.relativeTime(item.created_at))+'</time>'+
       '</article>';
     }).join('')+'</div>';
@@ -144,7 +147,7 @@ function create(options){
       return '<article class="community-stat-row">'+
         '<span class="community-stat-rank">'+(index+1)+'</span>'+
         coverMarkup(item,'community-mini-cover')+
-        '<div class="community-stat-copy"><strong>'+escapeHtml(item.title||'Unknown album')+'</strong><small>'+escapeHtml(item.artist_name||'Unknown artist')+'</small></div>'+
+        '<div class="community-stat-copy"><strong>'+escapeHtml(item.title||'Unknown album')+'</strong><small>'+escapeHtml(item.artist_name||'Unknown artist')+'</small>'+serviceLinks(item,'community-streaming-compact')+'</div>'+
         metric+
       '</article>';
     }).join('')+'</div>';
@@ -167,7 +170,7 @@ function create(options){
     return '<div class="community-wishlist-strip">'+items.map(function(item,index){
       return '<article class="community-wishlist-card">'+
         coverMarkup(item,'community-wishlist-cover')+
-        '<div class="community-wishlist-copy"><span class="community-wishlist-rank">#'+(index+1)+'</span><strong>'+escapeHtml(item.title||'Unknown album')+'</strong><small>'+escapeHtml(item.artist_name||'Unknown artist')+'</small><span class="community-wishlist-count">'+escapeHtml(Core.formatCount(item.wishlist_count))+' wishlists</span></div>'+
+        '<div class="community-wishlist-copy"><span class="community-wishlist-rank">#'+(index+1)+'</span><strong>'+escapeHtml(item.title||'Unknown album')+'</strong><small>'+escapeHtml(item.artist_name||'Unknown artist')+'</small><span class="community-wishlist-count">'+escapeHtml(Core.formatCount(item.wishlist_count))+' wishlists</span>'+serviceLinks(item,'community-streaming-card')+'</div>'+
       '</article>';
     }).join('')+'</div>';
   }
