@@ -405,6 +405,23 @@ test('dedicated discography fallback prefers Primary studio albums over broad St
   assert.match(block,/as a member of/);
 });
 
+test('composer works subsections can parse all list columns without loosening normal album lists',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const parserStart=edge.indexOf('function wikipediaStudioAlbumsFromHtml');
+  const parserEnd=edge.indexOf('function rankWikipediaCoreWorksSection',parserStart);
+  const parser=edge.slice(parserStart,parserEnd);
+  const candidateStart=edge.indexOf('async function wikipediaDiscographyCandidates');
+  const candidateEnd=edge.indexOf('function wikipediaTitleKey',candidateStart);
+  const candidates=edge.slice(candidateStart,candidateEnd);
+
+  assert.match(parser,/options\?\.allLists\?lists:lists\.slice\(0,1\)/);
+  assert.match(edge,/normalized==='musicals and show recordings'/);
+  assert.match(edge,/function wikipediaChildSections/);
+  assert.match(candidates,/rankWikipediaCoreWorksSection/);
+  assert.match(candidates,/\{allLists:true\}/);
+  assert.match(candidates,/strategy:'main_article_works'/);
+});
+
 test('artist main article discography is preferred before a dedicated discography page',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const start=edge.indexOf('async function wikipediaDiscographyCandidates');
