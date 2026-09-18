@@ -398,13 +398,29 @@
 
     function verifyDiscographyInBackground(id,name,version){
       ensureDiscographyCached(id,name).then(function(payload){
-        if(version!==requestVersion||!active||!payload||!payload.overview)return;
+        if(version!==requestVersion||!active)return;
+
+        if(!payload||!payload.overview){
+          currentOverview=Object.assign({},currentOverview||{},{
+            discography_source:'error'
+          });
+          renderCurrent(version);
+          return;
+        }
+
         currentOverview=payload.overview;
         renderCurrent(version);
 
         if(currentOverview.discography_verified){
           warmArtworkInBackground(id,name,currentOverview,version);
         }
+      }).catch(function(error){
+        if(version!==requestVersion||!active)return;
+        log('warn','Could not finish artist discography verification:',error);
+        currentOverview=Object.assign({},currentOverview||{},{
+          discography_source:'error'
+        });
+        renderCurrent(version);
       });
     }
 
