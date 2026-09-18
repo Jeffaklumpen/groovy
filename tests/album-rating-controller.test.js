@@ -161,3 +161,22 @@ test('community detail rating uses five fixed star cells and the shared value ro
   assert.match(detailElement.innerHTML,/groovy-rating-value-row rating-panel-community-main/);
   assert.equal((detailElement.innerHTML.match(/groovy-rating-star-cell/g)||[]).length,5);
 });
+
+
+test('own and community detail stars share the same cell structure',()=>{
+  const record={albumId:1,ownRating:2,communityRating:3.2,communityCount:2};
+  const detailElement=makeDetailElement();
+  const controller=Controller.create({
+    api:{from(){throw new Error('not used');}},
+    ratingCore:RatingCore,
+    recordModel:makeRecordModel(),
+    detailElement,
+    getRecords:()=>[record]
+  });
+  controller.renderDetail(0);
+  const html=detailElement.innerHTML;
+  assert.equal((html.match(/groovy-rating-star-cell/g)||[]).length,10);
+  assert.equal((html.match(/groovy-rating-star-base/g)||[]).length,10);
+  assert.equal((html.match(/groovy-rating-star-fill/g)||[]).length,10);
+  assert.equal((html.match(/class="album-rating-star groovy-rating-star-cell/g)||[]).length,5);
+});

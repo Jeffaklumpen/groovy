@@ -64,3 +64,16 @@ test('mobile rating cards use identical grid geometry for own and community valu
   assert.match(css,/groovy-score-main,html body \.detail-rating \.groovy-score-max\{font-size:21px/);
   assert.match(css,/rating-panel-footer\{display:flex!important;align-items:center!important;width:100%!important;height:24px/);
 });
+
+
+test('detail rating star geometry has one canonical owner across desktop and mobile',function(){
+  const controller=fs.readFileSync(path.join(root,'js','album-rating-controller.js'),'utf8');
+  const css=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
+  assert.match(controller,/album-rating-star groovy-rating-star-cell/);
+  assert.match(css,/--rating-star-size:24px/);
+  assert.match(css,/grid-template-columns:repeat\(5,var\(--rating-star-size\)\)/);
+  assert.match(css,/\.album-rating-star,\nhtml body \.detail-rating \.groovy-rating-star-cell/);
+  assert.match(css,/\.groovy-rating-star-base,\nhtml body \.detail-rating \.groovy-rating-star-fill/);
+  assert.match(css,/@media screen and \(max-width:760px\)\{[\s\S]*--rating-star-size:19px/);
+  assert.doesNotMatch(css,/groovy-rating-stars-base|groovy-rating-stars-fill/);
+});

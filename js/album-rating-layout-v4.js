@@ -114,8 +114,10 @@ function decorateYour(record){
   if(stars){
     stars.querySelectorAll('.album-rating-star').forEach(function(star){
       var rating=parseInt(star.getAttribute('data-rating'),10)||0;
-      star.classList.toggle('filled',own>0&&rating<=own);
-      star.classList.toggle('empty',!own||rating>own);
+      var filled=own>0&&rating<=own;
+      star.classList.toggle('filled',filled);
+      star.classList.toggle('empty',!filled);
+      star.style.setProperty('--star-fill',filled?'100%':'0%');
     });
 
     var row=panel.querySelector('.groovy-rating-value-row');

@@ -113,7 +113,11 @@
       var communityIcon='<svg viewBox="0 0 28 24" aria-hidden="true"><circle cx="14" cy="6.2" r="2.8"></circle><circle cx="6.6" cy="8.1" r="2.3"></circle><circle cx="21.4" cy="8.1" r="2.3"></circle><path d="M8.4 19.4c.35-4.1 2.45-6.4 5.6-6.4s5.25 2.3 5.6 6.4"></path><path d="M1.9 19.4c.25-3.2 1.9-5.1 4.7-5.1 1.1 0 2 .25 2.8.75M26.1 19.4c-.25-3.2-1.9-5.1-4.7-5.1-1.1 0-2 .25-2.8.75"></path></svg>';
 
       for(var i=1;i<=5;i++){
-        ownStars+='<button class="album-rating-star '+(i<=ownRating?'filled':'empty')+'" type="button" data-rating="'+i+'" aria-label="Rate '+i+' out of 5">★</button>';
+        var ownFill=i<=ownRating?'100%':'0%';
+        ownStars+='<button class="album-rating-star groovy-rating-star-cell '+(i<=ownRating?'filled':'empty')+'" style="--star-fill:'+ownFill+'" type="button" data-rating="'+i+'" aria-label="Rate '+i+' out of 5">'+
+          '<span class="groovy-rating-star-base" aria-hidden="true">★</span>'+
+          '<span class="groovy-rating-star-fill" aria-hidden="true">★</span>'+
+        '</button>';
       }
 
       detailElement.innerHTML='<div class="rating-panels">'+
