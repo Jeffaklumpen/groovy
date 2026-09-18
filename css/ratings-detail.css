@@ -13,9 +13,9 @@
 
 @media screen and (max-width:760px){
   .cover-rating{min-width:0!important;max-width:72px!important;flex:0 0 auto!important;align-items:center!important;justify-content:center!important;overflow:visible!important}
-  .cover-rating-inner{display:inline-flex!important;min-width:0!important;max-width:72px!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;overflow:visible!important}
+  .cover-rating-inner{display:inline-flex!important;min-width:0!important;max-width:72px!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;gap:2px!important;overflow:visible!important}
   .cover-rating .groovy-star-meter.is-compact{font-size:11px!important;letter-spacing:.045em!important;line-height:1!important}
-  .cover-rating-number{display:inline-flex!important;align-items:baseline!important;justify-content:center!important;gap:1px!important;min-height:9px!important;font-size:9px!important;line-height:1!important}
+  .cover-rating-number{display:inline-flex!important;align-items:baseline!important;justify-content:flex-start!important;align-self:flex-start!important;gap:1px!important;min-height:9px!important;font-size:9px!important;line-height:1!important}
   .cover-rating-max{display:inline!important;font-size:inherit!important;font-weight:400!important}
 }
 

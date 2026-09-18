@@ -126,3 +126,10 @@ test('thumbnail ratings have one responsive owner and mobile stacks score below 
   assert.match(ratingCss,/cover-rating-max\{display:inline!important/);
   assert.doesNotMatch(detailCss,/cover-rating/);
 });
+
+
+test('mobile thumbnail score aligns with the left edge of its stars',function(){
+  const css=fs.readFileSync(path.join(root,'css','ratings-detail.css'),'utf8');
+  assert.match(css,/@media screen and \(max-width:760px\)\{[\s\S]*cover-rating-inner\{[\s\S]*align-items:flex-start!important/);
+  assert.match(css,/cover-rating-number\{[\s\S]*justify-content:flex-start!important;[\s\S]*align-self:flex-start!important/);
+});
