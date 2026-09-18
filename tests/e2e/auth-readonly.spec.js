@@ -284,8 +284,8 @@ test.describe('authenticated read-only smoke flows',()=>{
     await expect(page.locator('#artistPage')).toBeVisible();
     await expect(page.locator('.artist-hero h1')).toHaveText('Pink Floyd');
     await expect(page.locator('.artist-genres')).toContainText('Progressive Rock');
-    await expect(page.locator('.artist-members-panel')).toContainText('Current members');
-    await expect(page.locator('.artist-members-panel')).toContainText('Past members');
+    await expect(page.getByRole('heading',{name:'Current members'})).toBeVisible();
+    await expect(page.getByRole('heading',{name:'Past members'})).toBeVisible();
     await expect(page.locator('.artist-discography-panel')).toBeVisible();
     await expect(page.locator('.artist-about-panel')).toContainText('History');
     await expect(page.locator('.artist-about-panel')).toContainText('Musical style');
