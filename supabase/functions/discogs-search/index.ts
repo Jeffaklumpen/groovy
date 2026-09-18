@@ -795,6 +795,75 @@ export default {
         })
       }
 
+      if (action === 'resolveArtist') {
+        const resolvedArtistName=cleanArtistName(artistName)
+        if (!resolvedArtistName) {
+          return Response.json({ error:'Artist name is required' },{status:400})
+        }
+
+        const admin=getServiceClient()
+        let localArtist:any=null
+
+        if (admin) {
+          const { data:local,error:localError } = await admin
+            .from('artists')
+            .select('id,name,discogs_artist_id')
+            .ilike('name',resolvedArtistName)
+            .maybeSingle()
+
+          if (localError) {
+            console.warn('Could not inspect local artist identity',localError)
+          } else {
+            localArtist=local||null
+            if (localArtist?.discogs_artist_id) {
+              return Response.json({
+                id:Number(localArtist.discogs_artist_id),
+                name:cleanArtistName(localArtist.name)||resolvedArtistName,
+                cached:true
+              })
+            }
+          }
+        }
+
+        const searchResult=await discogsJson(
+          'https://api.discogs.com/database/search?q='+
+          encodeURIComponent(resolvedArtistName)+
+          '&type=artist&per_page=8'
+        )
+        if (searchResult.response) return searchResult.response
+
+        const candidates=(Array.isArray(searchResult.data?.results)?searchResult.data.results:[])
+          .map((item: any)=>({
+            id:Number(item?.id)||0,
+            name:cleanArtistName(item?.title),
+            score:artistSearchScore(item,resolvedArtistName)
+          }))
+          .filter((item: any)=>item.id&&item.score>0)
+          .sort((left: any,right: any)=>right.score-left.score)
+
+        const resolved=candidates[0]
+        if (!resolved || resolved.score<70) {
+          return Response.json({ error:'Artist could not be resolved' },{status:404})
+        }
+
+        if (admin && localArtist?.id) {
+          const { error:updateError } = await admin
+            .from('artists')
+            .update({discogs_artist_id:resolved.id})
+            .eq('id',localArtist.id)
+            .is('discogs_artist_id',null)
+          if (updateError) {
+            console.warn('Could not persist resolved Discogs artist identity',updateError)
+          }
+        }
+
+        return Response.json({
+          id:resolved.id,
+          name:resolved.name||resolvedArtistName,
+          cached:false
+        })
+      }
+
       if (action === 'cacheArtistArtwork') {
         const resolvedArtistId=Number(artistId)||0
         const resolvedArtistName=cleanArtistName(artistName)
@@ -807,46 +876,51 @@ export default {
           return Response.json({ error: 'Artwork cache configuration is incomplete' }, { status: 500 })
         }
 
-        const { data:catalogRows,error:catalogError } = await admin
-          .from('musicbrainz_catalog')
-          .select('discogs_master_id,artist_name,album_title,first_release_year,secondary_types,match_type')
-          .ilike('artist_name',resolvedArtistName)
+        // Apple artwork follows the already verified shared Main Discography cache.
+        // This keeps the warm-up small and means every later user reads the same
+        // persisted album membership and artwork URLs directly from Postgres.
+        const { data:discographyRows,error:discographyError } = await admin
+          .from('artist_discography_cache')
+          .select('discogs_master_id,album_title,first_release_year,position')
+          .eq('discogs_artist_id',resolvedArtistId)
           .not('discogs_master_id','is',null)
-          .limit(200)
+          .order('position',{ascending:true})
+          .limit(60)
 
-        if (catalogError) {
-          console.warn('Could not load artist discography for Apple cache',catalogError)
-          return Response.json({ error: 'Could not load artist discography' }, { status: 500 })
+        if (discographyError) {
+          console.warn('Could not load verified artist discography for Apple cache',discographyError)
+          return Response.json({ error:'Could not load verified discography' },{status:500})
         }
 
         const seenMasters=new Set<string>()
-        const catalog=(Array.isArray(catalogRows)?catalogRows:[])
-          .filter((row: any)=>{
-            const secondary=String(row?.secondary_types||'').trim()
-            const title=String(row?.album_title||'').toLowerCase()
-            return (!secondary||secondary==='Soundtrack') &&
-              !title.includes('film soundtrack') &&
-              !title.includes('motion picture soundtrack')
-          })
-          .sort((left: any,right: any)=>{
-            const directLeft=left?.match_type==='direct'?0:1
-            const directRight=right?.match_type==='direct'?0:1
-            return directLeft-directRight
-          })
+        const catalog=(Array.isArray(discographyRows)?discographyRows:[])
+          .map((row: any)=>({
+            discogs_master_id:row.discogs_master_id,
+            artist_name:resolvedArtistName,
+            album_title:row.album_title,
+            first_release_year:row.first_release_year,
+            position:row.position
+          }))
           .filter((row: any)=>{
             const key=String(row?.discogs_master_id||'')
-            if (!key || seenMasters.has(key)) return false
+            if (!key||seenMasters.has(key)) return false
             seenMasters.add(key)
             return true
           })
-          .slice(0,60)
 
         const masterIds=catalog
           .map((row: any)=>Number(row.discogs_master_id)||0)
           .filter(Boolean)
 
         if (!masterIds.length) {
-          return Response.json({eligible:0,cached_total:0,cached_added:0,complete:true})
+          return Response.json({
+            eligible:0,
+            cached_total:0,
+            cached_added:0,
+            complete:false,
+            deferred:true,
+            reason:'verified_discography_not_cached'
+          })
         }
 
         const { data:existingRows,error:existingError } = await admin
@@ -1036,10 +1110,75 @@ export default {
 
         // Shared discography writes are anchored to the trusted Discogs artist ID.
         // Wikipedia alone decides which releases belong to Main Discography.
-        // Wikidata and the local catalog may enrich those Wikipedia rows with
-        // stable identifiers, but they never add or remove membership.
-        const resolvedWikidataId=await wikidataArtistQidByDiscogsId(resolvedArtistId)
+        // The persisted cache is intentionally checked before any external lookup:
+        // once one user has verified an artist, later users can render it immediately.
+        const { data:profileState,error:profileStateError } = await admin
+          .from('artist_profile_cache')
+          .select('wikidata_id,discography_checked_at,discography_source,discography_count')
+          .eq('discogs_artist_id',resolvedArtistId)
+          .maybeSingle()
+
+        if (profileStateError) {
+          console.warn('Could not read discography verification state',profileStateError)
+        }
+
+        const checkedAt=profileState?.discography_checked_at
+          ?Date.parse(String(profileState.discography_checked_at))
+          :0
+        const cachedSource=String(profileState?.discography_source||'')
+        const cachedCount=Number(profileState?.discography_count)||0
+        const cachedWikidataId=String(profileState?.wikidata_id||'').trim()
+        const cacheTtl=cachedSource==='fallback'
+          ?24*60*60*1000
+          :30*24*60*60*1000
+
+        if (checkedAt && Date.now()-checkedAt<cacheTtl) {
+          if (cachedSource==='wikipedia' && cachedCount>0) {
+            return Response.json({
+              verified:true,
+              cached:true,
+              count:cachedCount,
+              changed:false,
+              source:'wikipedia',
+              wikidata_id:cachedWikidataId
+            })
+          }
+
+          if (cachedSource==='fallback') {
+            return Response.json({
+              verified:false,
+              cached:true,
+              count:cachedCount,
+              changed:false,
+              source:'fallback',
+              wikidata_id:cachedWikidataId
+            })
+          }
+        }
+
+        // Reuse the stable Wikidata identity when it is already known. Only the
+        // first uncached verification needs the comparatively slow SPARQL lookup.
+        let resolvedWikidataId=cachedWikidataId
         if (!resolvedWikidataId) {
+          resolvedWikidataId=await wikidataArtistQidByDiscogsId(resolvedArtistId)
+        }
+
+        if (!resolvedWikidataId) {
+          // Never throw away a previously verified shared discography because an
+          // upstream identity service is temporarily unavailable.
+          if (cachedSource==='wikipedia' && cachedCount>0) {
+            return Response.json({
+              verified:true,
+              cached:true,
+              stale:true,
+              changed:false,
+              count:cachedCount,
+              source:'wikipedia',
+              reason:'wikidata_identity_unavailable',
+              wikidata_id:''
+            })
+          }
+
           const now=new Date().toISOString()
           await admin.from('artist_profile_cache').upsert({
             discogs_artist_id:resolvedArtistId,
@@ -1056,39 +1195,6 @@ export default {
             count:0,
             source:'fallback',
             reason:'wikidata_identity_missing'
-          })
-        }
-
-        const { data:profileState,error:profileStateError } = await admin
-          .from('artist_profile_cache')
-          .select('wikidata_id,discography_checked_at,discography_source,discography_count')
-          .eq('discogs_artist_id',resolvedArtistId)
-          .maybeSingle()
-
-        if (profileStateError) {
-          console.warn('Could not read discography verification state',profileStateError)
-        }
-
-        const checkedAt=profileState?.discography_checked_at
-          ?Date.parse(String(profileState.discography_checked_at))
-          :0
-        const cachedSource=String(profileState?.discography_source||'')
-        const cacheTtl=cachedSource==='fallback'
-          ?24*60*60*1000
-          :30*24*60*60*1000
-
-        if (
-          checkedAt &&
-          Date.now()-checkedAt<cacheTtl &&
-          String(profileState?.wikidata_id||'')===resolvedWikidataId
-        ) {
-          return Response.json({
-            verified:cachedSource==='wikipedia',
-            cached:true,
-            count:Number(profileState?.discography_count)||0,
-            changed:false,
-            source:cachedSource||'fallback',
-            wikidata_id:resolvedWikidataId
           })
         }
 
@@ -1140,12 +1246,16 @@ export default {
           })
         }
 
-        const { data:catalogRows,error:catalogError } = await admin
-          .from('musicbrainz_catalog')
-          .select('mbid,discogs_master_id,album_title,first_release_year,secondary_types,match_type')
-          .ilike('artist_name',resolvedArtistName)
-          .limit(1000)
+        const [catalogResult,structuredAlbums]=await Promise.all([
+          admin
+            .from('musicbrainz_catalog')
+            .select('mbid,discogs_master_id,album_title,first_release_year,secondary_types,match_type')
+            .ilike('artist_name',resolvedArtistName)
+            .limit(1000),
+          wikidataStudioAlbums(resolvedWikidataId)
+        ])
 
+        const { data:catalogRows,error:catalogError } = catalogResult
         if (catalogError) {
           console.warn('Could not load local artist catalog for discography enrichment',catalogError)
         }
@@ -1168,7 +1278,6 @@ export default {
           })
         })
 
-        const structuredAlbums=await wikidataStudioAlbums(resolvedWikidataId)
         const structuredByTitle=new Map<string,any[]>()
 
         ;(Array.isArray(structuredAlbums)?structuredAlbums:[]).forEach((album: any)=>{
