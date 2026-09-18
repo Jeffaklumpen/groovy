@@ -138,15 +138,15 @@
       if(!best||best.score<25)return null;
       var page=best.page;
       var sections=await topSections(page,2);
-      var sectionData=[];
-      for(var i=0;i<sections.length;i++){
-        sectionData.push({
-          heading:sections[i].heading,
-          paragraphs:await sectionParagraphs(page,sections[i].index)
+      var sectionPromise=Promise.all(sections.map(function(section){
+        return sectionParagraphs(page,section.index).then(function(paragraphs){
+          return {heading:section.heading,paragraphs:paragraphs};
         });
-      }
-      var image=null;
-      try{image=await freeImage(page);}catch(error){}
+      }));
+      var imagePromise=freeImage(page).catch(function(){return null;});
+      var enriched=await Promise.all([sectionPromise,imagePromise]);
+      var sectionData=enriched[0];
+      var image=enriched[1];
       return {
         title:String(page.title||name),
         wikidata_id:String(page&&page.pageprops&&page.pageprops.wikibase_item||''),
