@@ -179,11 +179,24 @@
       });
     }
 
-    function refreshProfileInBackground(id,name,version){
-      fetchProfile({id:id,name:name}).then(function(profile){
-        if(version!==requestVersion||!active||!profile)return;
-        currentProfile=profile;
-        renderCurrent(version);
+    function loadProfileInBackground(id,name,version){
+      loadCachedProfile(id).then(function(row){
+        if(version!==requestVersion||!active)return null;
+
+        var profile=cachedProfile(row,id,name);
+        if(profile){
+          currentProfile=profile;
+          renderCurrent(version);
+
+          var fetchedAt=profile.fetched_at?Date.parse(String(profile.fetched_at)):0;
+          if(fetchedAt&&Date.now()-fetchedAt<30*24*60*60*1000)return null;
+        }
+
+        return fetchProfile({id:id,name:name}).then(function(freshProfile){
+          if(version!==requestVersion||!active||!freshProfile)return;
+          currentProfile=freshProfile;
+          renderCurrent(version);
+        });
       }).catch(function(error){
         log('warn','Could not refresh artist profile:',error);
       });
@@ -240,28 +253,37 @@
       var name=String(state&&state.artistName||'').trim();
 
       try{
-        var cachedPromise=loadCachedProfile(id);
-        var linkedPromise=name?Promise.resolve(null):localArtistByDiscogsId(id);
-
-        var identityResults=await Promise.all([cachedPromise,linkedPromise]);
-        if(version!==requestVersion||!active)return false;
-
-        var cachedRow=identityResults[0];
-        var linkedArtist=identityResults[1];
-        if(!name&&cachedRow&&cachedRow.artist_name)name=String(cachedRow.artist_name);
-        if(!name&&linkedArtist&&linkedArtist.name)name=String(linkedArtist.name);
-
-        var profile=cachedProfile(cachedRow,id,name);
-
         if(!name){
-          profile=await fetchProfile({id:id});
+          var identityResults=await Promise.all([
+            loadCachedProfile(id),
+            localArtistByDiscogsId(id)
+          ]);
           if(version!==requestVersion||!active)return false;
-          if(!profile||!profile.name)throw new Error('Artist not found');
-          name=String(profile.name);
+
+          var cachedRow=identityResults[0];
+          var linkedArtist=identityResults[1];
+          if(cachedRow&&cachedRow.artist_name)name=String(cachedRow.artist_name);
+          if(!name&&linkedArtist&&linkedArtist.name)name=String(linkedArtist.name);
+
+          if(!name){
+            var resolvedProfile=await fetchProfile({id:id});
+            if(version!==requestVersion||!active)return false;
+            if(!resolvedProfile||!resolvedProfile.name)throw new Error('Artist not found');
+            name=String(resolvedProfile.name);
+            currentProfile=resolvedProfile;
+          }else{
+            currentProfile=cachedProfile(cachedRow,id,name)||emptyProfile(id,name);
+          }
+        }else{
+          // Normal in-app navigation already knows the artist name. Do not wait for
+          // Discogs or even the profile cache before starting the local page read model.
+          currentProfile=emptyProfile(id,name);
         }
 
-        currentProfile=profile||emptyProfile(id,name);
-        if(!currentProfile.name)currentProfile.name=name;
+        currentNavigation={
+          backToAlbum:!!(state&&state.artistSource==='album'),
+          backLabel:state&&state.artistBackLabel?String(state.artistBackLabel):'album'
+        };
 
         var overviewResult=await api.rpc('get_artist_overview',{p_artist_name:name});
         if(version!==requestVersion||!active)return false;
@@ -269,15 +291,10 @@
 
         currentOverview=overviewResult.data||{};
         currentWikipedia=null;
-        currentNavigation={
-          backToAlbum:!!(state&&state.artistSource==='album'),
-          backLabel:state&&state.artistBackLabel?String(state.artistBackLabel):'album'
-        };
-
         renderCurrent(version);
 
-        // External sources never block the page. They only enrich an already-rendered profile.
-        refreshProfileInBackground(id,name,version);
+        // External/cached profile data enriches an already-visible page.
+        loadProfileInBackground(id,name,version);
         loadWikipediaInBackground(name,version);
         warmArtworkInBackground(id,name,currentOverview,version);
 

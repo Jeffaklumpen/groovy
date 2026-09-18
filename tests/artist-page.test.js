@@ -92,7 +92,8 @@ test('artist and album navigation preserve contextual back behavior without a se
 test('artist pages render from local data before external enrichment and warm artwork asynchronously',()=>{
   const controller=fs.readFileSync('js/artist-controller.js','utf8');
   assert.match(controller,/api\.rpc\('get_artist_overview'/);
-  assert.match(controller,/renderCurrent\(version\);[\s\S]*refreshProfileInBackground/);
+  assert.match(controller,/currentProfile=emptyProfile\(id,name\);[\s\S]*api\.rpc\('get_artist_overview'/);
+  assert.match(controller,/renderCurrent\(version\);[\s\S]*loadProfileInBackground/);
   assert.match(controller,/loadWikipediaInBackground/);
   assert.match(controller,/warmArtworkInBackground/);
   assert.match(controller,/action:'cacheArtistArtwork'/);
