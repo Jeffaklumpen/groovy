@@ -421,6 +421,18 @@ test('inline composer works labels are bounded before other albums and can parse
   assert.match(candidates,/strategy:'main_article_inline_works'/);
 });
 
+test('nested Wikipedia recording lists cannot truncate the outer Main Discography list',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const helperStart=edge.indexOf('function wikipediaTopLevelListItems');
+  const helperEnd=edge.indexOf('function wikipediaStudioAlbumsFromHtml',helperStart);
+  const helper=edge.slice(helperStart,helperEnd);
+  assert.match(helper,/let ulDepth=0/);
+  assert.match(helper,/if \(currentParts && ulDepth===1/);
+  assert.match(helper,/else if \(ulDepth>1\)/);
+  assert.match(helper,/if \(!allLists && outerListsSeen>=1\) break/);
+  assert.match(edge,/discard nested cast \/\n        \/\/ alternate-recording lists/);
+});
+
 test('composer works subsections can parse all list columns without loosening normal album lists',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const parserStart=edge.indexOf('function wikipediaStudioAlbumsFromHtml');
@@ -430,7 +442,8 @@ test('composer works subsections can parse all list columns without loosening no
   const candidateEnd=edge.indexOf('function wikipediaTitleKey',candidateStart);
   const candidates=edge.slice(candidateStart,candidateEnd);
 
-  assert.match(parser,/options\?\.allLists\?lists:lists\.slice\(0,1\)/);
+  assert.match(edge,/function wikipediaTopLevelListItems/);
+  assert.match(parser,/wikipediaTopLevelListItems/);
   assert.match(edge,/normalized==='musicals and show recordings'/);
   assert.match(edge,/function wikipediaChildSections/);
   assert.match(candidates,/rankWikipediaCoreWorksSection/);
@@ -613,8 +626,8 @@ test('Wikipedia studio tables own Main Discography independently of local Discog
   const block=edge.slice(start,end);
 
   assert.match(edge,/function wikipediaStudioAlbumsFromHtml/);
-  assert.match(edge,/const lists=html\.match\(\/<ul/);
-  assert.match(edge,/options\?\.allLists\?lists:lists\.slice\(0,1\)/);
+  assert.match(edge,/function wikipediaTopLevelListItems/);
+  assert.match(edge,/const listItems=wikipediaTopLevelListItems/);
   assert.match(edge,/Released\\s\*:/);
   assert.match(edge,/wikipediaParse\(artistPage,'sections\|links\|text'\)/);
   assert.match(edge,/function wikipediaSectionHtml/);
