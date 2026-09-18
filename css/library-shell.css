@@ -441,6 +441,12 @@ body{padding:0 32px 56px;background:radial-gradient(circle at 50% -15%,#18100c 0
 .album-detail{display:grid;grid-template-columns:minmax(330px,1.05fr) minmax(280px,.95fr) minmax(390px,1.2fr);gap:22px;width:min(1560px,100%);max-width:none;min-height:0;padding:22px;background:transparent;box-shadow:none;overflow:visible;transform:none!important}
 .album-detail-cover{position:relative;grid-column:1;grid-row:1;width:auto;height:auto;aspect-ratio:1;border:1px solid var(--groovy-line);border-radius:8px;background:#111;overflow:hidden}
 .album-detail-cover img{position:static;width:100%;height:100%;border-radius:8px}
+.detail-library-remove-button{position:absolute;z-index:8;right:11px;bottom:11px;display:inline-flex;width:38px;height:38px;align-items:center;justify-content:center;padding:0;border:1px solid rgba(255,255,255,.14);border-radius:50%;background:rgba(15,15,17,.88);color:#b8b8bd;box-shadow:0 8px 22px rgba(0,0,0,.32);cursor:pointer;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);transition:color .15s ease,border-color .15s ease,background .15s ease,transform .15s ease,box-shadow .15s ease}
+.detail-library-remove-button[hidden]{display:none!important}
+.detail-library-remove-button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.detail-library-remove-button:hover{border-color:rgba(222,91,91,.58);background:rgba(82,28,30,.9);color:#f0b1b1;box-shadow:0 9px 24px rgba(0,0,0,.38)}
+.detail-library-remove-button:focus-visible{outline:2px solid rgba(232,83,1,.9);outline-offset:2px}
+.detail-library-remove-button:active{transform:scale(.94)}
 .album-detail-main{position:relative;grid-column:2;grid-row:1;width:auto;padding:18px 0;text-shadow:none}
 .album-detail-main:before{display:none}
 .detail-artist{margin:0 0 8px;color:#aaaab0;font-size:24px;font-weight:480}
@@ -545,6 +551,8 @@ body{padding:0 12px calc(78px + env(safe-area-inset-bottom))}
 .album-detail{display:grid;grid-template-columns:minmax(0,44%) minmax(0,56%);gap:0 14px;width:100%;padding:65px 12px calc(92px + env(safe-area-inset-bottom));transform:none!important}
 .album-detail-cover{grid-column:1;grid-row:1;align-self:end;border-radius:6px}
 .album-detail-cover img{border-radius:6px}
+.detail-library-remove-button{right:7px;bottom:7px;width:34px;height:34px;background:rgba(14,14,16,.9)}
+.detail-library-remove-button svg{width:15px;height:15px}
 .album-detail-main{grid-column:2;grid-row:1;align-self:end;padding:4px 0 0}
 .detail-artist{overflow:hidden;font-size:17px;text-overflow:ellipsis;white-space:nowrap}
 .detail-album{display:-webkit-box;overflow:hidden;font-size:24px;-webkit-box-orient:vertical;-webkit-line-clamp:2}

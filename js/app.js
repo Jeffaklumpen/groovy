@@ -835,6 +835,7 @@ var shelfPickerStatus=document.getElementById('shelfPickerStatus');
 var shelfPickerTitle=document.getElementById('shelfPickerTitle');
 var detailShelfActions=document.getElementById('detailShelfActions');
 var detailShelfStatus=document.getElementById('detailShelfStatus');
+var detailLibraryRemoveButton=document.getElementById('detailLibraryRemoveButton');
 var detailSocialContext=document.getElementById('detailSocialContext');
 var detailOpenRecordIndex=-1;
 var detailTracklistController=DetailTracklistController.create({
@@ -1393,13 +1394,23 @@ function renderDetailLibraryActions(index,container){
   container.querySelectorAll('[data-detail-library-action]').forEach(function(button){button.remove();});
 
   var record=records[index];
-  if(!record||viewedUserId!==null){
+  var canEdit=!!record&&viewedUserId===null;
+
+  if(detailLibraryRemoveButton){
+    detailLibraryRemoveButton.hidden=!canEdit;
+    detailLibraryRemoveButton.dataset.index=canEdit?String(index):'';
+    var removeLabel=window.libraryView==='wishlist'?'Remove from wishlist':'Remove from collection';
+    detailLibraryRemoveButton.setAttribute('aria-label',removeLabel);
+    detailLibraryRemoveButton.title=removeLabel;
+  }
+
+  if(!canEdit){
     if(!container.children.length)container.hidden=true;
     return;
   }
 
-  container.hidden=false;
   if(window.libraryView==='wishlist'){
+    container.hidden=false;
     var add=document.createElement('button');
     add.type='button';
     add.className='detail-shelf-button primary';
@@ -1414,17 +1425,15 @@ function renderDetailLibraryActions(index,container){
     });
     container.appendChild(add);
   }
+}
 
-  var remove=document.createElement('button');
-  remove.type='button';
-  remove.className='detail-shelf-button secondary detail-library-remove';
-  remove.dataset.detailLibraryAction='remove';
-  remove.textContent=window.libraryView==='wishlist'?'Remove from wishlist':'Remove from collection';
-  remove.addEventListener('click',function(event){
-    event.preventDefault();event.stopPropagation();
-    requestRemoveAlbum(index,true);
+if(detailLibraryRemoveButton){
+  detailLibraryRemoveButton.addEventListener('click',function(event){
+    event.preventDefault();
+    event.stopPropagation();
+    var index=parseInt(detailLibraryRemoveButton.dataset.index,10);
+    if(!isNaN(index))requestRemoveAlbum(index,true);
   });
-  container.appendChild(remove);
 }
 
 window.groovyMoveWishlistToCollection=async function(index,button){
