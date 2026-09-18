@@ -1035,8 +1035,9 @@ export default {
         }
 
         // Shared discography writes are anchored to the trusted Discogs artist ID.
-        // Wikidata is used only to resolve that identity to the corresponding
-        // English Wikipedia page.
+        // Wikipedia alone decides which releases belong to Main Discography.
+        // Wikidata and the local catalog may enrich those Wikipedia rows with
+        // stable identifiers, but they never add or remove membership.
         const resolvedWikidataId=await wikidataArtistQidByDiscogsId(resolvedArtistId)
         if (!resolvedWikidataId) {
           const now=new Date().toISOString()
@@ -1082,7 +1083,7 @@ export default {
           String(profileState?.wikidata_id||'')===resolvedWikidataId
         ) {
           return Response.json({
-            verified:['wikipedia','wikidata'].includes(cachedSource),
+            verified:cachedSource==='wikipedia',
             cached:true,
             count:Number(profileState?.discography_count)||0,
             changed:false,
@@ -1091,157 +1092,34 @@ export default {
           })
         }
 
-        // The local MusicBrainz↔Discogs catalog is enrichment only. It may attach
-        // MBID/master identity to a Wikipedia studio album, but it must never decide
-        // whether that album belongs in Main Discography.
-        const { data:catalogRows,error:catalogError } = await admin
-          .from('musicbrainz_catalog')
-          .select('mbid,discogs_master_id,artist_name,album_title,first_release_year,secondary_types,match_type')
-          .ilike('artist_name',resolvedArtistName)
-          .limit(1000)
-
-        if (catalogError) {
-          console.warn('Could not load local artist catalog for discography enrichment',catalogError)
-        }
-
-        const catalog=(Array.isArray(catalogRows)?catalogRows:[])
-          .filter((row: any)=>row?.match_type==='direct')
-        const byTitle=new Map<string,any[]>()
-
-        catalog.forEach((row: any)=>{
-          wikipediaAlbumKeys(row?.album_title,resolvedArtistName).forEach((key: string)=>{
-            if (!byTitle.has(key)) byTitle.set(key,[])
-            byTitle.get(key)!.push(row)
-          })
-        })
-
-        function bestCatalogMatch(album: any) {
-          const candidates:any[]=[]
-          const seen=new Set<string>()
-
-          wikipediaAlbumKeys(album?.article_title||album?.title,resolvedArtistName)
-            .concat(wikipediaAlbumKeys(album?.title,resolvedArtistName))
-            .forEach((key: string)=>{
-              ;(byTitle.get(key)||[]).forEach((row: any)=>{
-                const identity=String(row?.mbid||row?.discogs_master_id||'')
-                if (!identity||seen.has(identity)) return
-                seen.add(identity)
-                candidates.push(row)
-              })
-            })
-
-          return candidates
-            .map((row: any)=>{
-              const secondary=String(row?.secondary_types||'').toLowerCase()
-              const rowYear=Number(row?.first_release_year)||0
-              const wantedYear=Number(album?.year)||0
-              let score=0
-              if (wantedYear&&rowYear===wantedYear) score+=80
-              else if (wantedYear&&rowYear) score-=Math.min(Math.abs(wantedYear-rowYear),20)
-              if (!secondary) score+=20
-              else if (secondary==='soundtrack') score+=15
-              if (/compilation|live|remix|dj-mix|mixtape/.test(secondary)) score-=60
-              return {row,score}
-            })
-            .sort((left: any,right: any)=>right.score-left.score)[0]?.row||null
-        }
-
-        function wikipediaRows(albums: any[],sourcePage: string) {
-          const rows:any[]=[]
-          const seen=new Set<string>()
-
-          ;(Array.isArray(albums)?albums:[]).forEach((album: any,index: number)=>{
-            const title=wikipediaDisplayTitle(album?.title||album?.article_title)
-            if (!title) return
-
-            const articleTitle=String(album?.article_title||'').trim()
-            const year=Number(album?.year)||null
-            const sourceIdentity=normalizeIdentity(articleTitle||title)
-            const sourceKey='wikipedia:'+
-              (sourceIdentity||normalizeIdentity(title))+
-              '|'+String(year||index+1)
-            if (seen.has(sourceKey)) return
-            seen.add(sourceKey)
-
-            const match=bestCatalogMatch(album)
-            rows.push({
-              discogs_artist_id:resolvedArtistId,
-              source_key:sourceKey,
-              position:index+1,
-              source_page:sourcePage||null,
-              mbid:match?.mbid?String(match.mbid):null,
-              discogs_master_id:match?.discogs_master_id
-                ?Number(match.discogs_master_id)
-                :null,
-              album_title:title,
-              first_release_year:year||Number(match?.first_release_year)||null,
-              source:'wikipedia',
-              verified_at:new Date().toISOString()
-            })
-          })
-
-          return rows
-        }
-
-        function wikidataRows(albums: any[]) {
-          const rows:any[]=[]
-          const seen=new Set<string>()
-
-          ;(Array.isArray(albums)?albums:[]).forEach((album: any,index: number)=>{
-            const title=wikipediaDisplayTitle(album?.title)
-            if (!title) return
-            const local=bestCatalogMatch(album)
-            const mbid=String(album?.mbid||local?.mbid||'').trim()||null
-            const master=Number(album?.discogs_master_id||local?.discogs_master_id)||null
-            const year=Number(album?.year||local?.first_release_year)||null
-            const identity=mbid||String(master||'')||normalizeIdentity(title)+'|'+String(year||index+1)
-            const sourceKey='wikidata:'+identity
-            if (seen.has(sourceKey)) return
-            seen.add(sourceKey)
-
-            rows.push({
-              discogs_artist_id:resolvedArtistId,
-              source_key:sourceKey,
-              position:index+1,
-              source_page:null,
-              mbid,
-              discogs_master_id:master,
-              album_title:title,
-              first_release_year:year,
-              source:'wikidata',
-              verified_at:new Date().toISOString()
-            })
-          })
-
-          return rows
-        }
-
         const wikipedia=await wikipediaDiscographyCandidates(
           resolvedWikidataId,
           resolvedArtistName
         )
-        const wikipediaSourcePage=wikipedia.discographyPage||wikipedia.artistPage||''
-        let matched=wikipediaRows(wikipedia.studioAlbums,wikipediaSourcePage)
-        let source:'wikipedia'|'wikidata'='wikipedia'
-        let verified=matched.length>0
-        let wikidataCount=0
+        const wikipediaAlbums=Array.isArray(wikipedia.studioAlbums)
+          ?wikipedia.studioAlbums
+          :[]
 
-        // Wikidata is a structured fallback only when Wikipedia does not expose
-        // a usable Studio albums table. It is not used to trim Wikipedia rows.
-        if (!verified) {
-          const studioAlbums=await wikidataStudioAlbums(resolvedWikidataId)
-          wikidataCount=studioAlbums.length
-          const fallbackRows=wikidataRows(studioAlbums)
-          if (fallbackRows.length) {
-            matched=fallbackRows
-            source='wikidata'
-            verified=true
+        if (!wikipediaAlbums.length) {
+          // Preserve an older verified Wikipedia cache on transient upstream failure.
+          // Do not refresh checked_at so the next visit retries Wikipedia.
+          if (
+            cachedSource==='wikipedia' &&
+            Number(profileState?.discography_count||0)>0
+          ) {
+            return Response.json({
+              verified:true,
+              cached:true,
+              stale:true,
+              changed:false,
+              count:Number(profileState?.discography_count)||0,
+              source:'wikipedia',
+              reason:'wikipedia_studio_discography_unavailable',
+              wikidata_id:resolvedWikidataId
+            })
           }
-        }
 
-        const now=new Date().toISOString()
-
-        if (!verified) {
+          const now=new Date().toISOString()
           await admin.from('artist_profile_cache').upsert({
             discogs_artist_id:resolvedArtistId,
             artist_name:resolvedArtistName,
@@ -1257,13 +1135,163 @@ export default {
             changed:false,
             count:0,
             source:'fallback',
-            wikipedia_count:Array.isArray(wikipedia.studioAlbums)
-              ?wikipedia.studioAlbums.length
-              :0,
-            wikidata_count:wikidataCount,
+            reason:'wikipedia_studio_discography_missing',
             wikidata_id:resolvedWikidataId
           })
         }
+
+        const { data:catalogRows,error:catalogError } = await admin
+          .from('musicbrainz_catalog')
+          .select('mbid,discogs_master_id,album_title,first_release_year,secondary_types,match_type')
+          .ilike('artist_name',resolvedArtistName)
+          .limit(1000)
+
+        if (catalogError) {
+          console.warn('Could not load local artist catalog for discography enrichment',catalogError)
+        }
+
+        const catalog=Array.isArray(catalogRows)?catalogRows:[]
+        const byMbid=new Map<string,any>()
+        const byMaster=new Map<string,any>()
+        const byTitle=new Map<string,any[]>()
+
+        catalog.forEach((row: any)=>{
+          const mbid=String(row?.mbid||'').toLowerCase()
+          const master=String(row?.discogs_master_id||'')
+          if (mbid) byMbid.set(mbid,row)
+          if (master) byMaster.set(master,row)
+          if (row?.match_type!=='direct') return
+
+          wikipediaAlbumKeys(row?.album_title,resolvedArtistName).forEach((key: string)=>{
+            if (!byTitle.has(key)) byTitle.set(key,[])
+            byTitle.get(key)!.push(row)
+          })
+        })
+
+        const structuredAlbums=await wikidataStudioAlbums(resolvedWikidataId)
+        const structuredByTitle=new Map<string,any[]>()
+
+        ;(Array.isArray(structuredAlbums)?structuredAlbums:[]).forEach((album: any)=>{
+          wikipediaAlbumKeys(album?.title,resolvedArtistName).forEach((key: string)=>{
+            if (!structuredByTitle.has(key)) structuredByTitle.set(key,[])
+            structuredByTitle.get(key)!.push(album)
+          })
+        })
+
+        function bestStructuredMatch(album: any) {
+          const candidates:any[]=[]
+          const seen=new Set<string>()
+          const keys=wikipediaAlbumKeys(
+            album?.article_title||album?.title,
+            resolvedArtistName
+          ).concat(wikipediaAlbumKeys(album?.title,resolvedArtistName))
+
+          keys.forEach((key: string)=>{
+            ;(structuredByTitle.get(key)||[]).forEach((row: any)=>{
+              const identity=String(
+                row?.mbid||
+                row?.discogs_master_id||
+                normalizeIdentity(row?.title)
+              )
+              if (!identity||seen.has(identity)) return
+              seen.add(identity)
+              candidates.push(row)
+            })
+          })
+
+          const wantedYear=Number(album?.year)||0
+          return candidates
+            .map((row: any)=>{
+              const rowYear=Number(row?.year)||0
+              let score=0
+              if (wantedYear&&rowYear===wantedYear) score+=100
+              else if (wantedYear&&rowYear) {
+                score-=Math.min(Math.abs(wantedYear-rowYear),20)
+              }
+              return {row,score}
+            })
+            .sort((left: any,right: any)=>right.score-left.score)[0]?.row||null
+        }
+
+        function bestCatalogTitleMatch(album: any) {
+          const candidates:any[]=[]
+          const seen=new Set<string>()
+          const keys=wikipediaAlbumKeys(
+            album?.article_title||album?.title,
+            resolvedArtistName
+          ).concat(wikipediaAlbumKeys(album?.title,resolvedArtistName))
+
+          keys.forEach((key: string)=>{
+            ;(byTitle.get(key)||[]).forEach((row: any)=>{
+              const identity=String(row?.mbid||row?.discogs_master_id||'')
+              if (!identity||seen.has(identity)) return
+              seen.add(identity)
+              candidates.push(row)
+            })
+          })
+
+          const wantedYear=Number(album?.year)||0
+          return candidates
+            .map((row: any)=>{
+              const secondary=String(row?.secondary_types||'').toLowerCase()
+              const rowYear=Number(row?.first_release_year)||0
+              let score=0
+              if (wantedYear&&rowYear===wantedYear) score+=80
+              else if (wantedYear&&rowYear) {
+                score-=Math.min(Math.abs(wantedYear-rowYear),20)
+              }
+              if (!secondary) score+=20
+              else if (secondary==='soundtrack') score+=15
+              if (/compilation|live|remix|dj-mix|mixtape/.test(secondary)) score-=60
+              return {row,score}
+            })
+            .sort((left: any,right: any)=>right.score-left.score)[0]?.row||null
+        }
+
+        const now=new Date().toISOString()
+        const sourcePage=wikipedia.discographyPage||wikipedia.artistPage||''
+        const matched=wikipediaAlbums.map((album: any,index: number)=>{
+          const title=wikipediaDisplayTitle(album?.title||album?.article_title)
+          if (!title) return null
+
+          const structured=bestStructuredMatch(album)
+          let local:any=null
+
+          if (structured?.mbid) {
+            local=byMbid.get(String(structured.mbid).toLowerCase())||null
+          }
+          if (!local&&structured?.discogs_master_id) {
+            local=byMaster.get(String(structured.discogs_master_id))||null
+          }
+          if (!local) local=bestCatalogTitleMatch(album)
+
+          const mbid=String(local?.mbid||structured?.mbid||'').trim()||null
+          const master=Number(
+            local?.discogs_master_id||structured?.discogs_master_id
+          )||null
+          const year=Number(
+            album?.year||structured?.year||local?.first_release_year
+          )||null
+
+          const articleTitle=String(album?.article_title||'').trim()
+          const sourceIdentity=normalizeIdentity(articleTitle||title)
+          const sourceKey='wikipedia:'+
+            (sourceIdentity||normalizeIdentity(title))+
+            '|'+String(Number(album?.year)||index+1)
+
+          return {
+            discogs_artist_id:resolvedArtistId,
+            source_key:sourceKey,
+            position:index+1,
+            source_page:sourcePage||null,
+            mbid,
+            discogs_master_id:master,
+            album_title:title,
+            first_release_year:year,
+            source:'wikipedia',
+            verified_at:now
+          }
+        }).filter(Boolean)
 
         const { data:existingRows,error:existingError } = await admin
           .from('artist_discography_cache')
@@ -1317,7 +1345,7 @@ export default {
           artist_name:resolvedArtistName,
           wikidata_id:resolvedWikidataId,
           discography_checked_at:now,
-          discography_source:source,
+          discography_source:'wikipedia',
           discography_count:matched.length,
           updated_at:now
         },{onConflict:'discogs_artist_id'})
@@ -1326,11 +1354,11 @@ export default {
           verified:true,
           changed,
           count:matched.length,
-          source,
-          wikipedia_count:Array.isArray(wikipedia.studioAlbums)
-            ?wikipedia.studioAlbums.length
-            :0,
-          wikidata_count:wikidataCount,
+          source:'wikipedia',
+          enriched_count:matched.filter((row: any)=>
+            row&& (row.mbid||row.discogs_master_id)
+          ).length,
+          wikipedia_count:wikipediaAlbums.length,
           wikidata_id:resolvedWikidataId
         })
       }

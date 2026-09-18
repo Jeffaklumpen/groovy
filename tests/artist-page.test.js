@@ -176,7 +176,7 @@ test('artist overview is prefetched from album detail and reused by artist route
   assert.match(app,/groovyPrefetchArtist\(\{id:previewArtistId,name:artist\}\)/);
 });
 
-test('verified artist discography resolves artist identity from Discogs and prefers Wikipedia core albums',()=>{
+test('verified artist discography resolves trusted identity while Wikipedia alone owns membership',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
   const end=edge.indexOf("if (action === 'artistProfile')",start);
@@ -184,13 +184,15 @@ test('verified artist discography resolves artist identity from Discogs and pref
   const block=edge.slice(start,end);
   assert.match(edge,/P1953/);
   assert.match(edge,/sitefilter=enwiki/);
-  assert.match(edge,/wikipediaParse\([^\n]+,'sections'\)/);
-  assert.match(edge,/wikipediaParse\([\s\S]*?'links'/);
+  assert.match(edge,/wikipediaStudioAlbumsFromHtml/);
   assert.match(edge,/standardised studio albums/);
-  assert.match(edge,/Q208569/);
-  assert.match(block,/artist_discography_cache/);
+  assert.match(block,/Wikipedia alone decides which releases belong to Main Discography/);
+  assert.match(block,/structuredAlbums=await wikidataStudioAlbums/);
+  assert.match(block,/source:'wikipedia'/);
+  assert.match(block,/discogs_master_id:master/);
+  assert.doesNotMatch(block,/function wikidataRows/);
+  assert.doesNotMatch(block,/source:'wikidata'/);
   assert.doesNotMatch(block,/wikidataId:String/);
-  assert.match(block,/source='wikidata'|source:'wikidata'/);
 });
 
 test('verified discography cache replaces the loose fallback only when populated',()=>{
@@ -265,7 +267,9 @@ test('Wikipedia studio tables own Main Discography independently of local Discog
   assert.match(edge,/const firstList=html\.match\(\/<ul/);
   assert.match(edge,/Released\\s\*:/);
   assert.match(edge,/wikipediaParse\([\s\S]*?'text'/);
-  assert.match(block,/local MusicBrainz↔Discogs catalog is enrichment only/i);
+  assert.match(block,/Wikipedia alone decides which releases belong to Main Discography/i);
+  assert.match(block,/structuredAlbums=await wikidataStudioAlbums/);
+  assert.doesNotMatch(block,/source:'wikidata'/);
   assert.match(block,/source_key:sourceKey/);
   assert.match(block,/mbid:match\?\.mbid\?String\(match\.mbid\):null/);
   assert.match(block,/discogs_master_id:match\?\.discogs_master_id[\s\S]*?:null/);
