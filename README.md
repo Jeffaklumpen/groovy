@@ -1,44 +1,72 @@
 # Groovy
 
-Groovy är en enkel webbapp för att bygga och visa en vinylsamling. Sidan körs via GitHub Pages och använder Supabase för inloggning, databas, profilbilder och Discogs-sökning.
+Groovy är en webbapp för att bygga, organisera och dela en vinylsamling. Frontenden körs som vanilla JavaScript via GitHub Pages och använder Supabase för autentisering, databas, profilbilder, RPC:er och Edge Functions.
 
 ## Lokal kontroll
 
-Projektet kräver inget byggsteg. JavaScript-testerna körs med Node.js:
+Projektet har inget frontend-byggsteg. Node-regressionstesterna körs med:
 
 ```text
-node --test tests/route-state.test.js
+npm run test:node
 ```
+
+Browser-smoke-testerna körs med Playwright:
+
+```text
+npm install
+npm run test:e2e
+```
+
+Supabase JS laddas i webbläsaren från CDN och är pinnad till en exakt testad version i `index.html`.
 
 ## Profilregler
 
 | Besökare | Adress | Resultat |
 | --- | --- | --- |
 | Utloggad | Startsidan | Tom egen samling och möjlighet att logga in |
-| Utloggad | Direkt profiladress | Uppmaning att logga in eller skapa konto |
+| Utloggad | Direkt profiladress | Omdirigering till startsidan/inloggning |
 | Inloggad | Egen profiladress | Omdirigering till redigerbar egen samling |
 | Inloggad | Annan profil med album | Skrivskyddad samling |
 | Inloggad | Annan profil utan album | Meddelande om tom samling |
 | Inloggad | Profil som inte finns | Meddelande om att användaren inte finns |
 
-## Önskelista
+## Collection och wishlist
 
-Inloggade användare kan spara album i en separat önskelista och visa andra användares önskelistor skrivskyddat. Databastabellen och dess RLS-policyer finns i `supabase/migrations/20260911000000_create_wishlists.sql`.
+Albumdata är gemensam katalogdata. En vanlig klient får läsa katalogen men får inte längre skriva direkt till `artists`, `albums` eller `tracks`.
+
+När ett Discogs-album läggs till används RPC:n `save_album_to_library`. Den skapar/återanvänder artist och album, kompletterar tracklist och lägger posten i collection eller wishlist i en enda databastransaktion.
+
+Användarspecifika tabeller skyddas med RLS och ownership-regler.
+
+## Supabase
+
+- Hanterade databasändringar finns i `supabase/migrations/`.
+- En återuppbyggnadsbaseline av live-schemat finns i `supabase/baseline/20260918_live_schema.sql`.
+- Edge Functions finns i `supabase/functions/`.
+- Direkta Data API-rättigheter är explicita i stället för att förlita sig på Supabases äldre standardgrants.
+
+Baselinen innehåller schema och säkerhetsmodell men inte användardata eller innehållet i MusicBrainz-katalogen.
 
 ## Installation på mobil
 
-Groovy kan installeras som en webbapp på Android och läggas till på hemskärmen på iPhone. Manifest och ikoner finns i repot. Service workern är avsiktligt nätverksbaserad och cachar inte appfiler, så publicerade uppdateringar fortsätter att slå igenom utan hård omladdning.
+Groovy kan installeras som webbapp på Android och läggas till på hemskärmen på iPhone. Service workern är avsiktligt nätverksbaserad och cachar inte appfiler, så publicerade uppdateringar ska slå igenom utan hård omladdning.
 
-## Säkert arbetssätt
+## Brancher och deploy
 
-Gör ändringar på en separat gren och skapa en pull request mot `databas`. Kontrollera sidan lokalt innan grenen slås ihop. GitHub Pages-sidan påverkas först när ändringen har slagits ihop i den gren som publiceras.
+`notes` är aktiv utvecklingsbranch och `main` är stabil release-checkpoint.
 
-## Kända förbättringsområden
+GitHub Pages-konfigurationen bygger för närvarande även pushes till `notes`. Tills Pages-källan har flyttats till den avsedda release-branchen ska `notes` därför behandlas som en deployad utvecklingsmiljö, inte som en helt isolerad lokal branch.
 
-- Äldre delar av databasschemat och deras Supabase RLS-policyer behöver fortfarande dokumenteras i repot.
-- När ett album läggs till görs flera separata databasoperationer. En Supabase-funktion/transaktion skulle göra flödet säkrare mot halvfärdiga poster.
-- Sorteringsordningen sparas en post i taget. En samlad databasoperation skulle ge bättre prestanda för stora samlingar.
-- Användarsökningen gör en extra antalsfråga per användare. En vy eller RPC i Supabase kan ersätta detta.
-- `js/app.js` är fortfarande stor. Den bör delas upp stegvis först när fler tester täcker befintligt beteende.
+## Arkitekturprinciper
 
-Den publika Supabase-nyckeln i webbkoden är en klientnyckel. Säkerheten måste därför alltid ligga i korrekta RLS-policyer i Supabase.
+- Nya features ska läggas i tydliga moduler i stället för att växa `app.js` av bekvämlighet.
+- `app.js` är främst integrations-/composition root och ska inte delas bara för att nå ett visst filmått.
+- Ny kod ska använda `GroovyRecord`-adaptern och inte läsa positionsfält som `record[10]` direkt.
+- Routing ska successivt få en enda ägare.
+- Nya CSS-ändringar ska helst ändra den riktiga regeln i stället för att lägga ännu ett versionslager med `!important`.
+
+Se `docs/ARCHITECTURE.md` för mer detaljer.
+
+## Säkerhet
+
+Den publika Supabase-nyckeln i webbkoden är en publishable klientnyckel och är avsedd att vara publik. Säkerheten ligger i explicita databasgrants, RLS, validerade RPC:er och JWT-skyddade Edge Functions.
