@@ -69,7 +69,7 @@ function create(options){
     var isOwner=getViewedUserId()===null;
     if(elements.title){
       var username=String(getViewedUsername()||'').trim();
-      elements.title.textContent=isOwner?'My pressing':((username||'Collector')+"'s pressing");
+      elements.title.textContent=isOwner?'My Pressing':((username||'Collector')+"'s Pressing");
     }
     var result=View.renderCopyDetails({
       hasRecord:!!record,
