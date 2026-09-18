@@ -1788,13 +1788,13 @@ export default {
           :30*24*60*60*1000
 
         if (checkedAt && Date.now()-checkedAt<cacheTtl) {
-          if (cachedSource==='wikipedia' && cachedCount>0) {
+          if (cachedSource==='vinyl' && cachedCount>0) {
             return Response.json({
               verified:true,
               cached:true,
               count:cachedCount,
               changed:false,
-              source:'wikipedia',
+              source:'vinyl',
               wikidata_id:cachedWikidataId
             })
           }
@@ -2115,9 +2115,51 @@ export default {
           return true
         })
 
+        const unresolvedMasters=mainDiscographyEntries.filter((entry: any)=>
+          !Number(entry.local?.discogs_master_id)
+        )
+        await mapWithConcurrency(unresolvedMasters,4,async (entry: any)=>{
+          const resolved=await resolveVinylMasterByTitle(
+            canonicalArtistName,
+            entry.title,
+            entry.album?.year
+          )
+          if (!resolved)return
+          entry.local={
+            ...(entry.local||{}),
+            discogs_master_id:resolved.discogs_master_id
+          }
+        })
+
+        const vinylCheck=await verifyDiscogsVinylMasters(
+          admin,
+          canonicalArtistName,
+          mainDiscographyEntries
+            .map((entry: any)=>Number(entry.local?.discogs_master_id)||0)
+            .filter(Boolean)
+        )
+
+        if (!vinylCheck.complete && cachedSource==='vinyl' && cachedCount>0) {
+          return Response.json({
+            verified:true,
+            cached:true,
+            stale:true,
+            changed:false,
+            count:cachedCount,
+            source:'vinyl',
+            reason:'discogs_vinyl_verification_incomplete',
+            wikidata_id:resolvedWikidataId
+          })
+        }
+
+        const vinylDiscographyEntries=mainDiscographyEntries.filter((entry: any)=>{
+          const master=Number(entry.local?.discogs_master_id)||0
+          return master>0 && vinylCheck.vinylIds.has(master)
+        })
+
         const now=new Date().toISOString()
         const sourcePage=wikipedia.discographyPage||wikipedia.artistPage||''
-        const matched=mainDiscographyEntries.map((entry: any)=>{
+        const matched=vinylDiscographyEntries.map((entry: any,position: number)=>{
           const album=entry.album
           const index=entry.index
           const title=entry.title
@@ -2136,13 +2178,13 @@ export default {
           return {
             discogs_artist_id:resolvedArtistId,
             source_key:sourceKey,
-            position:index+1,
+            position:position+1,
             source_page:sourcePage||null,
             mbid,
             discogs_master_id:master,
             album_title:title,
             first_release_year:year,
-            source:'wikipedia',
+            source:'wikipedia_vinyl',
             verified_at:now
           }
         })
@@ -2199,7 +2241,7 @@ export default {
           artist_name:canonicalArtistName,
           wikidata_id:resolvedWikidataId,
           discography_checked_at:now,
-          discography_source:'wikipedia',
+          discography_source:'vinyl',
           discography_count:matched.length,
           updated_at:now
         },{onConflict:'discogs_artist_id'})
@@ -2208,11 +2250,12 @@ export default {
           verified:true,
           changed,
           count:matched.length,
-          source:'wikipedia',
+          source:'vinyl',
           enriched_count:matched.filter((row: any)=>
             row&& (row.mbid||row.discogs_master_id)
           ).length,
           wikipedia_count:wikipediaAlbums.length,
+          vinyl_count:matched.length,
           strategy:String(wikipedia?.strategy||'discography_page'),
           wikidata_id:resolvedWikidataId
         })
