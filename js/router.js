@@ -16,8 +16,9 @@ function setHandler(handler){
   routeHandler=typeof handler==='function'?handler:null;
 }
 
-function navigate(url,state){
+function navigate(url,state,options){
   windowObject.history.pushState(state||{},'',url);
+  if(options&&options.render===false)return;
   return runRouteHandler();
 }
 
