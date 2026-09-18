@@ -1661,32 +1661,10 @@ export default {
         const resolvedName=cleanArtistName(artist.name)||artistName
         const officialUrl=officialArtistUrl(artist.urls)
 
-        const genreResult=resolvedName
-          ?await discogsJson(
-            'https://api.discogs.com/database/search?artist=' +
-            encodeURIComponent(resolvedName) + '&type=master&per_page=30'
-          )
-          :{data:{results:[]}}
-
-        const genreCounts=new Map<string,number>()
-        if (!genreResult.response) {
-          const masters=Array.isArray(genreResult.data?.results)?genreResult.data.results:[]
-          masters.forEach((master: any)=>{
-            const values=[
-              ...(Array.isArray(master?.style)?master.style:[]),
-              ...(Array.isArray(master?.genre)?master.genre:[])
-            ]
-            values.forEach((value: unknown)=>{
-              const label=String(value||'').trim()
-              if (!label) return
-              genreCounts.set(label,(genreCounts.get(label)||0)+1)
-            })
-          })
-        }
-        const genres=Array.from(genreCounts.entries())
-          .sort((left,right)=>right[1]-left[1] || left[0].localeCompare(right[0]))
-          .slice(0,4)
-          .map((entry)=>entry[0])
+        // Do not block a first artist visit on a second Discogs search just
+        // to infer genres from up to 30 masters. The artist page already gets
+        // its genre chips from the local get_artist_overview read model.
+        const genres:string[]=[]
 
         if (admin && resolvedName) {
           const { error:artistIdentityError } = await admin
