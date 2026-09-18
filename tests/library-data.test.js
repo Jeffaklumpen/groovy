@@ -89,3 +89,42 @@ test('albumIds ignores rows without albums',()=>{
   const data=LibraryData.create({api,recordModel:Record});
   assert.deepEqual(data.albumIds([{albums:{id:1}},{albums:null},{albums:{id:2}}]),[1,2]);
 });
+
+
+function makeWishlistQuery(result,capture){
+  return {
+    select(columns){capture.select=columns;return this;},
+    eq(column,value){capture.eq=[column,value];return this;},
+    order(column,options){capture.orders.push([column,options]);return this;},
+    then(resolve,reject){return Promise.resolve(result).then(resolve,reject);}
+  };
+}
+
+test('fetchWishlist uses shared ordered wishlist query',async()=>{
+  const capture={orders:[]};
+  const api={from(table){assert.equal(table,'wishlists');return makeWishlistQuery({data:[{id:'wish-1'}],error:null},capture);}};
+  const data=LibraryData.create({api,recordModel:Record});
+  const result=await data.fetchWishlist('user-1');
+  assert.deepEqual(result,{data:[{id:'wish-1'}],error:null});
+  assert.match(capture.select,/added_at/);
+  assert.match(capture.select,/tracks\(/);
+  assert.deepEqual(capture.eq,['user_id','user-1']);
+  assert.equal(capture.orders.length,2);
+  assert.deepEqual(capture.orders[0],['sort_order',{ascending:true,nullsFirst:false}]);
+  assert.deepEqual(capture.orders[1],['added_at',{ascending:true}]);
+});
+
+test('mapWishlistRows delegates tuple construction to Record.fromWishlist',()=>{
+  const api={from(){throw new Error('not used');}};
+  const data=LibraryData.create({api,recordModel:Record});
+  const rows=[
+    {id:'wish-1',cover_url:'wish.jpg',discogs_style:'Prog Rock',albums:{id:42,title:'Album',release_year:1979,genre:'Rock',cover_url:'album.jpg',artists:{name:'Artist (2)'},tracks:[]}},
+    {id:'ignored',albums:null}
+  ];
+  const records=data.mapWishlistRows(rows);
+  assert.equal(records.length,1);
+  assert.equal(Record.artist(records[0]),'Artist');
+  assert.equal(Record.title(records[0]),'Album');
+  assert.equal(Record.entryId(records[0]),'wish-1');
+  assert.equal(Record.coverUrl(records[0]),'wish.jpg');
+});
