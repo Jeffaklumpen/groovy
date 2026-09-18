@@ -187,12 +187,67 @@ test('verified artist discography resolves trusted identity while Wikipedia alon
   assert.match(edge,/wikipediaStudioAlbumsFromHtml/);
   assert.match(edge,/standardised studio albums/);
   assert.match(block,/Wikipedia alone decides which releases belong to Main Discography/);
-  assert.match(block,/structuredAlbums=await wikidataStudioAlbums/);
+  assert.match(block,/\[catalogResult,structuredAlbums\]=await Promise\.all/);
   assert.match(block,/source:'wikipedia'/);
   assert.match(block,/discogs_master_id:master/);
   assert.doesNotMatch(block,/function wikidataRows/);
   assert.doesNotMatch(block,/source:'wikidata'/);
   assert.doesNotMatch(block,/wikidataId:String/);
+});
+
+test('artist navigation resolves missing Discogs identity without loading the full profile first',()=>{
+  const controller=fs.readFileSync('js/artist-controller.js','utf8');
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  assert.match(controller,/function resolveArtistIdentity\(input\)/);
+  assert.match(controller,/action:'resolveArtist'/);
+  const navigateStart=controller.indexOf('async function navigateResolved');
+  const navigateEnd=controller.indexOf('function renderCurrent',navigateStart);
+  const navigateBlock=controller.slice(navigateStart,navigateEnd);
+  assert.match(navigateBlock,/resolveArtistIdentity/);
+  assert.ok(
+    navigateBlock.indexOf('resolveArtistIdentity')<navigateBlock.indexOf('fetchProfile'),
+    'lightweight identity resolution must happen before the full Discogs profile fallback'
+  );
+  assert.match(edge,/if \(action === 'resolveArtist'\)/);
+  assert.match(edge,/score<70/);
+});
+
+test('shared verified discography cache is checked before Wikidata network resolution',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
+  const end=edge.indexOf("if (action === 'artistProfile')",start);
+  const block=edge.slice(start,end);
+  const cacheRead=block.indexOf("select('wikidata_id,discography_checked_at,discography_source,discography_count')");
+  const externalLookup=block.indexOf('wikidataArtistQidByDiscogsId(resolvedArtistId)');
+  assert.ok(cacheRead>=0&&externalLookup>cacheRead);
+  assert.match(block,/cachedSource==='wikipedia' && cachedCount>0/);
+  assert.match(block,/verified:true,[\s\S]*cached:true/);
+  assert.match(block,/let resolvedWikidataId=cachedWikidataId/);
+});
+
+test('artist prefetch fills the shared discography and artwork caches before navigation when possible',()=>{
+  const controller=fs.readFileSync('js/artist-controller.js','utf8');
+  const prefetchStart=controller.indexOf('function prefetch(input)');
+  const prefetchEnd=controller.indexOf('async function localArtistByDiscogsId',prefetchStart);
+  const block=controller.slice(prefetchStart,prefetchEnd);
+  assert.match(block,/resolveArtistIdentity\(input\)/);
+  assert.match(block,/ensureDiscographyCached\(resolvedId,name\)/);
+  assert.match(block,/ensureArtworkCached\(resolvedId,name,overview\)/);
+  assert.match(controller,/var discographyJobs=new Map\(\)/);
+  assert.match(controller,/var artworkJobs=new Map\(\)/);
+});
+
+test('Apple artwork warming is scoped to the verified Main Discography cache',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'cacheArtistArtwork')");
+  const end=edge.indexOf("if (action === 'verifyArtistDiscography')",start);
+  const block=edge.slice(start,end);
+  assert.match(block,/\.from\('artist_discography_cache'\)/);
+  assert.match(block,/\.eq\('discogs_artist_id',resolvedArtistId\)/);
+  assert.doesNotMatch(block,/\.from\('musicbrainz_catalog'\)/);
+  assert.match(block,/apple_artwork_cache/);
+  assert.match(block,/apple_collection_url/);
+  assert.match(block,/artwork_url/);
 });
 
 test('verified discography cache replaces the loose fallback only when populated',()=>{
@@ -268,7 +323,7 @@ test('Wikipedia studio tables own Main Discography independently of local Discog
   assert.match(edge,/Released\\s\*:/);
   assert.match(edge,/wikipediaParse\([\s\S]*?'text'/);
   assert.match(block,/Wikipedia alone decides which releases belong to Main Discography/i);
-  assert.match(block,/structuredAlbums=await wikidataStudioAlbums/);
+  assert.match(block,/\[catalogResult,structuredAlbums\]=await Promise\.all/);
   assert.doesNotMatch(block,/source:'wikidata'/);
   assert.match(block,/source_key:sourceKey/);
   assert.match(block,/const mbid=String\(local\?\.mbid\|\|structured\?\.mbid\|\|''\)/);
