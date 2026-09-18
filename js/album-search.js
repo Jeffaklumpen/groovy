@@ -175,63 +175,9 @@ async function getPersistentAppleArtworkCache(masters){
     return result;
 }
 
-async function savePersistentAppleArtworkMatches(matches){
-    if(!appleArtworkPersistentCacheAvailable||!Array.isArray(matches)||!matches.length)return;
-
-    const byMaster=new Map();
-
-    matches.forEach(function(match){
-        const masterId=String(match&&match.masterId||'').trim();
-        const artworkUrl=String(match&&match.artworkUrl100||'').trim();
-        const collectionUrl=String(match&&match.collectionUrl||'').trim();
-
-        if(!masterId||!artworkUrl||!collectionUrl)return;
-
-        byMaster.set(masterId,{
-            discogs_master_id:Number(masterId),
-            artist_name:String(match.artist||'').trim().slice(0,300),
-            album_title:String(match.albumTitle||'').trim().slice(0,500),
-            release_year:parseInt(match.year,10)||null,
-            apple_collection_id:match.collectionId?Number(match.collectionId):null,
-            apple_collection_url:collectionUrl.slice(0,1500),
-            artwork_url:artworkUrl.slice(0,1500)
-        });
-    });
-
-    const payload=[...byMaster.values()].filter(function(item){
-        return Number.isFinite(item.discogs_master_id)&&item.discogs_master_id>0;
-    }).slice(0,200);
-
-    if(!payload.length)return;
-
-    try{
-        const {error}=await supabaseClient.rpc(
-            'upsert_apple_artwork_cache',
-            {p_matches:payload}
-        );
-
-        if(error)throw error;
-
-        const matchedAt=new Date().toISOString();
-
-        payload.forEach(function(item){
-            const id=String(item.discogs_master_id);
-            const row={
-                discogs_master_id:item.discogs_master_id,
-                artist_name:item.artist_name,
-                album_title:item.album_title,
-                release_year:item.release_year,
-                apple_collection_id:item.apple_collection_id,
-                apple_collection_url:item.apple_collection_url,
-                artwork_url:item.artwork_url,
-                matched_at:matchedAt
-            };
-            appleArtworkPersistentLoaded.add(id);
-            appleArtworkPersistentCache.set(id,row);
-        });
-    }catch(error){
-        console.warn('Could not save Apple artwork cache:',error);
-    }
+async function savePersistentAppleArtworkMatches(){
+    // Persistent artwork cache writes are verified server-side when an album is
+    // actually saved. Search enrichment remains session-local until then.
 }
 
 function persistentMatchFromAppleAlbum(master,appleAlbum){
@@ -1397,182 +1343,38 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,coverState,but
     button.disabled=true;
 
     try{
-        const masterId=master.id;
+        const masterId=master&&master.id;
+        if(!masterId)throw new Error('Master Release saknar ID');
 
-        if(!masterId){
-            throw new Error('Master Release saknar ID');
+        let appleCollectionUrl=coverState&&coverState.appleCollectionUrl
+            ?String(coverState.appleCollectionUrl)
+            :'';
+
+        if(!appleCollectionUrl){
+            const appleDetails=await searchAppleAlbumArtwork(
+                artist,
+                albumTitle,
+                year
+            );
+            if(appleDetails&&appleDetails.collectionUrl){
+                appleCollectionUrl=appleDetails.collectionUrl;
+            }
         }
 
-        const {data,error}=await supabaseClient.functions.invoke(
+        const {data:saveResult,error:saveError}=await supabaseClient.functions.invoke(
             'discogs-search',
             {
                 body:{
-                    action:'master',
-                    masterId:masterId
+                    action:'saveAlbum',
+                    masterId:String(masterId),
+                    destination:isWishlistDestination?'wishlist':'collection',
+                    appleCollectionUrl:appleCollectionUrl||''
                 }
-            }
-        );
-
-        if(error){
-            console.error('Discogs master error:',error);
-            throw error;
-        }
-
-        const discogsTitle=data.title||albumTitle;
-        const discogsYear=parseInt(data.year||year,10)||null;
-
-        const discogsGenre=window.discogsStyleLabel(data);
-
-        const discogsArtist=
-            data.artists &&
-            data.artists.length &&
-            data.artists[0].name
-                ?data.artists[0].name.replace(/\s*\(\d+\)$/,'')
-                :artist;
-
-        const tracklist=
-            data &&
-            Array.isArray(data.tracklist)
-                ?data.tracklist
-                :[];
-
-        let finalTracklist=tracklist;
-        
-        const hasDiscSides=tracklist.some(function(track){
-            const position=String(track.position||'').toUpperCase();
-            return /^[A-H]\d/.test(position);
-        });
-        
-        if(!hasDiscSides){
-            const {
-                data:vinylData,
-                error:vinylError
-            }=await supabaseClient.functions.invoke(
-                'discogs-search',
-                {
-                    body:{
-                        action:'vinylRelease',
-                        masterId:masterId
-                    }
-                }
-            );
-        
-            if(vinylError){
-                console.error(
-                    'Kunde inte hämta vinyl-release:',
-                    vinylError
-                );
-            }else if(
-                vinylData &&
-                Array.isArray(vinylData.tracklist) &&
-                vinylData.tracklist.length
-            ){
-                finalTracklist=vinylData.tracklist;
-        
-            }
-        }
-
-        // Read the LIVE search-result state here. Apple/CAA may have upgraded
-        // the cover while the user was looking at the results.
-        const liveCoverState=coverState||{};
-        let previewCoverUrl=liveCoverState.url||'';
-        let previewCoverSource=liveCoverState.source||'';
-        let appleCollectionUrl=
-            liveCoverState.appleCollectionUrl||'';
-
-        // Preserve the exact cover source selected in the search result.
-        // Priority is Apple -> Cover Art Archive -> Discogs.
-        let coverUrl=previewCoverUrl||'';
-
-        // Discogs search results may use a small thumbnail. Upgrade only when
-        // Discogs is still the selected source.
-        if(
-            previewCoverSource==='discogs'&&
-            data.images&&
-            data.images.length&&
-            data.images[0].uri
-        ){
-            coverUrl=data.images[0].uri;
-        }
-
-        // If the background Apple lookup has not finished yet, do the safe
-        // Apple match now while saving this ONE album. This does not slow down
-        // the search-result list.
-        if(!appleCollectionUrl){
-            const appleDetails=
-                await searchAppleAlbumArtwork(
-                    discogsArtist,
-                    discogsTitle,
-                    discogsYear
-                );
-
-            if(appleDetails&&appleDetails.url){
-                coverUrl=appleDetails.url;
-                previewCoverSource='apple';
-            }
-
-            if(
-                appleDetails&&
-                appleDetails.collectionUrl
-            ){
-                appleCollectionUrl=
-                    appleDetails.collectionUrl;
-            }
-        }
-
-        if(!coverUrl){
-            const catalogByMaster=
-                await getMusicBrainzCatalogRows([masterId]);
-
-            const catalogRow=
-                catalogByMaster.get(String(masterId));
-
-            const mbid=
-                catalogRow
-                    ?catalogRow.mbid
-                    :'';
-
-            const discogsFallback=
-                data.images&&
-                data.images.length&&
-                data.images[0].uri
-                    ?data.images[0].uri
-                    :'';
-
-            const resolvedCover=
-                await resolveAlbumCover(
-                    mbid,
-                    discogsFallback
-                );
-
-            coverUrl=resolvedCover.url||'';
-        }
-
-        const trackRows=discogsTrackRows(null,finalTracklist).map(function(track){
-            return {
-                disc_side:track.disc_side||'',
-                track_number:track.track_number==null?null:track.track_number,
-                title:track.title||'Okänd låt'
-            };
-        });
-
-        const {data:saveResult,error:saveError}=await supabaseClient.rpc(
-            'save_album_to_library',
-            {
-                p_destination:isWishlistDestination?'wishlist':'collection',
-                p_discogs_master_id:String(masterId),
-                p_artist_name:discogsArtist,
-                p_album_title:discogsTitle,
-                p_release_year:discogsYear,
-                p_genre:discogsGenre||null,
-                p_cover_url:coverUrl||null,
-                p_cover_source:previewCoverSource||null,
-                p_apple_collection_url:appleCollectionUrl||null,
-                p_tracks:trackRows
             }
         );
 
         if(saveError)throw saveError;
+        if(saveResult&&saveResult.error)throw new Error(saveResult.error);
 
         const savedStatus=
             saveResult&&saveResult.status==='wishlist'
