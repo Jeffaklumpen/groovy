@@ -77,3 +77,12 @@ test('detail rating star geometry has one canonical owner across desktop and mob
   assert.match(css,/@media screen and \(max-width:760px\)\{[\s\S]*--rating-star-size:19px/);
   assert.doesNotMatch(css,/groovy-rating-stars-base|groovy-rating-stars-fill/);
 });
+
+
+test('filled and empty detail stars share one centered glyph geometry',function(){
+  const css=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
+  assert.match(css,/\.groovy-rating-star-glyph\{[\s\S]*align-items:center!important;[\s\S]*justify-content:center!important/);
+  assert.match(css,/\.groovy-rating-star-fill\{[\s\S]*width:var\(--star-fill\)!important/);
+  assert.doesNotMatch(css,/groovy-rating-star-fill\{[\s\S]{0,180}text-align:left!important/);
+  assert.match(css,/rating-panel-stars,\nhtml body \.detail-rating \.groovy-rating-stars\{\n  align-self:center!important/);
+});

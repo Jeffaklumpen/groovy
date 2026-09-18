@@ -42,8 +42,8 @@
         for(var i=1;i<=5;i++){
           var fill=Math.max(0,Math.min(1,numeric-(i-1)))*100;
           stars+='<span class="groovy-rating-star-cell" style="--star-fill:'+fill.toFixed(1)+'%;" aria-hidden="true">'+
-            '<span class="groovy-rating-star-base">★</span>'+
-            '<span class="groovy-rating-star-fill">★</span>'+
+            '<span class="groovy-rating-star-base"><span class="groovy-rating-star-glyph">★</span></span>'+
+            '<span class="groovy-rating-star-fill"><span class="groovy-rating-star-glyph">★</span></span>'+
           '</span>';
         }
         return '<span class="groovy-rating-stars is-community" aria-label="'+escapeHtml(label)+'">'+stars+'</span>';
@@ -115,8 +115,8 @@
       for(var i=1;i<=5;i++){
         var ownFill=i<=ownRating?'100%':'0%';
         ownStars+='<button class="album-rating-star groovy-rating-star-cell '+(i<=ownRating?'filled':'empty')+'" style="--star-fill:'+ownFill+'" type="button" data-rating="'+i+'" aria-label="Rate '+i+' out of 5">'+
-          '<span class="groovy-rating-star-base" aria-hidden="true">★</span>'+
-          '<span class="groovy-rating-star-fill" aria-hidden="true">★</span>'+
+          '<span class="groovy-rating-star-base" aria-hidden="true"><span class="groovy-rating-star-glyph">★</span></span>'+
+          '<span class="groovy-rating-star-fill" aria-hidden="true"><span class="groovy-rating-star-glyph">★</span></span>'+
         '</button>';
       }
 

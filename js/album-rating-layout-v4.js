@@ -54,8 +54,8 @@ function staticStars(value){
   for(var i=1;i<=5;i++){
     var starFill=Math.max(0,Math.min(1,numeric-(i-1)))*100;
     stars+='<span class="groovy-rating-star-cell" style="--star-fill:'+starFill.toFixed(1)+'%;" aria-hidden="true">'+
-      '<span class="groovy-rating-star-base">★</span>'+
-      '<span class="groovy-rating-star-fill">★</span>'+
+      '<span class="groovy-rating-star-base"><span class="groovy-rating-star-glyph">★</span></span>'+
+      '<span class="groovy-rating-star-fill"><span class="groovy-rating-star-glyph">★</span></span>'+
     '</span>';
   }
   return '<span class="groovy-rating-stars">'+stars+'</span>';

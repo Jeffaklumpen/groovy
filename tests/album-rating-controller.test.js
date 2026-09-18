@@ -180,3 +180,20 @@ test('own and community detail stars share the same cell structure',()=>{
   assert.equal((html.match(/groovy-rating-star-fill/g)||[]).length,10);
   assert.equal((html.match(/class="album-rating-star groovy-rating-star-cell/g)||[]).length,5);
 });
+
+
+test('detail star fill uses a full-size inner glyph in both panels',()=>{
+  const record={albumId:1,ownRating:2,communityRating:3.5,communityCount:2};
+  const detailElement=makeDetailElement();
+  const controller=Controller.create({
+    api:{from(){throw new Error('not used');}},
+    ratingCore:RatingCore,
+    recordModel:makeRecordModel(),
+    detailElement,
+    getRecords:()=>[record]
+  });
+  controller.renderDetail(0);
+  const html=detailElement.innerHTML;
+  assert.equal((html.match(/groovy-rating-star-glyph/g)||[]).length,20);
+  assert.match(html,/--star-fill:50\.0%/);
+});

@@ -186,6 +186,7 @@ html body .detail-rating .rating-panel-community-main{
 
 html body .detail-rating .rating-panel-stars,
 html body .detail-rating .groovy-rating-stars{
+  align-self:center!important;
   display:grid!important;
   grid-template-columns:repeat(5,var(--rating-star-size))!important;
   align-items:center!important;
@@ -223,6 +224,7 @@ html body .detail-rating .album-rating-star{
   cursor:pointer!important;
   appearance:none!important;
   -webkit-appearance:none!important;
+  vertical-align:top!important;
 }
 
 html body .detail-rating .groovy-rating-star-base,
@@ -230,25 +232,38 @@ html body .detail-rating .groovy-rating-star-fill{
   position:absolute!important;
   inset:0!important;
   display:block!important;
-  width:var(--rating-star-size)!important;
   height:var(--rating-star-size)!important;
+  overflow:hidden!important;
   font:inherit!important;
   font-family:Arial,sans-serif!important;
   font-size:var(--rating-star-size)!important;
   line-height:1!important;
-  text-align:center!important;
 }
 
 html body .detail-rating .groovy-rating-star-base{
+  width:var(--rating-star-size)!important;
   color:rgba(255,255,255,.18)!important;
 }
 
 html body .detail-rating .groovy-rating-star-fill{
   width:var(--star-fill)!important;
-  overflow:hidden!important;
   color:#ff6500!important;
-  white-space:nowrap!important;
-  text-align:left!important;
+}
+
+html body .detail-rating .groovy-rating-star-glyph{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:var(--rating-star-size)!important;
+  height:var(--rating-star-size)!important;
+  margin:0!important;
+  padding:0!important;
+  font:inherit!important;
+  font-family:Arial,sans-serif!important;
+  font-size:var(--rating-star-size)!important;
+  line-height:1!important;
+  text-align:center!important;
+  transform:none!important;
 }
 
 html body .detail-rating .album-rating-star.hover-filled{
