@@ -405,6 +405,22 @@ test('dedicated discography fallback prefers Primary studio albums over broad St
   assert.match(block,/as a member of/);
 });
 
+test('inline composer works labels are bounded before other albums and can parse all columns',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const helperStart=edge.indexOf('function wikipediaInlineCoreWorksHtml');
+  const helperEnd=edge.indexOf('function rankWikipediaStudioSection',helperStart);
+  const helper=edge.slice(helperStart,helperEnd);
+  const candidateStart=edge.indexOf('async function wikipediaDiscographyCandidates');
+  const candidateEnd=edge.indexOf('function wikipediaTitleKey',candidateStart);
+  const candidates=edge.slice(candidateStart,candidateEnd);
+
+  assert.match(helper,/Musicals.*show.*recordings/);
+  assert.match(helper,/Other.*albums/);
+  assert.match(candidates,/wikipediaInlineCoreWorksHtml\(mainDiscographyHtml\)/);
+  assert.match(candidates,/\{allLists:true\}/);
+  assert.match(candidates,/strategy:'main_article_inline_works'/);
+});
+
 test('composer works subsections can parse all list columns without loosening normal album lists',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const parserStart=edge.indexOf('function wikipediaStudioAlbumsFromHtml');
