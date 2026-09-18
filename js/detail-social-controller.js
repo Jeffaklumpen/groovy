@@ -9,6 +9,7 @@
     options=options||{};
 
     var api=options.api;
+    var recordModel=options.recordModel;
     var win=options.window||((typeof window!=='undefined')?window:null);
     var doc=options.document||(win&&win.document)||null;
     var element=options.element||null;
@@ -29,6 +30,7 @@
     var bound=false;
 
     if(!api)throw new Error('Detail social controller requires an API client');
+    if(!recordModel)throw new Error('Detail social controller requires record model');
 
     function log(level,message,error){onLog(level,message,error);}
 
@@ -101,14 +103,14 @@
     async function openForRecord(record,index){
       var request=++requestVersion;
       hide();
-      if(!record||!record[8])return;
+      var albumId=record&&recordModel.albumId(record);
+      if(!albumId)return;
 
       var sessionUser=await getCurrentUser();
       if(!isCurrent(request,index))return;
       if(!sessionUser)return;
 
-      var albumId=record[8];
-      var masterId=String(record[10]||'').trim();
+      var masterId=String(recordModel.discogsMasterId(record)||'').trim();
       var matchKey=masterId?'master:'+masterId:'album:'+albumId;
 
       try{
