@@ -114,8 +114,8 @@ test('Apple artwork verification accepts trusted MusicBrainz aliases and standar
   assert.match(edge,/identities\.push\(\{[\s\S]*artist:String\(catalogIdentity\.artist_name\)[\s\S]*title:String\(catalogIdentity\.album_title\)/);
   assert.match(edge,/verifiedAppleAlbum\(body\.appleCollectionUrl,identities\)/);
   assert.match(edge,/itunes\.apple\.com\/lookup\?id=/);
-  assert.ok(edge.includes(String.raw`parsed.pathname.match(/\\/(\\d+)(?:\\/)?$/)`));
-  assert.ok(edge.includes(String.raw`parsed.pathname.match(/\\/id(\\d+)(?:\\/|$)/i)`));
+  assert.ok(edge.includes(String.raw`parsed.pathname.match(/\/(\d+)(?:\/)?$/)`));
+  assert.ok(edge.includes(String.raw`parsed.pathname.match(/\/id(\d+)(?:\/|$)/i)`));
   assert.doesNotMatch(edge,/lookup\?id=' \+ encodeURIComponent\(idMatch\[1\]\) \+[\s\S]{0,80}&entity=album/);
 });
 
