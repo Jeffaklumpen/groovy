@@ -36,6 +36,12 @@
 
     function renderStaticStarMeter(value,extraClass){
       var label=(ratingCore.clamp(value)||0).toFixed(1)+' out of 5';
+      if(extraClass==='is-community'){
+        return '<span class="groovy-rating-stars is-community" style="--rating-fill:'+ratingCore.fillPercent(value)+';" aria-label="'+escapeHtml(label)+'">'+
+          '<span class="groovy-rating-stars-base" aria-hidden="true">★★★★★</span>'+
+          '<span class="groovy-rating-stars-fill" aria-hidden="true">★★★★★</span>'+
+        '</span>';
+      }
       return '<span class="groovy-star-meter'+(extraClass?' '+extraClass:'')+'" style="--rating-fill:'+ratingCore.fillPercent(value)+';" aria-label="'+escapeHtml(label)+'">'+
         '<span class="groovy-star-meter-base" aria-hidden="true">★★★★★</span>'+
         '<span class="groovy-star-meter-fill" aria-hidden="true">★★★★★</span>'+
