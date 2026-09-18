@@ -1584,6 +1584,29 @@ function openAlbum(index){
   renderAlbumDetail(record,index,{searchPreview:false});
 }
 
+function currentAlbumNavigationContext(){
+  var record=detailPreviewRecord||(detailOpenRecordIndex>=0?records[detailOpenRecordIndex]:null);
+  if(!record)return null;
+  return {
+    source:detailPreviewRecord?'preview':'library',
+    albumId:Number(Record.albumId(record))||null,
+    masterId:String(Record.discogsMasterId(record)||''),
+    artist:String(Record.artist(record)||''),
+    title:String(Record.title(record)||'')
+  };
+}
+
+function reopenLibraryAlbumById(albumId){
+  var numericAlbumId=Number(albumId)||0;
+  if(!numericAlbumId)return false;
+  var matchIndex=records.findIndex(function(record){
+    return Number(Record.albumId(record))===numericAlbumId;
+  });
+  if(matchIndex<0)return false;
+  openAlbum(matchIndex);
+  return true;
+}
+
 async function hydrateSearchAlbumPreview(record){
   var masterId=String(Record.discogsMasterId(record)||'').trim();
   var albumId=Number(Record.albumId(record))||0;
@@ -1676,6 +1699,20 @@ function closeAlbum(){
     }
   },350);
 }
+
+if(detailContextBack){
+  detailContextBack.addEventListener('click',function(event){
+    event.preventDefault();
+    event.stopPropagation();
+    closeAlbum();
+  });
+}
+
+window.groovyAlbumDetailNavigation=Object.freeze({
+  getContext:currentAlbumNavigationContext,
+  close:closeAlbum,
+  reopenLibraryAlbumById:reopenLibraryAlbumById
+});
 
 var libraryActionsController=LibraryActionsController.create({
   api:supabaseClient,
@@ -2295,34 +2332,20 @@ artistAlbumPreviewHandler=function(info){
     if(info&&info.masterId)return albumSearchController.openDiscogsMasterPreview(info.masterId,{navigationContext:navigationContext});
 };
 
-if(detailContextBack){
-    detailContextBack.addEventListener('click',function(event){
-        event.preventDefault();
-        event.stopPropagation();
-        closeAlbum();
-    });
-}
-
-function currentAlbumNavigationContext(){
-    var record=detailPreviewRecord||(detailOpenRecordIndex>=0?records[detailOpenRecordIndex]:null);
-    if(!record)return null;
-    return {
-      source:detailPreviewRecord?'preview':'library',
-      albumId:Number(Record.albumId(record))||null,
-      masterId:String(Record.discogsMasterId(record)||''),
-      artist:String(Record.artist(record)||''),
-      title:String(Record.title(record)||'')
-    };
-}
-
-detailArtist.addEventListener('click',async function(event){
+var detailArtistNavigationButton=document.getElementById('detailArtist');
+if(detailArtistNavigationButton){
+  detailArtistNavigationButton.addEventListener('click',async function(event){
     event.preventDefault();
     event.stopPropagation();
-    var context=currentAlbumNavigationContext();
+
+    var navigation=window.groovyAlbumDetailNavigation;
+    var context=navigation&&typeof navigation.getContext==='function'
+      ?navigation.getContext()
+      :null;
     if(!context||!context.artist)return;
 
     if(artistController&&artistController.isActive()){
-      closeAlbum();
+      navigation.close();
       return;
     }
 
@@ -2330,7 +2353,7 @@ detailArtist.addEventListener('click',async function(event){
     previousState.groovyReopenAlbum=context;
     Router.replace(Router.current(),previousState,{render:false});
     albumSearchController.close();
-    closeAlbum();
+    navigation.close();
 
     try{
       await artistController.navigateByName(context.artist,{
@@ -2341,7 +2364,8 @@ detailArtist.addEventListener('click',async function(event){
       console.error('Could not open artist from album:',error);
       await restoreAlbumFromHistoryState();
     }
-});
+  });
+}
 
 function openAddAlbumSearch(user){return albumSearchController.open(user);}
 function invalidateSearchLibraryState(){return albumSearchController.invalidateLibraryState();}
@@ -2593,14 +2617,15 @@ async function restoreAlbumFromHistoryState(){
     delete cleaned.groovyReopenAlbum;
     Router.replace(Router.current(),cleaned,{render:false});
 
-    if(context.source==='library'&&context.albumId){
-      var matchIndex=records.findIndex(function(record){
-        return Number(Record.albumId(record))===Number(context.albumId);
-      });
-      if(matchIndex>=0){
-        openAlbum(matchIndex);
-        return;
-      }
+    var navigation=window.groovyAlbumDetailNavigation;
+    if(
+      context.source==='library'&&
+      context.albumId&&
+      navigation&&
+      typeof navigation.reopenLibraryAlbumById==='function'&&
+      navigation.reopenLibraryAlbumById(context.albumId)
+    ){
+      return;
     }
     if(context.albumId){
       await albumSearchController.openCatalogPreview(context.albumId);

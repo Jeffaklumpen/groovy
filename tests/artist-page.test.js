@@ -78,6 +78,9 @@ test('artist and album navigation preserve contextual back behavior',()=>{
   assert.match(html,/id="detailContextBack"/);
   assert.match(app,/groovyReopenAlbum/);
   assert.match(app,/restoreAlbumFromHistoryState/);
+  assert.match(app,/window\.groovyAlbumDetailNavigation=Object\.freeze/);
+  assert.match(app,/navigation\.getContext\(\)/);
+  assert.match(app,/navigation\.reopenLibraryAlbumById\(context\.albumId\)/);
   assert.match(app,/navigationContext=\{source:'artist'/);
   assert.match(app,/artistSource:'search'/);
 });
