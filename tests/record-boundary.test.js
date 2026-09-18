@@ -13,6 +13,7 @@ const consumers=[
   'js/pressing-controller.js',
   'js/marketplace-controller.js',
   'js/shelf-core.js',
+  'js/shelf-view.js',
   'js/shelf-controller.js'
 ];
 
