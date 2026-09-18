@@ -19,8 +19,9 @@ function create(options){
   var IntlApi=options.Intl||(typeof Intl!=='undefined'?Intl:null);
   var request=typeof options.request==='function'?options.request:(typeof fetch==='function'?fetch:null);
   var getRecord=typeof options.getRecord==='function'?options.getRecord:function(){return null;};
-  var getArtist=typeof options.getArtist==='function'?options.getArtist:function(record){return record&&record[1]||'';};
-  var getTitle=typeof options.getTitle==='function'?options.getTitle:function(record){return record&&record[2]||'';};
+  var recordModel=options.recordModel;
+  var getArtist=typeof options.getArtist==='function'?options.getArtist:function(record){return recordModel&&recordModel.artist?recordModel.artist(record)||'':'';};
+  var getTitle=typeof options.getTitle==='function'?options.getTitle:function(record){return recordModel&&recordModel.title?recordModel.title(record)||'':'';};
   var currencyStorageKey='groovy-marketplace-currency-v1';
   var ebayEnabled=!!(elements.ebayButton&&elements.ebayButton.getAttribute&&elements.ebayButton.getAttribute('data-enabled')==='true');
 
