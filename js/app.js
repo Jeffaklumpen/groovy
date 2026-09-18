@@ -799,6 +799,8 @@ var librarySelectButton=document.getElementById('librarySelectButton');
 var selectionActionBar=document.getElementById('selectionActionBar');
 var selectionCount=document.getElementById('selectionCount');
 var selectionMoveButton=document.getElementById('selectionMoveButton');
+var selectionRemoveShelfButton=document.getElementById('selectionRemoveShelfButton');
+var selectionAddCollectionButton=document.getElementById('selectionAddCollectionButton');
 var selectionDeleteButton=document.getElementById('selectionDeleteButton');
 var selectionCancelButton=document.getElementById('selectionCancelButton');
 var mobileAddRecordButton=document.getElementById('mobileAddRecordButton');
@@ -1583,12 +1585,17 @@ selectionController=SelectionController.create({
     actionBar:selectionActionBar,
     count:selectionCount,
     moveButton:selectionMoveButton,
+    removeShelfButton:selectionRemoveShelfButton,
+    addCollectionButton:selectionAddCollectionButton,
     deleteButton:selectionDeleteButton,
     cancelButton:selectionCancelButton
   },
   getRecords:function(){return records;},
+  getContext:function(){
+    return {libraryView:window.libraryView,activeShelfId:activeShelfId};
+  },
   canActivate:function(){
-    return viewedUserId===null&&window.libraryView==='collection'&&window.hasAuthenticatedUser&&records.length>0;
+    return viewedUserId===null&&window.hasAuthenticatedUser&&records.length>0;
   },
   onModeChange:function(){
     closeRecordActionMenus();
@@ -1596,6 +1603,16 @@ selectionController=SelectionController.create({
   },
   onMove:function(entryIds){
     return shelfController.openBulkPicker(entryIds);
+  },
+  onRemoveShelf:async function(entryIds){
+    var moved=await libraryActionsController.moveCollectionRecordsToShelf(entryIds,null);
+    if(moved&&selectionController)selectionController.deactivate();
+    return moved;
+  },
+  onAddToCollection:async function(entryIds){
+    var moved=await libraryActionsController.moveWishlistRecordsToCollection(entryIds);
+    if(moved&&selectionController)selectionController.deactivate();
+    return moved;
   },
   onDelete:function(entryIds){
     requestBulkRemove(entryIds);
@@ -1800,7 +1817,8 @@ function requestBulkRemove(entryIds){
     removeAlbumIndex=null;
     removeAlbumIds=ids;
     removeAlbumFromDetail=false;
-    removeAlbumMessage.textContent='Remove '+ids.length+' selected record'+(ids.length===1?'':'s')+' from your collection?';
+    var targetLabel=window.libraryView==='wishlist'?'your wishlist':'your collection';
+    removeAlbumMessage.textContent='Remove '+ids.length+' selected record'+(ids.length===1?'':'s')+' from '+targetLabel+'?';
     confirmRemoveAlbum.textContent=ids.length===1?'Remove record':'Remove '+ids.length+' records';
     removeAlbumModal.style.display='flex';
     return true;
@@ -1845,7 +1863,9 @@ confirmRemoveAlbum.addEventListener('click',async function(){
       removeAlbumIds=[];
       removeAlbumFromDetail=false;
       confirmRemoveAlbum.textContent='Remove';
-      var bulkRemoved=await libraryActionsController.deleteCollectionRecords(bulkIds);
+      var bulkRemoved=window.libraryView==='wishlist'
+        ?await libraryActionsController.deleteWishlistRecords(bulkIds)
+        :await libraryActionsController.deleteCollectionRecords(bulkIds);
       if(bulkRemoved&&selectionController)selectionController.deactivate();
       return;
     }
