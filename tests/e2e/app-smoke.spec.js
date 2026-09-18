@@ -237,3 +237,33 @@ for(const viewport of [{name:'mobile',width:390,height:844},{name:'desktop',widt
     expect(close(geometry.ownFirstStar.height,geometry.communityFirstStar.height),JSON.stringify(geometry)).toBe(true);
   });
 }
+
+
+test('mobile full genre text has zero hidden width before the first-genre pseudo content',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+  const geometry=await page.evaluate(()=>{
+    const genre=document.getElementById('detailGenre');
+    const meta=genre&&genre.parentElement;
+    if(!genre||!meta)return null;
+    genre.textContent='Prog Rock · Psychedelic Rock · Art Rock';
+    genre.setAttribute('data-mobile-genre','Prog Rock');
+    const textNode=genre.firstChild;
+    const range=document.createRange();
+    range.selectNodeContents(textNode);
+    const textRect=range.getBoundingClientRect();
+    const style=getComputedStyle(genre);
+    const pseudo=getComputedStyle(genre,'::after');
+    return {
+      hiddenTextWidth:textRect.width,
+      letterSpacing:style.letterSpacing,
+      pseudoContent:pseudo.content,
+      display:getComputedStyle(meta).display
+    };
+  });
+  expect(geometry).not.toBeNull();
+  expect(geometry.display).toBe('flex');
+  expect(geometry.letterSpacing).toBe('0px');
+  expect(geometry.hiddenTextWidth).toBeLessThanOrEqual(0.5);
+  expect(geometry.pseudoContent).toContain('Prog Rock');
+});

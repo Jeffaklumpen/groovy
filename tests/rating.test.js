@@ -133,3 +133,10 @@ test('mobile thumbnail score aligns with the left edge of its stars',function(){
   assert.match(css,/@media screen and \(max-width:760px\)\{[\s\S]*cover-rating-inner\{[\s\S]*align-items:flex-start!important/);
   assert.match(css,/cover-rating-number\{[\s\S]*justify-content:flex-start!important;[\s\S]*align-self:flex-start!important/);
 });
+
+
+test('mobile hidden full genre cannot create invisible letter-spacing before the first genre',function(){
+  const css=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
+  assert.match(css,/detail-meta #detailGenre\{font-size:0!important;line-height:1\.15!important;letter-spacing:0!important\}/);
+  assert.match(css,/detail-meta #detailGenre:after\{content:attr\(data-mobile-genre\)!important/);
+});
