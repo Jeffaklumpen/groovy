@@ -21,7 +21,7 @@
   function sortRecords(records,options){
     var list=Array.isArray(records)?records.slice():[];
     var opts=options||{};
-    var sort=String(opts.sort||'added');
+    var sort=String(opts.sort||'standard');
     var isWishlist=!!opts.isWishlist;
     var activeShelfId=opts.activeShelfId==null?'all':opts.activeShelfId;
 
@@ -32,6 +32,11 @@
       if(sort==='artist-desc')return String(b[1]||'').localeCompare(String(a[1]||''),undefined,{sensitivity:'base'});
       if(sort==='year-desc')return (parseInt(b[3],10)||0)-(parseInt(a[3],10)||0);
       if(sort==='year-asc')return (parseInt(a[3],10)||9999)-(parseInt(b[3],10)||9999);
+      if(sort==='date-added'){
+        var aAdded=Date.parse(a[17]||'')||0;
+        var bAdded=Date.parse(b[17]||'')||0;
+        return bAdded-aAdded||(parseInt(a[0],10)||0)-(parseInt(b[0],10)||0);
+      }
       if(!isWishlist&&activeShelfId!=='all'){
         var aShelfOrder=parseInt(a[14],10);
         var bShelfOrder=parseInt(b[14],10);

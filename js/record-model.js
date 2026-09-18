@@ -6,7 +6,7 @@ var INDEX=Object.freeze({
   order:0, artist:1, title:2, year:3, genre:4,
   ownRating:5, coverUrl:6, sides:7, albumId:8, entryId:9,
   discogsMasterId:10, pressing:11, appleUrl:12, shelfId:13,
-  shelfSortOrder:14, communityRating:15, communityCount:16
+  shelfSortOrder:14, communityRating:15, communityCount:16, addedAt:17
 });
 
 function value(record,name){
@@ -88,7 +88,8 @@ function fromSearchPreview(item){
     '',
     null,
     item.communityRating||0,
-    item.communityCount||0
+    item.communityCount||0,
+    item.addedAt||''
   ];
 }
 
@@ -125,7 +126,10 @@ function fromWishlist(item,index){
     {},
     album.apple_collection_url||'',
     '',
-    null
+    null,
+    0,
+    0,
+    item.added_at||''
   ];
 }
 
@@ -165,7 +169,8 @@ function fromCollection(item,index,pressingDetails){
     item.shelf_id||'',
     item.shelf_sort_order==null?null:item.shelf_sort_order,
     0,
-    0
+    0,
+    item.added_at||''
   ];
 }
 

@@ -8,6 +8,7 @@
 var COLLECTION_SELECT=`
   id,
   collection_number,
+  added_at,
   sort_order,
   shelf_id,
   shelf_sort_order,

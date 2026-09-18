@@ -2,8 +2,8 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const Library=require('../js/library-core.js');
 
-function record(number,artist,album,year,genre,rating,shelfOrder){
-  const item=new Array(15).fill('');
+function record(number,artist,album,year,genre,rating,shelfOrder,addedAt){
+  const item=new Array(18).fill('');
   item[0]=number;
   item[1]=artist;
   item[2]=album;
@@ -11,6 +11,7 @@ function record(number,artist,album,year,genre,rating,shelfOrder){
   item[4]=genre;
   item[5]=rating;
   item[14]=shelfOrder;
+  item[17]=addedAt||'';
   return item;
 }
 
@@ -39,17 +40,24 @@ test('sortRecords handles album, artist and year modes',()=>{
   assert.deepEqual(Library.sortRecords(records,{sort:'year-asc'}),[beatles,floyd,alpha]);
 });
 
+test('sortRecords uses real added_at timestamps for Date added newest first',()=>{
+  const older=record(1,'Older','First','1970','Rock',0,null,'2026-01-01T10:00:00Z');
+  const newest=record(3,'Newest','Third','1972','Rock',0,null,'2026-09-18T10:00:00Z');
+  const middle=record(2,'Middle','Second','1971','Rock',0,null,'2026-06-01T10:00:00Z');
+  assert.deepEqual(Library.sortRecords([older,newest,middle],{sort:'date-added'}),[newest,middle,older]);
+});
+
 test('sortRecords uses shelf order only on an active collection shelf',()=>{
   const records=[alpha,floyd,beatles];
-  assert.deepEqual(Library.sortRecords(records,{sort:'added',activeShelfId:'all',isWishlist:false}),[floyd,beatles,alpha]);
-  assert.deepEqual(Library.sortRecords(records,{sort:'added',activeShelfId:'shelf-a',isWishlist:false}),[beatles,alpha,floyd]);
-  assert.deepEqual(Library.sortRecords(records,{sort:'added',activeShelfId:'shelf-a',isWishlist:true}),[floyd,beatles,alpha]);
+  assert.deepEqual(Library.sortRecords(records,{sort:'standard',activeShelfId:'all',isWishlist:false}),[floyd,beatles,alpha]);
+  assert.deepEqual(Library.sortRecords(records,{sort:'standard',activeShelfId:'shelf-a',isWishlist:false}),[beatles,alpha,floyd]);
+  assert.deepEqual(Library.sortRecords(records,{sort:'standard',activeShelfId:'shelf-a',isWishlist:true}),[floyd,beatles,alpha]);
 });
 
 test('sortRecords keeps missing shelf positions last and does not mutate input',()=>{
   const missing=record(4,'Missing','Order','2000','Rock',0,null);
   const records=[missing,alpha,beatles];
   const before=records.slice();
-  assert.deepEqual(Library.sortRecords(records,{sort:'added',activeShelfId:'shelf-a'}),[beatles,alpha,missing]);
+  assert.deepEqual(Library.sortRecords(records,{sort:'standard',activeShelfId:'shelf-a'}),[beatles,alpha,missing]);
   assert.deepEqual(records,before);
 });

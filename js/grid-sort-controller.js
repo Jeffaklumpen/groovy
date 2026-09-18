@@ -185,11 +185,11 @@ function enable(){
     var viewedUserId=state.viewedUserId;
     var selectedRating=state.selectedRating;
     var librarySearchQuery=state.searchQuery||'';
-    var librarySort=state.sort||'added';
+    var librarySort=state.sort||'standard';
     var libraryPage=parseInt(state.page,10)||1;
     var activeShelfId=state.activeShelfId||'all';
     var libraryView=state.libraryView||'collection';
-    if(selectedRating!=='all'||librarySearchQuery||librarySort!=='added'){
+    if(selectedRating!=='all'||librarySearchQuery||librarySort!=='standard'){
       collection.classList.remove('grid-sort-enabled');
       return;
     }

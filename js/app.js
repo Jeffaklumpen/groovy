@@ -795,7 +795,7 @@ var librarySortButton=document.getElementById('librarySortButton');
 var librarySortMenu=document.getElementById('librarySortMenu');
 var mobileAddRecordButton=document.getElementById('mobileAddRecordButton');
 var librarySearchQuery='';
-var librarySort='added';
+var librarySort='standard';
 var shelves=[];
 var activeShelfId='all';
 var SHELF_COLORS=['#E85301','#FF3B45','#FF6B4A','#F43F8C','#8B5CF6','#6366F1','#3B82F6','#14B8D4','#10B981','#84CC16','#F5C542','#6B7280','#14B8A6','#F59E0B'];
@@ -1865,7 +1865,7 @@ librarySortButton.addEventListener('click',function(event){
 librarySortMenu.querySelectorAll('button[data-sort]').forEach(function(button){
   button.addEventListener('click',function(event){
     event.stopPropagation();
-    librarySort=button.getAttribute('data-sort')||'added';
+    librarySort=button.getAttribute('data-sort')||'standard';
     libraryPage=1;
     librarySortMenu.querySelectorAll('button[data-sort]').forEach(function(item){
       item.classList.toggle('active',item===button);

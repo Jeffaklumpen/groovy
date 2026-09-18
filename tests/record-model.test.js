@@ -229,7 +229,7 @@ test('app controllers delegate local shelf ordering to record model',function(){
 test('record model builds collection tuples with tracks, pressing and shelf metadata',function(){
   const Record=loadModel();
   const pressing={country:'CA',catalogNumber:'SMAS-11163'};
-  const item={id:9,discogs_style:'Prog Rock',cover_url:'owned.jpg',shelf_id:'favorites',shelf_sort_order:4,albums:{id:42,title:'The Dark Side Of The Moon',release_year:1973,genre:'Rock',cover_url:'album.jpg',apple_collection_url:'https://music.apple.com/test',discogs_master_id:123,artists:{name:'Pink Floyd (2)'},tracks:[
+  const item={id:9,added_at:'2026-09-18T12:00:00Z',discogs_style:'Prog Rock',cover_url:'owned.jpg',shelf_id:'favorites',shelf_sort_order:4,albums:{id:42,title:'The Dark Side Of The Moon',release_year:1973,genre:'Rock',cover_url:'album.jpg',apple_collection_url:'https://music.apple.com/test',discogs_master_id:123,artists:{name:'Pink Floyd (2)'},tracks:[
     {id:2,disc_side:'B',track_number:1,title:'B One',duration:'4:00'},
     {id:1,disc_side:'A',track_number:1,title:'A One',duration:'3:00'}
   ]}};
@@ -241,6 +241,7 @@ test('record model builds collection tuples with tracks, pressing and shelf meta
   assert.equal(Record.pressing(record),pressing);
   assert.equal(Record.shelfId(record),'favorites');
   assert.equal(Record.shelfSortOrder(record),4);
+  assert.equal(Record.addedAt(record),'2026-09-18T12:00:00Z');
   assert.equal(Record.sides(record).A[0].trackNumber,1);
   assert.equal(Record.sides(record).A[0].duration,'3:00');
 });
