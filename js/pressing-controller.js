@@ -15,6 +15,7 @@ function create(options){
   var elements=options.elements||{};
   var getRecords=typeof options.getRecords==='function'?options.getRecords:function(){return [];};
   var getViewedUserId=typeof options.getViewedUserId==='function'?options.getViewedUserId:function(){return null;};
+  var getViewedUsername=typeof options.getViewedUsername==='function'?options.getViewedUsername:function(){return '';};
   var getLibraryView=typeof options.getLibraryView==='function'?options.getLibraryView:function(){return 'collection';};
   var renderGrid=typeof options.renderGrid==='function'?options.renderGrid:function(){};
   var onLog=typeof options.onLog==='function'?options.onLog:function(){};
@@ -60,10 +61,15 @@ function create(options){
 
   function render(index){
     var record=recordAt(index);
+    var isOwner=getViewedUserId()===null;
+    if(elements.title){
+      var username=String(getViewedUsername()||'').trim();
+      elements.title.textContent=isOwner?'My pressing':((username||'Collector')+"'s pressing");
+    }
     var result=View.renderCopyDetails({
       hasRecord:!!record,
       isWishlist:getLibraryView()==='wishlist',
-      isOwner:getViewedUserId()===null,
+      isOwner:isOwner,
       details:record?detailsFor(record):{},
       recordKey:record?String(recordModel.entryId(record)||('record-'+index)):'',
       previousRecordKey:recordKey,

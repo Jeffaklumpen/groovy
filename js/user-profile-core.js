@@ -21,6 +21,19 @@ function firstLetter(value){
   return chars.length?chars[0].toLocaleUpperCase():'';
 }
 
+function formatLastSeen(value,currentTime){
+  if(!value)return 'Last seen online —';
+  var date=new Date(value);
+  if(!isFinite(date.getTime()))return 'Last seen online —';
+  var nowValue=currentTime==null?Date.now():Number(currentTime);
+  var diff=Math.max(0,nowValue-date.getTime());
+  if(diff<90000)return 'Last seen online just now';
+  if(diff<3600000)return 'Last seen online '+Math.max(1,Math.floor(diff/60000))+'m ago';
+  if(diff<86400000)return 'Last seen online '+Math.max(1,Math.floor(diff/3600000))+'h ago';
+  if(diff<604800000)return 'Last seen online '+Math.max(1,Math.floor(diff/86400000))+'d ago';
+  return 'Last seen online '+date.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+}
+
 function avatarState(url,username){
   var cleanUrl=String(url||'').trim();
   return {hasImage:!!cleanUrl,url:cleanUrl,initial:firstLetter(username)};
@@ -56,6 +69,7 @@ function applyAvatar(element,url,username){
 return Object.freeze({
   validUsername:validUsername,
   firstLetter:firstLetter,
+  formatLastSeen:formatLastSeen,
   avatarState:avatarState,
   avatarMarkup:avatarMarkup,
   applyAvatar:applyAvatar

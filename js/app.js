@@ -176,6 +176,11 @@ var userSearchController=UserSearchController.create({
   onNavigate:function(username){
     return Router.navigate('/shelf/'+encodeURIComponent(username));
   },
+  persistLastSeen:async function(userId,lastSeenAt){
+    var result=await supabaseClient.from('user_presence_status')
+      .upsert({user_id:userId,last_seen_at:lastSeenAt},{onConflict:'user_id'});
+    if(result.error)throw result.error;
+  },
   onLog:function(level,message,error){
     if(level==='error')console.error(message,error||'');
     else if(level==='warn')console.warn(message,error||'');
@@ -762,6 +767,7 @@ var marketplaceLowestMeta=document.getElementById('marketplaceLowestMeta');
 var marketplacePriceStatus=document.getElementById('marketplacePriceStatus');
 var marketplacePriceNote=document.getElementById('marketplacePriceNote');
 var copyDetails=document.getElementById('copyDetails');
+var copyDetailsTitle=document.getElementById('copyDetailsTitle');
 var copyDetailsContent=document.getElementById('copyDetailsContent');
 var copyDetailsToggle=document.getElementById('copyDetailsToggle');
 var copyDetailsSummary=document.getElementById('copyDetailsSummary');
@@ -853,6 +859,10 @@ var detailSocialController=DetailSocialController.create({
   element:detailSocialContext,
   getCurrentUser:currentSessionUser,
   getViewedUserId:function(){return viewedUserId;},
+  getViewedUsername:function(){
+    var profile=window.groovyViewedStatisticsProfile;
+    return profile&&profile.username?profile.username:'';
+  },
   getLibraryView:function(){return window.libraryView;},
   getOpenRecordIndex:function(){return detailOpenRecordIndex;},
   escapeHtml:function(value){return esc(value==null?'':String(value));},
@@ -1142,6 +1152,7 @@ var pressingController=PressingController.create({
   document:document,
   elements:{
     root:copyDetails,
+    title:copyDetailsTitle,
     content:copyDetailsContent,
     toggle:copyDetailsToggle,
     summary:copyDetailsSummary,

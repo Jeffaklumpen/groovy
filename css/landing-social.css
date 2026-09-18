@@ -100,6 +100,8 @@ body.following-page-open .library-overview,body.following-page-open #libraryPagi
 .following-identity>span:last-child{min-width:0;display:flex;flex-direction:column;gap:4px}
 .following-identity strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:720}
 .following-identity small{color:#727279;font-size:9px;font-weight:650}
+.following-identity .following-last-seen{display:inline-flex;align-items:center;gap:5px;color:#9a9aa0;font-weight:600}
+.following-identity .following-last-seen:before{content:"";width:5px;height:5px;flex:0 0 5px;border-radius:50%;background:#e85301;box-shadow:0 0 0 2px rgba(232,83,1,.09)}
 .following-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:17px;padding:13px 0;border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07)}
 .following-stats div{display:flex;flex-direction:column;gap:3px;text-align:center}
 .following-stats strong{color:#fff;font-size:18px;font-weight:760}

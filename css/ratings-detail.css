@@ -245,9 +245,12 @@ html body .detail-rating .rating-panel-footer{
   margin-top:6px!important;
 }
 
-html body .detail-rating .rating-panel-meta{
+html body .detail-rating .rating-panel-meta,
+html body .detail-rating .rating-panel-empty-note{
   color:rgba(255,255,255,.52)!important;
   font-size:8.5px!important;
+  font-weight:500!important;
+  line-height:1!important;
 }
 
 html body .detail-rating .groovy-remove-rating{
@@ -385,6 +388,7 @@ html body .detail-rating .groovy-rating-avatar{
   }
 
   html body .detail-rating .rating-panel-meta,
+  html body .detail-rating .rating-panel-empty-note,
   html body .detail-rating .groovy-remove-rating{
     height:24px!important;
     min-height:24px!important;

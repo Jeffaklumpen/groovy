@@ -469,6 +469,15 @@
       var profile=profileResult.data;
       state.publicProfile=profile;
       var sessionUser=await currentUser();
+      var lastSeenAt='';
+      if(sessionUser){
+        var presenceResult=await supabaseClient.from('user_presence_status')
+          .select('last_seen_at')
+          .eq('user_id',profile.id)
+          .maybeSingle();
+        if(!presenceResult.error&&presenceResult.data)lastSeenAt=presenceResult.data.last_seen_at||'';
+      }
+      var lastSeenText=UserProfileCore.formatLastSeen(lastSeenAt);
       var isOwner=!!(sessionUser&&sessionUser.id===profile.id);
       var isFollowing=false;
       if(sessionUser&&!isOwner&&typeof window.groovyIsFollowing==='function'){
@@ -487,6 +496,7 @@
             '<span class="collector-profile-kicker">VINYL COLLECTOR</span>'+
             '<h1>'+escapeHtml(profile.username)+'</h1>'+
             '<p class="collector-profile-handle">groovyshelves.com/profile/'+escapeHtml(profile.username)+'</p>'+
+            '<p class="collector-profile-presence"><span aria-hidden="true"></span>'+escapeHtml(lastSeenText)+'</p>'+
             '<div class="collector-profile-stats">'+
               '<div><strong>'+countText(counts.collection)+'</strong><span>Records</span></div>'+
               '<div><strong>'+countText(counts.wishlist)+'</strong><span>Wishlist</span></div>'+

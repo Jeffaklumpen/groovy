@@ -16,16 +16,22 @@
     var getCurrentUser=typeof options.getCurrentUser==='function'?options.getCurrentUser:async function(){return null;};
     var onNavigate=typeof options.onNavigate==='function'?options.onNavigate:function(){};
     var onLog=typeof options.onLog==='function'?options.onLog:function(){};
+    var persistLastSeen=typeof options.persistLastSeen==='function'?options.persistLastSeen:async function(){};
     var setTimer=options.setTimeout||((win&&win.setTimeout)?win.setTimeout.bind(win):setTimeout);
     var clearTimer=options.clearTimeout||((win&&win.clearTimeout)?win.clearTimeout.bind(win):clearTimeout);
     var now=typeof options.now==='function'?options.now:Date.now;
     var random=typeof options.random==='function'?options.random:Math.random;
+    var setRepeating=options.setInterval||((win&&win.setInterval)?win.setInterval.bind(win):null);
+    var clearRepeating=options.clearInterval||((win&&win.clearInterval)?win.clearInterval.bind(win):null);
+    var lastSeenHeartbeatMs=Math.max(30000,Number(options.lastSeenHeartbeatMs)||60000);
 
     var searchTimer=null;
     var presenceChannel=null;
     var presenceIdentity='';
     var presenceSyncPromise=Promise.resolve();
     var onlineUserIds=new Set();
+    var lastSeenHeartbeat=null;
+    var lastSeenUserId='';
     var anonymousPresenceKey='viewer-'+random().toString(36).slice(2)+'-'+now().toString(36);
     var bound=false;
 
@@ -54,6 +60,33 @@
       refreshOnlineUserCount();
     }
 
+    function stopLastSeenHeartbeat(){
+      if(lastSeenHeartbeat&&clearRepeating)clearRepeating(lastSeenHeartbeat);
+      lastSeenHeartbeat=null;
+      lastSeenUserId='';
+    }
+
+    async function touchLastSeen(userId){
+      if(!userId)return;
+      try{
+        await persistLastSeen(userId,new Date(now()).toISOString());
+      }catch(error){
+        log('warn','Could not persist last seen status:',error);
+      }
+    }
+
+    function startLastSeenHeartbeat(userId){
+      stopLastSeenHeartbeat();
+      if(!userId)return;
+      lastSeenUserId=userId;
+      touchLastSeen(userId);
+      if(setRepeating){
+        lastSeenHeartbeat=setRepeating(function(){
+          if(lastSeenUserId===userId)touchLastSeen(userId);
+        },lastSeenHeartbeatMs);
+      }
+    }
+
     function addPresenceDot(avatar,userId){
       var dot=doc.createElement('span');
       dot.className='user-presence-dot';
@@ -69,6 +102,7 @@
       if(nextIdentity===presenceIdentity&&presenceChannel)return;
 
       var previousChannel=presenceChannel;
+      stopLastSeenHeartbeat();
       presenceChannel=null;
       presenceIdentity=nextIdentity;
       onlineUserIds=new Set();
@@ -97,13 +131,15 @@
         if(channel!==presenceChannel)return;
         if(status==='SUBSCRIBED'&&nextUserId){
           try{
-            await channel.track({user_id:nextUserId,online_at:new Date().toISOString()});
+            await channel.track({user_id:nextUserId,online_at:new Date(now()).toISOString()});
+            startLastSeenHeartbeat(nextUserId);
           }catch(error){
             log('warn','Could not update online status:',error);
           }
           return;
         }
         if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+          stopLastSeenHeartbeat();
           onlineUserIds=new Set();
           refreshPresenceDots();
         }

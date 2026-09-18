@@ -47,6 +47,21 @@
       return new Set((result.data||[]).map(function(row){return row.followed_id;}));
     }
 
+    async function lastSeenMap(userIds){
+      var ids=(userIds||[]).filter(Boolean);
+      var map={};
+      if(!ids.length||!api.from)return map;
+      var result=await api.from('user_presence_status')
+        .select('user_id,last_seen_at')
+        .in('user_id',ids);
+      if(result.error){
+        log('warn','Could not load last seen status:',result.error);
+        return map;
+      }
+      (result.data||[]).forEach(function(row){map[row.user_id]=row.last_seen_at||'';});
+      return map;
+    }
+
     async function isFollowing(targetUserId){
       if(!targetUserId)return false;
       var set=await followingIds([targetUserId]);
@@ -186,11 +201,13 @@
         grid.innerHTML='<div class="following-empty"><strong>You are not following anyone yet.</strong><span>Use Search User or visit a collector profile to follow someone.</span></div>';
         return;
       }
+      var lastSeen=await lastSeenMap(data.map(function(item){return item.user_id;}));
       grid.innerHTML=data.map(function(item){
+        var lastSeenText=UserProfileCore.formatLastSeen(lastSeen[item.user_id]||'');
         return '<article class="following-card">'+
           '<button class="following-identity" type="button" data-profile-username="'+escapeHtml(item.username||'')+'">'+
             UserProfileCore.avatarMarkup('following-avatar',item.avatar_url,item.username||'Collector')+
-            '<span><strong>'+escapeHtml(item.username||'Collector')+'</strong><small>Following since '+escapeHtml(new Date(item.followed_at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}))+'</small></span>'+
+            '<span><strong>'+escapeHtml(item.username||'Collector')+'</strong><small>Following since '+escapeHtml(new Date(item.followed_at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}))+'</small><small class="following-last-seen">'+escapeHtml(lastSeenText)+'</small></span>'+
           '</button>'+
           '<div class="following-stats">'+
             '<div><strong>'+Number(item.collection_count||0)+'</strong><span>Records</span></div>'+
