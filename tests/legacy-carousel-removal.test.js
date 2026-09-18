@@ -5,7 +5,16 @@ const fs=require('node:fs');
 test('legacy carousel runtime and styles stay removed',()=>{
   const app=fs.readFileSync('js/app.js','utf8');
   const gridSort=fs.readFileSync('js/grid-sort-controller.js','utf8');
-  const css=fs.readFileSync('css/style.css','utf8');
+  const css=[
+    'css/base-library.css',
+    'css/search-modals.css',
+    'css/copy-marketplace.css',
+    'css/library-shell.css',
+    'css/shelves-streaming.css',
+    'css/album-detail-extras.css',
+    'css/landing-social.css',
+    'css/ratings-detail.css'
+  ].map(file=>fs.readFileSync(file,'utf8')).join('');
   const html=fs.readFileSync('index.html','utf8');
 
   [
