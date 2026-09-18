@@ -250,6 +250,37 @@ test('Apple artwork warming is scoped to the verified Main Discography cache',()
   assert.match(block,/artwork_url/);
 });
 
+test('Wikipedia short album titles can enrich from a direct same-year catalog subtitle',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf('function bestCatalogTitleMatch');
+  const end=edge.indexOf('const now=new Date().toISOString()',start);
+  const block=edge.slice(start,end);
+  assert.match(block,/row\?\.match_type!==\'direct\'/);
+  assert.match(block,/Math\.abs\(wantedYear-rowYear\)>1/);
+  assert.match(block,/rowKey\.includes\(wanted\)\|\|wanted\.includes\(rowKey\)/);
+  assert.match(block,/compilation\|live\|remix\|dj-mix\|mixtape/);
+});
+
+test('list-based Wikipedia discography parsing strips inline Released metadata from album titles',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf('function wikipediaStudioAlbumsFromHtml');
+  const end=edge.indexOf('function rankWikipediaStudioSection',start);
+  const block=edge.slice(start,end);
+  assert.match(block,/replace\(\/\\s\+Released\\s\*:\\s\*\.\*\$\/i,\'\'\)/);
+});
+
+test('Apple artwork cache never reuses one Apple collection for two Main Discography masters',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'cacheArtistArtwork')");
+  const end=edge.indexOf("if (action === 'verifyArtistDiscography')",start);
+  const block=edge.slice(start,end);
+  assert.match(block,/collectionOwners=new Map/);
+  assert.match(block,/duplicateMasterIds=new Set/);
+  assert.match(block,/usedAppleCollectionIds=new Set/);
+  assert.match(block,/!usedAppleCollectionIds\.has\(String\(item\.collectionId\|\|\'\'\)\)/);
+  assert.match(block,/usedAppleCollectionIds\.add\(String\(best\.item\.collectionId\|\|\'\'\)\)/);
+});
+
 test('verified discography cache replaces the loose fallback only when populated',()=>{
   const sql=fs.readFileSync('supabase/migrations/20260918190526_verified_artist_discography_cache.sql','utf8');
   assert.match(sql,/create table if not exists public\.artist_discography_cache/i);
