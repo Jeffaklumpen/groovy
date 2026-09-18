@@ -14,6 +14,27 @@ function value(record,name){
   return record&&index!==undefined?record[index]:undefined;
 }
 
+function setValue(record,name,next){
+  var index=INDEX[name];
+  if(!record||index===undefined)return record;
+  record[index]=next;
+  return record;
+}
+
+function setShelf(record,shelfId,shelfSortOrder){
+  setValue(record,'shelfId',shelfId||'');
+  setValue(record,'shelfSortOrder',shelfSortOrder==null?null:shelfSortOrder);
+  return record;
+}
+
+function ensurePressing(record){
+  var details=value(record,'pressing');
+  if(details&&typeof details==='object')return details;
+  details={};
+  setValue(record,'pressing',details);
+  return details;
+}
+
 function setRatings(record,own,community,count){
   if(!record)return record;
   record[INDEX.ownRating]=own;
@@ -199,7 +220,7 @@ function compactShelfOrder(records,shelfId){
       if(isNaN(bOrder))bOrder=2147483647;
       return aOrder-bOrder||(parseInt(value(a,'order'),10)||0)-(parseInt(value(b,'order'),10)||0);
     })
-    .forEach(function(record,index){record[INDEX.shelfSortOrder]=index+1;});
+    .forEach(function(record,index){setValue(record,'shelfSortOrder',index+1);});
   return records;
 }
 
@@ -213,7 +234,7 @@ function nextShelfOrder(records,shelfId,excludedRecord){
   return highest+1;
 }
 
-var api={INDEX:INDEX,value:value,setRatings:setRatings,emptySides:emptySides,fromWishlist:fromWishlist,fromCollection:fromCollection,applyRatingMeta:applyRatingMeta,trackDurationCacheKey:trackDurationCacheKey,applyTrackDurations:applyTrackDurations,hasMissingTrackDurations:hasMissingTrackDurations,compactShelfOrder:compactShelfOrder,nextShelfOrder:nextShelfOrder};
+var api={INDEX:INDEX,value:value,setValue:setValue,setShelf:setShelf,ensurePressing:ensurePressing,setRatings:setRatings,emptySides:emptySides,fromWishlist:fromWishlist,fromCollection:fromCollection,applyRatingMeta:applyRatingMeta,trackDurationCacheKey:trackDurationCacheKey,applyTrackDurations:applyTrackDurations,hasMissingTrackDurations:hasMissingTrackDurations,compactShelfOrder:compactShelfOrder,nextShelfOrder:nextShelfOrder};
 Object.keys(INDEX).forEach(function(name){
   api[name]=function(record){return value(record,name);};
 });
