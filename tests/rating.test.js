@@ -86,3 +86,11 @@ test('filled and empty detail stars share one centered glyph geometry',function(
   assert.doesNotMatch(css,/groovy-rating-star-fill\{[\s\S]{0,180}text-align:left!important/);
   assert.match(css,/rating-panel-stars,\nhtml body \.detail-rating \.groovy-rating-stars\{\n  align-self:center!important/);
 });
+
+
+test('community score no longer has a separate line box size',function(){
+  const legacy=fs.readFileSync(path.join(root,'css','ratings-detail.css'),'utf8');
+  const canonical=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
+  assert.doesNotMatch(legacy,/rating-panel-community-main strong\{[^}]*font-size/);
+  assert.match(canonical,/groovy-rating-score\{[\s\S]*height:var\(--rating-star-size\)!important;[\s\S]*font-size:0!important;[\s\S]*line-height:var\(--rating-star-size\)!important/);
+});
