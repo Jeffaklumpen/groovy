@@ -133,6 +133,6 @@ test('album rating presentation lives in CSS instead of runtime style injection'
   const css=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
   assert.doesNotMatch(layout,/installStyles|groovyRatingLayoutV4Styles|createElement\(['"]style['"]\)/);
   assert.match(css,/Album rating layout \(moved from album-rating-layout-v4\.js\)/);
-  assert.match(css,/\.groovy-rating-section-heading/);
+  assert.doesNotMatch(css,/\.groovy-rating-section-heading/);
   assert.match(css,/\.groovy-rating-avatar/);
 });

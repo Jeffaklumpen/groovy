@@ -40,7 +40,7 @@ function makeHarness(overrides){
 test('record cards preserve shelf rating and streaming presentation',()=>{
   const h=makeHarness({activeShelfId:'shelf-1'});const html=h.controller.recordHTML(h.baseRecord,'');
   assert.match(html,/record-shelf-status/);assert.match(html,/Favorites/);assert.match(html,/data-index="0"/);assert.match(html,/class="number">2</);
-  assert.match(html,/streaming-service apple-service/);assert.match(html,/streaming-service spotify-service/);assert.match(html,/cover-rating-number">4\.5</);
+  assert.match(html,/streaming-service apple-service/);assert.match(html,/streaming-service spotify-service/);assert.match(html,/cover-rating-value">4\.5</);assert.match(html,/cover-rating-max">\/5</);
 });
 test('wishlist cards keep remove and add-to-collection controls',()=>{
   const h=makeHarness({libraryView:'wishlist'});const html=h.controller.recordHTML(h.baseRecord,'');
