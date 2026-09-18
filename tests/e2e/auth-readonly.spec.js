@@ -207,6 +207,13 @@ test.describe('authenticated read-only smoke flows',()=>{
           })
         });
       }
+      if(body.action==='cacheArtistArtwork'){
+        return route.fulfill({
+          status:200,
+          contentType:'application/json',
+          body:JSON.stringify({eligible:14,cached_total:14,cached_added:0,complete:true})
+        });
+      }
       if(body.action==='master'){
         return route.fulfill({
           status:200,
@@ -275,7 +282,8 @@ test.describe('authenticated read-only smoke flows',()=>{
       coverState:{url:'',appleCollectionUrl:''},
       isAdded:false,
       isWishlisted:false,
-      save:async()=>false
+      save:async()=>false,
+      artistDiscogsId:123
     }));
     await expect(page.locator('#albumOverlay')).toHaveClass(/visible/);
     await page.locator('#detailArtist').click();
@@ -297,7 +305,7 @@ test.describe('authenticated read-only smoke flows',()=>{
     await expect(page.locator('#detailAlbum')).toHaveText('The Dark Side of the Moon');
     await page.locator('#albumClose').click();
 
-    await page.evaluate(()=>window.GroovyRouter.navigate('/artist/123-pink-floyd',{artistSource:'search'}));
+    await page.evaluate(()=>window.GroovyRouter.navigate('/artist/123-pink-floyd',{artistSource:'search',artistName:'Pink Floyd'}));
     await expect(page.locator('#artistPage')).toBeVisible();
     await expect(page.locator('.artist-context-back')).toHaveCount(0);
 
@@ -305,10 +313,10 @@ test.describe('authenticated read-only smoke flows',()=>{
     if(await existingAlbum.count()>0){
       await existingAlbum.click();
       await expect(page.locator('#albumOverlay')).toHaveClass(/visible/);
-      await expect(page.locator('#detailContextBack')).toBeVisible();
-      await expect(page.locator('#detailContextBack')).toContainText('Pink Floyd');
-      await page.locator('#detailContextBack').click();
+      await expect(page.locator('#detailContextBack')).toHaveCount(0);
+      await page.locator('#albumClose').click();
       await expect(page.locator('#albumOverlay')).not.toHaveClass(/visible/);
+      await expect(page).toHaveURL(/\/artist\/123-pink-floyd$/);
       await expect(page.locator('#artistPage')).toBeVisible();
     }
 

@@ -116,8 +116,8 @@
           '</div>'+
         '</section>'+
         '<div class="artist-metrics">'+
-          metric(overview.summary.collected_records,'Collected Records')+
           metric(overview.summary.collectors,'Collectors')+
+          metric(overview.summary.collected_records,'Collected Records')+
           metric(overview.summary.wishlisted_records,'Wishlisted Records')+
         '</div>'+
         ((current.length||past.length)?'<div class="artist-members-grid">'+members('Current members',current)+members('Past members',past)+'</div>':'')+

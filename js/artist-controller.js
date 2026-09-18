@@ -20,6 +20,9 @@
     var active=false;
     var requestVersion=0;
     var currentProfile=null;
+    var currentOverview=null;
+    var currentWikipedia=null;
+    var currentNavigation={};
 
     if(!Core)throw new Error('Artist controller requires GroovyArtistCore');
     if(!api||!api.functions||typeof api.rpc!=='function')throw new Error('Artist controller requires Supabase');
@@ -41,8 +44,77 @@
       requestVersion++;
       active=false;
       currentProfile=null;
+      currentOverview=null;
+      currentWikipedia=null;
+      currentNavigation={};
       setTabState(false);
       view.hide();
+    }
+
+    function emptyProfile(id,name){
+      return {
+        id:Number(id)||null,
+        name:String(name||''),
+        current_members:[],
+        past_members:[],
+        genres:[],
+        official_url:''
+      };
+    }
+
+    function cachedProfile(row,id,name){
+      if(!row)return null;
+      return {
+        id:Number(row.discogs_artist_id)||Number(id)||null,
+        name:String(row.artist_name||name||''),
+        current_members:Array.isArray(row.current_members)?row.current_members:[],
+        past_members:Array.isArray(row.past_members)?row.past_members:[],
+        genres:Array.isArray(row.genres)?row.genres:[],
+        official_url:String(row.official_url||''),
+        fetched_at:row.fetched_at||null
+      };
+    }
+
+    async function loadCachedProfile(id){
+      if(!id)return null;
+      var result=await api
+        .from('artist_profile_cache')
+        .select('discogs_artist_id,artist_name,current_members,past_members,genres,official_url,fetched_at')
+        .eq('discogs_artist_id',Number(id))
+        .maybeSingle();
+      if(result.error){
+        log('warn','Could not load cached artist profile:',result.error);
+        return null;
+      }
+      return result.data||null;
+    }
+
+    async function localArtistByName(name){
+      if(!name)return null;
+      var result=await api
+        .from('artists')
+        .select('name,discogs_artist_id')
+        .ilike('name',String(name))
+        .maybeSingle();
+      if(result.error){
+        log('warn','Could not resolve local artist:',result.error);
+        return null;
+      }
+      return result.data||null;
+    }
+
+    async function localArtistByDiscogsId(id){
+      if(!id)return null;
+      var result=await api
+        .from('artists')
+        .select('name,discogs_artist_id')
+        .eq('discogs_artist_id',Number(id))
+        .maybeSingle();
+      if(result.error){
+        log('warn','Could not resolve local Discogs artist:',result.error);
+        return null;
+      }
+      return result.data||null;
     }
 
     async function fetchProfile(input){
@@ -55,10 +127,99 @@
       return result.data||null;
     }
 
+    function stateWithArtistName(state,name){
+      return Object.assign({},state||{},{artistName:String(name||'')});
+    }
+
     async function navigateResolved(input,state){
-      var profile=input&&input.id?input:await fetchProfile(input||{});
-      if(!profile||!profile.id)throw new Error('Artist could not be resolved');
-      return onNavigate(Core.route(profile.id,profile.name),state||{});
+      input=input||{};
+      var id=Number(input.id)||0;
+      var name=String(input.name||'').trim();
+
+      if(id&&name){
+        return onNavigate(Core.route(id,name),stateWithArtistName(state,name));
+      }
+
+      if(name){
+        var local=await localArtistByName(name);
+        if(local&&local.discogs_artist_id){
+          return onNavigate(
+            Core.route(local.discogs_artist_id,local.name||name),
+            stateWithArtistName(state,local.name||name)
+          );
+        }
+      }
+
+      if(id&&!name){
+        var cached=await loadCachedProfile(id);
+        if(cached&&cached.artist_name){
+          return onNavigate(Core.route(id,cached.artist_name),stateWithArtistName(state,cached.artist_name));
+        }
+        var linked=await localArtistByDiscogsId(id);
+        if(linked&&linked.name){
+          return onNavigate(Core.route(id,linked.name),stateWithArtistName(state,linked.name));
+        }
+      }
+
+      var profile=await fetchProfile({id:id||null,name:name||''});
+      if(!profile||!profile.id||!profile.name)throw new Error('Artist could not be resolved');
+      return onNavigate(
+        Core.route(profile.id,profile.name),
+        stateWithArtistName(state,profile.name)
+      );
+    }
+
+    function renderCurrent(version){
+      if(version!==requestVersion||!active||!currentProfile||!currentOverview)return;
+      view.render({
+        profile:currentProfile,
+        overview:currentOverview,
+        wikipedia:currentWikipedia,
+        navigation:currentNavigation
+      });
+    }
+
+    function refreshProfileInBackground(id,name,version){
+      fetchProfile({id:id,name:name}).then(function(profile){
+        if(version!==requestVersion||!active||!profile)return;
+        currentProfile=profile;
+        renderCurrent(version);
+      }).catch(function(error){
+        log('warn','Could not refresh artist profile:',error);
+      });
+    }
+
+    function loadWikipediaInBackground(name,version){
+      wikipedia.load(name).then(function(result){
+        if(version!==requestVersion||!active)return;
+        currentWikipedia=result||null;
+        renderCurrent(version);
+      }).catch(function(error){
+        log('warn','Could not load Wikipedia artist information:',error);
+      });
+    }
+
+    function warmArtworkInBackground(id,name,overview,version){
+      var cache=overview&&overview.artwork_cache?overview.artwork_cache:{};
+      if(!id||!name||cache.complete||!Core.number(cache.eligible))return;
+
+      api.functions.invoke('discogs-search',{
+        body:{
+          action:'cacheArtistArtwork',
+          artistId:Number(id),
+          artistName:String(name)
+        }
+      }).then(async function(result){
+        if(version!==requestVersion||!active)return;
+        if(result.error||!result.data||!Core.number(result.data.cached_added))return;
+
+        var refreshed=await api.rpc('get_artist_overview',{p_artist_name:String(name)});
+        if(version!==requestVersion||!active||refreshed.error)return;
+        currentOverview=refreshed.data||currentOverview;
+        renderCurrent(version);
+      }).catch(function(error){
+        log('warn','Could not warm artist artwork cache:',error);
+      });
     }
 
     async function renderPage(routeInfo,state){
@@ -75,27 +236,51 @@
       view.show();
       view.loading();
 
+      var id=Number(routeInfo&&routeInfo.id)||0;
+      var name=String(state&&state.artistName||'').trim();
+
       try{
-        var profile=await fetchProfile({id:routeInfo&&routeInfo.id});
-        if(version!==requestVersion||!active)return false;
-        if(!profile)throw new Error('Artist not found');
-        currentProfile=profile;
+        var cachedPromise=loadCachedProfile(id);
+        var linkedPromise=name?Promise.resolve(null):localArtistByDiscogsId(id);
 
-        var results=await Promise.all([
-          api.rpc('get_artist_overview',{p_artist_name:profile.name}),
-          wikipedia.load(profile.name).catch(function(error){
-            log('warn','Could not load Wikipedia artist information:',error);
-            return null;
-          })
-        ]);
+        var identityResults=await Promise.all([cachedPromise,linkedPromise]);
         if(version!==requestVersion||!active)return false;
-        if(results[0].error)throw results[0].error;
 
-        var navigation={
+        var cachedRow=identityResults[0];
+        var linkedArtist=identityResults[1];
+        if(!name&&cachedRow&&cachedRow.artist_name)name=String(cachedRow.artist_name);
+        if(!name&&linkedArtist&&linkedArtist.name)name=String(linkedArtist.name);
+
+        var profile=cachedProfile(cachedRow,id,name);
+
+        if(!name){
+          profile=await fetchProfile({id:id});
+          if(version!==requestVersion||!active)return false;
+          if(!profile||!profile.name)throw new Error('Artist not found');
+          name=String(profile.name);
+        }
+
+        currentProfile=profile||emptyProfile(id,name);
+        if(!currentProfile.name)currentProfile.name=name;
+
+        var overviewResult=await api.rpc('get_artist_overview',{p_artist_name:name});
+        if(version!==requestVersion||!active)return false;
+        if(overviewResult.error)throw overviewResult.error;
+
+        currentOverview=overviewResult.data||{};
+        currentWikipedia=null;
+        currentNavigation={
           backToAlbum:!!(state&&state.artistSource==='album'),
           backLabel:state&&state.artistBackLabel?String(state.artistBackLabel):'album'
         };
-        view.render({profile:profile,overview:results[0].data||{},wikipedia:results[1],navigation:navigation});
+
+        renderCurrent(version);
+
+        // External sources never block the page. They only enrich an already-rendered profile.
+        refreshProfileInBackground(id,name,version);
+        loadWikipediaInBackground(name,version);
+        warmArtworkInBackground(id,name,currentOverview,version);
+
         return true;
       }catch(error){
         if(version!==requestVersion)return false;
@@ -112,6 +297,7 @@
         onBack();
         return;
       }
+
       var album=event.target&&event.target.closest?event.target.closest('[data-artist-master-id],[data-artist-album-id]'):null;
       if(album){
         event.preventDefault();

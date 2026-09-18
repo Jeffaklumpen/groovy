@@ -24,6 +24,9 @@ test('artist page exposes the requested profile information',()=>{
   assert.match(view,/Collected Records/);
   assert.match(view,/Collectors/);
   assert.match(view,/Wishlisted Records/);
+  const metrics=view.slice(view.indexOf("'<div class=\"artist-metrics\">'"),view.indexOf("'</div>'+",view.indexOf("'<div class=\"artist-metrics\">'"))+9);
+  assert.ok(metrics.indexOf("'Collectors'")<metrics.indexOf("'Collected Records'"));
+  assert.ok(metrics.indexOf("'Collected Records'")<metrics.indexOf("'Wishlisted Records'"));
 });
 
 test('artist Wikipedia selects two useful top-level sections and only free Commons images',()=>{
@@ -71,17 +74,68 @@ test('existing album search renders artist results without replacing album resul
   assert.match(search,/openDiscogsMasterPreview/);
 });
 
-test('artist and album navigation preserve contextual back behavior',()=>{
+test('artist and album navigation preserve contextual back behavior without a second album back control',()=>{
   const app=fs.readFileSync('js/app.js','utf8');
   const view=fs.readFileSync('js/artist-view.js','utf8');
   const html=fs.readFileSync('index.html','utf8');
   assert.match(view,/data-artist-back-album/);
-  assert.match(html,/id="detailContextBack"/);
+  assert.doesNotMatch(html,/id="detailContextBack"/);
   assert.match(app,/groovyReopenAlbum/);
   assert.match(app,/restoreAlbumFromHistoryState/);
   assert.match(app,/window\.groovyAlbumDetailNavigation=Object\.freeze/);
   assert.match(app,/navigation\.getContext\(\)/);
   assert.match(app,/navigation\.reopenLibraryAlbumById\(context\.albumId\)/);
-  assert.match(app,/navigationContext=\{source:'artist'/);
   assert.match(app,/artistSource:'search'/);
+});
+
+
+test('artist pages render from local data before external enrichment and warm artwork asynchronously',()=>{
+  const controller=fs.readFileSync('js/artist-controller.js','utf8');
+  assert.match(controller,/api\.rpc\('get_artist_overview'/);
+  assert.match(controller,/renderCurrent\(version\);[\s\S]*refreshProfileInBackground/);
+  assert.match(controller,/loadWikipediaInBackground/);
+  assert.match(controller,/warmArtworkInBackground/);
+  assert.match(controller,/action:'cacheArtistArtwork'/);
+});
+
+test('artist discography and search read Apple artwork from persistent cache rather than live Apple search',()=>{
+  const search=fs.readFileSync('js/album-search.js','utf8');
+  const enrichStart=search.indexOf('async function enrichSearchResultsWithApple');
+  const enrichEnd=search.indexOf('async function searchDiscogs',enrichStart);
+  const enrich=search.slice(enrichStart,enrichEnd);
+  assert.match(enrich,/getPersistentAppleArtworkCache/);
+  assert.doesNotMatch(enrich,/itunes\.apple\.com|searchApplePreviewArtwork/);
+
+  const masterStart=search.indexOf('async function openDiscogsMasterPreview');
+  const masterEnd=search.indexOf('async function openCatalogAlbumPreview',masterStart);
+  const master=search.slice(masterStart,masterEnd);
+  assert.match(master,/getPersistentAppleArtworkCache/);
+  assert.doesNotMatch(master,/searchAppleAlbumArtwork/);
+
+  const saveStart=search.indexOf('async function saveAlbumFromDiscogs');
+  const saveEnd=search.indexOf('async function saveExistingCatalogAlbum',saveStart);
+  assert.doesNotMatch(search.slice(saveStart,saveEnd),/searchAppleAlbumArtwork/);
+});
+
+test('artist cache migration joins Apple artwork into the main discography',()=>{
+  const sql=fs.readFileSync('supabase/migrations/20260918184046_artist_profile_and_artwork_cache.sql','utf8');
+  assert.match(sql,/create table if not exists public\.artist_profile_cache/i);
+  assert.match(sql,/left join public\.apple_artwork_cache/i);
+  assert.match(sql,/coalesce\(aac\.artwork_url,a\.cover_url\)/i);
+  assert.match(sql,/apple_artwork_cached/i);
+  assert.match(sql,/artwork_cache/i);
+});
+
+test('artist artwork cache batches an Apple artist lookup and persists all matched album URLs',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'cacheArtistArtwork')");
+  const end=edge.indexOf("if (action === 'artistProfile')",start);
+  assert.ok(start>=0&&end>start);
+  const block=edge.slice(start,end);
+  assert.match(block,/entity=musicArtist/);
+  assert.match(block,/entity=album&limit=200/);
+  assert.match(block,/apple_artwork_cache/);
+  assert.match(block,/artwork_url/);
+  assert.match(block,/apple_collection_url/);
+  assert.match(block,/\.from\('albums'\)/);
 });

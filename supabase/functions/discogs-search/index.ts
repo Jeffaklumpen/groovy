@@ -34,6 +34,19 @@ export default {
         }
         return { data: await response.json() }
       }
+      let serviceClient: any = null
+
+      function getServiceClient() {
+        if (serviceClient) return serviceClient
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
+        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+        if (!supabaseUrl || !serviceRoleKey) return null
+        serviceClient = createClient(supabaseUrl,serviceRoleKey,{
+          auth:{persistSession:false,autoRefreshToken:false}
+        })
+        return serviceClient
+      }
+
 
       function cleanArtistName(value: unknown) {
         return String(value || '').replace(/\s*\(\d+\)$/,'').trim()
@@ -165,6 +178,48 @@ export default {
         if (a === b) return true
         return a.length >= 6 && b.length >= 6 && (a.includes(b) || b.includes(a))
       }
+      function appleAlbumScore(item: any,artist: string,title: string,year: unknown) {
+        if (!item || !identityMatches(item.artistName,artist)) return -1000
+        const wantedTitle=normalizeIdentity(title)
+        const candidateTitle=normalizeIdentity(item.collectionName)
+        if (!wantedTitle || !candidateTitle) return -1000
+
+        let score=-1000
+        if (candidateTitle===wantedTitle) score=120
+        else if (
+          candidateTitle.length>=6 &&
+          wantedTitle.length>=6 &&
+          (candidateTitle.includes(wantedTitle)||wantedTitle.includes(candidateTitle))
+        ) score=75
+
+        if (score<0) return score
+
+        const wantedYear=Number(year)||0
+        const candidateYear=Number(String(item.releaseDate||'').slice(0,4))||0
+        if (wantedYear&&candidateYear) score-=Math.min(Math.abs(wantedYear-candidateYear),25)
+        return score
+      }
+
+      function appleArtworkUrl(value: unknown) {
+        return String(value||'')
+          .replace(/\/\d+x\d+bb\./,'/1000x1000bb.')
+          .trim()
+      }
+
+      async function appleJson(url: string) {
+        try {
+          const response=await fetch(url)
+          if (!response.ok) {
+            console.warn('Apple HTTP',response.status)
+            return null
+          }
+          return await response.json()
+        } catch (error) {
+          console.warn('Apple request failed',error)
+          return null
+        }
+      }
+
 
       async function verifiedAppleAlbum(
         urlValue: unknown,
@@ -284,10 +339,26 @@ export default {
           })
         }
 
-        const verifiedApple = await verifiedAppleAlbum(body.appleCollectionUrl,identities)
+        const { data:cachedApple,error:cachedAppleError } = await admin
+          .from('apple_artwork_cache')
+          .select('apple_collection_id,apple_collection_url,artwork_url')
+          .eq('discogs_master_id',Number(saveMasterId))
+          .maybeSingle()
+        if (cachedAppleError) {
+          console.warn('Could not load Apple artwork cache for verified save',cachedAppleError)
+        }
+
+        const verifiedApple = cachedApple
+          ?{
+            collectionId:Number(cachedApple.apple_collection_id)||null,
+            collectionUrl:String(cachedApple.apple_collection_url||''),
+            artworkUrl:String(cachedApple.artwork_url||'')
+          }
+          :await verifiedAppleAlbum(body.appleCollectionUrl,identities)
+
         const discogsCover = String(master.images?.[0]?.uri || master.images?.[0]?.uri150 || '').trim()
         const coverUrl = verifiedApple?.artworkUrl || discogsCover || null
-        const coverSource = verifiedApple ? 'apple' : (discogsCover ? 'discogs' : null)
+        const coverSource = verifiedApple?.artworkUrl ? 'apple' : (discogsCover ? 'discogs' : null)
         const appleUrl = verifiedApple?.collectionUrl || null
         const { data:saveResult,error:saveError } = await admin.rpc(
           'save_album_to_library_verified',
@@ -322,7 +393,7 @@ export default {
           }
         }
 
-        if (verifiedApple) {
+        if (verifiedApple && !cachedApple) {
           const { error:cacheError } = await admin.from('apple_artwork_cache').upsert({
             discogs_master_id:Number(saveMasterId),
             artist_name:artist,
@@ -384,6 +455,232 @@ export default {
         })
       }
 
+      if (action === 'cacheArtistArtwork') {
+        const resolvedArtistId=Number(artistId)||0
+        const resolvedArtistName=cleanArtistName(artistName)
+        if (!resolvedArtistId || !resolvedArtistName) {
+          return Response.json({ error: 'Artist ID and name are required' }, { status: 400 })
+        }
+
+        const admin=getServiceClient()
+        if (!admin) {
+          return Response.json({ error: 'Artwork cache configuration is incomplete' }, { status: 500 })
+        }
+
+        const { data:catalogRows,error:catalogError } = await admin
+          .from('musicbrainz_catalog')
+          .select('discogs_master_id,artist_name,album_title,first_release_year,secondary_types,match_type')
+          .ilike('artist_name',resolvedArtistName)
+          .not('discogs_master_id','is',null)
+          .limit(200)
+
+        if (catalogError) {
+          console.warn('Could not load artist discography for Apple cache',catalogError)
+          return Response.json({ error: 'Could not load artist discography' }, { status: 500 })
+        }
+
+        const seenMasters=new Set<string>()
+        const catalog=(Array.isArray(catalogRows)?catalogRows:[])
+          .filter((row: any)=>{
+            const secondary=String(row?.secondary_types||'').trim()
+            const title=String(row?.album_title||'').toLowerCase()
+            return (!secondary||secondary==='Soundtrack') &&
+              !title.includes('film soundtrack') &&
+              !title.includes('motion picture soundtrack')
+          })
+          .sort((left: any,right: any)=>{
+            const directLeft=left?.match_type==='direct'?0:1
+            const directRight=right?.match_type==='direct'?0:1
+            return directLeft-directRight
+          })
+          .filter((row: any)=>{
+            const key=String(row?.discogs_master_id||'')
+            if (!key || seenMasters.has(key)) return false
+            seenMasters.add(key)
+            return true
+          })
+          .slice(0,60)
+
+        const masterIds=catalog
+          .map((row: any)=>Number(row.discogs_master_id)||0)
+          .filter(Boolean)
+
+        if (!masterIds.length) {
+          return Response.json({eligible:0,cached_total:0,cached_added:0,complete:true})
+        }
+
+        const { data:existingRows,error:existingError } = await admin
+          .from('apple_artwork_cache')
+          .select('discogs_master_id')
+          .in('discogs_master_id',masterIds)
+
+        if (existingError) {
+          console.warn('Could not inspect Apple artwork cache',existingError)
+          return Response.json({ error: 'Could not inspect artwork cache' }, { status: 500 })
+        }
+
+        const existingIds=new Set(
+          (Array.isArray(existingRows)?existingRows:[])
+            .map((row: any)=>String(row.discogs_master_id||''))
+            .filter(Boolean)
+        )
+
+        const missing=catalog.filter((row: any)=>!existingIds.has(String(row.discogs_master_id||'')))
+        const now=new Date().toISOString()
+
+        if (!missing.length) {
+          await admin.from('artist_profile_cache').update({
+            artwork_checked_at:now,
+            artwork_eligible_count:catalog.length,
+            artwork_cached_count:catalog.length,
+            updated_at:now
+          }).eq('discogs_artist_id',resolvedArtistId)
+
+          return Response.json({
+            eligible:catalog.length,
+            cached_total:catalog.length,
+            cached_added:0,
+            complete:true
+          })
+        }
+
+        const { data:cacheState } = await admin
+          .from('artist_profile_cache')
+          .select('artwork_checked_at,artwork_eligible_count,artwork_cached_count')
+          .eq('discogs_artist_id',resolvedArtistId)
+          .maybeSingle()
+
+        const checkedAt=cacheState?.artwork_checked_at
+          ?Date.parse(String(cacheState.artwork_checked_at))
+          :0
+        const recentlyChecked=checkedAt && Date.now()-checkedAt < 7*24*60*60*1000
+
+        if (
+          recentlyChecked &&
+          Number(cacheState?.artwork_eligible_count||0)===catalog.length &&
+          Number(cacheState?.artwork_cached_count||0)===existingIds.size
+        ) {
+          return Response.json({
+            eligible:catalog.length,
+            cached_total:existingIds.size,
+            cached_added:0,
+            complete:existingIds.size===catalog.length,
+            deferred:true
+          })
+        }
+
+        const artistSearch=await appleJson(
+          'https://itunes.apple.com/search?term='+
+          encodeURIComponent(resolvedArtistName)+
+          '&entity=musicArtist&limit=20&country=SE'
+        )
+
+        const artistCandidate=(Array.isArray(artistSearch?.results)?artistSearch.results:[])
+          .filter((item: any)=>item&&item.artistId)
+          .map((item: any)=>({
+            item,
+            score:normalizeIdentity(item.artistName)===normalizeIdentity(resolvedArtistName)
+              ?100
+              :(identityMatches(item.artistName,resolvedArtistName)?60:0)
+          }))
+          .sort((left: any,right: any)=>right.score-left.score)[0]
+
+        if (!artistCandidate || artistCandidate.score<=0) {
+          await admin.from('artist_profile_cache').update({
+            artwork_checked_at:now,
+            artwork_eligible_count:catalog.length,
+            artwork_cached_count:existingIds.size,
+            updated_at:now
+          }).eq('discogs_artist_id',resolvedArtistId)
+
+          return Response.json({
+            eligible:catalog.length,
+            cached_total:existingIds.size,
+            cached_added:0,
+            complete:false
+          })
+        }
+
+        const appleCatalog=await appleJson(
+          'https://itunes.apple.com/lookup?id='+
+          encodeURIComponent(String(artistCandidate.item.artistId))+
+          '&entity=album&limit=200&country=SE'
+        )
+        const appleAlbums=(Array.isArray(appleCatalog?.results)?appleCatalog.results:[])
+          .filter((item: any)=>item&&item.collectionId&&item.collectionName)
+
+        const matches:any[]=[]
+        missing.forEach((row: any)=>{
+          const best=appleAlbums
+            .map((item: any)=>({
+              item,
+              score:appleAlbumScore(
+                item,
+                String(row.artist_name||resolvedArtistName),
+                String(row.album_title||''),
+                row.first_release_year
+              )
+            }))
+            .filter((candidate: any)=>candidate.score>=60)
+            .sort((left: any,right: any)=>right.score-left.score)[0]
+
+          if (!best) return
+
+          const collectionUrl=String(best.item.collectionViewUrl||'').trim()
+          const artworkUrl=appleArtworkUrl(best.item.artworkUrl100)
+          if (!/^https:\/\/(?:music|itunes)\.apple\.com\//i.test(collectionUrl)) return
+          if (!/^https:\/\/[^/]*mzstatic\.com\//i.test(artworkUrl)) return
+
+          matches.push({
+            discogs_master_id:Number(row.discogs_master_id),
+            artist_name:String(row.artist_name||resolvedArtistName).trim(),
+            album_title:String(row.album_title||'').trim(),
+            release_year:Number(row.first_release_year)||null,
+            apple_collection_id:Number(best.item.collectionId)||null,
+            apple_collection_url:collectionUrl,
+            artwork_url:artworkUrl,
+            matched_at:now,
+            updated_at:now
+          })
+        })
+
+        if (matches.length) {
+          const { error:upsertError } = await admin
+            .from('apple_artwork_cache')
+            .upsert(matches,{onConflict:'discogs_master_id'})
+          if (upsertError) {
+            console.warn('Could not persist artist Apple artwork cache',upsertError)
+            return Response.json({ error: 'Could not persist artwork cache' }, { status: 500 })
+          }
+
+          await Promise.all(matches.map(async (match: any)=>{
+            const { error:updateError } = await admin
+              .from('albums')
+              .update({
+                cover_url:match.artwork_url,
+                apple_collection_url:match.apple_collection_url
+              })
+              .eq('discogs_master_id',String(match.discogs_master_id))
+            if (updateError) console.warn('Could not upgrade cached album artwork',updateError)
+          }))
+        }
+
+        const cachedTotal=Math.min(catalog.length,existingIds.size+matches.length)
+        await admin.from('artist_profile_cache').update({
+          artwork_checked_at:now,
+          artwork_eligible_count:catalog.length,
+          artwork_cached_count:cachedTotal,
+          updated_at:now
+        }).eq('discogs_artist_id',resolvedArtistId)
+
+        return Response.json({
+          eligible:catalog.length,
+          cached_total:cachedTotal,
+          cached_added:matches.length,
+          complete:cachedTotal===catalog.length
+        })
+      }
+
       if (action === 'artistProfile') {
         let resolvedArtistId=Number(artistId)||0
 
@@ -408,6 +705,34 @@ export default {
 
         if (!resolvedArtistId) {
           return Response.json({ error: 'Artist could not be resolved' }, { status: 404 })
+        }
+
+        const admin=getServiceClient()
+        if (admin) {
+          const { data:cachedProfile,error:cachedProfileError } = await admin
+            .from('artist_profile_cache')
+            .select('discogs_artist_id,artist_name,current_members,past_members,genres,official_url,fetched_at')
+            .eq('discogs_artist_id',resolvedArtistId)
+            .maybeSingle()
+
+          if (cachedProfileError) {
+            console.warn('Could not load artist profile cache',cachedProfileError)
+          } else if (
+            cachedProfile &&
+            cachedProfile.fetched_at &&
+            Date.now()-Date.parse(String(cachedProfile.fetched_at)) < 30*24*60*60*1000
+          ) {
+            return Response.json({
+              id:Number(cachedProfile.discogs_artist_id),
+              name:String(cachedProfile.artist_name||artistName),
+              real_name:'',
+              current_members:Array.isArray(cachedProfile.current_members)?cachedProfile.current_members:[],
+              past_members:Array.isArray(cachedProfile.past_members)?cachedProfile.past_members:[],
+              genres:Array.isArray(cachedProfile.genres)?cachedProfile.genres:[],
+              official_url:String(cachedProfile.official_url||''),
+              cached:true
+            })
+          }
         }
 
         const artistResult=await discogsJson(
@@ -456,12 +781,7 @@ export default {
           .slice(0,4)
           .map((entry)=>entry[0])
 
-        const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-        if (supabaseUrl && serviceRoleKey && resolvedName) {
-          const admin = createClient(supabaseUrl,serviceRoleKey,{
-            auth:{persistSession:false,autoRefreshToken:false}
-          })
+        if (admin && resolvedName) {
           const { error:artistIdentityError } = await admin
             .from('artists')
             .update({discogs_artist_id:resolvedArtistId})
@@ -469,6 +789,23 @@ export default {
             .is('discogs_artist_id',null)
           if (artistIdentityError) {
             console.warn('Could not link existing Groovy artist to Discogs',artistIdentityError)
+          }
+
+          const now=new Date().toISOString()
+          const { error:profileCacheError } = await admin
+            .from('artist_profile_cache')
+            .upsert({
+              discogs_artist_id:resolvedArtistId,
+              artist_name:resolvedName,
+              current_members:currentMembers,
+              past_members:pastMembers,
+              genres:genres,
+              official_url:officialUrl||null,
+              fetched_at:now,
+              updated_at:now
+            },{onConflict:'discogs_artist_id'})
+          if (profileCacheError) {
+            console.warn('Could not persist artist profile cache',profileCacheError)
           }
         }
 

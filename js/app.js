@@ -791,7 +791,6 @@ var filterMenu=document.getElementById('filterMenu');
 var albumOverlay=document.getElementById('albumOverlay');
 var albumClose=document.getElementById('albumClose');
 var detailCover=document.getElementById('detailCover');
-var detailContextBack=document.getElementById('detailContextBack');
 var detailNumber=document.getElementById('detailNumber');
 var detailArtist=document.getElementById('detailArtist');
 var detailAlbum=document.getElementById('detailAlbum');
@@ -1549,13 +1548,6 @@ function renderAlbumDetail(record,index,options){
   detailSpotifyLink.setAttribute('aria-label','Find '+title+' by '+artist+' on Spotify');
   wikipediaAboutController.openForRecord(record);
 
-  var navigationContext=searchPreview&&options.payload?options.payload.navigationContext:null;
-  if(detailContextBack){
-    var backToArtist=navigationContext&&navigationContext.source==='artist';
-    detailContextBack.hidden=!backToArtist;
-    detailContextBack.textContent=backToArtist?'← Back to '+String(navigationContext.label||artist):'← Back to artist';
-  }
-
   if(searchPreview){
     ratingController.renderPreview(record);
     if(detailShelfStatus){detailShelfStatus.hidden=true;detailShelfStatus.innerHTML='';detailShelfStatus.classList.remove('unshelved');}
@@ -1587,11 +1579,18 @@ function openAlbum(index){
 function currentAlbumNavigationContext(){
   var record=detailPreviewRecord||(detailOpenRecordIndex>=0?records[detailOpenRecordIndex]:null);
   if(!record)return null;
+  var previewArtistId=Number(
+    detailPreviewPayload&&(
+      detailPreviewPayload.artistDiscogsId||
+      (detailPreviewPayload.master&&detailPreviewPayload.master.artists&&detailPreviewPayload.master.artists[0]&&detailPreviewPayload.master.artists[0].id)
+    )
+  )||null;
   return {
     source:detailPreviewRecord?'preview':'library',
     albumId:Number(Record.albumId(record))||null,
     masterId:String(Record.discogsMasterId(record)||''),
     artist:String(Record.artist(record)||''),
+    artistDiscogsId:previewArtistId,
     title:String(Record.title(record)||'')
   };
 }
@@ -1685,7 +1684,6 @@ function closeAlbum(){
   detailPreviewRecord=null;
   detailPreviewPayload=null;
   if(detailShelfActions){detailShelfActions.hidden=true;detailShelfActions.innerHTML='';}
-  if(detailContextBack){detailContextBack.hidden=true;}
   if(detailShelfStatus){detailShelfStatus.hidden=true;detailShelfStatus.innerHTML='';detailShelfStatus.classList.remove('unshelved');}
   detailSocialController.close();
   if(detailInfoCard)detailInfoCard.style.height='';
@@ -1698,14 +1696,6 @@ function closeAlbum(){
       detailCover.src='';
     }
   },350);
-}
-
-if(detailContextBack){
-  detailContextBack.addEventListener('click',function(event){
-    event.preventDefault();
-    event.stopPropagation();
-    closeAlbum();
-  });
 }
 
 window.groovyAlbumDetailNavigation=Object.freeze({
@@ -2327,9 +2317,8 @@ communityAlbumPreviewHandler=function(albumId){
     return albumSearchController.openCatalogPreview(albumId);
 };
 artistAlbumPreviewHandler=function(info){
-    var navigationContext={source:'artist',label:info&&info.artistName?info.artistName:'Artist'};
-    if(info&&info.albumId)return albumSearchController.openCatalogPreview(info.albumId,{navigationContext:navigationContext});
-    if(info&&info.masterId)return albumSearchController.openDiscogsMasterPreview(info.masterId,{navigationContext:navigationContext});
+    if(info&&info.albumId)return albumSearchController.openCatalogPreview(info.albumId);
+    if(info&&info.masterId)return albumSearchController.openDiscogsMasterPreview(info.masterId);
 };
 
 var detailArtistNavigationButton=document.getElementById('detailArtist');
@@ -2356,10 +2345,18 @@ if(detailArtistNavigationButton){
     navigation.close();
 
     try{
-      await artistController.navigateByName(context.artist,{
+      var artistState={
         artistSource:'album',
         artistBackLabel:context.title||'album'
-      });
+      };
+      if(context.artistDiscogsId){
+        await artistController.navigateResolved({
+          id:context.artistDiscogsId,
+          name:context.artist
+        },artistState);
+      }else{
+        await artistController.navigateByName(context.artist,artistState);
+      }
     }catch(error){
       console.error('Could not open artist from album:',error);
       await restoreAlbumFromHistoryState();
