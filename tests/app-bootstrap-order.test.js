@@ -266,6 +266,23 @@ test('library actions controller owns collection and wishlist mutations',()=>{
 });
 
 
+test('selection toolbar keeps Select before desktop sort and exposes contextual bulk actions',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const css=fs.readFileSync('css/library-shell.css','utf8');
+  const app=fs.readFileSync('js/app.js','utf8');
+  const select=html.indexOf('id="librarySelectButton"');
+  const sort=html.indexOf('class="menu-dropdown library-sort-field"');
+  const filter=html.indexOf('class="menu-dropdown library-rating-filter"');
+  assert.ok(select>=0&&select<sort&&sort<filter);
+  assert.match(css,/\.library-sort-field\{order:1;/);
+  assert.match(css,/\.library-rating-filter\{order:2\}/);
+  assert.match(css,/\.library-select-button\{order:3;/);
+  assert.match(html,/id="selectionRemoveShelfButton"/);
+  assert.match(html,/id="selectionAddCollectionButton"/);
+  assert.match(app,/moveCollectionRecordsToShelf\(entryIds,null\)/);
+  assert.match(app,/moveWishlistRecordsToCollection\(entryIds\)/);
+});
+
 test('library render controller loads after library core/actions and before app.js',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const core=html.indexOf('/js/library-core.js?v=');
