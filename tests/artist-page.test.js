@@ -176,18 +176,21 @@ test('artist overview is prefetched from album detail and reused by artist route
   assert.match(app,/groovyPrefetchArtist\(\{id:previewArtistId,name:artist\}\)/);
 });
 
-test('verified artist discography uses Wikidata studio albums and stable catalog IDs',()=>{
+test('verified artist discography resolves artist identity from Discogs and prefers Wikipedia core albums',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
   const end=edge.indexOf("if (action === 'artistProfile')",start);
   assert.ok(start>=0&&end>start);
   const block=edge.slice(start,end);
+  assert.match(edge,/P1953/);
+  assert.match(edge,/sitefilter=enwiki/);
+  assert.match(edge,/prop:'sections'/);
+  assert.match(edge,/prop:'links'/);
+  assert.match(edge,/standardised studio albums/);
   assert.match(edge,/Q208569/);
-  assert.match(edge,/P436/);
-  assert.match(edge,/P1954/);
   assert.match(block,/artist_discography_cache/);
-  assert.match(block,/wikidataCoverage>=0\.55/);
-  assert.match(block,/baselineCoverage>=0\.55/);
+  assert.doesNotMatch(block,/wikidataId:String/);
+  assert.match(block,/source='wikidata'|source:'wikidata'/);
 });
 
 test('verified discography cache replaces the loose fallback only when populated',()=>{
@@ -211,4 +214,12 @@ test('unverified artist discography fallback only accepts direct MusicBrainz-to-
   const sql=fs.readFileSync('supabase/migrations/20260918190916_tighten_artist_discography_fallback.sql','utf8');
   assert.match(sql,/mb\.match_type='direct'/);
   assert.match(sql,/where not v_discography_verified/);
+});
+
+
+test('old unvalidated artist discography verification is reset before trusted identity matching',()=>{
+  const sql=fs.readFileSync('supabase/migrations/20260918192100_reset_untrusted_artist_discography_verification.sql','utf8');
+  assert.match(sql,/delete from public\.artist_discography_cache/i);
+  assert.match(sql,/wikidata_id=null/i);
+  assert.match(sql,/source in \('wikipedia','wikidata','manual'\)/i);
 });

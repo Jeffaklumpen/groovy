@@ -254,15 +254,14 @@
       });
     }
 
-    function verifyDiscographyInBackground(id,name,wikidataId,version){
-      if(!id||!name||!/^Q\d+$/.test(String(wikidataId||'')))return;
+    function verifyDiscographyInBackground(id,name,version){
+      if(!id||!name)return;
 
       api.functions.invoke('discogs-search',{
         body:{
           action:'verifyArtistDiscography',
           artistId:Number(id),
-          artistName:String(name),
-          wikidataId:String(wikidataId)
+          artistName:String(name)
         }
       }).then(async function(result){
         if(version!==requestVersion||!active||result.error||!result.data)return;
@@ -283,9 +282,6 @@
         if(version!==requestVersion||!active)return;
         currentWikipedia=result||null;
         renderCurrent(version);
-        if(result&&result.wikidata_id){
-          verifyDiscographyInBackground(id,name,result.wikidata_id,version);
-        }
       }).catch(function(error){
         log('warn','Could not load Wikipedia artist information:',error);
       });
@@ -375,6 +371,7 @@
         // External/cached profile data enriches an already-visible page.
         loadProfileInBackground(id,name,version);
         loadWikipediaInBackground(id,name,version);
+        verifyDiscographyInBackground(id,name,version);
         warmArtworkInBackground(id,name,currentOverview,version);
 
         return true;
