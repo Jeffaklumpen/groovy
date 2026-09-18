@@ -41,6 +41,7 @@ function create(options){
 var pendingGridOrderSaves=new Map();
 var gridOrderSaveRunning=false;
 var gridOrderSaveErrorShown=false;
+var removeWindowListeners=null;
 
 function saveKey(job){
   if(job.kind==='wishlist')return 'wishlist';
@@ -174,6 +175,11 @@ function commitDomOrder(){
   }
 
 function enable(){
+    if(removeWindowListeners){
+      removeWindowListeners();
+      removeWindowListeners=null;
+    }
+
     var state=getState()||{};
     var records=getRecords();
     var viewedUserId=state.viewedUserId;
@@ -376,101 +382,6 @@ function enable(){
     commitDomOrder();
   }
 
-    collection.ondragstart=function(event){
-      if(viewedUserId!==null){
-        event.preventDefault();
-        return;
-      }
-    
-      var record=event.target.closest('.record');
-    
-      if(!record)return;
-
-    dragged=record;
-    record.classList.add('dragging');
-    createDragPreview(record,event.clientX,event.clientY);
-
-    if(event.dataTransfer){
-      event.dataTransfer.effectAllowed='move';
-      event.dataTransfer.setData('text/plain',record.getAttribute('data-index'));
-
-      if(dragPreview){
-        // Dölj webbläsarens halvtransparenta standard-ghost. Vår egen
-        // kopia följer musen och förblir helt ogenomskinlig.
-        var transparentDragImage=document.createElement('canvas');
-        transparentDragImage.width=1;
-        transparentDragImage.height=1;
-        event.dataTransfer.setDragImage(transparentDragImage,0,0);
-      }
-    }
-  };
-
-  collection.ondragover=function(event){
-    if(viewedUserId!==null)return;
-    if(!dragged)return;
-
-    event.preventDefault();
-    event.dataTransfer.dropEffect='move';
-
-    updateDragPreview(event.clientX,event.clientY);
-
-    var target=event.target.closest('.record');
-
-    if(!target||target===dragged)return;
-
-    moveDragged(target,event.clientX,event.clientY);
-  };
-
-  collection.ondragenter=function(event){
-    if(viewedUserId===null&&dragged){
-      event.preventDefault();
-      event.dataTransfer.dropEffect='move';
-    }
-  };
-
-  collection.ondrop=async function(event){
-    if(viewedUserId!==null)return;  
-    if(!dragged)return;
-
-    event.preventDefault();
-
-    var releasedDragged=dragged;
-
-    releasedDragged.classList.remove('dragging');
-    removeDragPreview();
-    dragged=null;
-
-    await finishDrag();
-  };
-
-  collection.ondragend=function(){
-    if(dragged){
-      dragged.classList.remove('dragging');
-    }
-
-    removeDragPreview();
-    dragged=null;
-  };
-
-  window.addEventListener('dragend',removeDragPreview);
-  window.addEventListener('blur',function(){
-    if(dragged){
-      dragged.classList.remove('dragging');
-      dragged=null;
-    }
-
-    removeDragPreview();
-    touchDragging=false;
-    resetPointerState();
-    resetTouchState();
-  });
-
-  collection.ondragstart=null;
-  collection.ondragover=null;
-  collection.ondragenter=null;
-  collection.ondrop=null;
-  collection.ondragend=null;
-
   var cards=collection.querySelectorAll('.record');
   var pointerId=null;
   var pointerCard=null;
@@ -500,6 +411,23 @@ function enable(){
     touchCard=null;
     touchLongPressActive=false;
   }
+
+  function handleWindowBlur(){
+    if(dragged){
+      dragged.classList.remove('dragging');
+      dragged=null;
+    }
+
+    removeDragPreview();
+    touchDragging=false;
+    resetPointerState();
+    resetTouchState();
+  }
+
+  window.addEventListener('blur',handleWindowBlur);
+  removeWindowListeners=function(){
+    window.removeEventListener('blur',handleWindowBlur);
+  };
 
   function findTouch(touchList,id){
     for(var i=0;i<touchList.length;i++){
