@@ -13,7 +13,7 @@ npm run test:node
 Browser-smoke-testerna körs med Playwright:
 
 ```text
-npm install
+npm ci
 npm run test:e2e
 ```
 
