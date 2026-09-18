@@ -26,7 +26,25 @@ function makeRecordModel(){
     discogsMasterId(record){return record.masterId;},
     pressing(record){return record.pressing||{};},
     sides(record){return record.sides;},
-    trackDurationCacheKey(record){return record.albumId?'cache:'+String(record.masterId||record.albumId):'';},
+    trackDurationCacheKey(record){return (record.masterId||record.albumId)?'cache:'+String(record.masterId||record.albumId):'';},
+    hasTracks(record){
+      return Object.values(record.sides||{}).some(tracks=>Array.isArray(tracks)&&tracks.length>0);
+    },
+    replaceTrackRows(record,incoming){
+      const sides={A:[],B:[],C:[],D:[],E:[],F:[],G:[],H:[]};
+      (incoming||[]).forEach((track,index)=>{
+        const side=String(track.disc_side||'').toUpperCase();
+        if(!sides[side])return;
+        sides[side].push({
+          id:track.id||'preview-'+side+'-'+String(track.track_number||index+1),
+          trackNumber:track.track_number,
+          title:track.title||'Okänd låt',
+          duration:track.duration||''
+        });
+      });
+      record.sides=sides;
+      return Object.values(sides).some(tracks=>tracks.length>0);
+    },
     hasMissingTrackDurations(record){
       return Object.values(record.sides||{}).some(tracks=>(tracks||[]).some(track=>!String(track.duration||'').trim()));
     },
@@ -92,6 +110,39 @@ test('cached track durations render without a Discogs request',async()=>{
 
   assert.match(element.innerHTML,/3:00/);
   assert.equal(requests,0);
+});
+
+test('master-only search preview hydrates an empty tracklist',async()=>{
+  const record={albumId:null,masterId:123,sides:{A:[],B:[],C:[],D:[],E:[],F:[],G:[],H:[]}};
+  const actions=[];
+  const {controller,element}=createController({
+    getOpenRecordIndex:()=>99,
+    api:{functions:{async invoke(name,payload){
+      actions.push(payload.body.action);
+      return {data:{tracklist:[
+        {position:'A1',title:'Preview One',duration:'3:21'},
+        {position:'B1',title:'Preview Two',duration:'4:10'}
+      ]}};
+    }}},
+    pressingCore:{discogsTrackRows(albumId,tracks){
+      assert.equal(albumId,null);
+      return tracks.map(track=>({
+        album_id:null,
+        disc_side:String(track.position).charAt(0),
+        track_number:1,
+        title:track.title,
+        duration:track.duration
+      }));
+    }}
+  });
+
+  await controller.openForRecord(record,99);
+
+  assert.deepEqual(actions,['master']);
+  assert.equal(record.sides.A[0].title,'Preview One');
+  assert.equal(record.sides.B[0].duration,'4:10');
+  assert.match(element.innerHTML,/Preview One/);
+  assert.match(element.innerHTML,/4:10/);
 });
 
 test('Discogs master durations normalize through pressing core and persist',async()=>{
