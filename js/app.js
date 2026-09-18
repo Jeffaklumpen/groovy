@@ -1329,13 +1329,12 @@ var libraryRenderController=LibraryRenderController.create({
   attachWishlistRemoveControls:attachWishlistRemoveControls,
   attachRecordActionMenus:attachRecordActionMenus,
   attachAlbumClicks:attachAlbumClicks,
-  enableGridSorting:gridSortController.enable
+  enableGridSorting:gridSortController.enable,
+  onRendered:function(){if(selectionController)selectionController.syncCards();}
 });
 
 function buildGrid(){
-  var result=libraryRenderController.render();
-  if(selectionController)selectionController.syncCards();
-  return result;
+  return libraryRenderController.render();
 }
 window.buildGrid=buildGrid;
 
