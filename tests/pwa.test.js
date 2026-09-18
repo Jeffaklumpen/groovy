@@ -56,14 +56,14 @@ test('library controls and streaming links remain separate card actions',functio
 });
 
 test('record rendering supports four LP track sides',function(){
-  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
   const recordModel=fs.readFileSync(path.join(root,'js','record-model.js'),'utf8');
+  const libraryData=fs.readFileSync(path.join(root,'js','library-data.js'),'utf8');
   const tracklist=fs.readFileSync(path.join(root,'js','detail-tracklist-controller.js'),'utf8');
   const pressingCore=fs.readFileSync(path.join(root,'js','pressing-core.js'),'utf8');
   assert.match(recordModel,/return \{A:\[\],B:\[\],C:\[\],D:\[\],E:\[\],F:\[\],G:\[\],H:\[\]\}/);
   assert.match(tracklist,/var sideNames=\['A','B','C','D','E','F','G','H'\]/);
   assert.match(pressingCore,/\^\[A-H\]\\s\*\\d/);
-  assert.match(app,/matrixE:item\.matrix_runout_e/);
+  assert.match(libraryData,/matrixE:item\.matrix_runout_e/);
 });
 
 test('login and empty collection actions use the shared viewport-safe flow',function(){
@@ -118,9 +118,11 @@ test('document metadata is accessible and obsolete rating scripts are gone',func
 
 test('pressing matrices A-H use one schema path without compatibility hydration',function(){
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const libraryData=fs.readFileSync(path.join(root,'js','library-data.js'),'utf8');
   const pressingController=fs.readFileSync(path.join(root,'js','pressing-controller.js'),'utf8');
   assert.doesNotMatch(app,/hydrateExtendedMatrices|extendedMatricesSaved|extendedPayload|database update needed for E–H/);
-  assert.ok((app.match(/matrix_runout_h,/g)||[]).length>=2);
+  assert.match(libraryData,/matrix_runout_h/);
+  assert.match(libraryData,/matrixH:item\.matrix_runout_h\|\|''/);
   assert.match(pressingController,/matrix_runout_h:matrices\.H\|\|null/);
   assert.match(pressingController,/details\.matrixH=payload\.matrix_runout_h\|\|''/);
 });

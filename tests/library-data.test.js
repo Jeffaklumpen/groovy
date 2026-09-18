@@ -1,7 +1,18 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
 const LibraryData=require('../js/library-data.js');
-const Record=require('../js/record-model.js');
+
+function loadRecordModel(){
+  const source=fs.readFileSync(path.resolve(__dirname,'..','js','record-model.js'),'utf8');
+  const context={window:{}};
+  vm.runInNewContext(source,context);
+  return context.window.GroovyRecord;
+}
+
+const Record=loadRecordModel();
 
 function makeQuery(result,capture){
   return {
