@@ -164,6 +164,54 @@ function create(options){
     return true;
   }
 
+  async function deleteWishlistRecords(entryIds){
+    if(getViewedUserId()!==null||getLibraryView()!=='wishlist')return false;
+    var ids=normalizeEntryIds(entryIds);
+    if(!ids.length)return false;
+
+    var sessionResult=await api.auth.getSession();
+    var session=sessionResult&&sessionResult.data&&sessionResult.data.session;
+    if(!session||!session.user){
+      onAlert('Du måste vara inloggad.');
+      return false;
+    }
+
+    var result=await api.rpc('delete_wishlist_records',{p_wishlist_ids:ids});
+    if(result.error){
+      log('error','Kunde inte ta bort valda album från önskelistan:',result.error);
+      onAlert('Kunde inte ta bort de valda albumen från önskelistan.\n\n'+(result.error.message||result.error));
+      return false;
+    }
+
+    invalidateSearchState();
+    await loadCollection();
+    return true;
+  }
+
+  async function moveWishlistRecordsToCollection(entryIds){
+    if(getViewedUserId()!==null||getLibraryView()!=='wishlist')return false;
+    var ids=normalizeEntryIds(entryIds);
+    if(!ids.length)return false;
+
+    var sessionResult=await api.auth.getSession();
+    var session=sessionResult&&sessionResult.data&&sessionResult.data.session;
+    if(!session||!session.user){
+      onAlert('Du måste vara inloggad.');
+      return false;
+    }
+
+    var result=await api.rpc('move_wishlist_records_to_collection',{p_wishlist_ids:ids});
+    if(result.error){
+      log('error','Kunde inte lägga till valda album i samlingen:',result.error);
+      onAlert('Kunde inte lägga till de valda albumen i samlingen.\n\n'+(result.error.message||result.error));
+      return false;
+    }
+
+    invalidateSearchState();
+    await loadCollection();
+    return true;
+  }
+
   async function moveWishlistToCollection(index,button){
     if(getViewedUserId()!==null||getLibraryView()!=='wishlist')return false;
     var record=getRecords()[index];
@@ -203,7 +251,9 @@ function create(options){
     deleteCollection:deleteCollection,
     deleteCollectionRecords:deleteCollectionRecords,
     deleteWishlist:deleteWishlist,
+    deleteWishlistRecords:deleteWishlistRecords,
     moveCollectionRecordsToShelf:moveCollectionRecordsToShelf,
+    moveWishlistRecordsToCollection:moveWishlistRecordsToCollection,
     moveWishlistToCollection:moveWishlistToCollection
   });
 }
