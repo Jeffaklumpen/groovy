@@ -82,3 +82,27 @@ test('detail action rendering exposes one extension hook',()=>{
   assert.match(source,/onDetailActionsRendered/);
   assert.match(source,/detailActionsRendered\(index\)/);
 });
+
+
+test('bulk picker delegates selected entry ids through one callback',async()=>{
+  const moved=[];
+  const fx=fixture({
+    onBulkAssign:async(ids,shelfId)=>{moved.push({ids,shelfId});return true;},
+    onBulkAssigned:()=>{moved.push({complete:true});}
+  });
+  fx.state.records=[
+    {title:'One',entryId:'entry-1',shelfId:'',shelfSortOrder:null},
+    {title:'Two',entryId:'entry-2',shelfId:'',shelfSortOrder:null}
+  ];
+  fx.elements.pickerList.querySelector=function(selector){
+    if(selector==='input[name="recordShelf"]:checked')return {value:'s1'};
+    return null;
+  };
+
+  assert.equal(fx.controller.openBulkPicker(['entry-2','entry-1']),true);
+  assert.deepEqual(fx.controller.state().pickerRecordIds,['entry-2','entry-1']);
+  assert.equal(fx.elements.pickerTitle.textContent,'Move 2 Records');
+  assert.equal(fx.elements.createFromPicker.hidden,true);
+  assert.equal(await fx.controller.confirmPicker(),true);
+  assert.deepEqual(moved,[{ids:['entry-2','entry-1'],shelfId:'s1'},{complete:true}]);
+});
