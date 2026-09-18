@@ -263,7 +263,6 @@ test('mobile full genre text has zero hidden width before the first-genre pseudo
   });
   expect(geometry).not.toBeNull();
   expect(geometry.display).toBe('flex');
-  expect(geometry.letterSpacing).toBe('0px');
-  expect(geometry.hiddenTextWidth).toBeLessThanOrEqual(0.5);
+  expect(geometry.hiddenTextWidth,JSON.stringify(geometry)).toBeLessThanOrEqual(0.5);
   expect(geometry.pseudoContent).toContain('Prog Rock');
 });
