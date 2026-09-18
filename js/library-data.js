@@ -50,6 +50,25 @@ var COLLECTION_SELECT=`
   )
 `;
 
+var WISHLIST_SELECT=`
+  id,
+  added_at,
+  sort_order,
+  cover_url,
+  discogs_style,
+  albums(
+    id,
+    title,
+    release_year,
+    genre,
+    cover_url,
+    apple_collection_url,
+    discogs_master_id,
+    artists(id,name),
+    tracks(id,disc_side,track_number,title)
+  )
+`;
+
 function create(options){
   options=options||{};
   var api=options.api;
@@ -93,6 +112,26 @@ function create(options){
     };
   }
 
+  async function fetchWishlist(userId){
+    var result=await api
+      .from('wishlists')
+      .select(WISHLIST_SELECT)
+      .eq('user_id',userId)
+      .order('sort_order',{ascending:true,nullsFirst:false})
+      .order('added_at',{ascending:true});
+
+    return {
+      data:result&&Array.isArray(result.data)?result.data:[],
+      error:result?result.error:null
+    };
+  }
+
+  function mapWishlistRows(rows){
+    return (rows||[])
+      .filter(function(item){return item&&item.albums;})
+      .map(recordModel.fromWishlist);
+  }
+
   function albumIds(rows){
     return (rows||[])
       .map(function(item){return item&&item.albums&&item.albums.id;})
@@ -112,6 +151,8 @@ function create(options){
 
   return Object.freeze({
     fetchCollection:fetchCollection,
+    fetchWishlist:fetchWishlist,
+    mapWishlistRows:mapWishlistRows,
     albumIds:albumIds,
     mapCollectionRows:mapCollectionRows,
     copyDetailsFromRow:copyDetailsFromRow
@@ -120,6 +161,7 @@ function create(options){
 
 return Object.freeze({
   create:create,
-  COLLECTION_SELECT:COLLECTION_SELECT
+  COLLECTION_SELECT:COLLECTION_SELECT,
+  WISHLIST_SELECT:WISHLIST_SELECT
 });
 });
