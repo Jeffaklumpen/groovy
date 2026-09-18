@@ -1,3 +1,5 @@
+var Router=window.GroovyRouter;
+if(!Router)throw new Error('GroovyRouter must load before app.js');
 var NotificationCore=window.GroovyNotificationCore;
 if(!NotificationCore)throw new Error('GroovyNotificationCore must load before app.js');
 var NotificationController=window.GroovyNotificationController;
@@ -128,8 +130,7 @@ function openCollectorRoute(username,view){
     if(!username)return;
     var url=view==='profile'?'/profile/'+encodeURIComponent(username):'/shelf/'+encodeURIComponent(username);
     if(view==='wishlist')url+='?view=wishlist';
-    history.pushState({},'',url);
-    renderCurrentRoute();
+    return Router.navigate(url);
 }
 
 var socialController=SocialController.create({
@@ -143,9 +144,9 @@ var socialController=SocialController.create({
   getCurrentUser:currentSessionUser,
   escapeHtml:escapeSocialHtml,
   onNavigate:function(username,view){openCollectorRoute(username,view);},
-  onOpenFollowingRoute:function(){history.pushState({},'','/following');renderCurrentRoute();},
-  onBackHome:function(){history.pushState({},'','/');renderCurrentRoute();},
-  onRequireAuth:function(){openAuthPanel('login');history.replaceState({},'','/');},
+  onOpenFollowingRoute:function(){return Router.navigate('/following');},
+  onBackHome:function(){return Router.navigate('/');},
+  onRequireAuth:function(){openAuthPanel('login');Router.replace('/',{}, {render:false});},
   onBeforeFollowingOpen:function(){profileMenu.classList.remove('open');},
   onLog:function(level,message,error){
     if(level==='error')console.error(message,error||'');
@@ -171,8 +172,7 @@ var userSearchController=UserSearchController.create({
   getCurrentUser:currentSessionUser,
   socialController:socialController,
   onNavigate:function(username){
-    history.pushState({},'','/shelf/'+encodeURIComponent(username));
-    renderCurrentRoute();
+    return Router.navigate('/shelf/'+encodeURIComponent(username));
   },
   onLog:function(level,message,error){
     if(level==='error')console.error(message,error||'');
@@ -498,8 +498,7 @@ logoutButton.addEventListener('click',async function(){
     notificationController.closePanel();
     records=[];
     collection.innerHTML='';
-    history.replaceState({},'','/');
-    await renderCurrentRoute();
+    await Router.replace('/');
 });
 
 supabaseClient.auth.onAuthStateChange(function(){
@@ -1707,14 +1706,16 @@ logo.addEventListener('click',async function(event){
     event.preventDefault();
     const {data:{session}}=await supabaseClient.auth.getSession();
     if(!session||!session.user){
-        if(window.location.pathname!=='/'||window.location.search)history.replaceState({},'','/');
-        await renderCurrentRoute();
+        if(window.location.pathname!=='/'||window.location.search){
+            await Router.replace('/');
+        }else{
+            await renderCurrentRoute();
+        }
         return;
     }
-    history.pushState({},'','/');
     libraryPage=1;
     setDeleteMode(false);
-    await renderCurrentRoute();
+    await Router.navigate('/');
 });
 
 myCollectionButton.addEventListener('click',async function(event){
@@ -1727,10 +1728,9 @@ myCollectionButton.addEventListener('click',async function(event){
         return;
     }
 
-    history.pushState({},'','/');
     libraryPage=1;
     setDeleteMode(false);
-    await renderCurrentRoute();
+    await Router.navigate('/');
 });
 
 async function navigateOwnLibrary(nextView){
@@ -1744,8 +1744,7 @@ async function navigateOwnLibrary(nextView){
     var url='/';
     if(nextView==='wishlist')url+='?view=wishlist';
     if(window.location.pathname+window.location.search===url)return;
-    history.pushState({},'',url);
-    renderCurrentRoute();
+    return Router.navigate(url);
 }
 
 function navigateViewedLibrary(nextView){
@@ -1756,8 +1755,7 @@ function navigateViewedLibrary(nextView){
     var url='/shelf/'+encodeURIComponent(profile.username);
     if(nextView==='wishlist')url+='?view=wishlist';
     if(window.location.pathname+window.location.search===url)return;
-    history.pushState({},'',url);
-    renderCurrentRoute();
+    return Router.navigate(url);
 }
 
 collectionTabButton.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();navigateOwnLibrary('collection');});
@@ -2044,7 +2042,7 @@ async function loadUserFromUrl(){
     const resolvedState=GroovyRouteState.resolveProfileView(sessionUser,user);
 
     if(resolvedState==='own'){
-        history.replaceState({},'','/'+(window.libraryView==='wishlist'?'?view=wishlist':''));
+        Router.replace('/'+(window.libraryView==='wishlist'?'?view=wishlist':''),{}, {render:false});
         await window.loadCollection();
         return;
     }
@@ -2053,10 +2051,6 @@ async function loadUserFromUrl(){
     window.profileNotFound=false;
     await loadOtherUserCollection(user.id);
 }
-
-window.addEventListener('popstate',function(){
-    renderCurrentRoute();
-});
 
 const scrollTopButton=document.getElementById('scrollTopButton');
 let scrollTopUpdatePending=false;
@@ -2085,7 +2079,7 @@ async function renderCurrentRoute(){
     notificationController.closePanel();
     var routeUser=await currentSessionUser();
     if(!routeUser&&(window.location.pathname!=='/'||window.location.search||window.location.hash)){
-        history.replaceState({},'','/');
+        Router.replace('/',{}, {render:false});
         window.libraryView='collection';
     }
     if(!routeUser){
@@ -2104,6 +2098,7 @@ async function renderCurrentRoute(){
     await loadUserFromUrl();
 }
 
+Router.setHandler(renderCurrentRoute);
 renderCurrentRoute();
 updateScrollTopButton();
 
