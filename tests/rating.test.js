@@ -41,13 +41,13 @@ test('avatar fallback is rendered directly rather than fixed by a later DOM obse
 });
 
 
-test('mobile rating panels share star markup and footer alignment',function(){
+test('mobile rating panels share star geometry and footer alignment',function(){
   const controller=fs.readFileSync(path.join(root,'js','album-rating-controller.js'),'utf8');
   const css=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
   const searchCss=fs.readFileSync(path.join(root,'css','search-modals.css'),'utf8');
-  assert.match(controller,/groovy-rating-stars is-community/);
-  assert.match(css,/album-rating-star,html body \.detail-rating \.groovy-rating-stars\{font-size:17px!important;line-height:1!important/);
-  assert.match(css,/rating-panel-footer\{margin-top:auto!important;padding-top:6px!important/);
+  assert.match(controller,/groovy-rating-star-cell/);
+  assert.match(css,/grid-template-columns:repeat\(5,1em\)/);
+  assert.match(css,/rating-panel-footer\{display:flex!important;align-items:center!important;width:100%!important;height:24px/);
   assert.match(searchCss,/user-search-avatar\.groovy-user-avatar\{overflow:visible\}/);
 });
 
