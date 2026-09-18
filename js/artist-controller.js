@@ -25,6 +25,9 @@
     var currentNavigation={};
     var overviewCache=new Map();
     var identityCache=new Map();
+    var identityResolutionCache=new Map();
+    var discographyJobs=new Map();
+    var artworkJobs=new Map();
 
     if(!Core)throw new Error('Artist controller requires GroovyArtistCore');
     if(!api||!api.functions||typeof api.rpc!=='function')throw new Error('Artist controller requires Supabase');
@@ -119,6 +122,52 @@
       return promise;
     }
 
+    function resolveArtistIdentity(input){
+      input=input||{};
+      var id=Number(input.id)||0;
+      var name=String(input.name||'').trim();
+      if(id)return Promise.resolve({id:id,name:name||''});
+      if(!name)return Promise.resolve(null);
+
+      var key=artistCacheKey(name);
+      return localArtistByName(name).then(function(local){
+        if(local&&local.discogs_artist_id){
+          return {
+            id:Number(local.discogs_artist_id)||0,
+            name:String(local.name||name)
+          };
+        }
+
+        if(identityResolutionCache.has(key))return identityResolutionCache.get(key);
+
+        var request=api.functions.invoke('discogs-search',{
+          body:{action:'resolveArtist',artistName:name}
+        }).then(function(result){
+          if(result.error)throw result.error;
+          if(result.data&&result.data.error)throw new Error(result.data.error);
+          var resolved=result.data||null;
+          if(!resolved||!Number(resolved.id))return null;
+
+          var identity={
+            name:String(resolved.name||name),
+            discogs_artist_id:Number(resolved.id)
+          };
+          identityCache.set(key,Promise.resolve(identity));
+          return {id:identity.discogs_artist_id,name:identity.name};
+        }).catch(function(error){
+          log('warn','Could not resolve lightweight artist identity:',error);
+          return null;
+        });
+
+        identityResolutionCache.set(key,request);
+        request.then(
+          function(){identityResolutionCache.delete(key);},
+          function(){identityResolutionCache.delete(key);}
+        );
+        return request;
+      });
+    }
+
     function loadOverview(name,force){
       var key=artistCacheKey(name);
       if(!key)return Promise.resolve(null);
@@ -148,11 +197,37 @@
       var name=String(input.name||'').trim();
       if(!name)return Promise.resolve(false);
 
-      var jobs=[loadOverview(name,false)];
-      if(!Number(input.id))jobs.push(localArtistByName(name));
-      else jobs.push(loadCachedProfile(Number(input.id)));
+      return Promise.all([
+        loadOverview(name,false),
+        resolveArtistIdentity(input)
+      ]).then(async function(results){
+        var overview=results[0]||{};
+        var identity=results[1]||null;
+        var resolvedId=Number(input.id)||
+          Number(identity&&identity.id)||
+          Number(overview&&overview.summary&&overview.summary.discogs_artist_id)||
+          0;
 
-      return Promise.all(jobs).then(function(){return true;}).catch(function(){return false;});
+        if(!resolvedId)return true;
+
+        if(Number(overview&&overview.summary&&overview.summary.discogs_artist_id)!==resolvedId){
+          overview=await loadOverview(name,true);
+        }
+
+        if(!overview||!overview.discography_verified){
+          var verified=await ensureDiscographyCached(resolvedId,name);
+          if(verified&&verified.overview)overview=verified.overview;
+        }
+
+        if(overview&&overview.discography_verified){
+          await ensureArtworkCached(resolvedId,name,overview);
+        }
+
+        return true;
+      }).catch(function(error){
+        log('warn','Could not prefetch artist page:',error);
+        return false;
+      });
     }
 
     async function localArtistByDiscogsId(id){
@@ -193,11 +268,11 @@
       }
 
       if(name){
-        var local=await localArtistByName(name);
-        if(local&&local.discogs_artist_id){
+        var resolved=await resolveArtistIdentity({id:id,name:name});
+        if(resolved&&resolved.id){
           return onNavigate(
-            Core.route(local.discogs_artist_id,local.name||name),
-            stateWithArtistName(state,local.name||name)
+            Core.route(resolved.id,resolved.name||name),
+            stateWithArtistName(state,resolved.name||name)
           );
         }
       }
@@ -254,27 +329,82 @@
       });
     }
 
-    function verifyDiscographyInBackground(id,name,version){
-      if(!id||!name)return;
+    function ensureDiscographyCached(id,name){
+      var numericId=Number(id)||0;
+      var cleanName=String(name||'').trim();
+      if(!numericId||!cleanName)return Promise.resolve(null);
 
-      api.functions.invoke('discogs-search',{
+      var key=String(numericId);
+      if(discographyJobs.has(key))return discographyJobs.get(key);
+
+      var job=api.functions.invoke('discogs-search',{
         body:{
           action:'verifyArtistDiscography',
-          artistId:Number(id),
-          artistName:String(name)
+          artistId:numericId,
+          artistName:cleanName
         }
       }).then(async function(result){
-        if(version!==requestVersion||!active||result.error||!result.data)return;
-
-        var refreshed=await loadOverview(name,true);
-        if(version!==requestVersion||!active||!refreshed)return;
-        currentOverview=refreshed;
-        renderCurrent(version);
-        if(result.data.verified){
-          warmArtworkInBackground(id,name,currentOverview,version);
-        }
+        if(result.error||!result.data)return null;
+        var refreshed=await loadOverview(cleanName,true);
+        return {result:result.data,overview:refreshed||{}};
       }).catch(function(error){
         log('warn','Could not verify artist discography:',error);
+        return null;
+      });
+
+      discographyJobs.set(key,job);
+      job.then(
+        function(){discographyJobs.delete(key);},
+        function(){discographyJobs.delete(key);}
+      );
+      return job;
+    }
+
+    function ensureArtworkCached(id,name,overview){
+      var numericId=Number(id)||0;
+      var cleanName=String(name||'').trim();
+      var cache=overview&&overview.artwork_cache?overview.artwork_cache:{};
+      if(!numericId||!cleanName||cache.complete||!Core.number(cache.eligible)){
+        return Promise.resolve(null);
+      }
+
+      var key=String(numericId);
+      if(artworkJobs.has(key))return artworkJobs.get(key);
+
+      var job=api.functions.invoke('discogs-search',{
+        body:{
+          action:'cacheArtistArtwork',
+          artistId:numericId,
+          artistName:cleanName
+        }
+      }).then(async function(result){
+        if(result.error||!result.data)return null;
+        if(!Core.number(result.data.cached_added))return {result:result.data,overview:null};
+
+        var refreshed=await loadOverview(cleanName,true);
+        return {result:result.data,overview:refreshed||{}};
+      }).catch(function(error){
+        log('warn','Could not warm artist artwork cache:',error);
+        return null;
+      });
+
+      artworkJobs.set(key,job);
+      job.then(
+        function(){artworkJobs.delete(key);},
+        function(){artworkJobs.delete(key);}
+      );
+      return job;
+    }
+
+    function verifyDiscographyInBackground(id,name,version){
+      ensureDiscographyCached(id,name).then(function(payload){
+        if(version!==requestVersion||!active||!payload||!payload.overview)return;
+        currentOverview=payload.overview;
+        renderCurrent(version);
+
+        if(currentOverview.discography_verified){
+          warmArtworkInBackground(id,name,currentOverview,version);
+        }
       });
     }
 
@@ -289,26 +419,11 @@
     }
 
     function warmArtworkInBackground(id,name,overview,version){
-      var cache=overview&&overview.artwork_cache?overview.artwork_cache:{};
-      if(!id||!name||cache.complete||!Core.number(cache.eligible))return;
-
-      api.functions.invoke('discogs-search',{
-        body:{
-          action:'cacheArtistArtwork',
-          artistId:Number(id),
-          artistName:String(name)
-        }
-      }).then(async function(result){
-        if(version!==requestVersion||!active)return;
-        if(result.error||!result.data||!Core.number(result.data.cached_added))return;
-
-        var refreshed=await api.rpc('get_artist_overview',{p_artist_name:String(name)});
-        if(version!==requestVersion||!active||refreshed.error)return;
-        currentOverview=refreshed.data||currentOverview;
+      ensureArtworkCached(id,name,overview).then(function(payload){
+        if(version!==requestVersion||!active||!payload||!payload.overview)return;
+        currentOverview=payload.overview;
         setOverviewCache(name,currentOverview);
         renderCurrent(version);
-      }).catch(function(error){
-        log('warn','Could not warm artist artwork cache:',error);
       });
     }
 
@@ -372,8 +487,15 @@
         // External/cached profile data enriches an already-visible page.
         loadProfileInBackground(id,name,version);
         loadWikipediaInBackground(id,name,version);
-        verifyDiscographyInBackground(id,name,version);
-        warmArtworkInBackground(id,name,currentOverview,version);
+
+        // A verified shared discography is rendered immediately from Postgres.
+        // Only uncached artists need verification; artwork warming starts after
+        // membership is known so Apple work is limited to the albums we display.
+        if(currentOverview.discography_verified){
+          warmArtworkInBackground(id,name,currentOverview,version);
+        }else{
+          verifyDiscographyInBackground(id,name,version);
+        }
 
         return true;
       }catch(error){
