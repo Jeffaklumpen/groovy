@@ -408,6 +408,58 @@ export default {
           .trim()
       }
 
+      function wikipediaTopLevelListItems(html: string,allLists=false) {
+        const source=String(html||'')
+        if (!source)return []
+
+        const items:string[]=[]
+        const tagPattern=/<\/?(?:ul|li)\b[^>]*>/gi
+        let ulDepth=0
+        let currentParts:string[]|null=null
+        let lastIndex=0
+        let outerListsSeen=0
+        let match:RegExpExecArray|null
+
+        while ((match=tagPattern.exec(source))) {
+          const tag=String(match[0]||'')
+          const index=Number(match.index)||0
+
+          if (currentParts && ulDepth===1 && index>lastIndex) {
+            currentParts.push(source.slice(lastIndex,index))
+          }
+
+          const closing=/^<\//.test(tag)
+          const isUl=/^<\/?ul\b/i.test(tag)
+          const isLi=/^<\/?li\b/i.test(tag)
+
+          if (isUl) {
+            if (closing) {
+              if (ulDepth===1) {
+                ulDepth=0
+                outerListsSeen+=1
+                if (!allLists && outerListsSeen>=1) break
+              } else if (ulDepth>1) {
+                ulDepth-=1
+              }
+            } else {
+              ulDepth+=1
+            }
+          } else if (isLi) {
+            if (!closing && ulDepth===1 && !currentParts) {
+              currentParts=[]
+            } else if (closing && ulDepth===1 && currentParts) {
+              const item=currentParts.join('').trim()
+              if (item)items.push(item)
+              currentParts=null
+            }
+          }
+
+          lastIndex=tagPattern.lastIndex
+        }
+
+        return items
+      }
+
       function wikipediaStudioAlbumsFromHtml(data: any,options: any={}) {
         const html=String(data?.parse?.text||'')
         if (!html) return []
@@ -508,17 +560,15 @@ export default {
 
         if (albums.length) return albums
 
-        // Most canonical album sections should inspect only the first list so
-        // notes/references cannot become releases. A specifically isolated works
-        // section may opt into all lists because Wikipedia can split long lists
-        // into several column <ul> blocks.
-        const lists=html.match(/<ul\b[\s\S]*?<\/ul>/gi)||[]
-        const selectedLists=options?.allLists?lists:lists.slice(0,1)
-        let listIndex=0
-        selectedLists.forEach((list: string)=>{
-          const listItems=list.match(/<li\b[\s\S]*?<\/li>/gi)||[]
-          listItems.forEach((item: string)=>addAlbum(item,listIndex++))
-        })
+        // Regex cannot safely split nested <ul> blocks: an inner recording
+        // list would terminate the outer works list early. Read only direct
+        // children of each outer list and deliberately discard nested cast /
+        // alternate-recording lists.
+        const listItems=wikipediaTopLevelListItems(
+          html,
+          Boolean(options?.allLists)
+        )
+        listItems.forEach((item: string,index: number)=>addAlbum(item,index))
 
         return albums
       }
