@@ -47,6 +47,51 @@ function emptySides(){
   return {A:[],B:[],C:[],D:[],E:[],F:[],G:[],H:[]};
 }
 
+function replaceTrackRows(record,rows){
+  if(!record)return false;
+  var sides=emptySides();
+  (Array.isArray(rows)?rows:[]).forEach(function(track,index){
+    var side=String(track&&track.disc_side||'').toUpperCase();
+    if(!sides[side])return;
+    sides[side].push({
+      id:track.id||('preview-track-'+side+'-'+String(track.track_number||index+1)),
+      title:track.title||'Okänd låt',
+      trackNumber:track.track_number==null?null:track.track_number,
+      duration:track.duration||''
+    });
+  });
+  setValue(record,'sides',sides);
+  return Object.keys(sides).some(function(side){return sides[side].length>0;});
+}
+
+function hasTracks(record){
+  var sides=value(record,'sides')||{};
+  return Object.keys(sides).some(function(side){return Array.isArray(sides[side])&&sides[side].length>0;});
+}
+
+function fromSearchPreview(item){
+  item=item||{};
+  return [
+    0,
+    item.artist||'Okänd artist',
+    item.title||'Okänd titel',
+    item.year||'',
+    item.genre||'',
+    0,
+    item.coverUrl||'',
+    emptySides(),
+    item.albumId||null,
+    '',
+    item.discogsMasterId||'',
+    {},
+    item.appleUrl||'',
+    '',
+    null,
+    item.communityRating||0,
+    item.communityCount||0
+  ];
+}
+
 function fromWishlist(item,index){
   item=item||{};
   var album=item.albums||{};
@@ -137,9 +182,9 @@ function applyRatingMeta(record,ratingMap){
 }
 
 function trackDurationCacheKey(record){
-  var album=value(record,'albumId');
-  if(!album)return '';
-  return 'groovy-track-durations:'+String(value(record,'discogsMasterId')||album);
+  var identity=value(record,'discogsMasterId')||value(record,'albumId');
+  if(!identity)return '';
+  return 'groovy-track-durations:'+String(identity);
 }
 
 function normalizedTrackTitle(value){
@@ -239,7 +284,7 @@ function nextShelfOrder(records,shelfId,excludedRecord){
   return highest+1;
 }
 
-var api={INDEX:INDEX,value:value,setValue:setValue,setShelf:setShelf,ensurePressing:ensurePressing,setRatings:setRatings,emptySides:emptySides,fromWishlist:fromWishlist,fromCollection:fromCollection,applyRatingMeta:applyRatingMeta,trackDurationCacheKey:trackDurationCacheKey,applyTrackDurations:applyTrackDurations,hasMissingTrackDurations:hasMissingTrackDurations,compactShelfOrder:compactShelfOrder,nextShelfOrder:nextShelfOrder};
+var api={INDEX:INDEX,value:value,setValue:setValue,setShelf:setShelf,ensurePressing:ensurePressing,setRatings:setRatings,emptySides:emptySides,replaceTrackRows:replaceTrackRows,hasTracks:hasTracks,fromSearchPreview:fromSearchPreview,fromWishlist:fromWishlist,fromCollection:fromCollection,applyRatingMeta:applyRatingMeta,trackDurationCacheKey:trackDurationCacheKey,applyTrackDurations:applyTrackDurations,hasMissingTrackDurations:hasMissingTrackDurations,compactShelfOrder:compactShelfOrder,nextShelfOrder:nextShelfOrder};
 Object.keys(INDEX).forEach(function(name){
   api[name]=function(record){return value(record,name);};
 });
