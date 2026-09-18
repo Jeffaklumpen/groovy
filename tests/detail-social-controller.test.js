@@ -2,6 +2,11 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const DetailSocialController=require('../js/detail-social-controller.js');
 
+const recordModel={
+  albumId(record){return record&&record.albumId;},
+  discogsMasterId(record){return record&&record.masterId;}
+};
+
 function classList(){
   const values=new Set();
   return {
@@ -80,14 +85,14 @@ test('own shelf renders followed collectors and reuses cache until follow state 
   const api={from(table){if(table==='user_follows')followCalls++;return query(results[table],trace,table);}};
   let openIndex=4;
   const controller=DetailSocialController.create({
-    api,window:win,document:doc,element:el,
+    api,recordModel,window:win,document:doc,element:el,
     getCurrentUser:async()=>({id:'me'}),
     getViewedUserId:()=>null,
     getLibraryView:()=> 'collection',
     getOpenRecordIndex:()=>openIndex,
     escapeHtml:(value)=>String(value)
   });
-  const record=[];record[8]='album-1';record[10]='master-9';
+  const record={albumId:'album-1',masterId:'master-9'};
 
   await controller.openForRecord(record,4);
   assert.equal(el.hidden,false);
@@ -114,13 +119,13 @@ test('viewing another collector renders collection match from own collection',as
     return query({data:[{id:'own-row'}],error:null},trace,table);
   }};
   const controller=DetailSocialController.create({
-    api,window:makeWindow(),document:makeDocument(),element:el,
+    api,recordModel,window:makeWindow(),document:makeDocument(),element:el,
     getCurrentUser:async()=>({id:'me'}),
     getViewedUserId:()=> 'other-user',
     getLibraryView:()=> 'collection',
     getOpenRecordIndex:()=>2
   });
-  const record=[];record[8]='album-22';
+  const record={albumId:'album-22'};
 
   await controller.openForRecord(record,2);
   assert.equal(el.hidden,false);
@@ -135,13 +140,13 @@ test('own wishlist keeps album social context hidden and skips social queries',a
   let fromCalls=0;
   const controller=DetailSocialController.create({
     api:{from(){fromCalls++;throw new Error('should not query');}},
-    window:makeWindow(),document:makeDocument(),element:el,
+    recordModel,window:makeWindow(),document:makeDocument(),element:el,
     getCurrentUser:async()=>({id:'me'}),
     getViewedUserId:()=>null,
     getLibraryView:()=> 'wishlist',
     getOpenRecordIndex:()=>1
   });
-  const record=[];record[8]='album-1';
+  const record={albumId:'album-1'};
 
   await controller.openForRecord(record,1);
   assert.equal(el.hidden,true);
@@ -155,13 +160,13 @@ test('close invalidates a pending request so stale results cannot render',async(
   const userPromise=new Promise(resolve=>{resolveUser=resolve;});
   const controller=DetailSocialController.create({
     api:{from(){throw new Error('stale request should stop before querying');}},
-    window:makeWindow(),document:makeDocument(),element:el,
+    recordModel,window:makeWindow(),document:makeDocument(),element:el,
     getCurrentUser:()=>userPromise,
     getViewedUserId:()=>null,
     getLibraryView:()=> 'collection',
     getOpenRecordIndex:()=>7
   });
-  const record=[];record[8]='album-1';
+  const record={albumId:'album-1'};
 
   const pending=controller.openForRecord(record,7);
   controller.close();
@@ -181,7 +186,7 @@ test('collector click delegates navigation while more-menu click stays inside th
   el.setQuery('[data-detail-social-menu]',menu);
   el.setQuery('[data-detail-social-more]',more);
   DetailSocialController.create({
-    api:{},window:win,document:doc,element:el,
+    api:{},recordModel,window:win,document:doc,element:el,
     onNavigate:(username)=>navigated.push(username)
   });
 
