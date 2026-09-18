@@ -26,6 +26,8 @@ function element(){
 }
 
 test('copy detail helpers preserve conditions, summaries and A-H matrix output',()=>{
+  assert.equal(View.hasPressingDetails({country:'Canada'}),true);
+  assert.equal(View.hasPressingDetails({mediaCondition:'NM'}),false);
   assert.equal(View.hasCopyDetails({country:'Canada'}),true);
   assert.equal(View.hasCopyDetails({}),false);
   assert.equal(View.copySummaryText({country:'Canada',year:'1973'}),'Canada · 1973');
@@ -57,6 +59,7 @@ test('renderCopyDetails renders owner metadata, conditions and Discogs credit',(
   assert.match(content.innerHTML,/SMAS-11163 B-2/);
   assert.match(content.innerHTML,/Edit condition/);
   assert.match(content.innerHTML,/Change pressing/);
+  assert.match(content.innerHTML,/Clear pressing/);
   assert.match(content.innerHTML,/discogs\.com\/release\/3417275/);
   assert.equal(toggle.attrs['aria-expanded'],'false');
   assert.equal(content.attrs['aria-hidden'],'true');

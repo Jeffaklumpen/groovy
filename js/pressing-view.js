@@ -15,11 +15,14 @@ function esc(value){
     .replace(/"/g,'&quot;');
 }
 
-function hasCopyDetails(details){
-  return !!(details&&(details.mediaCondition||details.sleeveCondition||
-    details.discogsReleaseId||details.country||details.year||details.label||
+function hasPressingDetails(details){
+  return !!(details&&(details.discogsReleaseId||details.country||details.year||details.label||
     details.catalogNumber||details.matrixA||details.matrixB||details.matrixC||details.matrixD||
     details.matrixE||details.matrixF||details.matrixG||details.matrixH));
+}
+
+function hasCopyDetails(details){
+  return !!(details&&(details.mediaCondition||details.sleeveCondition||hasPressingDetails(details)));
 }
 
 function conditionOptions(selected,includeNoCover){
@@ -137,6 +140,7 @@ function renderCopyDetails(options){
     copyDetailItem('Record label',details.label)+
     copyDetailItem('Catalog number',details.catalogNumber);
   var matrix=matrixMarkup(details);
+  var hasPressing=hasPressingDetails(details);
   var summary=chips
     ?'<div class="copy-summary">'+chips+'</div>'
     :(!info&&!matrix?'<p class="copy-summary-empty">Add details about the physical record you own.</p>':'');
@@ -149,6 +153,7 @@ function renderCopyDetails(options){
         '<div class="copy-details-actions">'+
           '<button id="editConditionButton" class="copy-action-button" type="button">'+(details.mediaCondition||details.sleeveCondition?'Edit condition':'Add condition')+'</button>'+
           '<button id="identifyPressingButton" class="copy-action-button primary" type="button">'+(details.discogsReleaseId?'Change pressing':'Identify pressing')+'</button>'+
+          (hasPressing?'<button id="clearPressingButton" class="copy-action-button danger copy-action-button-clear" type="button">Clear pressing</button>':'')+
         '</div>'+
         '<div id="conditionEditor" class="condition-editor" hidden>'+
           '<label class="condition-field"><span>Record condition</span><select id="mediaConditionSelect">'+conditionOptions(details.mediaCondition||'',false)+'</select></label>'+
@@ -158,11 +163,13 @@ function renderCopyDetails(options){
 
       var editButton=content.querySelector?content.querySelector('#editConditionButton'):null;
       var identifyButton=content.querySelector?content.querySelector('#identifyPressingButton'):null;
+      var clearButton=content.querySelector?content.querySelector('#clearPressingButton'):null;
       var editor=content.querySelector?content.querySelector('#conditionEditor'):null;
       var mediaSelect=content.querySelector?content.querySelector('#mediaConditionSelect'):null;
       var sleeveSelect=content.querySelector?content.querySelector('#sleeveConditionSelect'):null;
       if(editButton&&editButton.addEventListener)editButton.addEventListener('click',function(){if(editor)editor.hidden=!editor.hidden;});
       if(identifyButton&&identifyButton.addEventListener)identifyButton.addEventListener('click',function(){if(typeof options.onIdentifyPressing==='function')options.onIdentifyPressing();});
+      if(clearButton&&clearButton.addEventListener)clearButton.addEventListener('click',function(){if(typeof options.onClearPressing==='function')options.onClearPressing();});
       [mediaSelect,sleeveSelect].forEach(function(select){
         if(select&&select.addEventListener)select.addEventListener('change',function(){if(typeof options.onConditionChange==='function')options.onConditionChange();});
       });
@@ -195,6 +202,7 @@ function updateProgress(form,values){
 }
 
 return Object.freeze({
+  hasPressingDetails:hasPressingDetails,
   hasCopyDetails:hasCopyDetails,
   conditionOptions:conditionOptions,
   conditionMeta:conditionMeta,

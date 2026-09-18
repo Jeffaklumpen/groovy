@@ -18,6 +18,7 @@ function create(options){
   var getViewedUsername=typeof options.getViewedUsername==='function'?options.getViewedUsername:function(){return '';};
   var getLibraryView=typeof options.getLibraryView==='function'?options.getLibraryView:function(){return 'collection';};
   var renderGrid=typeof options.renderGrid==='function'?options.renderGrid:function(){};
+  var confirmAction=typeof options.confirm==='function'?options.confirm:function(){return true;};
   var onLog=typeof options.onLog==='function'?options.onLog:function(){};
 
   var rootElement=elements.root||null;
@@ -82,6 +83,7 @@ function create(options){
         saved:saved
       },
       onIdentifyPressing:function(){openPicker(index);},
+      onClearPressing:function(){clearPressing(index);},
       onConditionChange:function(){saveCondition(index);}
     });
     expanded=result.expanded;
@@ -127,6 +129,69 @@ function create(options){
     renderGrid();
     render(index);
     if(saved)saved.textContent='Saved';
+    return true;
+  }
+
+  async function clearPressing(index){
+    var record=recordAt(index);
+    if(!record||getViewedUserId()!==null)return false;
+
+    var details=detailsFor(record);
+    if(!View.hasPressingDetails(details))return false;
+    if(!confirmAction('Clear the saved pressing for this record?'))return false;
+
+    if(saved)saved.textContent='Clearing…';
+
+    var userResult=await api.auth.getUser();
+    var user=userResult&&userResult.data&&userResult.data.user;
+    var payload={
+      discogs_release_id:null,
+      pressing_country:null,
+      pressing_year:null,
+      pressing_label:null,
+      catalog_number:null,
+      matrix_runout_a:null,
+      matrix_runout_b:null,
+      matrix_runout_c:null,
+      matrix_runout_d:null,
+      matrix_runout_e:null,
+      matrix_runout_f:null,
+      matrix_runout_g:null,
+      matrix_runout_h:null,
+      pressing_match_status:null
+    };
+    var result=(userResult.error||!user)
+      ?{error:userResult.error||new Error('Du måste vara inloggad.')}
+      :await api.from('collections')
+        .update(payload)
+        .eq('id',recordModel.entryId(record))
+        .eq('user_id',user.id)
+        .select('id');
+
+    if(result.error||!result.data||!result.data.length){
+      log('error','Kunde inte rensa pressningen:',result.error);
+      if(saved)saved.textContent='Could not clear pressing';
+      return false;
+    }
+
+    details.discogsReleaseId=null;
+    details.country='';
+    details.year='';
+    details.label='';
+    details.catalogNumber='';
+    details.matrixA='';
+    details.matrixB='';
+    details.matrixC='';
+    details.matrixD='';
+    details.matrixE='';
+    details.matrixF='';
+    details.matrixG='';
+    details.matrixH='';
+    details.matchStatus='';
+
+    renderGrid();
+    render(index);
+    if(saved)saved.textContent='Pressing cleared';
     return true;
   }
 
@@ -265,6 +330,7 @@ function create(options){
     resetRecord:resetRecord,
     closeDetails:closeDetails,
     saveCondition:saveCondition,
+    clearPressing:clearPressing,
     saveSelection:saveSelection,
     openPicker:openPicker,
     closePicker:closePicker,

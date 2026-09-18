@@ -114,11 +114,14 @@ function appleArtworkCacheIsFresh(row){
 function cachedAppleAlbumFromRow(row){
     if(!row||!row.artwork_url)return null;
 
+    const artworkUrl100=String(row.artwork_url||'')
+        .replace(/\/\d+x\d+bb\./i,'/100x100bb.');
+
     return {
         artistName:row.artist_name||'',
         collectionName:row.album_title||'',
         releaseDate:row.release_year?String(row.release_year)+'-01-01T00:00:00Z':'',
-        artworkUrl100:row.artwork_url||'',
+        artworkUrl100:artworkUrl100,
         collectionViewUrl:row.apple_collection_url||'',
         collectionId:row.apple_collection_id||null
     };
@@ -150,18 +153,48 @@ async function getPersistentAppleArtworkCache(masters){
     if(!missingIds.length)return result;
 
     try{
-        const {data,error}=await supabaseClient
-            .from('apple_artwork_cache')
-            .select('discogs_master_id,artist_name,album_title,release_year,apple_collection_id,apple_collection_url,artwork_url,matched_at')
-            .in('discogs_master_id',missingIds);
+        const cacheRequests=await Promise.all([
+            supabaseClient
+                .from('apple_artwork_cache')
+                .select('discogs_master_id,artist_name,album_title,release_year,apple_collection_id,apple_collection_url,artwork_url,matched_at')
+                .in('discogs_master_id',missingIds),
+            supabaseClient
+                .from('albums')
+                .select('discogs_master_id,cover_url,apple_collection_url,created_at')
+                .in('discogs_master_id',missingIds)
+                .not('apple_collection_url','is',null)
+        ]);
 
-        if(error)throw error;
+        const cacheResult=cacheRequests[0];
+        const albumResult=cacheRequests[1];
+        if(cacheResult.error)throw cacheResult.error;
+        if(albumResult.error)throw albumResult.error;
 
         missingIds.forEach(function(id){
             appleArtworkPersistentLoaded.add(String(id));
         });
 
-        (data||[]).forEach(function(row){
+        (albumResult.data||[]).forEach(function(row){
+            const id=String(row.discogs_master_id||'');
+            const artwork=String(row.cover_url||'').trim();
+            const collectionUrl=String(row.apple_collection_url||'').trim();
+            if(!id||!/mzstatic\.com/i.test(artwork)||!/^https:\/\/(?:music|itunes)\.apple\.com\//i.test(collectionUrl))return;
+
+            const persistedRow={
+                discogs_master_id:row.discogs_master_id,
+                artist_name:'',
+                album_title:'',
+                release_year:null,
+                apple_collection_id:null,
+                apple_collection_url:collectionUrl,
+                artwork_url:artwork,
+                matched_at:row.created_at||null
+            };
+            appleArtworkPersistentCache.set(id,persistedRow);
+            result.set(id,persistedRow);
+        });
+
+        (cacheResult.data||[]).forEach(function(row){
             const id=String(row.discogs_master_id||'');
             if(!id)return;
             appleArtworkPersistentCache.set(id,row);
@@ -852,8 +885,13 @@ async function searchDiscogs(query){
         }
 
         const searchResults=results.slice(0,10);
+        const persistentArtworkByMaster=
+            await getPersistentAppleArtworkCache(searchResults);
 
-        // Render Discogs immediately. Apple and CAA upgrade the covers later.
+        if(searchNumber!==musicBrainzSearchNumber)return;
+
+        // Render once with persisted Apple artwork when Groovy already knows it.
+        // Discogs remains the fallback; live Apple and CAA can upgrade later.
         albumSearchResults.innerHTML='';
 
         const entries=searchResults.map(function(master){
@@ -903,10 +941,30 @@ async function searchDiscogs(query){
                 master.cover_image||
                 '';
 
+            const cachedArtworkRow=
+                persistentArtworkByMaster.get(
+                    String(master.id||'')
+                );
+            const cachedAppleData=
+                appleAlbumData(
+                    cachedAppleAlbumFromRow(
+                        cachedArtworkRow
+                    )
+                );
+            const initialFullImage=
+                cachedAppleData.url||
+                discogsFullImage;
+            const initialPreviewImage=
+                cachedAppleData.previewUrl||
+                discogsPreviewImage;
+
             const coverState={
-                url:discogsFullImage,
-                source:discogsFullImage?'discogs':'',
-                appleCollectionUrl:''
+                url:initialFullImage,
+                source:cachedAppleData.url
+                    ?'apple'
+                    :(discogsFullImage?'discogs':''),
+                appleCollectionUrl:
+                    cachedAppleData.collectionUrl||''
             };
 
             const div=document.createElement('div');
@@ -914,8 +972,8 @@ async function searchDiscogs(query){
 
             div.innerHTML=
                 '<img class="mb-cover" '+
-                    (discogsPreviewImage
-                        ?'src="'+escapeHTML(discogsPreviewImage)+'"'
+                    (initialPreviewImage
+                        ?'src="'+escapeHTML(initialPreviewImage)+'"'
                         :'style="display:none"')+
                     ' alt="">'+
 
@@ -1013,7 +1071,7 @@ async function searchDiscogs(query){
             query,
             entries,
             searchNumber,
-            results
+            searchResults
         );
 
     }catch(error){

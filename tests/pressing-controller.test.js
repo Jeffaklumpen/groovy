@@ -109,7 +109,8 @@ function createHarness(record){
     getRecords:()=>[record],
     getViewedUserId:()=>null,
     getLibraryView:()=> 'collection',
-    renderGrid:()=>{renderCount++;}
+    renderGrid:()=>{renderCount++;},
+    confirm:()=>true
   });
   return {controller,elements,media,sleeve,apiData,get renderCount(){return renderCount;},picker:pickerInstances[0]};
 }
@@ -148,6 +149,43 @@ test('saves a selected Discogs pressing and all matrix sides',async()=>{
   assert.equal(record.pressing.matchStatus,'discogs');
   assert.equal(h.picker.closeCalls,1);
   assert.equal(h.elements.saved.textContent,'Saved');
+});
+
+test('clears saved pressing metadata without removing condition grades',async()=>{
+  const record={
+    artist:'Artist',title:'Album',albumId:'album-1',entryId:'entry-1',masterId:'master-1',
+    pressing:{
+      discogsReleaseId:123,country:'Sweden',year:1977,label:'Harvest',catalogNumber:'ABC-1',
+      matrixA:'A-1',matrixB:'B-2',matrixH:'H-8',matchStatus:'discogs',
+      mediaCondition:'NM',sleeveCondition:'VG+'
+    }
+  };
+  const h=createHarness(record);
+  assert.equal(await h.controller.clearPressing(0),true);
+  assert.deepEqual(h.apiData.updates[0].payload,{
+    discogs_release_id:null,
+    pressing_country:null,
+    pressing_year:null,
+    pressing_label:null,
+    catalog_number:null,
+    matrix_runout_a:null,
+    matrix_runout_b:null,
+    matrix_runout_c:null,
+    matrix_runout_d:null,
+    matrix_runout_e:null,
+    matrix_runout_f:null,
+    matrix_runout_g:null,
+    matrix_runout_h:null,
+    pressing_match_status:null
+  });
+  assert.equal(record.pressing.discogsReleaseId,null);
+  assert.equal(record.pressing.country,'');
+  assert.equal(record.pressing.matrixH,'');
+  assert.equal(record.pressing.matchStatus,'');
+  assert.equal(record.pressing.mediaCondition,'NM');
+  assert.equal(record.pressing.sleeveCondition,'VG+');
+  assert.equal(h.renderCount,1);
+  assert.equal(h.elements.saved.textContent,'Pressing cleared');
 });
 
 test('Discogs fetch helpers keep versions and release actions separate',async()=>{

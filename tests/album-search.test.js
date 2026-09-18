@@ -21,6 +21,17 @@ test('album search owns search, artwork enrichment and Discogs save flow',()=>{
   assert.equal(source.includes('async function renderCurrentRoute()'),false);
 });
 
+test('persisted Apple artwork is used before the visible search result render',()=>{
+  const source=fs.readFileSync('js/album-search.js','utf8');
+  const lookup=source.indexOf('await getPersistentAppleArtworkCache(searchResults)');
+  const render=source.indexOf("albumSearchResults.innerHTML='';",lookup);
+  assert.ok(lookup>=0,'visible search results should load persisted artwork');
+  assert.ok(render>lookup,'persisted artwork should resolve before the visible results are rendered');
+  assert.match(source,/\.from\('albums'\)[\s\S]*apple_collection_url[\s\S]*cover_url/);
+  assert.match(source,/cachedAppleAlbumFromRow[\s\S]*100x100bb/);
+  assert.match(source,/enrichSearchResultsWithApple\([\s\S]*searchResults/);
+});
+
 test('app delegates album-search behavior while retaining library integration',()=>{
   const app=fs.readFileSync('js/app.js','utf8');
   assert.match(app,/var AlbumSearch=window\.GroovyAlbumSearch;/);

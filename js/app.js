@@ -1178,6 +1178,7 @@ var pressingController=PressingController.create({
   getViewedUserId:function(){return viewedUserId;},
   getLibraryView:function(){return window.libraryView;},
   renderGrid:function(){buildGrid();},
+  confirm:function(message){return window.confirm(message);},
   onLog:function(level,message,error){
     if(level==='error')console.error(message,error||'');
     else if(level==='warn')console.warn(message,error||'');

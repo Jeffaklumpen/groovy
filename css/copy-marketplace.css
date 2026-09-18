@@ -21,6 +21,9 @@
 .copy-action-button:active{transform:scale(.98)}
 .copy-action-button.primary{border-color:rgba(232,83,1,.48);background:rgba(232,83,1,.12);color:#ff7126}
 .copy-action-button.primary:hover{border-color:#e85301;background:rgba(232,83,1,.19)}
+.copy-action-button.danger{border-color:rgba(198,40,40,.42);background:rgba(198,40,40,.08);color:#ff8a8a}
+.copy-action-button.danger:hover{border-color:rgba(229,57,53,.72);background:rgba(198,40,40,.15);color:#ffaaaa}
+.copy-action-button-clear{grid-column:1/-1}
 .condition-editor{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .condition-editor[hidden]{display:none}
 .condition-field,.pressing-field{display:block;color:#aaaab0;font-size:11px;font-weight:650}
