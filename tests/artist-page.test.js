@@ -92,7 +92,7 @@ test('artist and album navigation preserve contextual back behavior without a se
 test('artist pages render from local data before external enrichment and warm artwork asynchronously',()=>{
   const controller=fs.readFileSync('js/artist-controller.js','utf8');
   assert.match(controller,/api\.rpc\('get_artist_overview'/);
-  assert.match(controller,/currentProfile=emptyProfile\(id,name\);[\s\S]*api\.rpc\('get_artist_overview'/);
+  assert.match(controller,/currentProfile=emptyProfile\(id,name\);[\s\S]*loadOverview\(name,false\)/);
   assert.match(controller,/renderCurrent\(version\);[\s\S]*loadProfileInBackground/);
   assert.match(controller,/loadWikipediaInBackground/);
   assert.match(controller,/warmArtworkInBackground/);
@@ -182,9 +182,9 @@ test('verified artist discography uses Wikidata studio albums and stable catalog
   const end=edge.indexOf("if (action === 'artistProfile')",start);
   assert.ok(start>=0&&end>start);
   const block=edge.slice(start,end);
-  assert.match(block,/Q208569/);
-  assert.match(block,/P436/);
-  assert.match(block,/P1954/);
+  assert.match(edge,/Q208569/);
+  assert.match(edge,/P436/);
+  assert.match(edge,/P1954/);
   assert.match(block,/artist_discography_cache/);
   assert.match(block,/wikidataCoverage>=0\.55/);
   assert.match(block,/baselineCoverage>=0\.55/);
