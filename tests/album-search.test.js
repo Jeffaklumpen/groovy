@@ -27,7 +27,7 @@ test('search results expose a detail-preview callback without moving save owners
   assert.match(source,/var onPreview=typeof options\.onPreview===['"]function['"]/);
   assert.match(source,/div\.addEventListener\(['"]click['"]/);
   assert.match(source,/onPreview\(\{/);
-  assert.match(source,/save:saveFromPreview/);
+  assert.match(source,/save:saveResult/);
   assert.match(app,/onPreview:openSearchAlbumPreview/);
   assert.match(app,/Record\.fromSearchPreview/);
   assert.match(app,/searchPreview:true/);
