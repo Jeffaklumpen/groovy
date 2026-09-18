@@ -184,8 +184,8 @@ test('verified artist discography resolves artist identity from Discogs and pref
   const block=edge.slice(start,end);
   assert.match(edge,/P1953/);
   assert.match(edge,/sitefilter=enwiki/);
-  assert.match(edge,/prop:'sections'/);
-  assert.match(edge,/prop:'links'/);
+  assert.match(edge,/wikipediaParse\([^\n]+,'sections'\)/);
+  assert.match(edge,/wikipediaParse\([\s\S]*?'links'/);
   assert.match(edge,/standardised studio albums/);
   assert.match(edge,/Q208569/);
   assert.match(block,/artist_discography_cache/);
