@@ -613,6 +613,18 @@ test('artist overview preserves discography verification state and hides uncheck
   assert.match(view,/Checking main discography/);
 });
 
+test('discography verification errors cannot leave the artist page checking forever',()=>{
+  const controller=fs.readFileSync('js/artist-controller.js','utf8');
+  const view=fs.readFileSync('js/artist-view.js','utf8');
+  const verifyStart=controller.indexOf('function verifyDiscographyInBackground');
+  const verifyEnd=controller.indexOf('function loadWikipediaInBackground',verifyStart);
+  const block=controller.slice(verifyStart,verifyEnd);
+  assert.match(block,/discography_source:'error'/);
+  assert.match(block,/!payload\|\|!payload\.overview/);
+  assert.match(view,/unavailableDiscography=overview\.discography_source==='error'/);
+  assert.match(view,/Could not verify main discography/);
+});
+
 test('discography verifier always resolves the pending UI state even when verification falls back',()=>{
   const controller=fs.readFileSync('js/artist-controller.js','utf8');
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
