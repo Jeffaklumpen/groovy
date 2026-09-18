@@ -347,6 +347,16 @@ test('artist artwork warmer supports verified rows without Discogs masters',()=>
   assert.match(block,/artist_name:resolvedArtistName/);
 });
 
+test('verified Main Discography drops locally identified secondary releases',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
+  const end=edge.indexOf("if (action === 'artistProfile')",start);
+  const block=edge.slice(start,end);
+  assert.match(block,/const mainDiscographyEntries=prelim\.filter/);
+  assert.match(block,/compilation\|live\|remix\|dj-mix\|mixtape\|demo\|interview/);
+  assert.match(block,/const matched=mainDiscographyEntries\.map/);
+});
+
 test('artist overview can read direct artwork cached on verified discography rows',()=>{
   const sql=fs.readFileSync('supabase/migrations/20260919003500_artist_discography_direct_artwork.sql','utf8');
   assert.match(sql,/add column if not exists apple_collection_id bigint/);
