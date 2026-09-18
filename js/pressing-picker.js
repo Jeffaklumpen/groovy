@@ -59,7 +59,9 @@ function create(options){
   }
 
   function getMasterId(record){
-    return typeof options.getMasterId==='function'?options.getMasterId(record):(record&&record[10]);
+    if(typeof options.getMasterId==='function')return options.getMasterId(record);
+    if(options.recordModel&&typeof options.recordModel.discogsMasterId==='function')return options.recordModel.discogsMasterId(record);
+    return '';
   }
 
   function currentMatches(){
