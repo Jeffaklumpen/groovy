@@ -47,6 +47,7 @@ function create(options){
     try{return IntlApi&&IntlApi.DateTimeFormat?IntlApi.DateTimeFormat().resolvedOptions().timeZone||'':'';}catch(error){return '';}
   }
   function regionCurrency(){return Core.regionCurrency(locale()||'',timezone());}
+  function ebayMarketplace(){return Core.ebayMarketplaceId(locale()||'');}
   function preference(){
     try{return storage&&storage.getItem?storage.getItem(currencyStorageKey)||'auto':'auto';}catch(error){return 'auto';}
   }
@@ -89,7 +90,7 @@ function create(options){
     cache:ebayListingCache,
     request:function(record){
       if(!api||!api.functions||!api.functions.invoke)throw new Error('Marketplace data API is unavailable.');
-      return api.functions.invoke('ebay-search',{body:{artist:getArtist(record),album:getTitle(record)}});
+      return api.functions.invoke('ebay-search',{body:{artist:getArtist(record),album:getTitle(record),marketplaceId:ebayMarketplace()}});
     },
     filter:relevantListing
   });
@@ -144,7 +145,7 @@ function create(options){
       marketplace:'Tradera',
       artist:getArtist(record),
       album:getTitle(record),
-      locale:'sv-SE',
+      locale:locale()||'en-US',
       emptyText:'No active listings found for this album right now.'
     });
     return true;
@@ -200,7 +201,7 @@ function create(options){
     ebayListings=[];
     var requestVersion=++ebayRequestVersion;
     var result=loadEbayData({
-      key:cacheKey(record),
+      key:cacheKey(record)+'|'+ebayMarketplace(),
       record:record,
       isCancelled:function(){return requestVersion!==ebayRequestVersion;},
       onLoading:function(){setButtonState(elements.ebayButton,elements.ebayButtonLabel,'eBay','loading',0);}

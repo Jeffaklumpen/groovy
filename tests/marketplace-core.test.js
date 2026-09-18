@@ -223,3 +223,12 @@ test('createListingLoader preserves unavailable and cancelled states',async()=>{
   assert.equal(cancelledResult.state,'cancelled');
   assert.deepEqual(cancelledResult.listings,[]);
 });
+
+
+test('ebayMarketplaceId uses a local eBay site when supported and ebay.com otherwise',()=>{
+  assert.equal(Marketplace.ebayMarketplaceId('de-DE'),'EBAY_DE');
+  assert.equal(Marketplace.ebayMarketplaceId('en-GB'),'EBAY_GB');
+  assert.equal(Marketplace.ebayMarketplaceId('fr-FR'),'EBAY_FR');
+  assert.equal(Marketplace.ebayMarketplaceId('sv-SE'),'EBAY_US');
+  assert.equal(Marketplace.ebayMarketplaceId('sv'),'EBAY_US');
+});

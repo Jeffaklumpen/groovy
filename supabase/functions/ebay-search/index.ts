@@ -5,6 +5,22 @@ type JsonRecord = Record<string, unknown>
 let cachedToken = ''
 let cachedTokenExpiresAt = 0
 
+const supportedMarketplaceIds = new Set([
+  'EBAY_US','EBAY_AT','EBAY_AU','EBAY_BE','EBAY_CA','EBAY_CH','EBAY_DE',
+  'EBAY_ES','EBAY_FR','EBAY_GB','EBAY_HK','EBAY_IE','EBAY_IT','EBAY_MY',
+  'EBAY_NL','EBAY_PH','EBAY_PL','EBAY_SG','EBAY_TW'
+])
+
+function resolveMarketplaceId(requested: unknown, configured: string): string {
+  const requestedId = textValue(requested).toUpperCase()
+  if (supportedMarketplaceIds.has(requestedId)) return requestedId
+
+  const configuredId = textValue(configured).toUpperCase()
+  if (supportedMarketplaceIds.has(configuredId)) return configuredId
+
+  return 'EBAY_US'
+}
+
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? value as JsonRecord
@@ -133,7 +149,7 @@ export default {
       const album = textValue(body.album).slice(0, 140)
       const clientId = Deno.env.get('EBAY_CLIENT_ID') || ''
       const clientSecret = Deno.env.get('EBAY_CLIENT_SECRET') || ''
-      const marketplaceId = Deno.env.get('EBAY_MARKETPLACE_ID') || 'EBAY_DE'
+      const marketplaceId = resolveMarketplaceId(body.marketplaceId, Deno.env.get('EBAY_MARKETPLACE_ID') || '')
 
       if (!artist || !album) {
         return Response.json({ error: 'Artist and album are required.' }, { status: 400 })
@@ -178,7 +194,7 @@ export default {
         .slice(0, 60)
 
       return Response.json(
-        { listings, count: listings.length },
+        { listings, count: listings.length, marketplaceId },
         { headers: { 'Cache-Control': 'private, max-age=120' } }
       )
     } catch (error) {

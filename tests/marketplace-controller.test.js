@@ -88,7 +88,7 @@ function fixture(options){
     getRecord:index=>records[index]||null,
     recordModel:{artist:record=>record&&record.artist||'',title:record=>record&&record.title||''},
     storage,
-    navigator:{languages:['sv-SE'],language:'sv-SE'},
+    navigator:options.navigator||{languages:['sv-SE'],language:'sv-SE'},
     Intl,
     request:async()=>({ok:true,json:async()=>({rate:1})}),
     onLog:()=>{}
@@ -152,4 +152,22 @@ test('handleEscape closes eBay before Tradera and reports whether it handled the
   assert.equal(controller.handleEscape(),true);
   assert.equal(elements.traderaModal.classList.contains('visible'),false);
   assert.equal(controller.handleEscape(),false);
+});
+
+
+test('eBay request targets the browser marketplace instead of a fixed German site',async()=>{
+  const swedish=fixture({ebayEnabled:true});
+  await swedish.controller.openForRecord(0);
+  const seCall=swedish.calls.find(call=>call.name==='ebay-search');
+  assert.equal(seCall.payload.body.marketplaceId,'EBAY_US');
+
+  const german=fixture({ebayEnabled:true,navigator:{languages:['de-DE'],language:'de-DE'}});
+  await german.controller.openForRecord(0);
+  const deCall=german.calls.find(call=>call.name==='ebay-search');
+  assert.equal(deCall.payload.body.marketplaceId,'EBAY_DE');
+
+  const british=fixture({ebayEnabled:true,navigator:{languages:['en-GB'],language:'en-GB'}});
+  await british.controller.openForRecord(0);
+  const gbCall=british.calls.find(call=>call.name==='ebay-search');
+  assert.equal(gbCall.payload.body.marketplaceId,'EBAY_GB');
 });

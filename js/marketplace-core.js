@@ -47,12 +47,32 @@
     return !remainder;
   }
 
-  function regionCurrency(locale,timezone){
+  function localeRegion(locale){
     var region='';
     try{
       if(typeof Intl!=='undefined'&&typeof Intl.Locale==='function')region=(new Intl.Locale(locale||'')).region||'';
       if(!region){var match=String(locale||'').match(/[-_]([A-Z]{2})\b/i);region=match?match[1].toUpperCase():'';}
     }catch(error){}
+    return region;
+  }
+
+  function ebayMarketplaceId(locale){
+    var region=localeRegion(locale);
+    var byRegion={
+      AT:'EBAY_AT',AU:'EBAY_AU',BE:'EBAY_BE',CA:'EBAY_CA',CH:'EBAY_CH',
+      DE:'EBAY_DE',ES:'EBAY_ES',FR:'EBAY_FR',GB:'EBAY_GB',HK:'EBAY_HK',
+      IE:'EBAY_IE',IT:'EBAY_IT',MY:'EBAY_MY',NL:'EBAY_NL',PH:'EBAY_PH',
+      PL:'EBAY_PL',SG:'EBAY_SG',TW:'EBAY_TW',US:'EBAY_US'
+    };
+    if(region)return byRegion[region]||'EBAY_US';
+
+    var language=String(locale||'').split(/[-_]/)[0].toLowerCase();
+    var byLanguage={de:'EBAY_DE',es:'EBAY_ES',fr:'EBAY_FR',it:'EBAY_IT',nl:'EBAY_NL',pl:'EBAY_PL'};
+    return byLanguage[language]||'EBAY_US';
+  }
+
+  function regionCurrency(locale,timezone){
+    var region=localeRegion(locale);
 
     var byRegion={SE:'SEK',NO:'NOK',DK:'DKK',GB:'GBP',US:'USD',CA:'CAD',AU:'AUD',NZ:'NZD',CH:'CHF',JP:'JPY',PL:'PLN',CZ:'CZK',AT:'EUR',BE:'EUR',CY:'EUR',DE:'EUR',EE:'EUR',ES:'EUR',FI:'EUR',FR:'EUR',GR:'EUR',HR:'EUR',IE:'EUR',IT:'EUR',LT:'EUR',LU:'EUR',LV:'EUR',MT:'EUR',NL:'EUR',PT:'EUR',SI:'EUR',SK:'EUR'};
     if(byRegion[region])return byRegion[region];
@@ -244,6 +264,8 @@
     cacheKey:cacheKey,
     normalizeIdentity:normalizeIdentity,
     isRelevantListing:isRelevantListing,
+    localeRegion:localeRegion,
+    ebayMarketplaceId:ebayMarketplaceId,
     regionCurrency:regionCurrency,
     displayCurrency:displayCurrency,
     formatMoney:formatMoney,
