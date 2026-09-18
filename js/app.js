@@ -1535,6 +1535,7 @@ function attachAlbumClicks(){
 }
 
 const removeAlbumModal=document.getElementById('removeAlbumModal');
+const removeAlbumMessage=document.getElementById('removeAlbumMessage');
 const cancelRemoveAlbum=document.getElementById('cancelRemoveAlbum');
 const confirmRemoveAlbum=document.getElementById('confirmRemoveAlbum');
 
