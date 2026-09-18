@@ -107,12 +107,24 @@ test('detail compatibility layers use app state and the shared library mutation 
   assert.match(rating,/groovyGetOpenRecordIndex/);
 });
 
-test('Apple artwork verification accepts trusted MusicBrainz aliases for the same Discogs master',()=>{
+test('Apple artwork verification accepts trusted MusicBrainz aliases and standard Apple album URLs',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   assert.match(edge,/\.from\('musicbrainz_catalog'\)/);
   assert.match(edge,/\.eq\('discogs_master_id',Number\(saveMasterId\)\)/);
   assert.match(edge,/identities\.push\(\{[\s\S]*artist:String\(catalogIdentity\.artist_name\)[\s\S]*title:String\(catalogIdentity\.album_title\)/);
   assert.match(edge,/verifiedAppleAlbum\(body\.appleCollectionUrl,identities\)/);
   assert.match(edge,/itunes\.apple\.com\/lookup\?id=/);
+  assert.ok(edge.includes(String.raw`parsed.pathname.match(/\\/(\\d+)(?:\\/)?$/)`));
+  assert.ok(edge.includes(String.raw`parsed.pathname.match(/\\/id(\\d+)(?:\\/|$)/i)`));
   assert.doesNotMatch(edge,/lookup\?id=' \+ encodeURIComponent\(idMatch\[1\]\) \+[\s\S]{0,80}&entity=album/);
+});
+
+test('verified saves seed library cover overrides from the final persisted album cover',()=>{
+  const sql=fs.readFileSync(
+    'supabase/migrations/20260918104243_use_persisted_album_cover_for_library_entries.sql',
+    'utf8'
+  );
+  assert.match(sql,/select a\.cover_url into v_cover_url[\s\S]*where a\.id = v_album_id/i);
+  assert.match(sql,/insert into public\.wishlists\(user_id,album_id,cover_url/i);
+  assert.match(sql,/insert into public\.collections\(user_id,album_id,cover_url/i);
 });
