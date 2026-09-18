@@ -178,6 +178,175 @@ export default {
         if (a === b) return true
         return a.length >= 6 && b.length >= 6 && (a.includes(b) || b.includes(a))
       }
+      async function mapWithConcurrency(items: any[],limit: number,worker: (item:any)=>Promise<any>) {
+        const values=Array.isArray(items)?items:[]
+        const results:any[]=[]
+        let cursor=0
+
+        async function run() {
+          while (cursor<values.length) {
+            const index=cursor++
+            results[index]=await worker(values[index])
+          }
+        }
+
+        const count=Math.max(1,Math.min(Number(limit)||1,values.length||1))
+        await Promise.all(Array.from({length:count},()=>run()))
+        return results
+      }
+
+      function discogsAlbumSearchScore(item: any,artist: string,title: string,year: unknown) {
+        if (!item || String(item.type||'').toLowerCase()!=='master') return -1000
+        const wantedTitle=normalizeIdentity(title)
+        const wantedArtist=normalizeIdentity(artist)
+        const candidate=normalizeIdentity(item.title)
+        if (!wantedTitle||!candidate)return -1000
+
+        let score=-1000
+        if (candidate===wantedTitle) score=130
+        else if (wantedArtist&&candidate===normalizeIdentity(artist+' '+title)) score=125
+        else if (candidate.endsWith(' '+wantedTitle)) score=115
+        else if (candidate.includes(wantedTitle)) score=80
+        if (score<0)return score
+
+        const wantedYear=Number(year)||0
+        const candidateYear=Number(item.year)||0
+        if (wantedYear&&candidateYear) {
+          const delta=Math.abs(wantedYear-candidateYear)
+          if (delta>3)return -1000
+          score-=delta*8
+        }
+        return score
+      }
+
+      async function resolveVinylMasterByTitle(artist: string,title: string,year: unknown) {
+        if (!artist||!title)return null
+        const search=await discogsJson(
+          'https://api.discogs.com/database/search?type=master&format=Vinyl&artist='+
+          encodeURIComponent(artist)+
+          '&release_title='+encodeURIComponent(title)+
+          '&per_page=10'
+        )
+        if (search.response)return null
+
+        const best=(Array.isArray(search.data?.results)?search.data.results:[])
+          .map((item: any)=>({item,score:discogsAlbumSearchScore(item,artist,title,year)}))
+          .filter((entry: any)=>entry.score>=80)
+          .sort((left: any,right: any)=>right.score-left.score)[0]
+
+        const master=Number(best?.item?.id)||0
+        return master?{
+          discogs_master_id:master,
+          vinyl_release_id:null
+        }:null
+      }
+
+      async function verifyDiscogsVinylMasters(
+        admin: any,
+        artist: string,
+        masterIds: number[]
+      ) {
+        const ids=Array.from(new Set(
+          (Array.isArray(masterIds)?masterIds:[])
+            .map((value)=>Number(value)||0)
+            .filter((value)=>value>0)
+        ))
+        const vinylIds=new Set<number>()
+        if (!ids.length)return {vinylIds,complete:true,checked:0}
+
+        const {data:cachedRows,error:cacheError}=await admin
+          .from('discogs_master_vinyl_cache')
+          .select('discogs_master_id,has_vinyl,vinyl_release_id,checked_at')
+          .in('discogs_master_id',ids)
+
+        if (cacheError) {
+          console.warn('Could not read Discogs vinyl master cache',cacheError)
+        }
+
+        const now=Date.now()
+        const freshIds=new Set<number>()
+        ;(Array.isArray(cachedRows)?cachedRows:[]).forEach((row: any)=>{
+          const id=Number(row?.discogs_master_id)||0
+          const checked=Date.parse(String(row?.checked_at||''))||0
+          const positive=row?.has_vinyl===true
+          const ttl=positive?180*24*60*60*1000:30*24*60*60*1000
+          if (!id||!checked||now-checked>=ttl)return
+          freshIds.add(id)
+          if (positive)vinylIds.add(id)
+        })
+
+        const unknown=ids.filter((id)=>!freshIds.has(id))
+        if (!unknown.length)return {vinylIds,complete:true,checked:0}
+
+        // One broad artist+Vinyl search usually resolves almost every candidate
+        // in one request. Any candidate absent from that result is verified
+        // individually so pagination or unusual artist credits cannot create a
+        // false negative.
+        const broad=await discogsJson(
+          'https://api.discogs.com/database/search?type=master&format=Vinyl&artist='+
+          encodeURIComponent(artist)+
+          '&per_page=100'
+        )
+        const broadIds=new Set<number>()
+        if (!broad.response) {
+          ;(Array.isArray(broad.data?.results)?broad.data.results:[]).forEach((item: any)=>{
+            const id=Number(item?.id)||0
+            if (id)broadIds.add(id)
+          })
+        }
+
+        const broadMatches=unknown.filter((id)=>broadIds.has(id))
+        if (broadMatches.length) {
+          broadMatches.forEach((id)=>vinylIds.add(id))
+          const checkedAt=new Date().toISOString()
+          const {error:writeError}=await admin
+            .from('discogs_master_vinyl_cache')
+            .upsert(broadMatches.map((id)=>({
+              discogs_master_id:id,
+              has_vinyl:true,
+              vinyl_release_id:null,
+              checked_at:checkedAt
+            })),{onConflict:'discogs_master_id'})
+          if (writeError)console.warn('Could not cache broad Discogs vinyl matches',writeError)
+        }
+
+        const remaining=unknown.filter((id)=>!broadIds.has(id))
+        let complete=true
+        const checkedRows=(await mapWithConcurrency(remaining,4,async (id: number)=>{
+          const result=await discogsJson(
+            'https://api.discogs.com/masters/'+encodeURIComponent(String(id))+
+            '/versions?format=Vinyl&per_page=1'
+          )
+          if (result.response) {
+            complete=false
+            return null
+          }
+          const versions=Array.isArray(result.data?.versions)?result.data.versions:[]
+          const hasVinyl=(Number(result.data?.pagination?.items)||0)>0||versions.length>0
+          const releaseId=Number(versions[0]?.id||versions[0]?.release_id)||null
+          if (hasVinyl)vinylIds.add(id)
+          return {
+            discogs_master_id:id,
+            has_vinyl:hasVinyl,
+            vinyl_release_id:releaseId,
+            checked_at:new Date().toISOString()
+          }
+        })).filter(Boolean)
+
+        if (checkedRows.length) {
+          const {error:writeError}=await admin
+            .from('discogs_master_vinyl_cache')
+            .upsert(checkedRows,{onConflict:'discogs_master_id'})
+          if (writeError)console.warn('Could not cache Discogs vinyl verification',writeError)
+        }
+
+        return {
+          vinylIds,
+          complete,
+          checked:broadMatches.length+checkedRows.length
+        }
+      }
+
       function appleAlbumScore(item: any,artist: string,title: string,year: unknown) {
         if (!item || !identityMatches(item.artistName,artist)) return -1000
         const wantedTitle=normalizeIdentity(title)
