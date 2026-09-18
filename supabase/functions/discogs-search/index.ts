@@ -9,6 +9,8 @@ export default {
       const action = String(body.action || 'search')
       const masterId = body.masterId
       const releaseId = body.releaseId
+      const artistId = body.artistId
+      const artistName = String(body.artistName || '').trim()
       const token = Deno.env.get('DISCOGS_TOKEN')
 
       if (!token) {
@@ -135,6 +137,25 @@ export default {
           .replace(/[^a-z0-9]+/g,' ')
           .replace(/\s+/g,' ')
           .trim()
+      }
+
+      function artistSearchScore(result: any,wanted: string) {
+        const title=cleanArtistName(result?.title)
+        const normalizedTitle=normalizeIdentity(title)
+        const normalizedWanted=normalizeIdentity(wanted)
+        if (!normalizedTitle || !normalizedWanted) return -100
+        if (normalizedTitle===normalizedWanted) return 100
+        if (normalizedTitle.startsWith(normalizedWanted)) return 70
+        if (normalizedTitle.includes(normalizedWanted)) return 45
+        return 0
+      }
+
+      function officialArtistUrl(urls: unknown[]) {
+        const values=(Array.isArray(urls)?urls:[])
+          .map((value)=>String(value||'').trim())
+          .filter((value)=>/^https?:\/\//i.test(value))
+        const blocked=/\b(?:discogs|wikipedia|musicbrainz|facebook|instagram|twitter|x\.com|youtube|tiktok|spotify|apple)\b/i
+        return values.find((value)=>!blocked.test(value)) || values[0] || ''
       }
 
       function identityMatches(left: unknown,right: unknown) {
@@ -289,6 +310,18 @@ export default {
           return Response.json({ error: 'Could not save album' }, { status: 500 })
         }
 
+        const discogsArtistId=Number(master.artists?.[0]?.id) || null
+        if (discogsArtistId) {
+          const { error:artistIdentityError } = await admin
+            .from('artists')
+            .update({discogs_artist_id:discogsArtistId})
+            .eq('name',artist)
+            .is('discogs_artist_id',null)
+          if (artistIdentityError) {
+            console.warn('Could not persist Discogs artist identity',artistIdentityError)
+          }
+        }
+
         if (verifiedApple) {
           const { error:cacheError } = await admin.from('apple_artwork_cache').upsert({
             discogs_master_id:Number(saveMasterId),
@@ -308,12 +341,111 @@ export default {
       }
 
       if (action === 'search') {
-        if (!query) return Response.json({ results: [] })
-        const result = await discogsJson(
-          'https://api.discogs.com/database/search?q=' +
-          encodeURIComponent(query) + '&type=master&per_page=50'
+        if (!query) return Response.json({ results: [], artists: [] })
+
+        const [masterResult,artistResult] = await Promise.all([
+          discogsJson(
+            'https://api.discogs.com/database/search?q=' +
+            encodeURIComponent(query) + '&type=master&per_page=50'
+          ),
+          discogsJson(
+            'https://api.discogs.com/database/search?q=' +
+            encodeURIComponent(query) + '&type=artist&per_page=8'
+          )
+        ])
+
+        if (masterResult.response) return masterResult.response
+
+        const artistResults = artistResult.response
+          ? []
+          : (Array.isArray(artistResult.data?.results) ? artistResult.data.results : [])
+
+        const artists = artistResults
+          .map((item: any)=>({
+            id:Number(item?.id)||null,
+            name:cleanArtistName(item?.title),
+            score:artistSearchScore(item,query)
+          }))
+          .filter((item: any)=>item.id && item.name && item.score>0)
+          .sort((left: any,right: any)=>right.score-left.score || left.name.localeCompare(right.name))
+          .slice(0,3)
+          .map(({id,name}: any)=>({id,name}))
+
+        return Response.json({
+          ...(masterResult.data || {}),
+          artists
+        })
+      }
+
+      if (action === 'artistProfile') {
+        let resolvedArtistId=Number(artistId)||0
+
+        if (!resolvedArtistId && artistName) {
+          const searchResult=await discogsJson(
+            'https://api.discogs.com/database/search?q=' +
+            encodeURIComponent(artistName) + '&type=artist&per_page=8'
+          )
+          if (searchResult.response) return searchResult.response
+
+          const candidates=(Array.isArray(searchResult.data?.results)?searchResult.data.results:[])
+            .map((item: any)=>({
+              id:Number(item?.id)||0,
+              name:cleanArtistName(item?.title),
+              score:artistSearchScore(item,artistName)
+            }))
+            .filter((item: any)=>item.id && item.score>0)
+            .sort((left: any,right: any)=>right.score-left.score)
+
+          resolvedArtistId=candidates[0]?.id||0
+        }
+
+        if (!resolvedArtistId) {
+          return Response.json({ error: 'Artist could not be resolved' }, { status: 404 })
+        }
+
+        const artistResult=await discogsJson(
+          'https://api.discogs.com/artists/' + encodeURIComponent(String(resolvedArtistId))
         )
-        return result.response || Response.json(result.data)
+        if (artistResult.response) return artistResult.response
+
+        const artist=artistResult.data || {}
+        const members=Array.isArray(artist.members)?artist.members:[]
+        const currentMembers=members
+          .filter((member: any)=>member && member.active!==false)
+          .map((member: any)=>({id:Number(member.id)||null,name:cleanArtistName(member.name)}))
+          .filter((member: any)=>member.name)
+        const pastMembers=members
+          .filter((member: any)=>member && member.active===false)
+          .map((member: any)=>({id:Number(member.id)||null,name:cleanArtistName(member.name)}))
+          .filter((member: any)=>member.name)
+
+        const resolvedName=cleanArtistName(artist.name)||artistName
+        const officialUrl=officialArtistUrl(artist.urls)
+
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
+        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+        if (supabaseUrl && serviceRoleKey && resolvedName) {
+          const admin = createClient(supabaseUrl,serviceRoleKey,{
+            auth:{persistSession:false,autoRefreshToken:false}
+          })
+          const { error:artistIdentityError } = await admin
+            .from('artists')
+            .update({discogs_artist_id:resolvedArtistId})
+            .ilike('name',resolvedName)
+            .is('discogs_artist_id',null)
+          if (artistIdentityError) {
+            console.warn('Could not link existing Groovy artist to Discogs',artistIdentityError)
+          }
+        }
+
+        return Response.json({
+          id:resolvedArtistId,
+          name:resolvedName,
+          real_name:String(artist.realname||'').trim(),
+          current_members:currentMembers,
+          past_members:pastMembers,
+          official_url:officialUrl
+        })
       }
 
       if (action === 'master') {
