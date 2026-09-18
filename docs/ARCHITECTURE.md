@@ -52,18 +52,20 @@ This allows the internal representation to move to named objects later without a
 
 ## Album persistence boundary
 
-Adding an album is a database transaction through `save_album_to_library`.
+On `notes`, adding an album crosses a server-verification boundary before the database transaction. The browser sends only the Discogs master identity, destination and optional Apple album link to the JWT-protected `discogs-search` Edge Function. The function reloads canonical metadata from Discogs, verifies the Apple album identity when present, resolves a vinyl tracklist and calls `save_album_to_library_verified` using the service role.
 
-The browser is responsible for gathering/normalizing external metadata. PostgreSQL owns the consistency-sensitive part:
+PostgreSQL then owns the consistency-sensitive part:
 
-1. authenticate and validate input
+1. accept only a server-verified user id and normalized metadata
 2. reuse/create the shared artist
 3. reuse/create/update the Discogs master album
 4. add missing track rows
 5. serialize the user's destination ordering
 6. insert/reuse the collection or wishlist row
 
-Authenticated clients cannot directly INSERT/UPDATE shared `artists`, `albums` or `tracks` rows.
+Authenticated clients cannot directly INSERT/UPDATE shared `artists`, `albums` or `tracks` rows. The older authenticated `save_album_to_library` RPC remains temporarily for compatibility with the stable `main` client and should have authenticated EXECUTE removed when that client is upgraded.
+
+Wishlist-to-collection moves are separately atomic through `move_wishlist_to_collection`; UI surfaces must delegate that mutation to `library-actions-controller.js` rather than reimplementing table writes.
 
 ## Supabase
 
