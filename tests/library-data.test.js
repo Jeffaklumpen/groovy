@@ -80,8 +80,8 @@ test('mapCollectionRows uses Record.fromCollection for tracks sides pressing and
   assert.equal(Record.ownRating(records[0]),4);
   assert.equal(Record.communityRating(records[0]),3.5);
   assert.equal(Record.communityCount(records[0]),8);
-  assert.deepEqual(Record.sides(records[0]).A.map(track=>track.title),['First']);
-  assert.deepEqual(Record.sides(records[0]).B.map(track=>track.title),['Second']);
+  assert.equal(Array.from(Record.sides(records[0]).A,function(track){return track.title;}).join('|'),'First');
+  assert.equal(Array.from(Record.sides(records[0]).B,function(track){return track.title;}).join('|'),'Second');
 });
 
 test('albumIds ignores rows without albums',()=>{
