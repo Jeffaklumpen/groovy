@@ -1056,7 +1056,7 @@ function attachRecordActionMenus(){
         }
       }else if(action==='delete'){
         removeAlbumIndex=index;
-        document.getElementById('removeAlbumMessage').textContent='Are you sure you want to remove "'+records[index][2]+'" from your collection?';
+        document.getElementById('removeAlbumMessage').textContent='Are you sure you want to remove "'+Record.title(records[index])+'" from your collection?';
         document.getElementById('removeAlbumModal').style.display='flex';
       }
     });
@@ -1313,24 +1313,26 @@ function openAlbum(index){
   var isWishlist=window.libraryView==='wishlist';
   detailNumber.hidden=!isWishlist;
   detailNumber.textContent=isWishlist?'Wishlisted':'';
-  detailArtist.innerHTML=esc(record[1]);
-  detailAlbum.innerHTML=esc(record[2]);
-  detailYear.innerHTML=esc(record[3]);
-  var genreLabel=record[4]||'Genre saknas';
+  var artist=Record.artist(record);
+  var title=Record.title(record);
+  detailArtist.innerHTML=esc(artist);
+  detailAlbum.innerHTML=esc(title);
+  detailYear.innerHTML=esc(Record.year(record));
+  var genreLabel=Record.genre(record)||'Genre saknas';
   detailGenre.textContent=genreLabel;
   detailGenre.setAttribute('data-mobile-genre',genreLabel.split(' · ')[0]||genreLabel);
   pressingController.render(index);
 
-  detailCover.src=record[6];
-  detailCover.alt=record[1]+' - '+record[2];
+  detailCover.src=Record.coverUrl(record);
+  detailCover.alt=artist+' - '+title;
   var detailAppleMusicLink=document.getElementById('detailAppleMusicLink');
   var detailSpotifyLink=document.getElementById('detailSpotifyLink');
   if(detailAppleMusicLink){
     detailAppleMusicLink.href=appleMusicAlbumLink(record);
-    detailAppleMusicLink.setAttribute('aria-label','Listen to '+record[2]+' by '+record[1]+' on Apple Music');
+    detailAppleMusicLink.setAttribute('aria-label','Listen to '+title+' by '+artist+' on Apple Music');
   }
   detailSpotifyLink.href=spotifyAlbumLink(record);
-  detailSpotifyLink.setAttribute('aria-label','Find '+record[2]+' by '+record[1]+' on Spotify');
+  detailSpotifyLink.setAttribute('aria-label','Find '+title+' by '+artist+' on Spotify');
   wikipediaAboutController.openForRecord(record);
 
   ratingController.renderDetail(index);
@@ -1425,7 +1427,7 @@ function attachAlbumClicks(){
       if(isNaN(wishlistIndex)||!records[wishlistIndex])return;
 
       removeAlbumIndex=wishlistIndex;
-      document.getElementById('removeAlbumMessage').textContent='Remove "'+records[wishlistIndex][2]+'" from your wishlist?';
+      document.getElementById('removeAlbumMessage').textContent='Remove "'+Record.title(records[wishlistIndex])+'" from your wishlist?';
       document.getElementById('removeAlbumModal').style.display='flex';
       return;
     }
@@ -1472,7 +1474,7 @@ function attachAlbumClicks(){
         const removeAlbumModal=document.getElementById('removeAlbumModal');
         const removeAlbumMessage=document.getElementById('removeAlbumMessage');
         
-        removeAlbumMessage.textContent='Are you sure you want to remove "'+record[2]+'" from your collection?';
+        removeAlbumMessage.textContent='Are you sure you want to remove "'+Record.title(record)+'" from your collection?';
         
         removeAlbumModal.style.display='flex';
         
@@ -1556,7 +1558,7 @@ function attachWishlistRemoveControls(){
       if(isNaN(index)||!records[index])return;
 
       removeAlbumIndex=index;
-      document.getElementById('removeAlbumMessage').textContent='Remove "'+records[index][2]+'" from your wishlist?';
+      document.getElementById('removeAlbumMessage').textContent='Remove "'+Record.title(records[index])+'" from your wishlist?';
       document.getElementById('removeAlbumModal').style.display='flex';
     });
   }
