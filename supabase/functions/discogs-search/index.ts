@@ -428,6 +428,12 @@ export default {
           const title=wikipediaDisplayTitle(linkedLabel||fullLabel||articleTitle)
           if (!title || /^(title|album|studio albums?)$/i.test(title)) return
 
+          // Main-article core catalogues occasionally include an explicitly
+          // labelled compilation after the studio/core list (The Beatles'
+          // Past Masters is a good example). Do not promote that into Main Discography.
+          const containerText=wikipediaText(container)
+          if (/\bcompilation\b/i.test(containerText)) return
+
           const released=String(container||'').match(
             /Released\s*:[\s\S]{0,240}?\b((?:19|20)\d{2})\b/i
           )
@@ -575,6 +581,27 @@ export default {
         const discographySection=artistSections.find((item: any)=>
           normalizeIdentity(item?.line)==='discography'
         )
+
+        // Fast path: many artist main articles already contain a compact,
+        // curated core/studio discography. Parse that first and avoid following
+        // the much heavier dedicated discography page unless it is actually needed.
+        if (discographySection) {
+          const mainDiscographyHtml=wikipediaSectionHtml(artistData,discographySection)
+          const studioMarker=mainDiscographyHtml.search(/Studio\s+albums?/i)
+          const mainDiscographyAlbums=wikipediaStudioAlbumsFromHtml({
+            parse:{text:studioMarker>=0
+              ?mainDiscographyHtml.slice(studioMarker)
+              :mainDiscographyHtml}
+          })
+          if (mainDiscographyAlbums.length>=2) {
+            return {
+              artistPage,
+              discographyPage:'',
+              studioAlbums:mainDiscographyAlbums,
+              strategy:'main_article'
+            }
+          }
+        }
 
         let discographyPage=''
         if (discographySection) {
@@ -1405,6 +1432,11 @@ export default {
         const byMbid=new Map<string,any>()
         const byMaster=new Map<string,any>()
         const byTitle=new Map<string,any[]>()
+        const usedCatalogIdentities=new Set<string>()
+
+        function catalogIdentity(row: any) {
+          return String(row?.mbid||row?.discogs_master_id||'')
+        }
 
         catalog.forEach((row: any)=>{
           const mbid=String(row?.mbid||'').toLowerCase()
@@ -1484,19 +1516,85 @@ export default {
             .sort((left: any,right: any)=>right.score-left.score)[0]?.row||null
         }
 
+        async function uniqueGlobalCatalogMatch(album: any) {
+          const title=wikipediaDisplayTitle(album?.title||album?.article_title)
+          const year=Number(album?.year)||0
+          if (!title||!year)return null
+
+          const result=await admin
+            .from('musicbrainz_catalog')
+            .select('mbid,discogs_master_id,artist_name,album_title,first_release_year,secondary_types,match_type')
+            .eq('match_type','direct')
+            .eq('first_release_year',year)
+            .ilike('album_title',title)
+            .limit(3)
+
+          if (result.error) {
+            console.warn('Could not resolve cross-credit catalog album',result.error)
+            return null
+          }
+
+          const rows=(Array.isArray(result.data)?result.data:[])
+            .filter((row: any)=>{
+              const secondary=String(row?.secondary_types||'').toLowerCase()
+              return !/compilation|live|remix|dj-mix|mixtape|demo|interview/.test(secondary)
+            })
+
+          return rows.length===1?rows[0]:null
+        }
+
+        function sameYearRemainder(album: any) {
+          const year=Number(album?.year)||0
+          if (!year)return null
+
+          const rows=catalog.filter((row: any)=>{
+            if (row?.match_type!=='direct')return false
+            if (Number(row?.first_release_year)!==year)return false
+            if (usedCatalogIdentities.has(catalogIdentity(row)))return false
+            const secondary=String(row?.secondary_types||'').toLowerCase()
+            return !/compilation|live|remix|dj-mix|mixtape|demo|interview/.test(secondary)
+          })
+
+          return rows.length===1?rows[0]:null
+        }
+
+        const prelim=wikipediaAlbums.map((album: any,index: number)=>{
+          const title=wikipediaDisplayTitle(album?.title||album?.article_title)
+          if (!title)return null
+          const local=bestCatalogTitleMatch(album)
+          if (local)usedCatalogIdentities.add(catalogIdentity(local))
+          return {album,index,title,local}
+        }).filter(Boolean)
+
+        // A title alias can still be resolved safely when it is the only unused
+        // direct album for that artist/year after the obvious matches are taken.
+        prelim.forEach((entry: any)=>{
+          if (entry.local)return
+          const local=sameYearRemainder(entry.album)
+          if (!local)return
+          entry.local=local
+          usedCatalogIdentities.add(catalogIdentity(local))
+        })
+
+        // Artist credits sometimes change while the discography remains continuous
+        // (ELO -> Jeff Lynne's ELO). For remaining rows, accept a global catalog
+        // match only when title + year has exactly one direct non-secondary result.
+        await Promise.all(prelim.map(async (entry: any)=>{
+          if (entry.local)return
+          entry.local=await uniqueGlobalCatalogMatch(entry.album)
+        }))
+
         const now=new Date().toISOString()
         const sourcePage=wikipedia.discographyPage||wikipedia.artistPage||''
-        const matched=wikipediaAlbums.map((album: any,index: number)=>{
-          const title=wikipediaDisplayTitle(album?.title||album?.article_title)
-          if (!title) return null
-
-          const local=bestCatalogTitleMatch(album)
+        const matched=prelim.map((entry: any)=>{
+          const album=entry.album
+          const index=entry.index
+          const title=entry.title
+          const local=entry.local
 
           const mbid=String(local?.mbid||'').trim()||null
           const master=Number(local?.discogs_master_id)||null
-          const year=Number(
-            album?.year||local?.first_release_year
-          )||null
+          const year=Number(album?.year||local?.first_release_year)||null
 
           const articleTitle=String(album?.article_title||'').trim()
           const sourceIdentity=normalizeIdentity(articleTitle||title)
@@ -1516,7 +1614,7 @@ export default {
             source:'wikipedia',
             verified_at:now
           }
-        }).filter(Boolean)
+        })
 
         const { data:existingRows,error:existingError } = await admin
           .from('artist_discography_cache')
@@ -1584,6 +1682,7 @@ export default {
             row&& (row.mbid||row.discogs_master_id)
           ).length,
           wikipedia_count:wikipediaAlbums.length,
+          strategy:String(wikipedia?.strategy||'discography_page'),
           wikidata_id:resolvedWikidataId
         })
       }
