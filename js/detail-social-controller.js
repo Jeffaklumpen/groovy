@@ -59,7 +59,7 @@
       element.classList.remove('own-match');
     }
 
-    function renderFollowedCollectors(profiles){
+    function renderFollowedCollectors(profiles,heading){
       if(!element||!profiles||!profiles.length){hide();return;}
       element.classList.remove('own-match');
       element.hidden=false;
@@ -80,7 +80,7 @@
       }
 
       element.innerHTML=
-        '<div class="detail-social-heading"><strong>Also collected by</strong><small>Collectors you follow</small></div>'+
+        '<div class="detail-social-heading"><strong>'+escapeHtml(heading||'Also collected by')+'</strong><small>Collectors you follow</small></div>'+
         '<div class="detail-social-people">'+
           visibleProfiles.map(function(profile){return personButton(profile,'');}).join('')+
           (hasMore?'<button class="detail-social-more" type="button" data-detail-social-more aria-expanded="false" aria-label="Show more collectors">…</button>':'')+
@@ -101,21 +101,24 @@
       return request===requestVersion&&getOpenRecordIndex()===index;
     }
 
-    async function openForRecord(record,index){
+    async function openForRecord(record,index,context){
+      context=context||{};
       var request=++requestVersion;
       hide();
       var albumId=record&&recordModel.albumId(record);
-      if(!albumId)return;
+      var masterId=String(record&&recordModel.discogsMasterId(record)||'').trim();
+      if(!albumId&&!masterId)return;
 
       var sessionUser=await getCurrentUser();
       if(!isCurrent(request,index))return;
       if(!sessionUser)return;
 
-      var masterId=String(recordModel.discogsMasterId(record)||'').trim();
       var matchKey=masterId?'master:'+masterId:'album:'+albumId;
+      var searchPreview=!!context.searchPreview;
+      var collectorHeading=searchPreview?'Collected by':'Also collected by';
 
       try{
-        if(getViewedUserId()!==null){
+        if(!searchPreview&&getViewedUserId()!==null){
           var ownKey='own:'+sessionUser.id+':'+matchKey;
           var ownMatch=cacheGet(ownKey);
           if(ownMatch===null){
@@ -136,12 +139,12 @@
           return;
         }
 
-        if(getLibraryView()==='wishlist')return;
+        if(!searchPreview&&getLibraryView()==='wishlist')return;
 
         var followedKey='followed:'+sessionUser.id+':'+matchKey;
         var cachedProfiles=cacheGet(followedKey);
         if(cachedProfiles!==null){
-          if(isCurrent(request,index))renderFollowedCollectors(cachedProfiles);
+          if(isCurrent(request,index))renderFollowedCollectors(cachedProfiles,collectorHeading);
           return;
         }
 
@@ -174,7 +177,7 @@
         });
         cacheSet(followedKey,profiles);
         if(!isCurrent(request,index))return;
-        renderFollowedCollectors(profiles);
+        renderFollowedCollectors(profiles,collectorHeading);
       }catch(error){
         log('warn','Could not load album collection matches:',error);
         if(isCurrent(request,index))hide();
