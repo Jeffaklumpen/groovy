@@ -361,6 +361,15 @@ test('artist artwork warmer supports verified rows without Discogs masters',()=>
   assert.match(block,/artist_name:resolvedArtistName/);
 });
 
+test('weak distant compilation matches cannot veto a Wikipedia core album',()=>{
+  const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const start=edge.indexOf('function bestCatalogTitleMatch');
+  const end=edge.indexOf('async function uniqueGlobalCatalogMatch',start);
+  const block=edge.slice(start,end);
+  assert.match(block,/return best&&best\.score>=60\?best\.row:null/);
+  assert.match(block,/distant compilation\/reissue/);
+});
+
 test('verified Main Discography drops locally identified secondary releases',()=>{
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
   const start=edge.indexOf("if (action === 'verifyArtistDiscography')");
