@@ -101,7 +101,9 @@ test('detail compatibility layers use app state and the shared library mutation 
   assert.match(app,/window\.groovyGetOpenRecordIndex/);
   assert.match(app,/window\.groovyMoveWishlistToCollection/);
   assert.match(detail,/groovyGetOpenRecordIndex/);
-  assert.match(detail,/groovyMoveWishlistToCollection/);
+  assert.doesNotMatch(detail,/groovyMoveWishlistToCollection/);
+  assert.match(app,/function renderDetailLibraryActions/);
+  assert.match(app,/requestRemoveAlbum/);
   assert.doesNotMatch(detail,/async function addWishlistToCollection/);
   assert.doesNotMatch(detail,/\.from\(['"]collections['"]\)\s*\.insert/);
   assert.match(rating,/groovyGetOpenRecordIndex/);
