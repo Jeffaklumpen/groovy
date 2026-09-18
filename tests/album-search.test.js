@@ -28,7 +28,8 @@ test('search results expose a detail-preview callback without moving save owners
   assert.match(source,/div\.addEventListener\(['"]click['"]/);
   assert.match(source,/onPreview\(\{/);
   assert.match(source,/save:saveResult/);
-  assert.match(app,/onPreview:openSearchAlbumPreview/);
+  assert.match(app,/window\.groovyOpenSearchAlbumPreview=openSearchAlbumPreview/);
+  assert.match(app,/onPreview:function\(payload\)\{return window\.groovyOpenSearchAlbumPreview\(payload\);\}/);
   assert.match(app,/Record\.fromSearchPreview/);
   assert.match(app,/searchPreview:true/);
   assert.match(app,/renderSearchPreviewActions/);
