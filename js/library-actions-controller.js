@@ -103,6 +103,67 @@ function create(options){
     return true;
   }
 
+  function normalizeEntryIds(entryIds){
+    var seen={};
+    return (Array.isArray(entryIds)?entryIds:[])
+      .map(function(value){return String(value==null?'':value).trim();})
+      .filter(function(value){
+        if(!value||seen[value])return false;
+        seen[value]=true;
+        return true;
+      });
+  }
+
+  async function deleteCollectionRecords(entryIds){
+    if(getViewedUserId()!==null||getLibraryView()==='wishlist')return false;
+    var ids=normalizeEntryIds(entryIds);
+    if(!ids.length)return false;
+
+    var sessionResult=await api.auth.getSession();
+    var session=sessionResult&&sessionResult.data&&sessionResult.data.session;
+    if(!session||!session.user){
+      onAlert('Du måste vara inloggad.');
+      return false;
+    }
+
+    var result=await api.rpc('delete_collection_records',{p_collection_ids:ids});
+    if(result.error){
+      log('error','Kunde inte ta bort valda album:',result.error);
+      onAlert('Kunde inte ta bort de valda albumen.\n\n'+(result.error.message||result.error));
+      return false;
+    }
+
+    invalidateSearchState();
+    await loadCollection();
+    return true;
+  }
+
+  async function moveCollectionRecordsToShelf(entryIds,shelfId){
+    if(getViewedUserId()!==null||getLibraryView()==='wishlist')return false;
+    var ids=normalizeEntryIds(entryIds);
+    if(!ids.length)return false;
+
+    var sessionResult=await api.auth.getSession();
+    var session=sessionResult&&sessionResult.data&&sessionResult.data.session;
+    if(!session||!session.user){
+      onAlert('Du måste vara inloggad.');
+      return false;
+    }
+
+    var result=await api.rpc('move_collection_records_to_shelf',{
+      p_collection_ids:ids,
+      p_shelf_id:shelfId||null
+    });
+    if(result.error){
+      log('error','Kunde inte flytta valda album till shelf:',result.error);
+      onAlert('Kunde inte flytta de valda albumen.\n\n'+(result.error.message||result.error));
+      return false;
+    }
+
+    await loadCollection();
+    return true;
+  }
+
   async function moveWishlistToCollection(index,button){
     if(getViewedUserId()!==null||getLibraryView()!=='wishlist')return false;
     var record=getRecords()[index];
@@ -140,7 +201,9 @@ function create(options){
 
   return Object.freeze({
     deleteCollection:deleteCollection,
+    deleteCollectionRecords:deleteCollectionRecords,
     deleteWishlist:deleteWishlist,
+    moveCollectionRecordsToShelf:moveCollectionRecordsToShelf,
     moveWishlistToCollection:moveWishlistToCollection
   });
 }
