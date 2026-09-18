@@ -46,26 +46,11 @@ function recordAt(index){
 }
 
 function detailIndex(){
-  var album=(document.getElementById('detailAlbum')||{}).textContent||'';
-  var artist=(document.getElementById('detailArtist')||{}).textContent||'';
-  album=album.trim();
-  artist=artist.trim();
-
-  var current=recordAt(currentDetailIndex);
-  if(current&&String(Record.title(current)||'').trim()===album&&(!artist||String(Record.artist(current)||'').trim()===artist)){
-    return currentDetailIndex;
+  if(typeof window.groovyGetOpenRecordIndex==='function'){
+    var index=parseInt(window.groovyGetOpenRecordIndex(),10);
+    if(!isNaN(index)&&recordAt(index))return index;
   }
-
-  if(!album||!Array.isArray(window.records))return -1;
-  for(var i=0;i<window.records.length;i++){
-    var record=window.records[i];
-    if(!record)continue;
-    if(String(Record.title(record)||'').trim()!==album)continue;
-    if(artist&&String(Record.artist(record)||'').trim()!==artist)continue;
-    currentDetailIndex=i;
-    return i;
-  }
-  return -1;
+  return currentDetailIndex>=0&&recordAt(currentDetailIndex)?currentDetailIndex:-1;
 }
 
 function ratingMap(rows,userId){
@@ -373,57 +358,6 @@ async function refreshWishlistCollectedBy(index){
   renderCollectedBy(sorted);
 }
 
-async function addWishlistToCollection(index,button){
-  var record=recordAt(index);
-  var user=await sessionUser();
-  if(!record||!user||window.libraryView!=='wishlist'||window.viewedUserId!==null)return;
-
-  button.disabled=true;
-  button.textContent='Adding…';
-
-  try{
-    var existing=await supabaseClient.from('collections')
-      .select('id')
-      .eq('user_id',user.id)
-      .eq('album_id',Record.albumId(record))
-      .limit(1);
-    if(existing.error)throw existing.error;
-
-    if(!existing.data||!existing.data.length){
-      var last=await supabaseClient.from('collections')
-        .select('sort_order')
-        .eq('user_id',user.id)
-        .order('sort_order',{ascending:false})
-        .limit(1);
-      if(last.error)throw last.error;
-
-      var nextOrder=last.data&&last.data.length?(parseInt(last.data[0].sort_order,10)||0)+1:1;
-      var inserted=await supabaseClient.from('collections').insert({
-        user_id:user.id,
-        album_id:Record.albumId(record),
-        cover_url:Record.coverUrl(record)||null,
-        discogs_style:Record.genre(record)||null,
-        sort_order:nextOrder
-      });
-      if(inserted.error)throw inserted.error;
-    }
-
-    var removed=await supabaseClient.from('wishlists')
-      .delete()
-      .eq('id',Record.entryId(record))
-      .eq('user_id',user.id);
-    if(removed.error)throw removed.error;
-
-    var close=document.getElementById('albumClose');
-    if(close)close.click();
-    if(typeof window.loadCollection==='function')await window.loadCollection();
-  }catch(error){
-    button.disabled=false;
-    button.textContent='Add to collection';
-    alert('Could not add the album to your collection.\n\n'+(error.message||error));
-  }
-}
-
 function ensureWishlistAction(){
   var actions=document.getElementById('detailShelfActions');
   if(!actions)return;
@@ -485,7 +419,7 @@ function install(){
       event.preventDefault();
       event.stopPropagation();
       var addIndex=detailIndex();
-      if(addIndex>=0)addWishlistToCollection(addIndex,add);
+      if(addIndex>=0&&typeof window.groovyMoveWishlistToCollection==='function')window.groovyMoveWishlistToCollection(addIndex,add);
       return;
     }
 
