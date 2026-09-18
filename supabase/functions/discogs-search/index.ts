@@ -1760,9 +1760,19 @@ export default {
           })
         }
 
+        const mainDiscographyEntries=prelim.filter((entry: any)=>{
+          const secondary=String(entry.local?.secondary_types||'').toLowerCase()
+          if (/compilation|live|remix|dj-mix|mixtape|demo|interview/.test(secondary)) {
+            return false
+          }
+          const title=normalizeIdentity(entry.title)
+          if (/\bgreatest hits\b|\bbest of\b/.test(title)) return false
+          return true
+        })
+
         const now=new Date().toISOString()
         const sourcePage=wikipedia.discographyPage||wikipedia.artistPage||''
-        const matched=prelim.map((entry: any)=>{
+        const matched=mainDiscographyEntries.map((entry: any)=>{
           const album=entry.album
           const index=entry.index
           const title=entry.title
