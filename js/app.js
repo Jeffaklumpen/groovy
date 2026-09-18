@@ -1388,6 +1388,13 @@ var libraryActionsController=LibraryActionsController.create({
   }
 });
 
+window.groovyGetOpenRecordIndex=function(){return detailOpenRecordIndex;};
+window.groovyMoveWishlistToCollection=async function(index,button){
+  var moved=await libraryActionsController.moveWishlistToCollection(index,button);
+  if(moved)closeAlbum();
+  return moved;
+};
+
 function attachAlbumClicks(){
   if(collection._albumClickAttached)return;
   collection._albumClickAttached=true;
