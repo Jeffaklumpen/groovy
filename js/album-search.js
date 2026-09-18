@@ -11,6 +11,7 @@ function create(options){
   var albumSearchResults=options.albumSearchResults;
   var AppleSearchCore=options.appleSearchCore;
   var PressingCore=options.pressingCore;
+  var onPreview=typeof options.onPreview==='function'?options.onPreview:function(){};
 
   if(!supabaseClient)throw new Error('Album search requires Supabase');
   if(!addAlbumModal||!closeAddAlbum||!albumSearchInput||!albumSearchResults)throw new Error('Album search DOM is incomplete');
@@ -969,6 +970,8 @@ async function searchDiscogs(query){
 
             const div=document.createElement('div');
             div.className='mb-result';
+            div.tabIndex=0;
+            div.setAttribute('aria-label','Open '+albumTitle+' by '+artist);
 
             div.innerHTML=
                 '<img class="mb-cover" '+
@@ -1024,6 +1027,59 @@ async function searchDiscogs(query){
 
             const wishlistButton=
                 div.querySelector('.mb-wishlist-button');
+
+            async function saveFromPreview(destination,button){
+                const status=await saveAlbumFromDiscogs(
+                    master,
+                    artist,
+                    albumTitle,
+                    year,
+                    coverState,
+                    button,
+                    destination
+                );
+                if(status)setSearchResultStatus(addButton,status);
+                return status;
+            }
+
+            function openPreview(){
+                var styles=Array.isArray(master&&master.style)?master.style:[];
+                var genres=Array.isArray(master&&master.genre)?master.genre:[];
+                var genreValues=(styles.length?styles:genres)
+                    .map(function(value){return String(value||'').trim();})
+                    .filter(Boolean)
+                    .slice(0,2);
+
+                onPreview({
+                    master:master,
+                    artist:artist,
+                    albumTitle:albumTitle,
+                    year:year,
+                    genre:genreValues.join(' · '),
+                    coverState:coverState,
+                    isAdded:isAdded,
+                    isWishlisted:isWishlisted,
+                    save:saveFromPreview
+                });
+            }
+
+            div.addEventListener('click',function(event){
+                var action=event.target&&event.target.closest
+                    ?event.target.closest('.mb-actions')
+                    :null;
+                if(action)return;
+                openPreview();
+            });
+
+            div.addEventListener('keydown',function(event){
+                if(event.key!=='Enter'&&event.key!==' ')return;
+                var action=event.target&&event.target.closest
+                    ?event.target.closest('.mb-actions')
+                    :null;
+                if(action)return;
+                event.preventDefault();
+                openPreview();
+            });
 
             addButton.addEventListener(
                 'click',
@@ -1444,10 +1500,11 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,coverState,but
 
         if(savedStatus==='wishlist'){
             if(window.libraryView==='wishlist')await window.loadCollection();
-            return;
+            return savedStatus;
         }
 
         if(!isWishlistDestination)await window.loadCollection();
+        return savedStatus;
 
     }catch(error){
         console.error(
@@ -1464,6 +1521,7 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,coverState,but
             'Kunde inte spara albumet.\n\n'+
             (error.message||error)
         );
+        return false;
     }
 }
 
