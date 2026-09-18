@@ -157,6 +157,7 @@
     </div>
   </div>
   <div class="library-toolbar">
+    <button id="librarySelectButton" class="menu-button library-select-button" type="button" aria-pressed="false" hidden>Select</button>
     <div class="menu-dropdown library-sort-field">
       <button id="librarySortButton" class="menu-button" type="button" aria-expanded="false" aria-controls="librarySortMenu" aria-haspopup="true">Sort: Standard ▾</button>
       <div id="librarySortMenu" class="menu-panel">
@@ -170,7 +171,6 @@
         <button type="button" data-sort="year-asc">Year oldest</button>
       </div>
     </div>
-    <button id="librarySelectButton" class="menu-button library-select-button" type="button" aria-pressed="false" hidden>Select</button>
     <div class="menu-dropdown library-rating-filter">
       <button id="filterButton" class="menu-button" type="button" aria-expanded="false">All ratings ▾</button>
       <div id="filterMenu" class="menu-panel">
@@ -189,6 +189,8 @@
   <strong id="selectionCount" class="selection-action-count">0 selected</strong>
   <div class="selection-action-buttons">
     <button id="selectionMoveButton" class="selection-action-button primary" type="button" disabled>Move to Shelf</button>
+    <button id="selectionRemoveShelfButton" class="selection-action-button secondary" type="button" hidden disabled>Remove from Shelf</button>
+    <button id="selectionAddCollectionButton" class="selection-action-button primary" type="button" hidden disabled>Add to Collection</button>
     <button id="selectionDeleteButton" class="selection-action-button danger" type="button" disabled>Delete</button>
     <button id="selectionCancelButton" class="selection-action-button secondary" type="button">Cancel</button>
   </div>
