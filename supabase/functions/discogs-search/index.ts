@@ -408,7 +408,7 @@ export default {
           .trim()
       }
 
-      function wikipediaStudioAlbumsFromHtml(data: any) {
+      function wikipediaStudioAlbumsFromHtml(data: any,options: any={}) {
         const html=String(data?.parse?.text||'')
         if (!html) return []
 
@@ -508,14 +508,44 @@ export default {
 
         if (albums.length) return albums
 
-        // Some canonical discographies (notably The Beatles) use a simple list
-        // instead of a wikitable. Only inspect the first list in the selected
-        // Studio albums section so notes/references cannot become albums.
-        const firstList=html.match(/<ul\b[\s\S]*?<\/ul>/i)?.[0]||''
-        const listItems=firstList.match(/<li\b[\s\S]*?<\/li>/gi)||[]
-        listItems.forEach((item: string,index: number)=>addAlbum(item,index))
+        // Most canonical album sections should inspect only the first list so
+        // notes/references cannot become releases. A specifically isolated works
+        // section may opt into all lists because Wikipedia can split long lists
+        // into several column <ul> blocks.
+        const lists=html.match(/<ul\b[\s\S]*?<\/ul>/gi)||[]
+        const selectedLists=options?.allLists?lists:lists.slice(0,1)
+        let listIndex=0
+        selectedLists.forEach((list: string)=>{
+          const listItems=list.match(/<li\b[\s\S]*?<\/li>/gi)||[]
+          listItems.forEach((item: string)=>addAlbum(item,listIndex++))
+        })
 
         return albums
+      }
+
+      function rankWikipediaCoreWorksSection(item: any) {
+        const normalized=normalizeIdentity(item?.line)
+        if (normalized==='musicals and show recordings') return 160
+        if (normalized==='musicals and recordings') return 155
+        if (normalized==='musicals') return 150
+        if (normalized==='show recordings') return 145
+        if (normalized==='cast recordings') return 140
+        return 0
+      }
+
+      function wikipediaChildSections(sections: any[],parent: any) {
+        if (!Array.isArray(sections)||!parent)return []
+        const parentIndex=sections.indexOf(parent)
+        if (parentIndex<0)return []
+        const parentLevel=Number(parent?.level)||2
+        const children:any[]=[]
+        for (let index=parentIndex+1;index<sections.length;index++) {
+          const section=sections[index]
+          const level=Number(section?.level)||6
+          if (level<=parentLevel)break
+          children.push(section)
+        }
+        return children
       }
 
       function rankWikipediaStudioSection(item: any) {
@@ -601,10 +631,35 @@ export default {
           normalizeIdentity(item?.line)==='discography'
         )
 
-        // Fast path: many artist main articles already contain a compact,
-        // curated core/studio discography. Parse that first and avoid following
-        // the much heavier dedicated discography page unless it is actually needed.
+        // Composer / musical-theatre pages can expose their canonical catalogue
+        // as a dedicated works subsection instead of "Studio albums". Prefer that
+        // isolated subsection and allow all of its list columns, while still
+        // avoiding the many individual cast/live recordings on dedicated pages.
         if (discographySection) {
+          const worksSection=wikipediaChildSections(artistSections,discographySection)
+            .map((item: any)=>({item,score:rankWikipediaCoreWorksSection(item)}))
+            .filter((entry: any)=>entry.score>0)
+            .sort((left: any,right: any)=>right.score-left.score)[0]?.item
+
+          if (worksSection) {
+            const worksHtml=wikipediaSectionHtml(artistData,worksSection)
+            const worksAlbums=wikipediaStudioAlbumsFromHtml(
+              {parse:{text:worksHtml}},
+              {allLists:true}
+            )
+            if (worksAlbums.length>=2) {
+              return {
+                artistPage,
+                discographyPage:'',
+                studioAlbums:worksAlbums,
+                strategy:'main_article_works'
+              }
+            }
+          }
+
+          // Fast path: many artist main articles already contain a compact,
+          // curated core/studio discography. Parse that first and avoid following
+          // the much heavier dedicated discography page unless it is actually needed.
           const mainDiscographyHtml=wikipediaSectionHtml(artistData,discographySection)
           const studioMarker=mainDiscographyHtml.search(/Studio\s+albums?/i)
           const mainDiscographyAlbums=wikipediaStudioAlbumsFromHtml({
