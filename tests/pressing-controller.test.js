@@ -89,7 +89,7 @@ function createHarness(record,options){
   options=options||{};
   pickerInstances.length=0;
   const elements={
-    root:makeElement(),content:makeElement(),toggle:makeElement(),summary:makeElement(),saved:makeElement(),
+    root:makeElement(),title:makeElement(),content:makeElement(),toggle:makeElement(),summary:makeElement(),saved:makeElement(),
     albumOverlay:makeElement(),pressingModal:makeElement(),closePressingModalButton:makeElement(),
     pressingLoading:makeElement(),pressingForm:makeElement(),pressingError:makeElement(),
     pressingCountry:makeElement(),pressingYear:makeElement(),pressingLabel:makeElement(),
