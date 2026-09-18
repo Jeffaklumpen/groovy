@@ -33,3 +33,13 @@ test('app delegates album-search behavior while retaining library integration',(
   assert.equal(app.includes('async function getSearchLibraryState('),false);
   assert.match(app,/async function loadOtherUserCollection\(userId\)/);
 });
+
+test('album library saves use one atomic RPC instead of direct shared-catalog writes',()=>{
+  const source=fs.readFileSync('js/album-search.js','utf8');
+  assert.match(source,/\.rpc\(\s*['"]save_album_to_library['"]/);
+  assert.doesNotMatch(source,/\.from\(\s*['"]artists['"]\s*\)\s*\.insert\(/);
+  assert.doesNotMatch(source,/\.from\(\s*['"]albums['"]\s*\)\s*\.insert\(/);
+  assert.doesNotMatch(source,/\.from\(\s*['"]albums['"]\s*\)\s*\.update\(/);
+  assert.doesNotMatch(source,/\.from\(\s*['"]tracks['"]\s*\)\s*\.insert\(/);
+});
+
