@@ -196,7 +196,6 @@ function create(options){
   function render(data){
     data=Core.normalizeOverview(data);
     content.innerHTML=
-      '<div class="community-heading"><div><span class="community-kicker">THE GROOVY COMMUNITY</span><h1>Where collections connect.</h1><p>Discover collectors with records in common, see what is happening across Groovy and explore what the community is collecting.</p></div><span class="community-heading-record" aria-hidden="true"><i></i></span></div>'+
       '<div class="community-summary-grid">'+
         summaryCard('people','Collectors',data.summary.collectors,'People building their shelves')+
         summaryCard('record','Records',data.summary.records,'Records in community collections')+

@@ -114,7 +114,7 @@ test.describe('authenticated read-only smoke flows',()=>{
     await expect(page.locator('body')).toHaveClass(/community-page-open/);
     await expect(page.locator('#communityPage')).toBeVisible();
     await expect(page.locator('#communityTabButton')).toHaveClass(/active/);
-    await expect(page.locator('.community-heading h1')).toHaveText('Where collections connect.');
+    await expect(page.locator('.community-heading')).toHaveCount(0);
     await expect(page.locator('.community-summary-card')).toHaveCount(3);
     await expect(page.locator('.community-panel-heading h2')).toContainText([
       'Collectors with similar taste',
