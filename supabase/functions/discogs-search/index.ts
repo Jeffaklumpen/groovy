@@ -144,7 +144,10 @@ export default {
         return a.length >= 6 && b.length >= 6 && (a.includes(b) || b.includes(a))
       }
 
-      async function verifiedAppleAlbum(urlValue: unknown,artist: string,title: string) {
+      async function verifiedAppleAlbum(
+        urlValue: unknown,
+        identities: Array<{ artist: string, title: string }>
+      ) {
         const input = String(urlValue || '').trim()
         if (!input) return null
         let parsed: URL
@@ -155,16 +158,34 @@ export default {
 
         const response = await fetch(
           'https://itunes.apple.com/lookup?id=' + encodeURIComponent(idMatch[1]) +
-          '&entity=album&country=SE'
+          '&country=SE'
         )
         if (!response.ok) return null
         const payload = await response.json()
-        const album = (Array.isArray(payload?.results) ? payload.results : []).find((item: any) =>
-          item && item.collectionId &&
-          identityMatches(item.artistName,artist) &&
-          identityMatches(item.collectionName,title)
-        )
-        if (!album?.artworkUrl100) return null
+        const candidates = Array.isArray(identities)
+          ? identities.filter((identity) => identity && identity.artist && identity.title)
+          : []
+
+        const album = (Array.isArray(payload?.results) ? payload.results : []).find((item: any) => {
+          if (!item || !item.collectionId || !item.artworkUrl100) return false
+
+          const artistMatches = candidates.some((identity) =>
+            identityMatches(item.artistName,identity.artist)
+          )
+          const titleMatches = candidates.some((identity) =>
+            identityMatches(item.collectionName,identity.title)
+          )
+
+          return artistMatches && titleMatches
+        })
+
+        if (!album) {
+          console.warn('Apple album identity verification failed',{
+            collectionId:idMatch[1],
+            identities:candidates
+          })
+          return null
+        }
 
         return {
           collectionId: Number(album.collectionId) || null,
@@ -201,12 +222,6 @@ export default {
           if (vinylTracklist.length) tracklist = vinylTracklist
         }
 
-        const verifiedApple = await verifiedAppleAlbum(body.appleCollectionUrl,artist,title)
-        const discogsCover = String(master.images?.[0]?.uri || master.images?.[0]?.uri150 || '').trim()
-        const coverUrl = verifiedApple?.artworkUrl || discogsCover || null
-        const coverSource = verifiedApple ? 'apple' : (discogsCover ? 'discogs' : null)
-        const appleUrl = verifiedApple?.collectionUrl || null
-
         const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
         const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
         const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -227,6 +242,28 @@ export default {
         const admin = createClient(supabaseUrl,serviceRoleKey,{
           auth:{persistSession:false,autoRefreshToken:false}
         })
+
+        const identities=[{artist,title}]
+        const { data:catalogIdentity,error:catalogIdentityError } = await admin
+          .from('musicbrainz_catalog')
+          .select('artist_name,album_title')
+          .eq('discogs_master_id',Number(saveMasterId))
+          .maybeSingle()
+
+        if (catalogIdentityError) {
+          console.warn('Could not load MusicBrainz identity for Apple verification',catalogIdentityError)
+        } else if (catalogIdentity?.artist_name && catalogIdentity?.album_title) {
+          identities.push({
+            artist:String(catalogIdentity.artist_name).trim(),
+            title:String(catalogIdentity.album_title).trim()
+          })
+        }
+
+        const verifiedApple = await verifiedAppleAlbum(body.appleCollectionUrl,identities)
+        const discogsCover = String(master.images?.[0]?.uri || master.images?.[0]?.uri150 || '').trim()
+        const coverUrl = verifiedApple?.artworkUrl || discogsCover || null
+        const coverSource = verifiedApple ? 'apple' : (discogsCover ? 'discogs' : null)
+        const appleUrl = verifiedApple?.collectionUrl || null
         const { data:saveResult,error:saveError } = await admin.rpc(
           'save_album_to_library_verified',
           {
