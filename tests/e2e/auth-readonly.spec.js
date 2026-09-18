@@ -299,10 +299,30 @@ test.describe('authenticated read-only smoke flows',()=>{
     await expect(page.locator('.artist-about-panel')).toContainText('Musical style');
     await expect(page.locator('.artist-context-back')).toContainText('The Dark Side of the Moon');
 
+    await page.evaluate(()=>{
+      window.__groovyAlbumBackFlash=false;
+      var collection=document.getElementById('collection');
+      var overlay=document.getElementById('albumOverlay');
+      var observer=new MutationObserver(function(){
+        var collectionVisible=collection&&getComputedStyle(collection).display!=='none';
+        var overlayVisible=overlay&&overlay.classList.contains('visible');
+        if(!location.pathname.startsWith('/artist/')&&collectionVisible&&!overlayVisible){
+          window.__groovyAlbumBackFlash=true;
+        }
+      });
+      observer.observe(document.documentElement,{subtree:true,attributes:true,childList:true});
+      window.__groovyAlbumBackObserver=observer;
+    });
+
     await page.locator('.artist-context-back').click();
     await expect(page).toHaveURL('http://127.0.0.1:4173/');
     await expect(page.locator('#albumOverlay')).toHaveClass(/visible/);
     await expect(page.locator('#detailAlbum')).toHaveText('The Dark Side of the Moon');
+    expect(await page.evaluate(()=>window.__groovyAlbumBackFlash)).toBe(false);
+    await page.evaluate(()=>{
+      if(window.__groovyAlbumBackObserver)window.__groovyAlbumBackObserver.disconnect();
+      delete window.__groovyAlbumBackObserver;
+    });
     await page.locator('#albumClose').click();
 
     await page.evaluate(()=>window.GroovyRouter.navigate('/artist/123-pink-floyd',{artistSource:'search',artistName:'Pink Floyd'}));

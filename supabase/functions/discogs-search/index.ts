@@ -202,7 +202,7 @@ export default {
 
       function appleArtworkUrl(value: unknown) {
         return String(value||'')
-          .replace(/\/\d+x\d+bb\./,'/1000x1000bb.')
+          .replace(/\/\d+x\d+bb\./,'/1200x1200bb.')
           .trim()
       }
 
@@ -271,7 +271,7 @@ export default {
           collectionId: Number(album.collectionId) || null,
           collectionUrl: String(album.collectionViewUrl || input),
           artworkUrl: String(album.artworkUrl100)
-            .replace(/\/\d+x\d+bb\./,'/1000x1000bb.')
+            .replace(/\/\d+x\d+bb\./,'/1200x1200bb.')
         }
       }
 

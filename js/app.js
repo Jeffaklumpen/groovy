@@ -2608,29 +2608,35 @@ async function loadUserFromUrl(){
 async function restoreAlbumFromHistoryState(){
     var state=window.history.state||{};
     var context=state.groovyReopenAlbum;
-    if(!context)return;
-
-    var cleaned=Object.assign({},state);
-    delete cleaned.groovyReopenAlbum;
-    Router.replace(Router.current(),cleaned,{render:false});
+    if(!context)return false;
 
     var navigation=window.groovyAlbumDetailNavigation;
+    var restored=false;
+
     if(
       context.source==='library'&&
       context.albumId&&
       navigation&&
-      typeof navigation.reopenLibraryAlbumById==='function'&&
-      navigation.reopenLibraryAlbumById(context.albumId)
+      typeof navigation.reopenLibraryAlbumById==='function'
     ){
-      return;
+      restored=!!navigation.reopenLibraryAlbumById(context.albumId);
     }
-    if(context.albumId){
-      await albumSearchController.openCatalogPreview(context.albumId);
-      return;
+
+    if(!restored&&context.albumId){
+      restored=!!(await albumSearchController.openCatalogPreview(context.albumId));
     }
-    if(context.masterId){
-      await albumSearchController.openDiscogsMasterPreview(context.masterId);
+
+    if(!restored&&context.masterId){
+      restored=!!(await albumSearchController.openDiscogsMasterPreview(context.masterId));
     }
+
+    if(restored){
+      var cleaned=Object.assign({},state);
+      delete cleaned.groovyReopenAlbum;
+      Router.replace(Router.current(),cleaned,{render:false});
+    }
+
+    return restored;
 }
 
 const scrollTopButton=document.getElementById('scrollTopButton');
@@ -2680,22 +2686,31 @@ async function renderCurrentRoute(){
         await artistController.renderPage(artistRoute,window.history.state||{});
         return;
     }
+
+    // Browser Back from an artist should restore the album overlay before
+    // revealing the route underneath it. This prevents the collection grid
+    // from flashing briefly before the album appears.
+    var restoredAlbumEarly=false;
+    if(window.history.state&&window.history.state.groovyReopenAlbum){
+        restoredAlbumEarly=await restoreAlbumFromHistoryState();
+    }
+
     artistController.hidePage();
     if(/^\/community\/?$/.test(window.location.pathname)){
         socialController.hideFollowingPage();
         await communityController.renderPage();
-        await restoreAlbumFromHistoryState();
+        if(!restoredAlbumEarly)await restoreAlbumFromHistoryState();
         return;
     }
     communityController.hidePage();
     if(/^\/following\/?$/.test(window.location.pathname)){
         await socialController.renderFollowingPage();
-        await restoreAlbumFromHistoryState();
+        if(!restoredAlbumEarly)await restoreAlbumFromHistoryState();
         return;
     }
     socialController.hideFollowingPage();
     await loadUserFromUrl();
-    await restoreAlbumFromHistoryState();
+    if(!restoredAlbumEarly)await restoreAlbumFromHistoryState();
 }
 
 Router.setHandler(renderCurrentRoute);

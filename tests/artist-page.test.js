@@ -140,3 +140,20 @@ test('artist artwork cache batches an Apple artist lookup and persists all match
   assert.match(block,/apple_collection_url/);
   assert.match(block,/\.from\('albums'\)/);
 });
+
+
+test('artist artwork cache is normalized to high resolution at the database boundary',()=>{
+  const sql=fs.readFileSync('supabase/migrations/20260918185340_normalize_apple_artwork_cache_resolution.sql','utf8');
+  assert.match(sql,/1200x1200bb/);
+  assert.match(sql,/before insert or update of artwork_url/i);
+  assert.match(sql,/update public\.apple_artwork_cache/i);
+});
+
+test('returning from artist restores the album before the underlying route is revealed',()=>{
+  const app=fs.readFileSync('js/app.js','utf8');
+  const routeStart=app.indexOf('var artistRoute=GroovyRouteState.artistFromPath');
+  const earlyRestore=app.indexOf('restoredAlbumEarly=await restoreAlbumFromHistoryState();',routeStart);
+  const hideArtist=app.indexOf('artistController.hidePage();',routeStart);
+  assert.ok(routeStart>=0&&earlyRestore>routeStart&&hideArtist>earlyRestore);
+  assert.match(app,/if\(!restoredAlbumEarly\)await restoreAlbumFromHistoryState\(\)/);
+});
