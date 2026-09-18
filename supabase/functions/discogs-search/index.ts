@@ -432,7 +432,10 @@ export default {
           // labelled compilation after the studio/core list (The Beatles'
           // Past Masters is a good example). Do not promote that into Main Discography.
           const containerText=wikipediaText(container)
-          if (/\bcompilation\b/i.test(containerText)) return
+          if (
+            /\bcompilation\b|\bEP\b|\bre-record(?:ed|ing)\b|\blive\b/i.test(containerText) ||
+            /\bgreatest hits\b|\bbest of\b/i.test(title)
+          ) return
 
           const released=String(container||'').match(
             /Released\s*:[\s\S]{0,240}?\b((?:19|20)\d{2})\b/i
@@ -1062,9 +1065,8 @@ export default {
         // persisted album membership and artwork URLs directly from Postgres.
         const { data:discographyRows,error:discographyError } = await admin
           .from('artist_discography_cache')
-          .select('discogs_master_id,album_title,first_release_year,position')
+          .select('source_key,discogs_master_id,album_title,first_release_year,position,apple_collection_id,apple_collection_url,artwork_url')
           .eq('discogs_artist_id',resolvedArtistId)
-          .not('discogs_master_id','is',null)
           .order('position',{ascending:true})
           .limit(60)
 
@@ -1073,11 +1075,14 @@ export default {
           return Response.json({ error:'Could not load verified discography' },{status:500})
         }
 
+        const rawRows=Array.isArray(discographyRows)?discographyRows:[]
         const seenMasters=new Set<string>()
-        const catalog=(Array.isArray(discographyRows)?discographyRows:[])
+        const catalog=rawRows
+          .filter((row: any)=>Number(row?.discogs_master_id)||0)
           .map((row: any)=>({
+            source_key:String(row?.source_key||''),
             discogs_master_id:row.discogs_master_id,
-            artist_name:canonicalArtistName,
+            artist_name:resolvedArtistName,
             album_title:row.album_title,
             first_release_year:row.first_release_year,
             position:row.position
@@ -1089,25 +1094,30 @@ export default {
             return true
           })
 
+        const directArtworkRows=rawRows.filter((row: any)=>!(Number(row?.discogs_master_id)||0))
+        const directArtworkCached=directArtworkRows.filter((row: any)=>
+          String(row?.artwork_url||'').trim() &&
+          String(row?.apple_collection_url||'').trim()
+        )
+        const directArtworkMissing=directArtworkRows.filter((row: any)=>
+          !String(row?.artwork_url||'').trim() ||
+          !String(row?.apple_collection_url||'').trim()
+        )
+
         const masterIds=catalog
           .map((row: any)=>Number(row.discogs_master_id)||0)
           .filter(Boolean)
 
-        if (!masterIds.length) {
-          return Response.json({
-            eligible:0,
-            cached_total:0,
-            cached_added:0,
-            complete:false,
-            deferred:true,
-            reason:'verified_discography_not_cached'
-          })
+        let existingRows:any[]=[]
+        let existingError:any=null
+        if (masterIds.length) {
+          const existingResult=await admin
+            .from('apple_artwork_cache')
+            .select('discogs_master_id,apple_collection_id,apple_collection_url,artwork_url')
+            .in('discogs_master_id',masterIds)
+          existingRows=Array.isArray(existingResult.data)?existingResult.data:[]
+          existingError=existingResult.error
         }
-
-        const { data:existingRows,error:existingError } = await admin
-          .from('apple_artwork_cache')
-          .select('discogs_master_id,apple_collection_id,apple_collection_url,artwork_url')
-          .in('discogs_master_id',masterIds)
 
         if (existingError) {
           console.warn('Could not inspect Apple artwork cache',existingError)
@@ -1170,23 +1180,26 @@ export default {
           (Array.isArray(existingRows)?existingRows:[])
             .filter((row: any)=>!duplicateMasterIds.has(String(row?.discogs_master_id||'')))
             .map((row: any)=>String(row?.apple_collection_id||''))
+            .concat(directArtworkCached.map((row: any)=>String(row?.apple_collection_id||'')))
             .filter(Boolean)
         )
 
         const missing=catalog.filter((row: any)=>!existingIds.has(String(row.discogs_master_id||'')))
+        const totalEligible=catalog.length+directArtworkRows.length
+        const cachedBefore=existingIds.size+directArtworkCached.length
         const now=new Date().toISOString()
 
-        if (!missing.length) {
+        if (!missing.length && !directArtworkMissing.length) {
           await admin.from('artist_profile_cache').update({
             artwork_checked_at:now,
-            artwork_eligible_count:catalog.length,
-            artwork_cached_count:catalog.length,
+            artwork_eligible_count:totalEligible,
+            artwork_cached_count:cachedBefore,
             updated_at:now
           }).eq('discogs_artist_id',resolvedArtistId)
 
           return Response.json({
-            eligible:catalog.length,
-            cached_total:catalog.length,
+            eligible:totalEligible,
+            cached_total:cachedBefore,
             cached_added:0,
             complete:true
           })
@@ -1205,14 +1218,14 @@ export default {
 
         if (
           recentlyChecked &&
-          Number(cacheState?.artwork_eligible_count||0)===catalog.length &&
-          Number(cacheState?.artwork_cached_count||0)===existingIds.size
+          Number(cacheState?.artwork_eligible_count||0)===totalEligible &&
+          Number(cacheState?.artwork_cached_count||0)===cachedBefore
         ) {
           return Response.json({
-            eligible:catalog.length,
-            cached_total:existingIds.size,
+            eligible:totalEligible,
+            cached_total:cachedBefore,
             cached_added:0,
-            complete:existingIds.size===catalog.length,
+            complete:cachedBefore===totalEligible,
             deferred:true
           })
         }
@@ -1236,14 +1249,14 @@ export default {
         if (!artistCandidate || artistCandidate.score<=0) {
           await admin.from('artist_profile_cache').update({
             artwork_checked_at:now,
-            artwork_eligible_count:catalog.length,
-            artwork_cached_count:existingIds.size,
+            artwork_eligible_count:totalEligible,
+            artwork_cached_count:cachedBefore,
             updated_at:now
           }).eq('discogs_artist_id',resolvedArtistId)
 
           return Response.json({
-            eligible:catalog.length,
-            cached_total:existingIds.size,
+            eligible:totalEligible,
+            cached_total:cachedBefore,
             cached_added:0,
             complete:false
           })
@@ -1294,6 +1307,38 @@ export default {
           })
         })
 
+        const directMatches:any[]=[]
+        directArtworkMissing.forEach((row: any)=>{
+          const best=appleAlbums
+            .filter((item: any)=>!usedAppleCollectionIds.has(String(item.collectionId||'')))
+            .map((item: any)=>({
+              item,
+              score:appleAlbumScore(
+                item,
+                resolvedArtistName,
+                String(row.album_title||''),
+                row.first_release_year
+              )
+            }))
+            .filter((candidate: any)=>candidate.score>=60)
+            .sort((left: any,right: any)=>right.score-left.score)[0]
+
+          if (!best) return
+
+          const collectionUrl=String(best.item.collectionViewUrl||'').trim()
+          const artworkUrl=appleArtworkUrl(best.item.artworkUrl100)
+          if (!/^https:\/\/(?:music|itunes)\.apple\.com\//i.test(collectionUrl)) return
+          if (!/^https:\/\/[^/]*mzstatic\.com\//i.test(artworkUrl)) return
+
+          usedAppleCollectionIds.add(String(best.item.collectionId||''))
+          directMatches.push({
+            source_key:String(row.source_key||''),
+            apple_collection_id:Number(best.item.collectionId)||null,
+            apple_collection_url:collectionUrl,
+            artwork_url:artworkUrl
+          })
+        })
+
         if (matches.length) {
           const { error:upsertError } = await admin
             .from('apple_artwork_cache')
@@ -1315,19 +1360,39 @@ export default {
           }))
         }
 
-        const cachedTotal=Math.min(catalog.length,existingIds.size+matches.length)
+        if (directMatches.length) {
+          await Promise.all(directMatches.map(async (match: any)=>{
+            const { error:updateError }=await admin
+              .from('artist_discography_cache')
+              .update({
+                apple_collection_id:match.apple_collection_id,
+                apple_collection_url:match.apple_collection_url,
+                artwork_url:match.artwork_url
+              })
+              .eq('discogs_artist_id',resolvedArtistId)
+              .eq('source_key',match.source_key)
+            if (updateError) {
+              console.warn('Could not persist direct artist artwork fallback',updateError)
+            }
+          }))
+        }
+
+        const cachedTotal=Math.min(
+          totalEligible,
+          cachedBefore+matches.length+directMatches.length
+        )
         await admin.from('artist_profile_cache').update({
           artwork_checked_at:now,
-          artwork_eligible_count:catalog.length,
+          artwork_eligible_count:totalEligible,
           artwork_cached_count:cachedTotal,
           updated_at:now
         }).eq('discogs_artist_id',resolvedArtistId)
 
         return Response.json({
-          eligible:catalog.length,
+          eligible:totalEligible,
           cached_total:cachedTotal,
-          cached_added:matches.length,
-          complete:cachedTotal===catalog.length
+          cached_added:matches.length+directMatches.length,
+          complete:cachedTotal===totalEligible
         })
       }
 
@@ -1528,7 +1593,7 @@ export default {
           const master=String(row?.discogs_master_id||'')
           if (mbid) byMbid.set(mbid,row)
           if (master) byMaster.set(master,row)
-          if (row?.match_type!=='direct') return
+          if (row?.match_type!=='direct' && row?.match_type!=='artist_title') return
 
           wikipediaAlbumKeys(row?.album_title,canonicalArtistName).forEach((key: string)=>{
             if (!byTitle.has(key)) byTitle.set(key,[])
