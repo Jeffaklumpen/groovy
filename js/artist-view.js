@@ -107,10 +107,15 @@
       var past=Array.isArray(profile.past_members)?profile.past_members:[];
       var official=profile.official_url||'';
       var checkingDiscography=overview.discography_source==='unchecked';
-      var discographyMeta=checkingDiscography?'Checking catalog…':String(overview.discography.length)+' albums';
+      var unavailableDiscography=overview.discography_source==='error';
+      var discographyMeta=checkingDiscography
+        ?'Checking catalog…'
+        :(unavailableDiscography?'Unavailable':String(overview.discography.length)+' albums');
       var discographyBody=checkingDiscography
         ?'<div class="artist-empty artist-discography-loading">Checking main discography…</div>'
-        :discography(overview.discography,profile.name||'Artist');
+        :(unavailableDiscography
+          ?'<div class="artist-empty">Could not verify main discography. Try again in a moment.</div>'
+          :discography(overview.discography,profile.name||'Artist'));
 
       content.innerHTML=
         (nav.backToAlbum?'<button class="artist-context-back" type="button" data-artist-back-album>← Back to '+escapeHtml(nav.backLabel||'album')+'</button>':'')+
