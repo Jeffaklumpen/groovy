@@ -154,9 +154,11 @@
 }
 
 @media (prefers-reduced-motion:reduce){.tradera-trigger,.tradera-modal,.tradera-modal-panel,.tradera-listing-card,.tradera-listing-image img{transition:none}}
-#cancelRemoveAlbum{background:#333;color:#fff}
-#confirmRemoveAlbum{background:#c62828;color:#fff}
-#confirmRemoveAlbum:hover{background:#e53935}
+#cancelRemoveAlbum,#cancelClearPressing{background:#333;color:#fff}
+#cancelRemoveAlbum:hover,#cancelClearPressing:hover{background:#414146}
+#confirmRemoveAlbum,#confirmClearPressing{background:#c62828;color:#fff}
+#confirmRemoveAlbum:hover,#confirmClearPressing:hover{background:#e53935}
+#confirmClearPressing:disabled{opacity:.62;cursor:wait}
 
 #profileMenu #searchUserButton,#profileMenu #myCollectionButton{display:block;width:100%;padding:8px;background:none;border:0;border-radius:6px;color:#fff;text-align:left;font-family:inherit;font-size:12px;cursor:pointer}
 #profileMenu #searchUserButton:hover,#profileMenu #myCollectionButton:hover{background:#242426}
