@@ -198,3 +198,27 @@ test('open requires authentication and opens populated search for logged-in user
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(profileLoads,1);
 });
+
+
+test('presence subscription persists last seen status through the injected writer',async()=>{
+  const doc=makeDocument();
+  const elements=makeElements();
+  const writes=[];
+  const channel={
+    on(){return channel;},
+    subscribe(fn){channel.subscription=fn;return channel;},
+    presenceState(){return {};},
+    async track(){},
+    async untrack(){}
+  };
+  const controller=UserSearchController.create({
+    api:{channel(){return channel;},removeChannel:async()=>{}},
+    document:doc,elements,socialController:{},
+    now:()=>Date.parse('2026-09-18T13:00:00Z'),
+    persistLastSeen:async(userId,lastSeenAt)=>writes.push([userId,lastSeenAt])
+  });
+  await controller.syncUser({id:'u1'});
+  await channel.subscription('SUBSCRIBED');
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(writes,[['u1','2026-09-18T13:00:00.000Z']]);
+});

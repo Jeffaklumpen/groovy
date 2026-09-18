@@ -73,3 +73,12 @@ test('detail actions stay hidden for wishlist and other-user contexts',()=>{
   fx.controller.renderDetailActions(0);
   assert.equal(fx.elements.detailActions.hidden,true);
 });
+
+
+test('detail action rendering exposes one extension hook',()=>{
+  const fs=require('node:fs');
+  const path=require('node:path');
+  const source=fs.readFileSync(path.join(__dirname,'..','js','shelf-controller.js'),'utf8');
+  assert.match(source,/onDetailActionsRendered/);
+  assert.match(source,/detailActionsRendered\(index\)/);
+});

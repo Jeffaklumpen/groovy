@@ -30,6 +30,7 @@ function create(options){
   function viewedUserId(){return typeof options.getViewedUserId==='function'?options.getViewedUserId():null;}
   function libraryView(){return typeof options.getLibraryView==='function'?options.getLibraryView():'collection';}
   function detailOpenIndex(){return typeof options.getDetailOpenRecordIndex==='function'?options.getDetailOpenRecordIndex():-1;}
+  function detailActionsRendered(index){if(typeof options.onDetailActionsRendered==='function')options.onDetailActionsRendered(index,elements.detailActions);}
   function resetLibraryPage(){if(typeof options.onLibraryPageReset==='function')options.onLibraryPageReset();}
   function renderGrid(){if(typeof options.onGridChange==='function')options.onGridChange();}
   function isMobile(){return typeof options.isMobile==='function'&&options.isMobile();}
@@ -275,6 +276,7 @@ function create(options){
     if(!canEdit){
       elements.detailActions.hidden=true;
       elements.detailActions.innerHTML='';
+      detailActionsRendered(index);
       return;
     }
     elements.detailActions.hidden=false;
@@ -287,6 +289,7 @@ function create(options){
       try{await assignRecord(index,null);renderDetailActions(index);}
       catch(error){report('error','Kunde inte ta bort albumet från shelf:',error);showAlert('Could not remove the record from the shelf.\n\n'+(error.message||error));remove.disabled=false;}
     });
+    detailActionsRendered(index);
   }
 
   function refreshDetail(index){

@@ -24,3 +24,12 @@ test('profile avatar helpers use username initials instead of the vinyl placehol
   assert.doesNotMatch(fallback,/avatar-placeholder/);
   assert.match(UserProfileCore.avatarMarkup('test-avatar','avatar.jpg','jeff'),/background-image/);
 });
+
+
+test('last seen copy is compact and deterministic',()=>{
+  const now=Date.parse('2026-09-18T13:00:00Z');
+  assert.equal(UserProfileCore.formatLastSeen('',now),'Last seen online —');
+  assert.equal(UserProfileCore.formatLastSeen('2026-09-18T12:59:30Z',now),'Last seen online just now');
+  assert.equal(UserProfileCore.formatLastSeen('2026-09-18T12:48:00Z',now),'Last seen online 12m ago');
+  assert.equal(UserProfileCore.formatLastSeen('2026-09-18T09:00:00Z',now),'Last seen online 4h ago');
+});

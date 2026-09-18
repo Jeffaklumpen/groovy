@@ -134,3 +134,13 @@ test('following menu delegates route orchestration instead of owning app routing
   assert.equal(before,1);
   assert.equal(open,1);
 });
+
+
+test('following page source uses private presence status for last seen copy',()=>{
+  const fs=require('node:fs');
+  const path=require('node:path');
+  const source=fs.readFileSync(path.join(__dirname,'..','js','social-controller.js'),'utf8');
+  assert.match(source,/from\('user_presence_status'\)/);
+  assert.match(source,/UserProfileCore\.formatLastSeen/);
+  assert.match(source,/following-last-seen/);
+});

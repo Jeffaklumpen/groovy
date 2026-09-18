@@ -261,22 +261,6 @@ async function refreshWishlistCollectedBy(index){
   renderCollectedBy(sorted);
 }
 
-function ensureWishlistAction(){
-  var actions=document.getElementById('detailShelfActions');
-  if(!actions)return;
-
-  if(window.libraryView!=='wishlist'||window.viewedUserId!==null){
-    actions.classList.remove('wishlist-detail-actions');
-    return;
-  }
-
-  actions.hidden=false;
-  actions.classList.add('wishlist-detail-actions');
-  if(!actions.querySelector('.groovy-detail-add-collection')){
-    actions.innerHTML='<button class="detail-move-to-collection groovy-detail-add-collection" type="button">Add to collection</button>';
-  }
-}
-
 function onDetailOpen(){
   placeRating();
   syncMobileStreaming();
@@ -284,7 +268,6 @@ function onDetailOpen(){
   var index=detailIndex();
   if(index<0)return;
   currentDetailIndex=index;
-  ensureWishlistAction();
 
   if(window.libraryView==='wishlist'&&window.viewedUserId===null){
     setTimeout(function(){refreshWishlistCollectedBy(index);},80);
@@ -312,15 +295,6 @@ function install(){
       event.stopPropagation();
       var removeIndex=detailIndex();
       if(removeIndex>=0)removeRating(removeIndex,remove);
-      return;
-    }
-
-    var add=event.target.closest&&event.target.closest('.groovy-detail-add-collection');
-    if(add){
-      event.preventDefault();
-      event.stopPropagation();
-      var addIndex=detailIndex();
-      if(addIndex>=0&&typeof window.groovyMoveWishlistToCollection==='function')window.groovyMoveWishlistToCollection(addIndex,add);
       return;
     }
 

@@ -172,6 +172,8 @@
 .detail-shelf-button.primary:hover{border-color:#E85301;background:#E85301;color:#fff}
 .detail-shelf-button.secondary{border:1px solid #3a3a3e;background:#151517;color:#c8c8cd}
 .detail-shelf-button.secondary:hover{border-color:#55555a;background:#202023;color:#fff}
+.detail-shelf-button.detail-library-remove{border-color:rgba(190,82,82,.28);color:#d6a7a7}
+.detail-shelf-button.detail-library-remove:hover{border-color:rgba(211,91,91,.58);background:rgba(140,48,48,.16);color:#f0b9b9}
 @media screen and (min-width:761px){
 .shelf-chip{width:176px;min-width:176px;max-width:176px;flex:0 0 176px}
 .shelf-chip-copy{width:124px;overflow:hidden}

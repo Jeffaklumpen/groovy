@@ -170,3 +170,12 @@ test('picker receives named record-model accessors and controller owns open/clos
   h.controller.closePicker();
   assert.equal(h.picker.closeCalls,1);
 });
+
+
+test('pressing heading source uses viewed collector username outside own collection',()=>{
+  const fs=require('node:fs');
+  const path=require('node:path');
+  const source=fs.readFileSync(path.join(__dirname,'..','js','pressing-controller.js'),'utf8');
+  assert.match(source,/getViewedUsername/);
+  assert.match(source,/\+"'s pressing"\)/);
+});

@@ -911,7 +911,8 @@ var shelfController=ShelfController.create({
   getDetailOpenRecordIndex:function(){return detailOpenRecordIndex;},getSessionUser:currentSessionUser,
   shouldHideStrip:function(){return window.libraryView==='wishlist'||window.loginRequiredForViewedCollection||window.profileNotFound||(!window.hasAuthenticatedUser&&viewedUserId===null);},
   onLibraryPageReset:function(){libraryPage=1;},onGridChange:function(){buildGrid();},isMobile:isMobileRecordMenu,
-  requestFrame:function(callback){return requestAnimationFrame(callback);},alert:function(message){alert(message);}
+  requestFrame:function(callback){return requestAnimationFrame(callback);},alert:function(message){alert(message);},
+  onDetailActionsRendered:function(index,container){renderDetailLibraryActions(index,container);}
 });
 
 function closeRecordActionMenus(){
@@ -1386,6 +1387,46 @@ var libraryActionsController=LibraryActionsController.create({
 });
 
 window.groovyGetOpenRecordIndex=function(){return detailOpenRecordIndex;};
+
+function renderDetailLibraryActions(index,container){
+  if(!container)return;
+  container.querySelectorAll('[data-detail-library-action]').forEach(function(button){button.remove();});
+
+  var record=records[index];
+  if(!record||viewedUserId!==null){
+    if(!container.children.length)container.hidden=true;
+    return;
+  }
+
+  container.hidden=false;
+  if(window.libraryView==='wishlist'){
+    var add=document.createElement('button');
+    add.type='button';
+    add.className='detail-shelf-button primary';
+    add.dataset.detailLibraryAction='move';
+    add.textContent='Add to collection';
+    add.addEventListener('click',async function(event){
+      event.preventDefault();event.stopPropagation();
+      add.disabled=true;
+      var moved=await libraryActionsController.moveWishlistToCollection(index,add);
+      if(moved)closeAlbum();
+      else add.disabled=false;
+    });
+    container.appendChild(add);
+  }
+
+  var remove=document.createElement('button');
+  remove.type='button';
+  remove.className='detail-shelf-button secondary detail-library-remove';
+  remove.dataset.detailLibraryAction='remove';
+  remove.textContent=window.libraryView==='wishlist'?'Remove from wishlist':'Remove from collection';
+  remove.addEventListener('click',function(event){
+    event.preventDefault();event.stopPropagation();
+    requestRemoveAlbum(index,true);
+  });
+  container.appendChild(remove);
+}
+
 window.groovyMoveWishlistToCollection=async function(index,button){
   var moved=await libraryActionsController.moveWishlistToCollection(index,button);
   if(moved)closeAlbum();
@@ -1431,9 +1472,7 @@ function attachAlbumClicks(){
       var wishlistIndex=parseInt(wishlistRecordElement.getAttribute('data-index'),10);
       if(isNaN(wishlistIndex)||!records[wishlistIndex])return;
 
-      removeAlbumIndex=wishlistIndex;
-      document.getElementById('removeAlbumMessage').textContent='Remove "'+Record.title(records[wishlistIndex])+'" from your wishlist?';
-      document.getElementById('removeAlbumModal').style.display='flex';
+      requestRemoveAlbum(wishlistIndex,false);
       return;
     }
 
@@ -1474,15 +1513,7 @@ function attachAlbumClicks(){
         
         if(!record)return;
         
-        removeAlbumIndex=index;
-        
-        const removeAlbumModal=document.getElementById('removeAlbumModal');
-        const removeAlbumMessage=document.getElementById('removeAlbumMessage');
-        
-        removeAlbumMessage.textContent='Are you sure you want to remove "'+Record.title(record)+'" from your collection?';
-        
-        removeAlbumModal.style.display='flex';
-        
+        requestRemoveAlbum(index,false);
         return;
     }
       
@@ -1508,16 +1539,30 @@ const cancelRemoveAlbum=document.getElementById('cancelRemoveAlbum');
 const confirmRemoveAlbum=document.getElementById('confirmRemoveAlbum');
 
 let removeAlbumIndex=null;
+let removeAlbumFromDetail=false;
+
+function requestRemoveAlbum(index,fromDetail){
+    var record=records[index];
+    if(!record||viewedUserId!==null)return;
+    removeAlbumIndex=index;
+    removeAlbumFromDetail=!!fromDetail;
+    removeAlbumMessage.textContent=window.libraryView==='wishlist'
+      ?'Remove "'+Record.title(record)+'" from your wishlist?'
+      :'Are you sure you want to remove "'+Record.title(record)+'" from your collection?';
+    removeAlbumModal.style.display='flex';
+}
 
 cancelRemoveAlbum.addEventListener('click',function(){
     removeAlbumModal.style.display='none';
     removeAlbumIndex=null;
+    removeAlbumFromDetail=false;
 });
 
 removeAlbumModal.addEventListener('click',function(event){
     if(event.target===removeAlbumModal){
         removeAlbumModal.style.display='none';
         removeAlbumIndex=null;
+        removeAlbumFromDetail=false;
     }
 });
 
@@ -1525,15 +1570,19 @@ confirmRemoveAlbum.addEventListener('click',async function(){
     if(removeAlbumIndex===null)return;
 
     const index=removeAlbumIndex;
+    const fromDetail=removeAlbumFromDetail;
 
     removeAlbumModal.style.display='none';
     removeAlbumIndex=null;
+    removeAlbumFromDetail=false;
 
+    var removed;
     if(window.libraryView==='wishlist'){
-      await libraryActionsController.deleteWishlist(index);
+      removed=await libraryActionsController.deleteWishlist(index);
     }else{
-      await libraryActionsController.deleteCollection(index);
+      removed=await libraryActionsController.deleteCollection(index);
     }
+    if(removed&&fromDetail)closeAlbum();
 });
 
 function attachWishlistRemoveControls(){

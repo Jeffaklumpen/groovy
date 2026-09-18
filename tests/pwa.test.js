@@ -136,3 +136,15 @@ test('album rating presentation lives in CSS instead of runtime style injection'
   assert.doesNotMatch(css,/\.groovy-rating-section-heading/);
   assert.match(css,/\.groovy-rating-avatar/);
 });
+
+
+test('add album shares the polished search modal shell and detail delete reuses library actions',()=>{
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const detail=fs.readFileSync(path.join(root,'js','detail-enhancements-v2.js'),'utf8');
+  assert.match(html,/id="addAlbumModal"[\s\S]*class="add-album-box search-modal-box"/);
+  assert.match(app,/Remove from wishlist/);
+  assert.match(app,/Remove from collection/);
+  assert.match(app,/requestRemoveAlbum\(index,true\)/);
+  assert.doesNotMatch(detail,/ensureWishlistAction|groovy-detail-add-collection/);
+});
