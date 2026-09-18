@@ -91,7 +91,7 @@ test('routing state stays pure and detail enhancements load directly',function()
   assert.ok(statePosition>=0&&appPosition>statePosition&&detailPosition>appPosition);
 });
 
-test('signup uses the auth trigger and collection membership checks are direct',function(){
+test('signup uses the auth trigger and collection membership checks stay bounded',function(){
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
   const detailSocial=fs.readFileSync(path.join(root,'js','detail-social-controller.js'),'utf8');
   const libraryActions=fs.readFileSync(path.join(root,'js','library-actions-controller.js'),'utf8');
@@ -99,7 +99,8 @@ test('signup uses the auth trigger and collection membership checks are direct',
   assert.match(app,/handle_new_user creates the profile from signup metadata/);
   assert.doesNotMatch(app,/\.from\('profiles'\)[\s\S]{0,80}\.insert\(\{[\s\S]{0,80}id:data\.user\.id/);
   assert.match(detailSocial,/ownQuery=api\.from\('collections'\)[\s\S]{0,400}\.limit\(1\);[\s\S]{0,160}:ownQuery\.eq\('album_id',albumId\);/);
-  assert.match(libraryActions,/\.eq\('album_id',recordModel\.albumId\(record\)\)\s*\.limit\(1\)/);
+  assert.match(libraryActions,/rpc\('move_wishlist_to_collection'/);
+  assert.doesNotMatch(libraryActions,/\.from\('collections'\)[\s\S]{0,600}\.insert\(/);
   assert.doesNotMatch(app,/\.limit\(500\)/);
   assert.doesNotMatch(detailSocial,/\.limit\(500\)/);
   assert.doesNotMatch(libraryActions,/\.limit\(500\)/);
