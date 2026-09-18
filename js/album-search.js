@@ -1548,271 +1548,46 @@ async function saveAlbumFromDiscogs(master,artist,albumTitle,year,coverState,but
             coverUrl=resolvedCover.url||'';
         }
 
-        let albumId=null;
-        const {data:existingAlbums,error:existingAlbumError}=await supabaseClient
-            .from('albums')
-            .select('id')
-            .eq('discogs_master_id',String(masterId))
-            .limit(1);
+        const trackRows=discogsTrackRows(null,finalTracklist).map(function(track){
+            return {
+                disc_side:track.disc_side||'',
+                track_number:track.track_number==null?null:track.track_number,
+                title:track.title||'Okänd låt'
+            };
+        });
 
-        if(existingAlbumError)throw existingAlbumError;
-        if(existingAlbums&&existingAlbums.length){
-            albumId=existingAlbums[0].id;
-
-            // Album rows are shared. Refresh metadata we now know safely.
-            const albumUpdates={};
-
-            if(discogsGenre){
-                albumUpdates.genre=discogsGenre;
+        const {data:saveResult,error:saveError}=await supabaseClient.rpc(
+            'save_album_to_library',
+            {
+                p_destination:isWishlistDestination?'wishlist':'collection',
+                p_discogs_master_id:String(masterId),
+                p_artist_name:discogsArtist,
+                p_album_title:discogsTitle,
+                p_release_year:discogsYear,
+                p_genre:discogsGenre||null,
+                p_cover_url:coverUrl||null,
+                p_cover_source:previewCoverSource||null,
+                p_apple_collection_url:appleCollectionUrl||null,
+                p_tracks:trackRows
             }
+        );
 
-            if(appleCollectionUrl){
-                albumUpdates.apple_collection_url=
-                    appleCollectionUrl;
-            }
+        if(saveError)throw saveError;
 
-            if(
-                previewCoverSource==='apple'&&
-                coverUrl
-            ){
-                albumUpdates.cover_url=coverUrl;
-            }
+        const savedStatus=
+            saveResult&&saveResult.status==='wishlist'
+                ?'wishlist'
+                :'collection';
 
-            if(Object.keys(albumUpdates).length){
-                const {error:albumUpdateError}=
-                    await supabaseClient
-                        .from('albums')
-                        .update(albumUpdates)
-                        .eq('id',albumId);
+        invalidateSearchLibraryState();
+        setSearchResultStatus(button,savedStatus);
 
-                if(albumUpdateError){
-                    console.warn(
-                        'Could not refresh shared album metadata:',
-                        albumUpdateError
-                    );
-                }
-            }
-
-        }
-
-        if(!albumId){
-        let artistId=null;
-
-        const {
-            data:existingArtists,
-            error:artistSearchError
-        }=await supabaseClient
-            .from('artists')
-            .select('id,name')
-            .eq('name',discogsArtist)
-            .limit(1);
-
-        if(artistSearchError){
-            throw artistSearchError;
-        }
-
-        if(existingArtists && existingArtists.length){
-            artistId=existingArtists[0].id;
-        }else{
-            const {
-                data:newArtist,
-                error:newArtistError
-            }=await supabaseClient
-                .from('artists')
-                .insert({
-                    name:discogsArtist
-                })
-                .select('id')
-                .single();
-
-            if(newArtistError){
-                throw newArtistError;
-            }
-
-            artistId=newArtist.id;
-        }
-
-        const {
-            data:newAlbum,
-            error:albumError
-        }=await supabaseClient
-            .from('albums')
-            .insert({
-                artist_id:artistId,
-                title:discogsTitle,
-                release_year:discogsYear,
-                genre:discogsGenre,
-                cover_url:coverUrl,
-                discogs_master_id:String(masterId),
-                apple_collection_url:appleCollectionUrl||null
-            })
-            .select('id')
-            .single();
-
-        if(albumError){
-            throw albumError;
-        }
-
-        albumId=newAlbum.id;
-
-        if(finalTracklist.length){
-            const tracks=discogsTrackRows(albumId,finalTracklist);
-
-            if(tracks.length){
-                const {
-                    error:tracksError
-                }=await supabaseClient
-                    .from('tracks')
-                    .insert(tracks);
-
-                if(tracksError){
-                    throw tracksError;
-                }
-            }
-        }
-        }
-
-        // Album records are shared and remain in the database when a user
-        // removes an album from their collection. Complete an older album
-        // record with any tracks that were previously omitted, including
-        // Discogs sub-tracks, instead of assuming its tracklist is complete.
-        if(albumId&&finalTracklist.length&&existingAlbums&&existingAlbums.length){
-            const incomingTracks=discogsTrackRows(albumId,finalTracklist);
-            const {data:storedTracks,error:storedTracksError}=await supabaseClient
-                .from('tracks')
-                .select('disc_side,track_number,title')
-                .eq('album_id',albumId);
-
-            if(storedTracksError)throw storedTracksError;
-
-            const storedTrackCounts=new Map();
-            (storedTracks||[]).forEach(function(track){
-                const key=[
-                    String(track.disc_side||''),
-                    String(track.track_number==null?'':track.track_number),
-                    String(track.title||'').trim().toLocaleLowerCase()
-                ].join('|');
-                storedTrackCounts.set(key,(storedTrackCounts.get(key)||0)+1);
-            });
-
-            const missingTracks=incomingTracks.filter(function(track){
-                const key=[
-                    String(track.disc_side||''),
-                    String(track.track_number==null?'':track.track_number),
-                    String(track.title||'').trim().toLocaleLowerCase()
-                ].join('|');
-                const count=storedTrackCounts.get(key)||0;
-                if(count){
-                    storedTrackCounts.set(key,count-1);
-                    return false;
-                }
-                return true;
-            });
-
-            if(missingTracks.length){
-                const {error:missingTracksError}=await supabaseClient
-                    .from('tracks')
-                    .insert(missingTracks);
-                if(missingTracksError)throw missingTracksError;
-            }
-        }
-
-        const {
-            data:{
-                user
-            }
-        }=await supabaseClient.auth.getUser();
-
-        if(!user){
-            throw new Error(
-                'Du måste vara inloggad för att lägga till album.'
-            );
-        }
-
-        if(isWishlistDestination){
-            const {data:collectionRows,error:collectionMatchError}=await supabaseClient
-                .from('collections')
-                .select('id')
-                .eq('user_id',user.id)
-                .eq('album_id',albumId)
-                .limit(1);
-
-            if(collectionMatchError)throw collectionMatchError;
-
-            const collectionMatch=!!(collectionRows&&collectionRows.length);
-
-            if(collectionMatch){
-                setSearchResultStatus(button,'collection');
-                return;
-            }
-
-            const {data:lastWishlist,error:lastWishlistError}=await supabaseClient
-                .from('wishlists')
-                .select('sort_order')
-                .eq('user_id',user.id)
-                .order('sort_order',{ascending:false,nullsFirst:false})
-                .limit(1);
-
-            if(lastWishlistError)throw lastWishlistError;
-
-            const nextWishlistSortOrder=lastWishlist&&lastWishlist.length&&lastWishlist[0].sort_order
-                ?lastWishlist[0].sort_order+1
-                :1;
-
-            const {error:wishlistError}=await supabaseClient
-                .from('wishlists')
-                .insert({
-                    user_id:user.id,
-                    album_id:albumId,
-                    cover_url:coverUrl,
-                    discogs_style:discogsGenre||null,
-                    sort_order:nextWishlistSortOrder
-                });
-
-            if(wishlistError&&wishlistError.code!=='23505')throw wishlistError;
-
-            invalidateSearchLibraryState();
-            setSearchResultStatus(button,'wishlist');
+        if(savedStatus==='wishlist'){
             if(window.libraryView==='wishlist')await window.loadCollection();
             return;
         }
 
-        const {data:lastCollection,error:lastCollectionError}=await supabaseClient
-            .from('collections')
-            .select('sort_order')
-            .eq('user_id',user.id)
-            .order('sort_order',{ascending:false})
-            .limit(1);
-        
-        if(lastCollectionError){
-            throw lastCollectionError;
-        }
-        
-        const nextSortOrder=
-            lastCollection&&lastCollection.length
-                ?lastCollection[0].sort_order+1
-                :1;
-        
-        const {
-            error:collectionError
-        }=await supabaseClient
-            .from('collections')
-            .insert({
-                user_id:user.id,
-                album_id:albumId,
-                cover_url:coverUrl,
-                discogs_style:discogsGenre||null,
-                sort_order:nextSortOrder
-            });
-        
-        if(collectionError){
-            throw collectionError;
-        }
-
-        invalidateSearchLibraryState();
-        setSearchResultStatus(button,'collection');
-        
-        await window.loadCollection();
+        if(!isWishlistDestination)await window.loadCollection();
 
     }catch(error){
         console.error(
