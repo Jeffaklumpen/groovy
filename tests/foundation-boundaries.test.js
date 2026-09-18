@@ -47,3 +47,19 @@ test('Supabase rebuild baseline is kept outside managed migrations',()=>{
   assert.match(sql,/enable row level security/i);
   assert.match(sql,/profile-images/);
 });
+
+test('CI dependencies are reproducible and current action runtimes are used',()=>{
+  const lock=JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+  const testWorkflow=fs.readFileSync('.github/workflows/test.yml','utf8');
+  const e2eWorkflow=fs.readFileSync('.github/workflows/e2e.yml','utf8');
+
+  assert.equal(lock.lockfileVersion,3);
+  assert.equal(lock.packages['node_modules/@playwright/test'].version,'1.63.0');
+  assert.match(testWorkflow,/actions\/checkout@v7/);
+  assert.match(testWorkflow,/actions\/setup-node@v7/);
+  assert.match(e2eWorkflow,/actions\/checkout@v7/);
+  assert.match(e2eWorkflow,/actions\/setup-node@v7/);
+  assert.match(e2eWorkflow,/npm ci --no-audit --no-fund/);
+  assert.doesNotMatch(e2eWorkflow,/npm install --no-audit --no-fund/);
+});
+
