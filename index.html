@@ -25,8 +25,8 @@
   <title>GroovyShelves – Track Your Vinyl Collection</title>
   <link rel="stylesheet" href="/css/base-library.css?v=2">
   <link rel="stylesheet" href="/css/search-modals.css?v=3">
-  <link rel="stylesheet" href="/css/copy-marketplace.css?v=2">
-  <link rel="stylesheet" href="/css/library-shell.css?v=4">
+  <link rel="stylesheet" href="/css/copy-marketplace.css?v=3">
+  <link rel="stylesheet" href="/css/library-shell.css?v=5">
   <link rel="stylesheet" href="/css/shelves-streaming.css?v=3">
   <link rel="stylesheet" href="/css/album-detail-extras.css?v=1">
   <link rel="stylesheet" href="/css/landing-social.css?v=3">
@@ -495,6 +495,18 @@
     </div>
 </div>
 
+<div id="clearPressingModal" class="add-album-modal" role="dialog" aria-modal="true" aria-labelledby="clearPressingModalTitle">
+    <div class="add-album-box remove-album-box">
+        <h2 id="clearPressingModalTitle">Clear pressing?</h2>
+        <p id="clearPressingMessage">Clear the saved pressing details for this record?</p>
+
+        <div class="remove-album-buttons">
+            <button id="cancelClearPressing" type="button">Cancel</button>
+            <button id="confirmClearPressing" type="button">Clear pressing</button>
+        </div>
+    </div>
+</div>
+
 <div id="statisticsPage" class="statistics-page" role="dialog" aria-modal="true" aria-labelledby="statisticsPageTitle" aria-hidden="true">
   <div class="statistics-shell">
     <div class="statistics-toolbar">
@@ -543,7 +555,7 @@
 <script src="/js/detail-layout-controller.js?v=1"></script>
 <script src="/js/pressing-view.js?v=2"></script>
 <script src="/js/pressing-picker.js?v=1"></script>
-<script src="/js/pressing-controller.js?v=3"></script>
+<script src="/js/pressing-controller.js?v=4"></script>
 <script src="/js/rating-core.js?v=1"></script>
 <script src="/js/album-rating-controller.js?v=9"></script>
 <script src="/js/marketplace-core.js?v=2"></script>
@@ -562,7 +574,7 @@
 <script src="/js/album-search.js?v=3"></script>
 <script src="/js/wikipedia-service.js?v=1"></script>
 <script src="/js/wikipedia-about-controller.js?v=1"></script>
-<script src="/js/app.js?v=178"></script>
+<script src="/js/app.js?v=179"></script>
 <script src="/js/detail-enhancements-v2.js?v=14"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=13"></script>
