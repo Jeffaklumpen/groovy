@@ -1027,8 +1027,9 @@ async function searchDiscogs(query){
 
             const wishlistButton=
                 div.querySelector('.mb-wishlist-button');
+            let resultStatus=isAdded?'collection':(isWishlisted?'wishlist':'');
 
-            async function saveFromPreview(destination,button){
+            async function saveResult(destination,button){
                 const status=await saveAlbumFromDiscogs(
                     master,
                     artist,
@@ -1038,7 +1039,10 @@ async function searchDiscogs(query){
                     button,
                     destination
                 );
-                if(status)setSearchResultStatus(addButton,status);
+                if(status){
+                    resultStatus=status;
+                    setSearchResultStatus(addButton,status);
+                }
                 return status;
             }
 
@@ -1057,9 +1061,9 @@ async function searchDiscogs(query){
                     year:year,
                     genre:genreValues.join(' · '),
                     coverState:coverState,
-                    isAdded:isAdded,
-                    isWishlisted:isWishlisted,
-                    save:saveFromPreview
+                    isAdded:resultStatus==='collection',
+                    isWishlisted:resultStatus==='wishlist',
+                    save:saveResult
                 });
             }
 
@@ -1083,33 +1087,17 @@ async function searchDiscogs(query){
 
             addButton.addEventListener(
                 'click',
-                function(event){
+                async function(event){
                     event.stopPropagation();
-
-                    addAlbumFromDiscogs(
-                        master,
-                        artist,
-                        albumTitle,
-                        year,
-                        coverState,
-                        addButton
-                    );
+                    await saveResult('collection',addButton);
                 }
             );
 
             wishlistButton.addEventListener(
                 'click',
-                function(event){
+                async function(event){
                     event.stopPropagation();
-
-                    addAlbumToWishlistFromDiscogs(
-                        master,
-                        artist,
-                        albumTitle,
-                        year,
-                        coverState,
-                        wishlistButton
-                    );
+                    await saveResult('wishlist',wishlistButton);
                 }
             );
 
