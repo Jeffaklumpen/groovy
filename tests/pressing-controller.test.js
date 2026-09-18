@@ -85,7 +85,8 @@ function makeApi(updateResult){
   return {api,updates,invokes};
 }
 
-function createHarness(record){
+function createHarness(record,options){
+  options=options||{};
   pickerInstances.length=0;
   const elements={
     root:makeElement(),content:makeElement(),toggle:makeElement(),summary:makeElement(),saved:makeElement(),
@@ -109,7 +110,8 @@ function createHarness(record){
     document:{body:{style:{}}},
     elements,
     getRecords:()=>[record],
-    getViewedUserId:()=>null,
+    getViewedUserId:()=>Object.prototype.hasOwnProperty.call(options,'viewedUserId')?options.viewedUserId:null,
+    getViewedUsername:()=>options.viewedUsername||'',
     getLibraryView:()=> 'collection',
     renderGrid:()=>{renderCount++;}
   });
@@ -230,10 +232,17 @@ test('picker receives named record-model accessors and controller owns open/clos
 });
 
 
+test('pressing heading uses viewed collector username dynamically',()=>{
+  const record={artist:'Artist',title:'Album',albumId:'album-1',entryId:'entry-1',masterId:'master-1',pressing:{country:'Sweden'}};
+  const h=createHarness(record,{viewedUserId:'user-2',viewedUsername:'Jeff'});
+  h.controller.render(0);
+  assert.equal(h.elements.title.textContent,"Jeff's Pressing");
+});
+
 test('pressing heading source uses viewed collector username outside own collection',()=>{
   const fs=require('node:fs');
   const path=require('node:path');
   const source=fs.readFileSync(path.join(__dirname,'..','js','pressing-controller.js'),'utf8');
   assert.match(source,/getViewedUsername/);
-  assert.match(source,/\+"'s pressing"\)/);
+  assert.match(source,/\+"'s Pressing"\)/);
 });
