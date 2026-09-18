@@ -27,7 +27,7 @@ test('persisted Apple artwork is used before the visible search result render',(
   const render=source.indexOf("albumSearchResults.innerHTML='';",lookup);
   assert.ok(lookup>=0,'visible search results should load persisted artwork');
   assert.ok(render>lookup,'persisted artwork should resolve before the visible results are rendered');
-  assert.match(source,/\.from\('albums'\)[\s\S]*apple_collection_url[\s\S]*cover_url/);
+  assert.match(source,/\.from\('albums'\)[\s\S]*cover_url[\s\S]*apple_collection_url/);
   assert.match(source,/cachedAppleAlbumFromRow[\s\S]*100x100bb/);
   assert.match(source,/enrichSearchResultsWithApple\([\s\S]*searchResults/);
 });
