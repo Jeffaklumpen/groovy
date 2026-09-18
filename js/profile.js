@@ -2,6 +2,8 @@
   'use strict';
 
   if(typeof supabaseClient==='undefined')return;
+  var Router=window.GroovyRouter;
+  if(!Router)throw new Error('GroovyRouter must load before profile.js');
 
   var profileMenu=document.getElementById('profileMenu');
   var myCollectionButton=document.getElementById('myCollectionButton');
@@ -432,11 +434,6 @@
     '</section>';
   }
 
-  function dispatchRouteChange(){
-    try{window.dispatchEvent(new PopStateEvent('popstate',{state:history.state}));}
-    catch(error){window.dispatchEvent(new Event('popstate'));}
-  }
-
   function navigate(url){
     settingsPage.classList.remove('visible');
     settingsPage.setAttribute('aria-hidden','true');
@@ -444,8 +441,7 @@
     publicPage.classList.remove('visible');
     publicPage.setAttribute('aria-hidden','true');
     document.body.classList.remove('collector-profile-open');
-    history.pushState({},'',url);
-    dispatchRouteChange();
+    return Router.navigate(url);
   }
 
   async function renderPublicProfile(username){
@@ -665,7 +661,7 @@
       if(typeof window.updateAuthUI==='function')window.updateAuthUI();
 
       if(oldUsername!==username&&publicProfileUsernameFromPath(window.location.pathname)){
-        history.replaceState({},'', '/profile/'+encodeURIComponent(username));
+        Router.replace('/profile/'+encodeURIComponent(username),{}, {render:false});
       }
       renderPublicProfile(username);
     }catch(error){
@@ -786,14 +782,13 @@
     var username=result.data&&result.data.username?result.data.username:(user.user_metadata&&user.user_metadata.username)||'';
     if(!username)return;
     publicProfileOpenedWithHistory=true;
-    history.pushState({},'', '/profile/'+encodeURIComponent(username));
-    syncRoute();
+    return Router.navigate('/profile/'+encodeURIComponent(username));
   }
 
   function closePublicProfile(){
     if(publicProfileOpenedWithHistory){
       publicProfileOpenedWithHistory=false;
-      history.back();
+      Router.back();
       return;
     }
     var username=state.publicProfile&&state.publicProfile.username?state.publicProfile.username:publicProfileUsernameFromPath(window.location.pathname);
@@ -860,7 +855,6 @@
   removePhotoButton.addEventListener('click',removeAvatar);
   deleteButton.addEventListener('click',deleteAccount);
 
-  window.addEventListener('popstate',syncRoute);
   window.addEventListener('groovy-route-change',syncRoute);
   supabaseClient.auth.onAuthStateChange(function(){setTimeout(syncRoute,0);});
 
