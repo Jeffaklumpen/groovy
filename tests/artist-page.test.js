@@ -15,6 +15,7 @@ test('artist page exposes the requested profile information',()=>{
   assert.match(html,/id="artistPage"/);
   assert.match(view,/artist-photo-shell/);
   assert.match(view,/artist-genres/);
+  assert.match(view,/concat\(profile\.genres\|\|\[\],overview\.genres\|\|\[\]\)/);
   assert.match(view,/Current members/);
   assert.match(view,/Past members/);
   assert.match(view,/Main Discography/);

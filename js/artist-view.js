@@ -95,7 +95,7 @@
       var wiki=data.wikipedia||null;
       var nav=data.navigation||{};
       var genres=[];
-      [].concat(overview.genres||[],profile.genres||[]).forEach(function(genre){
+      [].concat(profile.genres||[],overview.genres||[]).forEach(function(genre){
         var value=String(genre||'').trim();
         if(!value)return;
         if(genres.some(function(existing){return existing.toLowerCase()===value.toLowerCase();}))return;

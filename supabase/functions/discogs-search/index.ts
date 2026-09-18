@@ -360,6 +360,7 @@ export default {
           ? []
           : (Array.isArray(artistResult.data?.results) ? artistResult.data.results : [])
 
+        const seenArtistNames=new Set<string>()
         const artists = artistResults
           .map((item: any)=>({
             id:Number(item?.id)||null,
@@ -368,6 +369,12 @@ export default {
           }))
           .filter((item: any)=>item.id && item.name && item.score>0)
           .sort((left: any,right: any)=>right.score-left.score || left.name.localeCompare(right.name))
+          .filter((item: any)=>{
+            const key=normalizeIdentity(item.name)
+            if (!key || seenArtistNames.has(key)) return false
+            seenArtistNames.add(key)
+            return true
+          })
           .slice(0,3)
           .map(({id,name}: any)=>({id,name}))
 
