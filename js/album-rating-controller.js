@@ -127,11 +127,9 @@
       return map;
     }
 
-    function renderDetail(index){
-      if(!detailElement)return;
-      var records=getRecords();
-      var record=records[index];
-      if(!record)return;
+    function renderRecord(record,index){
+      if(!detailElement||!record)return;
+      var interactive=Number.isInteger(index)&&index>=0;
 
       var ownRating=ratingCore.clamp(recordModel.ownRating(record));
       var communityAverage=ratingCore.clamp(recordModel.communityRating(record));
@@ -142,7 +140,7 @@
       detailElement.innerHTML='<div class="rating-panels">'+
         '<section class="rating-panel rating-panel-your">'+
           '<div class="rating-panel-label"><span class="rating-panel-icon rating-panel-icon-user">'+personIcon+'</span><span>Your Rating</span></div>'+
-          '<div class="groovy-rating-value-row">'+renderDetailStars(ownRating,true)+renderScore(ownRating)+'</div>'+
+          '<div class="groovy-rating-value-row">'+renderDetailStars(ownRating,interactive)+renderScore(ownRating)+'</div>'+
           '<div class="rating-panel-footer">'+renderOwnFooter(ownRating)+'</div>'+
         '</section>'+
         '<section class="rating-panel rating-panel-community">'+
@@ -164,14 +162,25 @@
         ratingButtons[r].addEventListener('click',function(event){
           event.preventDefault();
           event.stopPropagation();
-          save(index,parseInt(this.getAttribute('data-rating'),10));
+          if(interactive)save(index,parseInt(this.getAttribute('data-rating'),10));
         });
         ratingButtons[r].addEventListener('touchend',function(event){
           event.preventDefault();
           event.stopPropagation();
-          save(index,parseInt(this.getAttribute('data-rating'),10));
+          if(interactive)save(index,parseInt(this.getAttribute('data-rating'),10));
         },{passive:false});
       }
+    }
+
+    function renderDetail(index){
+      var records=getRecords();
+      var record=records[index];
+      if(!record)return;
+      renderRecord(record,index);
+    }
+
+    function renderPreview(record){
+      renderRecord(record,null);
     }
 
     async function save(index,rating){
@@ -244,6 +253,7 @@
     return Object.freeze({
       loadData:loadData,
       renderDetail:renderDetail,
+      renderPreview:renderPreview,
       save:save,
       renderStaticStarMeter:renderStaticStarMeter,
       renderGridRating:renderGridRating,
