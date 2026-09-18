@@ -397,6 +397,7 @@ export default {
           const linkedLabel=link?wikipediaText(link[1]):''
           const fullLabel=wikipediaText(container)
             .replace(/\s*\[[^\]]+\]\s*$/,'')
+            .replace(/\s+Released\s*:\s*.*$/i,'')
             .trim()
           const title=wikipediaDisplayTitle(linkedLabel||fullLabel||articleTitle)
           if (!title || /^(title|album|studio albums?)$/i.test(title)) return
@@ -925,7 +926,7 @@ export default {
 
         const { data:existingRows,error:existingError } = await admin
           .from('apple_artwork_cache')
-          .select('discogs_master_id')
+          .select('discogs_master_id,apple_collection_id')
           .in('discogs_master_id',masterIds)
 
         if (existingError) {
@@ -933,9 +934,43 @@ export default {
           return Response.json({ error: 'Could not inspect artwork cache' }, { status: 500 })
         }
 
+        // A single Apple collection must not be reused for two different albums
+        // in the same Main Discography. Self-titled artists can otherwise cause
+        // distinct Discogs masters to receive the same cover.
+        const collectionOwners=new Map<string,string[]>()
+        ;(Array.isArray(existingRows)?existingRows:[]).forEach((row: any)=>{
+          const collectionId=String(row?.apple_collection_id||'')
+          const master=String(row?.discogs_master_id||'')
+          if (!collectionId||!master) return
+          if (!collectionOwners.has(collectionId))collectionOwners.set(collectionId,[])
+          collectionOwners.get(collectionId)!.push(master)
+        })
+
+        const duplicateMasterIds=new Set<string>()
+        collectionOwners.forEach((masters: string[])=>{
+          if (masters.length<2)return
+          masters.forEach((master)=>duplicateMasterIds.add(master))
+        })
+
+        if (duplicateMasterIds.size) {
+          const { error:duplicateDeleteError } = await admin
+            .from('apple_artwork_cache')
+            .delete()
+            .in('discogs_master_id',Array.from(duplicateMasterIds).map(Number))
+          if (duplicateDeleteError) {
+            console.warn('Could not clear duplicate Apple album matches',duplicateDeleteError)
+          }
+        }
+
         const existingIds=new Set(
           (Array.isArray(existingRows)?existingRows:[])
             .map((row: any)=>String(row.discogs_master_id||''))
+            .filter((master: string)=>master&&!duplicateMasterIds.has(master))
+        )
+        const usedAppleCollectionIds=new Set(
+          (Array.isArray(existingRows)?existingRows:[])
+            .filter((row: any)=>!duplicateMasterIds.has(String(row?.discogs_master_id||'')))
+            .map((row: any)=>String(row?.apple_collection_id||''))
             .filter(Boolean)
         )
 
@@ -1026,6 +1061,7 @@ export default {
         const matches:any[]=[]
         missing.forEach((row: any)=>{
           const best=appleAlbums
+            .filter((item: any)=>!usedAppleCollectionIds.has(String(item.collectionId||'')))
             .map((item: any)=>({
               item,
               score:appleAlbumScore(
@@ -1045,6 +1081,7 @@ export default {
           if (!/^https:\/\/(?:music|itunes)\.apple\.com\//i.test(collectionUrl)) return
           if (!/^https:\/\/[^/]*mzstatic\.com\//i.test(artworkUrl)) return
 
+          usedAppleCollectionIds.add(String(best.item.collectionId||''))
           matches.push({
             discogs_master_id:Number(row.discogs_master_id),
             artist_name:String(row.artist_name||resolvedArtistName).trim(),
@@ -1330,28 +1367,58 @@ export default {
             resolvedArtistName
           ).concat(wikipediaAlbumKeys(album?.title,resolvedArtistName))
 
+          function addCandidate(row: any) {
+            const identity=String(row?.mbid||row?.discogs_master_id||'')
+            if (!identity||seen.has(identity)) return
+            seen.add(identity)
+            candidates.push(row)
+          }
+
           keys.forEach((key: string)=>{
-            ;(byTitle.get(key)||[]).forEach((row: any)=>{
-              const identity=String(row?.mbid||row?.discogs_master_id||'')
-              if (!identity||seen.has(identity)) return
-              seen.add(identity)
-              candidates.push(row)
-            })
+            ;(byTitle.get(key)||[]).forEach(addCandidate)
           })
 
           const wantedYear=Number(album?.year)||0
+
+          // Wikipedia often uses a shortened display title while MusicBrainz
+          // keeps a subtitle (for example "Tales of Mystery and Imagination"
+          // vs "...: Edgar Allan Poe"). If exact normalized keys found nothing,
+          // allow a contained-title match only for direct catalog rows with the
+          // same release year and no compilation/live/remix secondary type.
+          if (!candidates.length) {
+            const wantedTitles=keys.filter((key: string)=>key.length>=8)
+            catalog.forEach((row: any)=>{
+              if (row?.match_type!=='direct') return
+              const secondary=String(row?.secondary_types||'').toLowerCase()
+              if (/compilation|live|remix|dj-mix|mixtape/.test(secondary)) return
+
+              const rowYear=Number(row?.first_release_year)||0
+              if (wantedYear&&rowYear&&Math.abs(wantedYear-rowYear)>1) return
+
+              const rowKey=normalizeIdentity(row?.album_title)
+              const titleMatches=wantedTitles.some((wanted: string)=>
+                rowKey===wanted ||
+                (rowKey.length>=8&&wanted.length>=8&&
+                  (rowKey.includes(wanted)||wanted.includes(rowKey)))
+              )
+              if (titleMatches)addCandidate(row)
+            })
+          }
+
           return candidates
             .map((row: any)=>{
               const secondary=String(row?.secondary_types||'').toLowerCase()
               const rowYear=Number(row?.first_release_year)||0
-              let score=0
+              const rowKey=normalizeIdentity(row?.album_title)
+              const exactTitle=keys.includes(rowKey)
+              let score=exactTitle?120:70
               if (wantedYear&&rowYear===wantedYear) score+=80
               else if (wantedYear&&rowYear) {
-                score-=Math.min(Math.abs(wantedYear-rowYear),20)
+                score-=Math.min(Math.abs(wantedYear-rowYear)*20,80)
               }
               if (!secondary) score+=20
               else if (secondary==='soundtrack') score+=15
-              if (/compilation|live|remix|dj-mix|mixtape/.test(secondary)) score-=60
+              if (/compilation|live|remix|dj-mix|mixtape/.test(secondary)) score-=100
               return {row,score}
             })
             .sort((left: any,right: any)=>right.score-left.score)[0]?.row||null
