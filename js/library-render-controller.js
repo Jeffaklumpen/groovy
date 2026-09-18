@@ -89,6 +89,11 @@ function create(options){
          '<strong>'+escapeHtml(cardShelfName)+'</strong>'+
        '</span>'
       :'';
+    var canSelect=state.viewedUserId===null&&!isWishlist;
+    var entryId=String(recordModel.entryId(record)||'');
+    var selectToggle=canSelect
+      ?'<button class="record-select-toggle" type="button" data-record-select data-record-title="'+escapeHtml(recordModel.title(record))+'" aria-pressed="false" aria-label="Select '+escapeHtml(recordModel.title(record))+'"><span aria-hidden="true">✓</span></button>'
+      :'';
     var removeButton=state.viewedUserId===null
       ?(isWishlist
         ?'<button class="wishlist-remove-button" type="button" aria-label="Remove from wishlist">×</button>'
@@ -101,9 +106,9 @@ function create(options){
          '</div>')
       :'';
 
-    var html='<article class="record '+(isWishlist?'wishlist-record ':'')+(className||'')+'" draggable="false" data-index="'+recordIndex+'">'+
+    var html='<article class="record '+(isWishlist?'wishlist-record ':'')+(className||'')+'" draggable="false" data-index="'+recordIndex+'" data-entry-id="'+escapeHtml(entryId)+'">'+
       '<div class="record-card-topbar"><span class="number">'+displayNumber(record,state)+'</span>'+cardShelfStatus+removeButton+'</div>'+
-      '<div class="cover-wrapper">'+
+      '<div class="cover-wrapper">'+selectToggle+
         '<img class="cover" draggable="false" loading="lazy" decoding="async" src="" data-src="'+escapeHtml(smallSrc)+'" alt="'+escapeHtml(recordModel.artist(record)+' - '+recordModel.title(record))+'">'+
       '</div>'+
       '<div class="info">'+
@@ -256,6 +261,7 @@ function create(options){
     }
 
     if(elements.addAlbumButton)elements.addAlbumButton.style.display=isViewingProfile?'none':'';
+    if(elements.selectButton)elements.selectButton.hidden=!(isOwnCollection&&!isWishlist&&state.hasAuthenticatedUser&&records.length>0);
     if(elements.filterButton&&elements.filterButton.parentElement){
       elements.filterButton.parentElement.style.display=(isWishlist||showLoggedOutLanding)?'none':'';
     }
