@@ -97,7 +97,7 @@ function create(options){
 
     var previousScroll=scroll.scrollLeft;
     scroll.innerHTML=View.stripMarkup({
-      shelves:getShelves(),records:getRecords(),activeShelfId:active,
+      shelves:getShelves(),records:getRecords(),getShelfId:Record.shelfId,activeShelfId:active,
       maxShelves:maxShelves,showCreate:viewedUserId()===null,colors:colors
     });
     scroll.scrollLeft=previousScroll;
