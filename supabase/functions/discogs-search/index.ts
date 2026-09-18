@@ -1750,7 +1750,8 @@ export default {
         }
 
         // Shared discography writes are anchored to the trusted Discogs artist ID.
-        // Wikipedia alone decides which releases belong to Main Discography.
+        // Wikipedia proposes the curated core catalogue; Discogs then verifies
+        // that each persisted Main Discography entry has an actual Vinyl master.
         // The persisted cache is intentionally checked before any external lookup:
         // once one user has verified an artist, later users can render it immediately.
         const [profileStateResult,localArtistResult]=await Promise.all([
