@@ -116,7 +116,7 @@ function commitDomOrder(){
       reorderedPage.push(record);
     }
 
-    var pageStart=(libraryPage-1)*RECORDS_PER_PAGE;
+    var pageStart=(libraryPage-1)*recordsPerPage;
 
     if(libraryView==='wishlist'||activeShelfId==='all'){
       var orderedList=records

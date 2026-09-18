@@ -4,6 +4,7 @@ const fs=require('node:fs');
 
 test('legacy carousel runtime and styles stay removed',()=>{
   const app=fs.readFileSync('js/app.js','utf8');
+  const gridSort=fs.readFileSync('js/grid-sort-controller.js','utf8');
   const css=fs.readFileSync('css/style.css','utf8');
   const html=fs.readFileSync('index.html','utf8');
 
@@ -21,5 +22,5 @@ test('legacy carousel runtime and styles stay removed',()=>{
 
   assert.equal(/\.carousel(?:-|\{)/.test(css),false,'carousel CSS should remain removed');
   assert.equal(/carousel/i.test(html),false,'carousel controls should not exist in the document');
-  assert.match(app,/if\(selectedRating!=='all'\|\|librarySearchQuery\|\|librarySort!=='added'\)/);
+  assert.match(gridSort,/if\(selectedRating!=='all'\|\|librarySearchQuery\|\|librarySort!=='added'\)/);
 });
