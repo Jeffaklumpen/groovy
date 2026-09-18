@@ -93,7 +93,9 @@ function createHarness(record){
     pressingLoading:makeElement(),pressingForm:makeElement(),pressingError:makeElement(),
     pressingCountry:makeElement(),pressingYear:makeElement(),pressingLabel:makeElement(),
     pressingCatalogNumber:makeElement(),pressingMatrixSearch:makeElement(),pressingMatrixQuery:makeElement(),
-    pressingMatrixSearchButton:makeElement(),pressingMatches:makeElement()
+    pressingMatrixSearchButton:makeElement(),pressingMatches:makeElement(),
+    clearPressingModal:makeElement(),clearPressingMessage:makeElement(),
+    cancelClearPressing:makeElement(),confirmClearPressing:makeElement()
   };
   elements.albumOverlay.className='album-overlay visible';
   const media=makeElement();media.value='NM';
@@ -109,8 +111,7 @@ function createHarness(record){
     getRecords:()=>[record],
     getViewedUserId:()=>null,
     getLibraryView:()=> 'collection',
-    renderGrid:()=>{renderCount++;},
-    confirm:()=>true
+    renderGrid:()=>{renderCount++;}
   });
   return {controller,elements,media,sleeve,apiData,get renderCount(){return renderCount;},picker:pickerInstances[0]};
 }
@@ -149,6 +150,25 @@ test('saves a selected Discogs pressing and all matrix sides',async()=>{
   assert.equal(record.pressing.matchStatus,'discogs');
   assert.equal(h.picker.closeCalls,1);
   assert.equal(h.elements.saved.textContent,'Saved');
+});
+
+test('clear pressing opens the Groovy confirmation modal before changing data',async()=>{
+  const record={
+    artist:'Artist',title:'Album',albumId:'album-1',entryId:'entry-1',masterId:'master-1',
+    pressing:{discogsReleaseId:123,country:'Sweden',mediaCondition:'NM',sleeveCondition:'VG+'}
+  };
+  const h=createHarness(record);
+
+  assert.equal(h.controller.requestClearPressing(0),true);
+  assert.equal(h.elements.clearPressingModal.style.display,'flex');
+  assert.match(h.elements.clearPressingMessage.textContent,/Record and sleeve condition will be kept/);
+  assert.equal(h.apiData.updates.length,0,'opening the modal must not clear data');
+
+  await h.elements.confirmClearPressing.listeners.click();
+  assert.equal(h.apiData.updates.length,1);
+  assert.equal(h.elements.clearPressingModal.style.display,'none');
+  assert.equal(h.elements.confirmClearPressing.disabled,false);
+  assert.equal(h.elements.confirmClearPressing.textContent,'Clear pressing');
 });
 
 test('clears saved pressing metadata without removing condition grades',async()=>{
