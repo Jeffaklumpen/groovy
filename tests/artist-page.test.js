@@ -294,11 +294,15 @@ test('artist overview preserves discography verification state and hides uncheck
 test('discography verifier always resolves the pending UI state even when verification falls back',()=>{
   const controller=fs.readFileSync('js/artist-controller.js','utf8');
   const edge=fs.readFileSync('supabase/functions/discogs-search/index.ts','utf8');
+  const ensureStart=controller.indexOf('function ensureDiscographyCached');
+  const ensureEnd=controller.indexOf('function ensureArtworkCached',ensureStart);
+  const ensureBlock=controller.slice(ensureStart,ensureEnd);
   const verifyStart=controller.indexOf('function verifyDiscographyInBackground');
   const verifyEnd=controller.indexOf('function loadWikipediaInBackground',verifyStart);
   const verifyBlock=controller.slice(verifyStart,verifyEnd);
-  assert.match(verifyBlock,/loadOverview\(name,true\)/);
-  assert.doesNotMatch(verifyBlock,/!result\.data\.verified\|\|!result\.data\.changed/);
+  assert.match(ensureBlock,/loadOverview\(cleanName,true\)/);
+  assert.match(verifyBlock,/currentOverview=payload\.overview/);
+  assert.doesNotMatch(ensureBlock,/!result\.data\.verified\|\|!result\.data\.changed/);
   assert.match(edge,/reason:'wikidata_identity_missing'/);
   assert.match(edge,/discography_source:'fallback'/);
 });
