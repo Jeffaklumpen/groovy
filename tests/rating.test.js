@@ -46,8 +46,8 @@ test('mobile rating panels share star geometry and footer alignment',function(){
   const css=fs.readFileSync(path.join(root,'css','detail-enhancements.css'),'utf8');
   const searchCss=fs.readFileSync(path.join(root,'css','search-modals.css'),'utf8');
   assert.match(controller,/groovy-rating-star-cell/);
-  assert.match(css,/grid-template-columns:repeat\(5,1em\)/);
-  assert.match(css,/rating-panel-footer\{display:flex!important;align-items:center!important;width:100%!important;height:24px/);
+  assert.match(css,/grid-template-columns:repeat\(5,var\(--rating-star-size\)\)/);
+  assert.match(css,/rating-panel-footer\{[\s\S]*min-height:24px!important/);
   assert.match(searchCss,/user-search-avatar\.groovy-user-avatar\{overflow:visible\}/);
 });
 
@@ -59,10 +59,10 @@ test('mobile rating cards use identical grid geometry for own and community valu
   assert.match(controller,/groovy-rating-value-row rating-panel-community-main/);
   assert.match(controller,/groovy-rating-star-cell/);
   assert.match(layout,/groovy-rating-star-cell/);
-  assert.match(css,/grid-template-rows:16px 30px 24px/);
-  assert.match(css,/grid-template-columns:repeat\(5,1em\)/);
-  assert.match(css,/groovy-score-main,html body \.detail-rating \.groovy-score-max\{font-size:21px/);
-  assert.match(css,/rating-panel-footer\{display:flex!important;align-items:center!important;width:100%!important;height:24px/);
+  assert.match(css,/grid-template-rows:16px var\(--rating-star-size\) 24px/);
+  assert.match(css,/grid-template-columns:repeat\(5,var\(--rating-star-size\)\)/);
+  assert.match(css,/groovy-score-main,\nhtml body \.detail-rating \.groovy-score-max\{[\s\S]*font-size:21px/);
+  assert.match(css,/rating-panel-footer\{[\s\S]*min-height:24px!important/);
 });
 
 

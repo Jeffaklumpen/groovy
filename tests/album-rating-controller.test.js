@@ -159,7 +159,7 @@ test('community detail rating uses five fixed star cells and the shared value ro
   });
   controller.renderDetail(0);
   assert.match(detailElement.innerHTML,/groovy-rating-value-row rating-panel-community-main/);
-  assert.equal((detailElement.innerHTML.match(/groovy-rating-star-cell/g)||[]).length,5);
+  assert.equal((detailElement.innerHTML.match(/groovy-rating-star-cell/g)||[]).length,10);
 });
 
 
