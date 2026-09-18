@@ -58,12 +58,13 @@ function stripMarkup(options){
   var activeShelfId=options.activeShelfId==null?'all':options.activeShelfId;
   var maxShelves=Number(options.maxShelves)||10;
   var colors=options.colors;
+  var getShelfId=options.getShelfId;
   var html='<button class="shelf-chip '+(activeShelfId==='all'?'active':'')+'" type="button" data-shelf-id="all">'+
-    '<span class="shelf-chip-icon" aria-hidden="true">'+Core.iconSvg('record')+'</span><span class="shelf-chip-copy"><strong>All Records</strong><small>'+Core.recordCount(records,'all')+' records</small></span></button>';
+    '<span class="shelf-chip-icon" aria-hidden="true">'+Core.iconSvg('record')+'</span><span class="shelf-chip-copy"><strong>All Records</strong><small>'+Core.recordCount(records,'all',getShelfId)+' records</small></span></button>';
 
   shelves.forEach(function(shelf){
     html+='<button class="shelf-chip shelf-chip-custom '+(String(activeShelfId)===String(shelf.id)?'active':'')+'" type="button" data-shelf-id="'+esc(shelf.id)+'" style="'+Core.colorStyle(shelf,colors)+'">'+
-      '<span class="shelf-chip-icon" aria-hidden="true">'+Core.iconSvg(shelf.icon)+'</span><span class="shelf-chip-copy"><strong>'+esc(shelf.name)+'</strong><small>'+Core.recordCount(records,shelf.id)+' records</small></span></button>';
+      '<span class="shelf-chip-icon" aria-hidden="true">'+Core.iconSvg(shelf.icon)+'</span><span class="shelf-chip-copy"><strong>'+esc(shelf.name)+'</strong><small>'+Core.recordCount(records,shelf.id,getShelfId)+' records</small></span></button>';
   });
 
   if(options.showCreate){
