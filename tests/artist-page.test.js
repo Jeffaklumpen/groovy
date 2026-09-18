@@ -191,7 +191,7 @@ test('verified artist discography resolves trusted identity and requires Discogs
   assert.match(block,/verifyDiscogsVinylMasters/);
   assert.match(block,/const catalogResult=await admin/);
   assert.doesNotMatch(block,/wikidataStudioAlbums\(resolvedWikidataId\)/);
-  assert.match(block,/source:'wikipedia_vinyl'/);
+  assert.match(block,/source:'wikipedia'/);
   assert.match(block,/discography_source:'vinyl'/);
   assert.match(block,/discogs_master_id:master/);
   assert.doesNotMatch(block,/function wikidataRows/);
@@ -653,7 +653,7 @@ test('Wikipedia proposes Main Discography candidates and Discogs Vinyl verificat
   assert.match(block,/Wikipedia proposes the curated core catalogue/);
   assert.match(block,/Discogs then verifies/);
   assert.match(block,/verifyDiscogsVinylMasters/);
-  assert.match(block,/source:'wikipedia_vinyl'/);
+  assert.match(block,/source:'wikipedia'/);
   assert.match(block,/discography_source:'vinyl'/);
   assert.match(block,/const catalogResult=await admin/);
   assert.doesNotMatch(block,/wikidataStudioAlbums\(resolvedWikidataId\)/);
