@@ -22,13 +22,12 @@ test('findById compares shelf ids as strings',()=>{
   assert.equal(Shelf.findById(shelves,'3'),null);
 });
 
-test('recordCount handles all shelves and positional shelf ids',()=>{
-  const a=new Array(14).fill('');a[13]='shelf-a';
-  const b=new Array(14).fill('');b[13]='shelf-b';
-  const c=new Array(14).fill('');c[13]='shelf-a';
-  assert.equal(Shelf.recordCount([a,b,c],'all'),3);
-  assert.equal(Shelf.recordCount([a,b,c],'shelf-a'),2);
-  assert.equal(Shelf.recordCount([a,b,c],'missing'),0);
+test('recordCount uses the supplied shelf accessor instead of record shape',()=>{
+  const records=[{slot:'shelf-a'},{slot:'shelf-b'},{slot:'shelf-a'}];
+  const getShelfId=record=>record.slot;
+  assert.equal(Shelf.recordCount(records,'all',getShelfId),3);
+  assert.equal(Shelf.recordCount(records,'shelf-a',getShelfId),2);
+  assert.equal(Shelf.recordCount(records,'missing',getShelfId),0);
 });
 
 test('shelf icon aliases normalize to supported icons',()=>{
