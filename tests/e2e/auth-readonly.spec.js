@@ -186,171 +186,6 @@ test.describe('authenticated read-only smoke flows',()=>{
     expectNoPageErrors(pageErrors);
   });
 
-  test('artist profile supports contextual album navigation',async({page})=>{
-    const pageErrors=watchPageErrors(page);
-
-    await page.route('**/functions/v1/discogs-search',async route=>{
-      if(route.request().method()!=='POST')return route.continue();
-      let body={};
-      try{body=route.request().postDataJSON()||{};}catch(error){}
-      if(body.action==='artistProfile'){
-        return route.fulfill({
-          status:200,
-          contentType:'application/json',
-          body:JSON.stringify({
-            id:123,
-            name:'Pink Floyd',
-            current_members:[{id:1,name:'David Gilmour'},{id:2,name:'Nick Mason'}],
-            past_members:[{id:3,name:'Richard Wright'}],
-            genres:['Progressive Rock','Psychedelic Rock'],
-            official_url:'https://www.pinkfloyd.com/'
-          })
-        });
-      }
-      if(body.action==='verifyArtistDiscography'){
-        return route.fulfill({
-          status:200,
-          contentType:'application/json',
-          body:JSON.stringify({verified:true,changed:false,count:15})
-        });
-      }
-      if(body.action==='cacheArtistArtwork'){
-        return route.fulfill({
-          status:200,
-          contentType:'application/json',
-          body:JSON.stringify({eligible:14,cached_total:14,cached_added:0,complete:true})
-        });
-      }
-      if(body.action==='master'){
-        return route.fulfill({
-          status:200,
-          contentType:'application/json',
-          body:JSON.stringify({
-            id:Number(body.masterId)||10362,
-            title:'The Dark Side of the Moon',
-            year:1973,
-            artists:[{id:123,name:'Pink Floyd'}],
-            styles:['Prog Rock'],
-            genres:['Rock'],
-            images:[]
-          })
-        });
-      }
-      return route.continue();
-    });
-
-    await page.route('https://en.wikipedia.org/w/api.php**',async route=>{
-      const url=new URL(route.request().url());
-      const prop=url.searchParams.get('prop')||'';
-      if(url.searchParams.get('generator')==='search'){
-        return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
-          query:{pages:[{pageid:1,title:'Pink Floyd',extract:'Pink Floyd are an English rock band formed in London.',fullurl:'https://en.wikipedia.org/wiki/Pink_Floyd',pageimage:'Pink_Floyd_test.jpg',pageprops:{wikibase_item:'Q2306'}}]}
-        })});
-      }
-      if(prop==='sections'){
-        return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
-          parse:{sections:[
-            {index:'1',line:'History',level:'2',toclevel:1},
-            {index:'2',line:'Musical style',level:'2',toclevel:1},
-            {index:'3',line:'References',level:'2',toclevel:1}
-          ]}
-        })});
-      }
-      if(prop==='text'){
-        const section=url.searchParams.get('section');
-        return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
-          parse:{text:'<p>'+(section==='1'?'History paragraph.':'Musical style paragraph.')+'</p>'}
-        })});
-      }
-      return route.fulfill({status:200,contentType:'application/json',body:'{}'});
-    });
-
-    await page.route('https://commons.wikimedia.org/w/api.php**',route=>route.fulfill({
-      status:200,
-      contentType:'application/json',
-      body:JSON.stringify({query:{pages:[{imageinfo:[{
-        thumburl:'https://example.com/pink-floyd.jpg',
-        url:'https://example.com/pink-floyd.jpg',
-        descriptionurl:'https://commons.wikimedia.org/wiki/File:Pink_Floyd_test.jpg',
-        extmetadata:{LicenseShortName:{value:'CC BY-SA 4.0'},Artist:{value:'Test Photographer'}}
-      }]}]}})
-    }));
-    await page.route('https://example.com/pink-floyd.jpg',route=>route.fulfill({status:200,contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>'}));
-    await page.route('https://itunes.apple.com/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({resultCount:0,results:[]})}));
-
-    await loginWithTestAccount(page);
-
-    await page.evaluate(()=>window.groovyOpenSearchAlbumPreview({
-      master:{id:10362},
-      artist:'Pink Floyd',
-      albumTitle:'The Dark Side of the Moon',
-      year:1973,
-      genre:'Prog Rock',
-      coverState:{url:'',appleCollectionUrl:''},
-      isAdded:false,
-      isWishlisted:false,
-      save:async()=>false,
-      artistDiscogsId:123
-    }));
-    await expect(page.locator('#albumOverlay')).toHaveClass(/visible/);
-    await page.locator('#detailArtist').click();
-
-    await expect(page).toHaveURL(/\/artist\/123-pink-floyd$/);
-    await expect(page.locator('#artistPage')).toBeVisible();
-    await expect(page.locator('.artist-hero h1')).toHaveText('Pink Floyd');
-    await expect(page.locator('.artist-genres')).toContainText('Progressive Rock');
-    await expect(page.getByRole('heading',{name:'Current members'})).toBeVisible();
-    await expect(page.getByRole('heading',{name:'Past members'})).toBeVisible();
-    await expect(page.locator('.artist-discography-panel')).toBeVisible();
-    await expect(page.locator('.artist-about-panel')).toContainText('History');
-    await expect(page.locator('.artist-about-panel')).toContainText('Musical style');
-    await expect(page.locator('.artist-context-back')).toContainText('The Dark Side of the Moon');
-
-    await page.evaluate(()=>{
-      window.__groovyAlbumBackFlash=false;
-      var collection=document.getElementById('collection');
-      var overlay=document.getElementById('albumOverlay');
-      var observer=new MutationObserver(function(){
-        var collectionVisible=collection&&getComputedStyle(collection).display!=='none';
-        var overlayVisible=overlay&&overlay.classList.contains('visible');
-        if(!location.pathname.startsWith('/artist/')&&collectionVisible&&!overlayVisible){
-          window.__groovyAlbumBackFlash=true;
-        }
-      });
-      observer.observe(document.documentElement,{subtree:true,attributes:true,childList:true});
-      window.__groovyAlbumBackObserver=observer;
-    });
-
-    await page.locator('.artist-context-back').click();
-    await expect(page).toHaveURL('http://127.0.0.1:4173/');
-    await expect(page.locator('#albumOverlay')).toHaveClass(/visible/);
-    await expect(page.locator('#detailAlbum')).toHaveText('The Dark Side of the Moon');
-    expect(await page.evaluate(()=>window.__groovyAlbumBackFlash)).toBe(false);
-    await page.evaluate(()=>{
-      if(window.__groovyAlbumBackObserver)window.__groovyAlbumBackObserver.disconnect();
-      delete window.__groovyAlbumBackObserver;
-    });
-    await page.locator('#albumClose').click();
-
-    await page.evaluate(()=>window.GroovyRouter.navigate('/artist/123-pink-floyd',{artistSource:'search',artistName:'Pink Floyd'}));
-    await expect(page.locator('#artistPage')).toBeVisible();
-    await expect(page.locator('.artist-context-back')).toHaveCount(0);
-
-    const existingAlbum=page.locator('.artist-discography-card[data-artist-album-id]').first();
-    if(await existingAlbum.count()>0){
-      await existingAlbum.click();
-      await expect(page.locator('#albumOverlay')).toHaveClass(/visible/);
-      await expect(page.locator('#detailContextBack')).toHaveCount(0);
-      await page.locator('#albumClose').click();
-      await expect(page.locator('#albumOverlay')).not.toHaveClass(/visible/);
-      await expect(page).toHaveURL(/\/artist\/123-pink-floyd$/);
-      await expect(page.locator('#artistPage')).toBeVisible();
-    }
-
-    expectNoPageErrors(pageErrors);
-  });
-
-
   test('authenticated read-only controls, search, sorting and shelving stay responsive',async({page})=>{
     const pageErrors=watchPageErrors(page);
 
@@ -366,8 +201,7 @@ test.describe('authenticated read-only smoke flows',()=>{
             year:2026,
             thumb:'',
             cover_image:''
-          }],
-          artists:[{id:123456,name:'Playwright Artist'}]
+          }]
         })
       });
     });
@@ -397,7 +231,6 @@ test.describe('authenticated read-only smoke flows',()=>{
     await expect(searchResult.locator('.mb-year')).toHaveText('2026');
     await expect(searchResult.locator('.mb-add-button')).toHaveText('Add Record');
     await expect(searchResult.locator('.mb-wishlist-button')).toContainText('Wishlist');
-    await expect(page.locator('#albumSearchResults .artist-search-result').first()).toContainText('Playwright Artist');
 
     await page.locator('#closeAddAlbum').click();
     await expect(page.locator('#addAlbumModal')).not.toBeVisible();

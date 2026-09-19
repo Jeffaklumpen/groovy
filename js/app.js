@@ -12,11 +12,6 @@ var CommunityView=window.GroovyCommunityView;
 if(!CommunityView)throw new Error('GroovyCommunityView must load before app.js');
 var CommunityController=window.GroovyCommunityController;
 if(!CommunityController)throw new Error('GroovyCommunityController must load before app.js');
-var ArtistCore=window.GroovyArtistCore;
-var ArtistWikipedia=window.GroovyArtistWikipedia;
-var ArtistView=window.GroovyArtistView;
-var ArtistController=window.GroovyArtistController;
-if(!ArtistCore||!ArtistWikipedia||!ArtistView||!ArtistController)throw new Error('Artist page modules must load before app.js');
 var UserSearchController=window.GroovyUserSearchController;
 if(!UserSearchController)throw new Error('GroovyUserSearchController must load before app.js');
 var DetailSocialController=window.GroovyDetailSocialController;
@@ -72,8 +67,6 @@ const registerButton=document.getElementById('registerButton');
 const authSwitchButton=document.getElementById('authSwitchButton');
 const viewedUserFollowButton=document.getElementById('viewedUserFollowButton');
 var communityController=null;
-var artistController=null;
-var artistAlbumPreviewHandler=null;
 
 // A blurred header becomes a containing block for fixed descendants in mobile
 // browsers. Put the dialog at body level after capturing its controls, so it
@@ -181,44 +174,6 @@ var communityView=CommunityView.create({
   escapeHtml:escapeSocialHtml
 });
 
-var artistView=ArtistView.create({
-  window:window,
-  document:document,
-  page:document.getElementById('artistPage'),
-  content:document.getElementById('artistPageContent'),
-  escapeHtml:escapeSocialHtml
-});
-
-artistController=ArtistController.create({
-  api:supabaseClient,
-  view:artistView,
-  wikipedia:ArtistWikipedia,
-  window:window,
-  elements:{
-    page:document.getElementById('artistPage'),
-    collectionTab:document.getElementById('collectionTabButton'),
-    wishlistTab:document.getElementById('wishlistTabButton'),
-    communityTab:document.getElementById('communityTabButton')
-  },
-  getCurrentUser:currentSessionUser,
-  onNavigate:function(url,state){return Router.navigate(url,state);},
-  onBack:function(){return Router.back();},
-  onOpenAlbum:function(info){
-    if(typeof artistAlbumPreviewHandler==='function')return artistAlbumPreviewHandler(info);
-  },
-  onRequireAuth:function(){openAuthPanel('login');return Router.replace('/',{}, {render:false});},
-  onLog:function(level,message,error){
-    if(level==='error')console.error(message,error||'');
-    else if(level==='warn')console.warn(message,error||'');
-    else console.log(message,error||'');
-  }
-});
-
-window.groovyPrefetchArtist=function(input){
-  if(!artistController||typeof artistController.prefetch!=='function')return;
-  artistController.prefetch(input||{});
-};
-
 communityController=CommunityController.create({
   api:supabaseClient,
   view:communityView,
@@ -241,7 +196,6 @@ communityController=CommunityController.create({
       return communityAlbumPreviewHandler(albumId);
     }
   },
-  onNavigateArtist:function(name){return artistController.navigateByName(name,{artistSource:'community'});},
   onRequireAuth:function(){openAuthPanel('login');return Router.replace('/',{}, {render:false});},
   onBeforeOpen:function(){profileMenu.classList.remove('open');notificationController.closePanel();},
   onLog:function(level,message,error){
@@ -356,42 +310,7 @@ authSwitchButton.addEventListener('click',function(){
     });
 });
 
-var authUiProfileCache={userId:'',profile:null,loadedAt:0,promise:null};
-
-async function loadAuthUiProfile(user,force){
-    if(!user)return null;
-    var sameUser=authUiProfileCache.userId===user.id;
-    var fresh=sameUser&&authUiProfileCache.profile&&Date.now()-authUiProfileCache.loadedAt<60000;
-    if(!force&&fresh)return authUiProfileCache.profile;
-    if(!force&&sameUser&&authUiProfileCache.promise)return authUiProfileCache.promise;
-
-    if(!sameUser){
-        authUiProfileCache={userId:user.id,profile:null,loadedAt:0,promise:null};
-    }
-
-    var promise=supabaseClient
-        .from('profiles')
-        .select('username,avatar_url')
-        .eq('id',user.id)
-        .maybeSingle()
-        .then(function(result){
-            if(result.error)throw result.error;
-            authUiProfileCache.profile=result.data||null;
-            authUiProfileCache.loadedAt=Date.now();
-            authUiProfileCache.promise=null;
-            return authUiProfileCache.profile;
-        })
-        .catch(function(error){
-            authUiProfileCache.promise=null;
-            throw error;
-        });
-
-    authUiProfileCache.promise=promise;
-    return promise;
-}
-
-async function updateAuthUI(options){
-    options=options||{};
+async function updateAuthUI(){
     const {data:{session}}=await supabaseClient.auth.getSession();
     const user=session&&session.user;
     userSearchController.syncUser(user);
@@ -401,10 +320,13 @@ async function updateAuthUI(options){
         profileMenu.classList.remove('open');
         loginPanel.classList.remove('open');
 
-        var profile=null;
-        try{
-            profile=await loadAuthUiProfile(user,!!options.forceProfile);
-        }catch(profileError){
+        const {data:profile,error:profileError}=await supabaseClient
+            .from('profiles')
+            .select('username,avatar_url')
+            .eq('id',user.id)
+            .maybeSingle();
+
+        if(profileError){
             console.error('Kunde inte hämta profil:',profileError);
         }
 
@@ -425,7 +347,6 @@ async function updateAuthUI(options){
         registerUsername.value='';
         notificationController.syncUser(user);
     }else{
-        authUiProfileCache={userId:'',profile:null,loadedAt:0,promise:null};
         profileButton.style.display='flex';
         profileMenu.classList.remove('open');
         loginPanel.classList.remove('open');
@@ -502,10 +423,6 @@ profileImageInput.addEventListener('change',async function(){
 
         UserProfileCore.applyAvatar(profileImage,avatarUrl,profileUsername.textContent);
         UserProfileCore.applyAvatar(profileImageMenu,avatarUrl,profileUsername.textContent);
-        if(authUiProfileCache.userId===user.id&&authUiProfileCache.profile){
-            authUiProfileCache.profile=Object.assign({},authUiProfileCache.profile,{avatar_url:avatarUrl});
-            authUiProfileCache.loadedAt=Date.now();
-        }
 
     }catch(error){
         console.error('Profilbild kunde inte laddas upp:',error);
@@ -544,7 +461,7 @@ loginButton.addEventListener('click',async function(){
     loginButton.disabled=false;
     loginButton.textContent='Log in';
 
-    await updateAuthUI({forceProfile:true});
+    await updateAuthUI();
 });
 
 registerButton.addEventListener('click',async function(){
@@ -590,7 +507,7 @@ registerButton.addEventListener('click',async function(){
 
     if(data.session){
         // The auth trigger handle_new_user creates the profile from signup metadata.
-        await updateAuthUI({forceProfile:true});
+        await updateAuthUI();
     }else{
         alert('Kontot är skapat. Kontrollera din e-post för att bekräfta kontot.');
     }
@@ -1563,19 +1480,8 @@ function renderAlbumDetail(record,index,options){
 
   var artist=Record.artist(record);
   var title=Record.title(record);
-  detailArtist.textContent=artist;
-  detailArtist.setAttribute('aria-label','Open '+artist+' artist page');
+  detailArtist.innerHTML=esc(artist);
   detailAlbum.innerHTML=esc(title);
-
-  if(typeof window.groovyPrefetchArtist==='function'){
-    var previewArtistId=Number(
-      searchPreview&&options.payload&&(
-        options.payload.artistDiscogsId||
-        (options.payload.master&&options.payload.master.artists&&options.payload.master.artists[0]&&options.payload.master.artists[0].id)
-      )
-    )||null;
-    window.groovyPrefetchArtist({id:previewArtistId,name:artist});
-  }
   detailYear.innerHTML=esc(Record.year(record));
   var genreLabel=Record.genre(record)||'Genre saknas';
   detailGenre.textContent=genreLabel;
@@ -1626,36 +1532,6 @@ function openAlbum(index){
   detailPreviewRecord=null;
   detailPreviewPayload=null;
   renderAlbumDetail(record,index,{searchPreview:false});
-}
-
-function currentAlbumNavigationContext(){
-  var record=detailPreviewRecord||(detailOpenRecordIndex>=0?records[detailOpenRecordIndex]:null);
-  if(!record)return null;
-  var previewArtistId=Number(
-    detailPreviewPayload&&(
-      detailPreviewPayload.artistDiscogsId||
-      (detailPreviewPayload.master&&detailPreviewPayload.master.artists&&detailPreviewPayload.master.artists[0]&&detailPreviewPayload.master.artists[0].id)
-    )
-  )||null;
-  return {
-    source:detailPreviewRecord?'preview':'library',
-    albumId:Number(Record.albumId(record))||null,
-    masterId:String(Record.discogsMasterId(record)||''),
-    artist:String(Record.artist(record)||''),
-    artistDiscogsId:previewArtistId,
-    title:String(Record.title(record)||'')
-  };
-}
-
-function reopenLibraryAlbumById(albumId){
-  var numericAlbumId=Number(albumId)||0;
-  if(!numericAlbumId)return false;
-  var matchIndex=records.findIndex(function(record){
-    return Number(Record.albumId(record))===numericAlbumId;
-  });
-  if(matchIndex<0)return false;
-  openAlbum(matchIndex);
-  return true;
 }
 
 async function hydrateSearchAlbumPreview(record){
@@ -1749,12 +1625,6 @@ function closeAlbum(){
     }
   },350);
 }
-
-window.groovyAlbumDetailNavigation=Object.freeze({
-  getContext:currentAlbumNavigationContext,
-  close:closeAlbum,
-  reopenLibraryAlbumById:reopenLibraryAlbumById
-});
 
 var libraryActionsController=LibraryActionsController.create({
   api:supabaseClient,
@@ -2362,59 +2232,11 @@ var albumSearchController=AlbumSearch.create({
     albumSearchResults:albumSearchResults,
     appleSearchCore:AppleSearchCore,
     pressingCore:PressingCore,
-    onPreview:function(payload){return window.groovyOpenSearchAlbumPreview(payload);},
-    onArtistNavigate:function(artist){return artistController.navigateResolved(artist,{artistSource:'search'});}
+    onPreview:function(payload){return window.groovyOpenSearchAlbumPreview(payload);}
 });
 communityAlbumPreviewHandler=function(albumId){
     return albumSearchController.openCatalogPreview(albumId);
 };
-artistAlbumPreviewHandler=function(info){
-    if(info&&info.albumId)return albumSearchController.openCatalogPreview(info.albumId);
-    if(info&&info.masterId)return albumSearchController.openDiscogsMasterPreview(info.masterId);
-};
-
-var detailArtistNavigationButton=document.getElementById('detailArtist');
-if(detailArtistNavigationButton){
-  detailArtistNavigationButton.addEventListener('click',async function(event){
-    event.preventDefault();
-    event.stopPropagation();
-
-    var navigation=window.groovyAlbumDetailNavigation;
-    var context=navigation&&typeof navigation.getContext==='function'
-      ?navigation.getContext()
-      :null;
-    if(!context||!context.artist)return;
-
-    if(artistController&&artistController.isActive()){
-      navigation.close();
-      return;
-    }
-
-    var previousState=Object.assign({},window.history.state||{});
-    previousState.groovyReopenAlbum=context;
-    Router.replace(Router.current(),previousState,{render:false});
-    albumSearchController.close();
-    navigation.close();
-
-    try{
-      var artistState={
-        artistSource:'album',
-        artistBackLabel:context.title||'album'
-      };
-      if(context.artistDiscogsId){
-        await artistController.navigateResolved({
-          id:context.artistDiscogsId,
-          name:context.artist
-        },artistState);
-      }else{
-        await artistController.navigateByName(context.artist,artistState);
-      }
-    }catch(error){
-      console.error('Could not open artist from album:',error);
-      await restoreAlbumFromHistoryState();
-    }
-  });
-}
 
 function openAddAlbumSearch(user){return albumSearchController.open(user);}
 function invalidateSearchLibraryState(){return albumSearchController.invalidateLibraryState();}
@@ -2657,40 +2479,6 @@ async function loadUserFromUrl(){
     await loadOtherUserCollection(user.id);
 }
 
-async function restoreAlbumFromHistoryState(){
-    var state=window.history.state||{};
-    var context=state.groovyReopenAlbum;
-    if(!context)return false;
-
-    var navigation=window.groovyAlbumDetailNavigation;
-    var restored=false;
-
-    if(
-      context.source==='library'&&
-      context.albumId&&
-      navigation&&
-      typeof navigation.reopenLibraryAlbumById==='function'
-    ){
-      restored=!!navigation.reopenLibraryAlbumById(context.albumId);
-    }
-
-    if(!restored&&context.albumId){
-      restored=!!(await albumSearchController.openCatalogPreview(context.albumId));
-    }
-
-    if(!restored&&context.masterId){
-      restored=!!(await albumSearchController.openDiscogsMasterPreview(context.masterId));
-    }
-
-    if(restored){
-      var cleaned=Object.assign({},state);
-      delete cleaned.groovyReopenAlbum;
-      Router.replace(Router.current(),cleaned,{render:false});
-    }
-
-    return restored;
-}
-
 const scrollTopButton=document.getElementById('scrollTopButton');
 let scrollTopUpdatePending=false;
 
@@ -2722,7 +2510,6 @@ async function renderCurrentRoute(){
         window.libraryView='collection';
     }
     if(!routeUser){
-        artistController.hidePage();
         communityController.hidePage();
         socialController.hideFollowingPage();
         viewedUserId=null;
@@ -2731,38 +2518,18 @@ async function renderCurrentRoute(){
         await window.loadCollection();
         return;
     }
-    var artistRoute=GroovyRouteState.artistFromPath(window.location.pathname);
-    if(artistRoute){
-        communityController.hidePage();
-        socialController.hideFollowingPage();
-        await artistController.renderPage(artistRoute,window.history.state||{});
-        return;
-    }
-
-    // Browser Back from an artist should restore the album overlay before
-    // revealing the route underneath it. This prevents the collection grid
-    // from flashing briefly before the album appears.
-    var restoredAlbumEarly=false;
-    if(window.history.state&&window.history.state.groovyReopenAlbum){
-        restoredAlbumEarly=await restoreAlbumFromHistoryState();
-    }
-
-    artistController.hidePage();
     if(/^\/community\/?$/.test(window.location.pathname)){
         socialController.hideFollowingPage();
         await communityController.renderPage();
-        if(!restoredAlbumEarly)await restoreAlbumFromHistoryState();
         return;
     }
     communityController.hidePage();
     if(/^\/following\/?$/.test(window.location.pathname)){
         await socialController.renderFollowingPage();
-        if(!restoredAlbumEarly)await restoreAlbumFromHistoryState();
         return;
     }
     socialController.hideFollowingPage();
     await loadUserFromUrl();
-    if(!restoredAlbumEarly)await restoreAlbumFromHistoryState();
 }
 
 Router.setHandler(renderCurrentRoute);

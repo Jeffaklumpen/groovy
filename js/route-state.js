@@ -46,12 +46,6 @@
     }
   }
 
-  function artistFromPath(pathname){
-    var match=String(pathname||'').match(/^\/artist\/(\d+)(?:-([^\/]+))?\/?$/);
-    if(!match)return null;
-    return {id:Number(match[1])||0,slug:match[2]||''};
-  }
-
   function albumIdentityKey(artist,title){
     function normalize(value){
       var text=String(value||'').toLowerCase();
@@ -67,7 +61,6 @@
     resolveProfileView:resolveProfileView,
     libraryViewFromSearch:libraryViewFromSearch,
     statisticsFromSearch:statisticsFromSearch,
-    artistFromPath:artistFromPath,
     albumIdentityKey:albumIdentityKey
   };
 });

@@ -17,7 +17,6 @@ function create(options){
   var onNavigateProfile=typeof options.onNavigateProfile==='function'?options.onNavigateProfile:function(){};
   var onNavigateShelf=typeof options.onNavigateShelf==='function'?options.onNavigateShelf:function(){};
   var onOpenAlbum=typeof options.onOpenAlbum==='function'?options.onOpenAlbum:function(){};
-  var onNavigateArtist=typeof options.onNavigateArtist==='function'?options.onNavigateArtist:function(){};
   var onRequireAuth=typeof options.onRequireAuth==='function'?options.onRequireAuth:function(){};
   var onBeforeOpen=typeof options.onBeforeOpen==='function'?options.onBeforeOpen:function(){};
   var onLog=typeof options.onLog==='function'?options.onLog:function(){};
@@ -124,14 +123,6 @@ function create(options){
     if(profile){
       event.preventDefault();
       onNavigateProfile(profile.getAttribute('data-community-profile'));
-      return;
-    }
-
-    var artist=event.target&&event.target.closest?event.target.closest('[data-community-artist]'):null;
-    if(artist){
-      event.preventDefault();
-      event.stopPropagation();
-      onNavigateArtist(artist.getAttribute('data-community-artist'));
       return;
     }
 
