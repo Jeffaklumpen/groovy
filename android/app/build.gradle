@@ -5,9 +5,9 @@ plugins {
 
 def keystorePath = System.getenv('GROOVY_KEYSTORE_PATH')
 def keystorePassword = System.getenv('GROOVY_KEYSTORE_PASSWORD')
-def keyPassword = System.getenv('GROOVY_KEY_PASSWORD') ?: keystorePassword
+def signingKeyPassword = System.getenv('GROOVY_KEY_PASSWORD') ?: keystorePassword
 def keyAliasValue = System.getenv('GROOVY_KEY_ALIAS') ?: 'groovy'
-def hasReleaseSigning = keystorePath && keystorePassword && keyPassword
+def hasReleaseSigning = keystorePath && keystorePassword && signingKeyPassword
 
 android {
     namespace 'com.groovyshelves.twa'
@@ -31,7 +31,7 @@ android {
                 storeFile file(keystorePath)
                 storePassword keystorePassword
                 keyAlias keyAliasValue
-                keyPassword keyPassword
+                keyPassword signingKeyPassword
             }
         }
     }
