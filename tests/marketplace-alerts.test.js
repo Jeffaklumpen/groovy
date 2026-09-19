@@ -244,3 +244,10 @@ test('Web Push private key never lives in frontend or committed migration values
   assert.doesNotMatch(migration,/Kt7GwxCyr7AKWoZP3yY9ss/);
   assert.doesNotMatch(initMigration,/Kt7GwxCyr7AKWoZP3yY9ss/);
 });
+
+
+test('scanner initializes VAPID config without making marketplace scans depend on push',()=>{
+  const scanner=fs.readFileSync(path.join(root,'supabase','functions','marketplace-alert-scan','index.ts'),'utf8');
+  assert.match(scanner,/try\{await vapidConfig\(db\)\}catch\(error\)/);
+  assert.match(scanner,/Could not initialize Web Push configuration/);
+});

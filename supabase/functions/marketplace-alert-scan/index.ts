@@ -544,6 +544,10 @@ Deno.serve(async(req)=>{
   if(!supabaseUrl||!serviceRole)return Response.json({error:'Server is not configured'},{status:500})
   const db=createClient(supabaseUrl,serviceRole,{auth:{persistSession:false,autoRefreshToken:false}})
 
+  // Initialize the server VAPID key pair once. Failure here must not stop the
+  // marketplace scan; it only disables mobile delivery until the next run.
+  try{await vapidConfig(db)}catch(error){console.warn('Could not initialize Web Push configuration',error)}
+
   const claim=await db.rpc('claim_marketplace_alert_scan',{p_min_interval_minutes:55})
   if(claim.error){
     console.error('Could not claim marketplace alert scan',claim.error)
