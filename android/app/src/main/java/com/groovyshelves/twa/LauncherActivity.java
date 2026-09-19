@@ -41,6 +41,7 @@ public class LauncherActivity extends Activity {
     private int channelRequestAttempts = 0;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private String currentFcmToken = "";
+    private boolean initialLaunchStarted = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -54,7 +55,7 @@ public class LauncherActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         if (session != null) {
-            launchTrustedWebActivity(resolveLaunchUrl(intent));
+            launchTrustedWebActivity(withCurrentNativePushToken(resolveLaunchUrl(intent)));
         }
     }
 
@@ -99,8 +100,7 @@ public class LauncherActivity extends Activity {
                     );
                     Log.d(TAG, "PostMessage origin validation requested: " + validationRequested);
 
-                    loadCurrentFcmToken();
-                    launchTrustedWebActivity(resolveLaunchUrl(getIntent()));
+                    launchInitialTrustedWebActivity();
                 }
 
                 @Override
@@ -178,6 +178,79 @@ public class LauncherActivity extends Activity {
         }
     }
 
+    private void launchInitialTrustedWebActivity() {
+        Uri launchUrl = resolveLaunchUrl(getIntent());
+        String cachedToken = getSharedPreferences("groovy_native_push", MODE_PRIVATE)
+            .getString("last_fcm_token", "");
+
+        if (cachedToken != null && !cachedToken.isEmpty()) {
+            currentFcmToken = cachedToken;
+            initialLaunchStarted = true;
+            launchTrustedWebActivity(withNativePushToken(launchUrl, cachedToken));
+            loadCurrentFcmToken();
+            return;
+        }
+
+        handler.postDelayed(() -> {
+            if (initialLaunchStarted || session == null) {
+                return;
+            }
+            initialLaunchStarted = true;
+            Log.w(TAG, "FCM token was not ready before launch; opening Groovy without token fragment.");
+            launchTrustedWebActivity(launchUrl);
+        }, 3000L);
+
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+            if (!task.isSuccessful() || task.getResult() == null || task.getResult().isEmpty()) {
+                Log.w(TAG, "Could not get initial FCM token", task.getException());
+                if (!initialLaunchStarted && session != null) {
+                    initialLaunchStarted = true;
+                    launchTrustedWebActivity(launchUrl);
+                }
+                return;
+            }
+
+            currentFcmToken = task.getResult();
+            rememberFcmToken(currentFcmToken);
+
+            if (!initialLaunchStarted && session != null) {
+                initialLaunchStarted = true;
+                launchTrustedWebActivity(withNativePushToken(launchUrl, currentFcmToken));
+            } else {
+                sendFcmTokenToWeb();
+            }
+        });
+    }
+
+    private Uri withCurrentNativePushToken(Uri url) {
+        String token = currentFcmToken;
+        if (token == null || token.isEmpty()) {
+            token = getSharedPreferences("groovy_native_push", MODE_PRIVATE)
+                .getString("last_fcm_token", "");
+        }
+        return withNativePushToken(url, token);
+    }
+
+    private Uri withNativePushToken(Uri url, String token) {
+        if (token == null || token.isEmpty()) {
+            return url;
+        }
+        String fragment =
+            "groovyNativePush=" + Uri.encode(token) +
+            "&groovyNativeVersion=" + Uri.encode(BuildConfig.VERSION_NAME);
+        return url.buildUpon().encodedFragment(fragment).build();
+    }
+
+    private void rememberFcmToken(String token) {
+        if (token == null || token.isEmpty()) {
+            return;
+        }
+        getSharedPreferences("groovy_native_push", MODE_PRIVATE)
+            .edit()
+            .putString("last_fcm_token", token)
+            .apply();
+    }
+
     private void loadCurrentFcmToken() {
         FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
             if (!task.isSuccessful() || task.getResult() == null) {
@@ -185,6 +258,7 @@ public class LauncherActivity extends Activity {
                 return;
             }
             currentFcmToken = task.getResult();
+            rememberFcmToken(currentFcmToken);
             sendFcmTokenToWeb();
         });
     }
