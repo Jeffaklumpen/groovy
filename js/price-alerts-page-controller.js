@@ -16,6 +16,7 @@ function create(options){
   var nav=options.navigator||(win&&win.navigator)||{};
   var storage=options.storage||(win&&win.localStorage)||null;
   var IntlApi=options.Intl||(typeof Intl!=='undefined'?Intl:null);
+  var request=typeof options.request==='function'?options.request:(typeof fetch==='function'?fetch:null);
   var getCurrentUser=typeof options.getCurrentUser==='function'?options.getCurrentUser:async function(){return null;};
   var onOpenRoute=typeof options.onOpenRoute==='function'?options.onOpenRoute:function(){};
   var onBackHome=typeof options.onBackHome==='function'?options.onBackHome:function(){};
@@ -24,10 +25,14 @@ function create(options){
   var onRequireAuth=typeof options.onRequireAuth==='function'?options.onRequireAuth:function(){};
   var onLog=typeof options.onLog==='function'?options.onLog:function(){};
   var loadVersion=0;
+  var renderVersion=0;
   var alerts=[];
   var bound=false;
   var visibilityStorageKey='groovy-price-alert-marketplace-visibility-v1';
+  var currencyStorageKey='groovy-price-alert-currency-v1';
   var marketVisibility=loadVisibility();
+  var currencyPreference=loadCurrencyPreference();
+  var fxCache=new Map();
 
   if(!api||typeof api.from!=='function')throw new Error('Price alerts page requires Supabase');
   if(!MarketplaceCore)throw new Error('Price alerts page requires marketplace core');
@@ -70,6 +75,62 @@ function create(options){
     try{
       if(storage&&storage.setItem)storage.setItem(visibilityStorageKey,JSON.stringify(marketVisibility));
     }catch(error){}
+  }
+
+  function loadCurrencyPreference(){
+    try{
+      var saved=storage&&storage.getItem?String(storage.getItem(currencyStorageKey)||'auto'):'auto';
+      if(saved==='auto'||/^[A-Z]{3}$/.test(saved))return saved;
+    }catch(error){}
+    return 'auto';
+  }
+
+  function displayCurrency(){
+    return MarketplaceCore.displayCurrency(currencyPreference,MarketplaceCore.regionCurrency(locale()||'',timezone()));
+  }
+
+  function syncCurrencyControl(){
+    if(!elements.currencySelect)return;
+    elements.currencySelect.value=currencyPreference;
+    var auto=elements.currencySelect.querySelector&&elements.currencySelect.querySelector('option[value="auto"]');
+    if(auto)auto.textContent='Auto ('+MarketplaceCore.regionCurrency(locale()||'',timezone())+')';
+  }
+
+  var fxRate=MarketplaceCore.createFxRateLoader({
+    cache:fxCache,
+    getStored:function(key){try{return storage&&storage.getItem?storage.getItem(key):null;}catch(error){return null;}},
+    setStored:function(key,value){try{if(storage&&storage.setItem)storage.setItem(key,value);}catch(error){}},
+    request:function(url,requestOptions){
+      if(!request)throw new Error('FX request unavailable');
+      return request(url,requestOptions);
+    }
+  });
+
+  async function loadDisplayRates(){
+    var target=displayCurrency();
+    var currencies={};
+    alerts.forEach(function(alert){
+      var code=String(alert&&alert.currency||'').toUpperCase();
+      if(code)currencies[code]=true;
+      statesOf(alert);
+    });
+    var rates={};
+    var codes=Object.keys(currencies);
+    await Promise.all(codes.map(async function(code){
+      if(code===target){rates[code]=1;return;}
+      try{rates[code]=await fxRate(code,target);}catch(error){rates[code]=null;}
+    }));
+    return {target:target,rates:rates};
+  }
+
+  function displayMoney(value,sourceCurrency,conversion){
+    var amount=Number(value);
+    var source=String(sourceCurrency||'').toUpperCase();
+    if(!isFinite(amount)||amount<=0)return '—';
+    var rate=conversion&&conversion.rates?conversion.rates[source]:null;
+    if(source===conversion.target)rate=1;
+    if(isFinite(rate)&&rate>0)return money(amount*rate,conversion.target);
+    return money(amount,source);
   }
 
   function safeExternalUrl(value){
@@ -141,16 +202,16 @@ function create(options){
     return 'Checked '+days+'d ago';
   }
 
-  function serviceMarkup(name,state,enabled,currency,alertId){
+  function serviceMarkup(name,state,enabled,currency,alertId,conversion){
     if(!enabled||!marketVisibility[name])return '';
     var marketClass=name==='Tradera'?'tradera':'ebay';
     var brand=name==='Tradera'?'T':'e';
     var marketAttr=esc(name);
     if(!state){
-      return '<div class="price-alert-market '+marketClass+'">'+
-        '<button class="price-alert-market-open" type="button" data-price-alert-market="'+marketAttr+'" data-price-alert-market-id="'+esc(alertId)+'" aria-label="View active '+marketAttr+' listings">'+
+      return '<div class="price-alert-market '+marketClass+'" role="button" tabindex="0" data-price-alert-market="'+marketAttr+'" data-price-alert-market-id="'+esc(alertId)+'" aria-label="View active '+marketAttr+' listings">'+
+        '<div class="price-alert-market-head">'+
           '<span class="price-alert-market-brand">'+brand+'</span><strong>'+name+'</strong><span>—</span>'+
-        '</button>'+
+        '</div>'+
         '<div class="price-alert-market-price"><strong>—</strong><span>Waiting for scan</span></div>'+
         '<small>Current marketplace data is not available yet.</small>'+
       '</div>';
@@ -161,24 +222,24 @@ function create(options){
     var lowestUrl=safeExternalUrl(state.lowest_listing_url);
     var lowestMarkup=lowest&&lowest>0
       ?(lowestUrl
-        ?'<a class="price-alert-lowest-link" href="'+esc(lowestUrl)+'" target="_blank" rel="noopener noreferrer" title="Open lowest-priced listing">'+esc(money(lowest,currency))+'</a>'
-        :'<strong>'+esc(money(lowest,currency))+'</strong>')
+        ?'<a class="price-alert-lowest-link" href="'+esc(lowestUrl)+'" target="_blank" rel="noopener noreferrer" title="Open lowest-priced listing">'+esc(displayMoney(lowest,currency,conversion))+'</a>'
+        :'<strong>'+esc(displayMoney(lowest,currency,conversion))+'</strong>')
       :'<strong>No price</strong>';
-    return '<div class="price-alert-market '+marketClass+'">'+
-      '<button class="price-alert-market-open" type="button" data-price-alert-market="'+marketAttr+'" data-price-alert-market-id="'+esc(alertId)+'" aria-label="View '+countLabel+' active '+marketAttr+' listings">'+
+    return '<div class="price-alert-market '+marketClass+'" role="button" tabindex="0" data-price-alert-market="'+marketAttr+'" data-price-alert-market-id="'+esc(alertId)+'" aria-label="View '+countLabel+' active '+marketAttr+' listings">'+
+      '<div class="price-alert-market-head">'+
         '<span class="price-alert-market-brand">'+brand+'</span><strong>'+name+'</strong><span>'+countLabel+' '+(count===1&&!state.listing_count_capped?'listing':'listings')+'</span>'+
-      '</button>'+
+      '</div>'+
       '<div class="price-alert-market-price">'+lowestMarkup+'<span>Lowest current</span></div>'+
       '<small>'+esc(relative(state.checked_at))+'</small>'+
     '</div>';
   }
 
-  function card(alert){
+  function card(alert,conversion){
     var album=albumOf(alert);
     var states=statesOf(alert);
     var markets=[];
-    if(alert.tradera_enabled)markets.push('Tradera');
     if(alert.ebay_enabled)markets.push('eBay');
+    if(alert.tradera_enabled)markets.push('Tradera');
     var types=[];
     if(alert.fixed_price)types.push('Fixed price');
     if(alert.auction)types.push('Auction');
@@ -201,7 +262,7 @@ function create(options){
           '<p>'+esc(album.artist)+'</p>'+
         '</div>'+
         '<div class="price-alert-rule">'+
-          '<span>Notify me under</span><strong>'+esc(money(alert.max_price,alert.currency))+'</strong>'+
+          '<span>Notify me under</span><strong>'+esc(displayMoney(alert.max_price,alert.currency,conversion))+'</strong>'+
         '</div>'+
         '<div class="price-alert-meta">'+
           '<span>'+esc(markets.join(' + '))+'</span>'+
@@ -209,8 +270,8 @@ function create(options){
           '<span>'+esc(types.join(' + '))+'</span>'+
         '</div>'+
         '<div class="price-alert-market-grid">'+
-          serviceMarkup('Tradera',states.Tradera,!!alert.tradera_enabled,alert.currency,alert.id)+
-          serviceMarkup('eBay',states.eBay,!!alert.ebay_enabled,alert.currency,alert.id)+
+          serviceMarkup('eBay',states.eBay,!!alert.ebay_enabled,alert.currency,alert.id,conversion)+
+          serviceMarkup('Tradera',states.Tradera,!!alert.tradera_enabled,alert.currency,alert.id,conversion)+
         '</div>'+
       '</div>'+
       '<div class="price-alert-card-actions">'+
@@ -225,14 +286,18 @@ function create(options){
     '</article>';
   }
 
-  function render(){
+  async function render(){
+    var version=++renderVersion;
     if(elements.count)elements.count.textContent=alerts.length+' ACTIVE '+(alerts.length===1?'ALERT':'ALERTS');
     if(!elements.grid)return;
+    syncCurrencyControl();
     if(!alerts.length){
       elements.grid.innerHTML='<div class="price-alert-empty"><span class="price-alert-empty-icon" aria-hidden="true"></span><strong>No price alerts yet</strong><p>Open a record and set a price alert to start watching Tradera and eBay.</p><button type="button" data-price-alert-back>Back to My Shelf</button></div>';
       return;
     }
-    elements.grid.innerHTML=alerts.map(card).join('');
+    var conversion=await loadDisplayRates();
+    if(version!==renderVersion)return;
+    elements.grid.innerHTML=alerts.map(function(alert){return card(alert,conversion);}).join('');
   }
 
   async function load(){
@@ -259,7 +324,7 @@ function create(options){
       return;
     }
     alerts=Array.isArray(result.data)?result.data:[];
-    render();
+    await render();
   }
 
   function findAlert(id){
@@ -289,7 +354,7 @@ function create(options){
       var result=await api.rpc('delete_marketplace_alert',{p_album_id:alert.album_id});
       if(result.error)throw result.error;
       alerts=alerts.filter(function(item){return String(item.id)!==String(id);});
-      render();
+      await render();
     }catch(error){
       onLog('error','Could not remove price alert:',error);
       if(button){button.disabled=false;button.textContent='Remove';}
@@ -307,11 +372,19 @@ function create(options){
     if(elements.backButton)elements.backButton.addEventListener('click',onBackHome);
     if(elements.traderaToggle)elements.traderaToggle.addEventListener('change',function(){setVisibility('Tradera',this.checked);});
     if(elements.ebayToggle)elements.ebayToggle.addEventListener('change',function(){setVisibility('eBay',this.checked);});
+    if(elements.currencySelect)elements.currencySelect.addEventListener('change',function(){
+      currencyPreference=String(this.value||'auto');
+      try{if(storage&&storage.setItem)storage.setItem(currencyStorageKey,currencyPreference);}catch(error){}
+      render();
+    });
     syncVisibilityControls();
+    syncCurrencyControl();
     if(elements.grid)elements.grid.addEventListener('click',function(event){
       var target=event.target;
       var back=target.closest&&target.closest('[data-price-alert-back]');
       if(back){onBackHome();return;}
+      var lowestLink=target.closest&&target.closest('.price-alert-lowest-link');
+      if(lowestLink)return;
       var market=target.closest&&target.closest('[data-price-alert-market]');
       if(market){
         var marketAlert=findAlert(market.getAttribute('data-price-alert-market-id'));
@@ -330,6 +403,16 @@ function create(options){
       if(cancel){showDelete(cancel.getAttribute('data-price-alert-cancel'),false);return;}
       var del=target.closest&&target.closest('[data-price-alert-delete]');
       if(del)removeAlert(del.getAttribute('data-price-alert-delete'));
+    });
+    if(elements.grid)elements.grid.addEventListener('keydown',function(event){
+      if(event.key!=='Enter'&&event.key!==' ')return;
+      var lowestLink=event.target&&event.target.closest&&event.target.closest('.price-alert-lowest-link');
+      if(lowestLink)return;
+      var market=event.target&&event.target.closest&&event.target.closest('[data-price-alert-market]');
+      if(!market)return;
+      event.preventDefault();
+      var marketAlert=findAlert(market.getAttribute('data-price-alert-market-id'));
+      if(marketAlert)onOpenMarketplace(marketAlert,albumOf(marketAlert),market.getAttribute('data-price-alert-market'));
     });
   }
 
@@ -362,7 +445,7 @@ function create(options){
     renderPage:renderPage,
     hidePage:hidePage,
     refreshIfOpen:refreshIfOpen,
-    state:function(){return {alerts:alerts.slice(),marketVisibility:{Tradera:marketVisibility.Tradera,eBay:marketVisibility.eBay},open:!!(elements.page&&!elements.page.hidden)};}
+    state:function(){return {alerts:alerts.slice(),marketVisibility:{Tradera:marketVisibility.Tradera,eBay:marketVisibility.eBay},currencyPreference:currencyPreference,displayCurrency:displayCurrency(),open:!!(elements.page&&!elements.page.hidden)};}
   });
 }
 

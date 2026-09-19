@@ -22,7 +22,9 @@ function element(){
 }
 
 test('renders active alerts with marketplace state and streaming badges',async()=>{
-  const page=element();const grid=element();const count=element();const menu=element();const back=element();const traderaToggle=element();const ebayToggle=element();
+  const page=element();const grid=element();const count=element();const menu=element();const back=element();const traderaToggle=element();const ebayToggle=element();const currencySelect=element();
+  currencySelect.value='auto';
+  currencySelect.querySelector=()=>null;
   const body={classList:classListMock()};
   const rows=[{
     id:1,album_id:99,max_price:1000,currency:'SEK',
@@ -39,7 +41,7 @@ test('renders active alerts with marketplace state and streaming badges',async()
   };
   const controller=Controller.create({
     api:{from(){return query;}},
-    elements:{page,grid,count,menuButton:menu,backButton:back,traderaToggle,ebayToggle,profileMenu:{classList:classListMock()}},
+    elements:{page,grid,count,menuButton:menu,backButton:back,traderaToggle,ebayToggle,currencySelect,profileMenu:{classList:classListMock()}},
     document:{body},
     navigator:{languages:['sv-SE']},
     getCurrentUser:async()=>({id:'user-1'})
@@ -88,4 +90,49 @@ test('persists marketplace visibility and never hides both marketplaces',async()
   traderaToggle.listeners.change.call(traderaToggle);
   assert.equal(controller.state().marketVisibility.Tradera,true);
   assert.match(data.get('groovy-price-alert-marketplace-visibility-v1'),/"Tradera":true/);
+});
+
+
+test('converts every displayed price with one Price Alerts currency selector',async()=>{
+  const page=element();const grid=element();const count=element();const currencySelect=element();
+  currencySelect.value='auto';currencySelect.querySelector=()=>null;
+  const data=new Map();
+  const storage={getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,String(value))};
+  const rows=[{
+    id:2,album_id:88,max_price:1000,currency:'SEK',
+    tradera_enabled:true,ebay_enabled:true,fixed_price:true,auction:true,
+    albums:{id:88,title:'Nevermind',cover_url:'',apple_collection_url:'',artists:{name:'Nirvana'}},
+    marketplace_alert_market_state:[
+      {marketplace:'eBay',listing_count:2,listing_count_capped:false,lowest_price:500,lowest_listing_url:'https://example.com/ebay',currency:'SEK',checked_at:new Date().toISOString()},
+      {marketplace:'Tradera',listing_count:1,listing_count_capped:false,lowest_price:750,lowest_listing_url:'https://example.com/tradera',currency:'SEK',checked_at:new Date().toISOString()}
+    ]
+  }];
+  const query={select(){return this;},eq(){return this;},async order(){return {data:rows,error:null};}};
+  const controller=Controller.create({
+    api:{from(){return query;}},
+    elements:{page,grid,count,currencySelect,profileMenu:{classList:classListMock()}},
+    document:{body:{classList:classListMock()}},
+    navigator:{languages:['sv-SE'],language:'sv-SE'},
+    storage,
+    request:async()=>({ok:true,json:async()=>({rate:0.1})}),
+    getCurrentUser:async()=>({id:'user-1'})
+  });
+  await controller.renderPage();
+  assert.match(grid.innerHTML,/1[\s\u00a0]?000/);
+
+  currencySelect.value='EUR';
+  await currencySelect.listeners.change.call(currencySelect);
+  await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal(controller.state().currencyPreference,'EUR');
+  assert.match(data.get('groovy-price-alert-currency-v1'),/EUR/);
+  assert.match(grid.innerHTML,/100/);
+  assert.match(grid.innerHTML,/50/);
+  assert.match(grid.innerHTML,/75/);
+});
+
+test('renders eBay before Tradera and makes the whole marketplace card interactive',async()=>{
+  const source=require('fs').readFileSync(require('path').join(__dirname,'..','js','price-alerts-page-controller.js'),'utf8');
+  assert.ok(source.indexOf("serviceMarkup('eBay'")<source.indexOf("serviceMarkup('Tradera'"));
+  assert.match(source,/role="button" tabindex="0" data-price-alert-market/);
+  assert.match(source,/closest\('\.price-alert-lowest-link'\)/);
 });

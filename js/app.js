@@ -1376,6 +1376,7 @@ priceAlertsController=PriceAlertsPageController.create({
   navigator:navigator,
   storage:localStorage,
   Intl:Intl,
+  request:window.fetch.bind(window),
   elements:{
     menuButton:document.getElementById('priceAlertsButton'),
     profileMenu:profileMenu,
@@ -1384,7 +1385,8 @@ priceAlertsController=PriceAlertsPageController.create({
     count:document.getElementById('priceAlertsCount'),
     backButton:document.getElementById('priceAlertsBackButton'),
     traderaToggle:document.getElementById('priceAlertsShowTradera'),
-    ebayToggle:document.getElementById('priceAlertsShowEbay')
+    ebayToggle:document.getElementById('priceAlertsShowEbay'),
+    currencySelect:document.getElementById('priceAlertsCurrencySelect')
   },
   getCurrentUser:currentSessionUser,
   onOpenRoute:function(){profileMenu.classList.remove('open');return Router.navigate('/price-alerts');},

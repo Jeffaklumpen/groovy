@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="/css/base-library.css?v=3">
   <link rel="stylesheet" href="/css/search-modals.css?v=4">
   <link rel="stylesheet" href="/css/copy-marketplace.css?v=6">
-  <link rel="stylesheet" href="/css/library-shell.css?v=9">
+  <link rel="stylesheet" href="/css/library-shell.css?v=10">
   <link rel="stylesheet" href="/css/shelves-streaming.css?v=3">
   <link rel="stylesheet" href="/css/album-detail-extras.css?v=2">
   <link rel="stylesheet" href="/css/landing-social.css?v=4">
@@ -34,7 +34,7 @@
   <link rel="stylesheet" href="/css/ratings-detail.css?v=8">
   <link rel="stylesheet" href="/css/detail-enhancements.css?v=18">
   <link rel="stylesheet" href="/css/reviews-detail.css?v=3">
-  <link rel="stylesheet" href="/css/price-alerts.css?v=2">
+  <link rel="stylesheet" href="/css/price-alerts.css?v=3">
   <link rel="stylesheet" href="/css/profile.css?v=11">
   <link rel="icon" type="image/png" href="/assets/icons/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
@@ -202,11 +202,17 @@
       <p>See what you are watching, current marketplace prices and how many matching listings are available.</p>
       <div class="price-alerts-market-filters" aria-label="Marketplace visibility">
         <span>Show marketplaces</span>
-        <label class="price-alerts-market-toggle tradera"><input id="priceAlertsShowTradera" type="checkbox"><span class="price-alerts-toggle-switch" aria-hidden="true"></span><b>T</b><strong>Tradera</strong></label>
         <label class="price-alerts-market-toggle ebay"><input id="priceAlertsShowEbay" type="checkbox"><span class="price-alerts-toggle-switch" aria-hidden="true"></span><b>e</b><strong>eBay</strong></label>
+        <label class="price-alerts-market-toggle tradera"><input id="priceAlertsShowTradera" type="checkbox"><span class="price-alerts-toggle-switch" aria-hidden="true"></span><b>T</b><strong>Tradera</strong></label>
       </div>
     </div>
     <div class="price-alerts-heading-actions">
+      <label class="price-alerts-currency-field" for="priceAlertsCurrencySelect"><span>Currency</span>
+        <select id="priceAlertsCurrencySelect" aria-label="Price Alerts currency">
+          <option value="auto">Auto</option>
+          <option value="SEK">SEK</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="NOK">NOK</option><option value="DKK">DKK</option><option value="CHF">CHF</option><option value="CAD">CAD</option><option value="AUD">AUD</option><option value="JPY">JPY</option><option value="PLN">PLN</option><option value="CZK">CZK</option>
+        </select>
+      </label>
       <span id="priceAlertsCount" class="price-alerts-count">0 ACTIVE ALERTS</span>
       <button id="priceAlertsBackButton" class="price-alerts-back" type="button">Back to My Shelf</button>
     </div>
@@ -340,14 +346,14 @@
     <span id="marketplacePriceNote" class="marketplace-price-note">Excl. shipping</span>
   </div>
   <div class="marketplace-triggers">
-    <button id="traderaButton" class="tradera-trigger" type="button" aria-haspopup="dialog">
-      <span class="tradera-trigger-mark" aria-hidden="true">T</span>
-      <span id="traderaButtonLabel">Tradera</span>
-      <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
-    </button>
     <button id="ebayButton" class="tradera-trigger ebay-trigger" type="button" aria-haspopup="dialog" data-enabled="true">
       <span class="tradera-trigger-mark ebay-trigger-mark" aria-hidden="true">e</span>
       <span id="ebayButtonLabel">eBay</span>
+      <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
+    </button>
+    <button id="traderaButton" class="tradera-trigger" type="button" aria-haspopup="dialog">
+      <span class="tradera-trigger-mark" aria-hidden="true">T</span>
+      <span id="traderaButtonLabel">Tradera</span>
       <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
     </button>
   </div>
@@ -415,14 +421,14 @@
       <legend>Marketplaces</legend>
       <div class="marketplace-alert-choice-grid">
         <label class="marketplace-alert-choice">
-          <input id="marketplaceAlertTradera" class="marketplace-alert-checkbox" type="checkbox" checked>
-          <span class="marketplace-alert-brand-mark tradera" aria-hidden="true">T</span>
-          <span class="marketplace-alert-choice-copy"><strong>Tradera</strong><small>Swedish marketplace</small></span>
-        </label>
-        <label class="marketplace-alert-choice">
           <input id="marketplaceAlertEbay" class="marketplace-alert-checkbox" type="checkbox" checked>
           <span class="marketplace-alert-brand-mark ebay" aria-hidden="true">e</span>
           <span class="marketplace-alert-choice-copy"><strong>eBay</strong><small>International marketplace</small></span>
+        </label>
+        <label class="marketplace-alert-choice">
+          <input id="marketplaceAlertTradera" class="marketplace-alert-checkbox" type="checkbox" checked>
+          <span class="marketplace-alert-brand-mark tradera" aria-hidden="true">T</span>
+          <span class="marketplace-alert-choice-copy"><strong>Tradera</strong><small>Swedish marketplace</small></span>
         </label>
       </div>
     </fieldset>
@@ -679,7 +685,7 @@
 <script src="/js/marketplace-view.js?v=1"></script>
 <script src="/js/marketplace-controller.js?v=4"></script>
 <script src="/js/marketplace-alert-controller.js?v=2"></script>
-<script src="/js/price-alerts-page-controller.js?v=2"></script>
+<script src="/js/price-alerts-page-controller.js?v=3"></script>
 <script src="/js/shelf-core.js?v=2"></script>
 <script src="/js/shelf-view.js?v=1"></script>
 <script src="/js/shelf-controller.js?v=3"></script>
@@ -694,7 +700,7 @@
 <script src="/js/album-search.js?v=6"></script>
 <script src="/js/wikipedia-service.js?v=1"></script>
 <script src="/js/wikipedia-about-controller.js?v=1"></script>
-<script src="/js/app.js?v=196"></script>
+<script src="/js/app.js?v=197"></script>
 <script src="/js/detail-enhancements-v2.js?v=14"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=14"></script>

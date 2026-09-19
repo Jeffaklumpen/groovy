@@ -167,3 +167,22 @@ test('interactive marketplace listing modals are not capped at 60 results',()=>{
   assert.doesNotMatch(tradera,/\.slice\(0,\s*60\)/);
   assert.doesNotMatch(ebay,/\.slice\(0,\s*60\)/);
 });
+
+
+test('eBay precedes Tradera in both marketplace layouts and Price Alerts exposes display currency',()=>{
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const page=fs.readFileSync(path.join(root,'js','price-alerts-page-controller.js'),'utf8');
+  const triggerStart=html.indexOf('class="marketplace-triggers"');
+  const triggerEnd=html.indexOf('</div>',triggerStart);
+  const triggers=html.slice(triggerStart,triggerEnd);
+  assert.ok(triggers.indexOf('id="ebayButton"')<triggers.indexOf('id="traderaButton"'));
+  assert.ok(page.indexOf("serviceMarkup('eBay'")<page.indexOf("serviceMarkup('Tradera'"));
+  assert.match(html,/id="priceAlertsCurrencySelect"/);
+  assert.match(page,/groovy-price-alert-currency-v1/);
+  assert.match(page,/createFxRateLoader/);
+});
+
+test('Price Alerts profile-menu icon is a bell mask',()=>{
+  const css=fs.readFileSync(path.join(root,'css','library-shell.css'),'utf8');
+  assert.match(css,/#profileMenu #priceAlertsButton:before\{content:"";[^}]*mask:url/);
+});
