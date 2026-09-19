@@ -1,6 +1,7 @@
 (function(){
   var TRUSTED_ORIGINS={
     'android://com.groovyshelves.twa':true,
+    'android-app://com.groovyshelves.twa':true,
     'https://groovyshelves.com':true
   };
   var STORAGE_KEY='groovy-native-push-device-v1';
