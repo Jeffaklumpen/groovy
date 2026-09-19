@@ -16,6 +16,8 @@ var UserSearchController=window.GroovyUserSearchController;
 if(!UserSearchController)throw new Error('GroovyUserSearchController must load before app.js');
 var DetailSocialController=window.GroovyDetailSocialController;
 if(!DetailSocialController)throw new Error('GroovyDetailSocialController must load before app.js');
+var AlbumReviewController=window.GroovyAlbumReviewController;
+if(!AlbumReviewController)throw new Error('GroovyAlbumReviewController must load before app.js');
 var AppleSearchCore=window.GroovyAppleSearchCore;
 if(!AppleSearchCore)throw new Error('GroovyAppleSearchCore must load before app.js');
 var AlbumSearch=window.GroovyAlbumSearch;
@@ -756,6 +758,8 @@ var detailAlbum=document.getElementById('detailAlbum');
 var detailYear=document.getElementById('detailYear');
 var detailGenre=document.getElementById('detailGenre');
 var detailRating=document.getElementById('detailRating');
+var detailReviews=document.getElementById('detailReviews');
+var albumReviewController=null;
 var ratingController=AlbumRatingController.create({
   api:supabaseClient,
   ratingCore:RatingCore,
@@ -767,6 +771,7 @@ var ratingController=AlbumRatingController.create({
   onAlert:function(message){alert(message);},
   onRatingUpdated:function(detail){
     window.dispatchEvent(new CustomEvent('groovy-rating-updated',{detail:detail}));
+    if(albumReviewController)albumReviewController.refresh();
   },
   onLog:function(level,message,error){
     if(level==='error')console.error(message,error||'');
@@ -803,6 +808,65 @@ var wikipediaAboutController=WikipediaAboutController.create({
     body:document.getElementById('detailAboutAlbumBody'),
     toggle:document.getElementById('detailAboutAlbumToggle'),
     link:document.getElementById('detailAboutAlbumLink')
+  },
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
+
+albumReviewController=AlbumReviewController.create({
+  api:supabaseClient,
+  recordModel:Record,
+  rootElement:detailReviews,
+  window:window,
+  document:document,
+  getCurrentUser:currentSessionUser,
+  getOpenRecordIndex:function(){return detailOpenRecordIndex;},
+  onNavigate:function(username){
+    closeAlbum();
+    openCollectorRoute(username,'profile');
+  },
+  onRatingChanged:async function(detail){
+    var user=await currentSessionUser();
+    if(!user||!detail||!detail.albumId)return;
+
+    var ratingMap=await ratingController.loadData([detail.albumId],user.id);
+
+    for(var i=0;i<records.length;i++){
+      if(Number(Record.albumId(records[i]))!==Number(detail.albumId))continue;
+      Record.applyRatingMeta(records[i],ratingMap);
+    }
+
+    if(detailPreviewRecord&&Number(Record.albumId(detailPreviewRecord))===Number(detail.albumId)){
+      Record.applyRatingMeta(detailPreviewRecord,ratingMap);
+    }
+
+    if(detailOpenRecordIndex===SEARCH_PREVIEW_INDEX&&detailPreviewRecord){
+      ratingController.renderPreview(detailPreviewRecord);
+    }else if(
+      detailOpenRecordIndex>=0&&
+      records[detailOpenRecordIndex]&&
+      Number(Record.albumId(records[detailOpenRecordIndex]))===Number(detail.albumId)
+    ){
+      ratingController.renderDetail(detailOpenRecordIndex);
+    }
+
+    var cards=collection?collection.querySelectorAll('.record'):[];
+    for(var c=0;c<cards.length;c++){
+      var cardIndex=parseInt(cards[c].getAttribute('data-index'),10);
+      var cardRecord=records[cardIndex];
+      if(!cardRecord||Number(Record.albumId(cardRecord))!==Number(detail.albumId))continue;
+      var coverRating=cards[c].querySelector('.cover-rating');
+      if(coverRating){
+        coverRating.innerHTML=ratingController.renderGridRating(Record.ownRating(cardRecord));
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent('groovy-rating-updated',{
+      detail:{albumId:detail.albumId,index:detail.index,source:'review'}
+    }));
   },
   onLog:function(level,message,error){
     if(level==='error')console.error(message,error||'');
@@ -1520,6 +1584,7 @@ function renderAlbumDetail(record,index,options){
   }
 
   detailTracklistController.openForRecord(record,index);
+  albumReviewController.openForRecord(record,index);
 
   albumOverlay.className='album-overlay visible'+(searchPreview?' search-preview':'');
   document.body.style.overflow='hidden';
@@ -1571,6 +1636,7 @@ async function hydrateSearchAlbumPreview(record){
     var genreLabel=Record.genre(record)||'Genre saknas';
     detailGenre.textContent=genreLabel;
     detailGenre.setAttribute('data-mobile-genre',genreLabel.split(' · ')[0]||genreLabel);
+    albumReviewController.openForRecord(record,SEARCH_PREVIEW_INDEX);
   }catch(error){
     console.warn('Could not hydrate search album preview:',error);
   }
@@ -1614,6 +1680,7 @@ function closeAlbum(){
   if(detailShelfActions){detailShelfActions.hidden=true;detailShelfActions.innerHTML='';}
   if(detailShelfStatus){detailShelfStatus.hidden=true;detailShelfStatus.innerHTML='';detailShelfStatus.classList.remove('unshelved');}
   detailSocialController.close();
+  albumReviewController.close();
   if(detailInfoCard)detailInfoCard.style.height='';
   albumOverlay.scrollTop=0;
   var tracksPanel=albumOverlay.querySelector('.album-tracks');
