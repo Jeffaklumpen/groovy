@@ -45,10 +45,12 @@ self.addEventListener('push',function(event){
   }
 
   var title=String(payload.title||'Groovy');
+  var iconUrl=String(payload.icon||new URL('/assets/icons/app-icon-192.png',self.location.origin).href);
+  var badgeUrl=String(payload.badge||new URL('/assets/icons/notification-badge.png',self.location.origin).href);
   var options={
     body:String(payload.body||''),
-    icon:String(payload.icon||'/assets/icons/app-icon-192.png'),
-    badge:String(payload.badge||'/assets/icons/app-icon-192.png'),
+    icon:iconUrl,
+    badge:badgeUrl,
     tag:String(payload.tag||'groovy-notification'),
     renotify:true,
     data:{

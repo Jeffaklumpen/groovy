@@ -263,3 +263,14 @@ test('saved alerts request an owned immediate scan and scheduled scans retain th
   assert.match(scanner,/\.eq\('user_id',requestUserId\)/);
   assert.match(scanner,/if\(!requestedAlertId\)[\s\S]*claim_marketplace_alert_scan/);
 });
+
+
+test('Web Push uses a dedicated Android notification badge and Groovy app icon',()=>{
+  const scanner=fs.readFileSync(path.join(root,'supabase','functions','marketplace-alert-scan','index.ts'),'utf8');
+  const serviceWorker=fs.readFileSync(path.join(root,'service-worker.js'),'utf8');
+  const pwa=fs.readFileSync(path.join(root,'js','pwa.js'),'utf8');
+  assert.match(scanner,/icon:'https:\/\/groovyshelves\.com\/assets\/icons\/app-icon-192\.png'/);
+  assert.match(scanner,/badge:'https:\/\/groovyshelves\.com\/assets\/icons\/notification-badge\.png'/);
+  assert.match(serviceWorker,/notification-badge\.png/);
+  assert.match(pwa,/service-worker\.js\?v=4/);
+});

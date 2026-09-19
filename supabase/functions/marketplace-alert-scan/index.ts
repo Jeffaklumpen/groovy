@@ -494,8 +494,8 @@ async function sendPriceAlertPush(db:ReturnType<typeof createClient>,alert:Alert
   const payload=JSON.stringify({
     title:'Price alert · '+album,
     body,
-    icon:'/assets/icons/app-icon-192.png',
-    badge:'/assets/icons/app-icon-192.png',
+    icon:'https://groovyshelves.com/assets/icons/app-icon-192.png',
+    badge:'https://groovyshelves.com/assets/icons/notification-badge.png',
     tag:'price-alert-'+alert.id,
     url:'/price-alerts',
     listingUrl:textValue(latest?.listing_url)
