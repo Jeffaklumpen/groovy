@@ -1,5 +1,6 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
+const fs=require('fs');
 const WikipediaAboutController=require('../js/wikipedia-about-controller.js');
 
 function classList(){
@@ -163,6 +164,19 @@ test('close invalidates an in-flight Wikipedia request and resets the panel',asy
   assert.equal(elements.toggle.attributes['aria-expanded'],'false');
   assert.equal(elements.body.classList.contains('expanded'),false);
   assert.equal(elements.body.style.maxHeight,'');
+});
+
+test('Wikipedia attribution stays inside the expandable About body',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const bodyStart=html.indexOf('id="detailAboutAlbumBody"');
+  const source=html.indexOf('class="album-about-source"',bodyStart);
+  const toggle=html.indexOf('id="detailAboutAlbumToggle"',bodyStart);
+
+  assert.ok(bodyStart>=0&&source>bodyStart&&toggle>source);
+  const expandableMarkup=html.slice(bodyStart,toggle);
+  assert.match(expandableMarkup,/class="album-about-source"/);
+  assert.match(expandableMarkup,/Wikipedia contributors/);
+  assert.match(expandableMarkup,/CC BY-SA 4\.0/);
 });
 
 test('Read more toggle preserves expanded and collapsed presentation',()=>{
