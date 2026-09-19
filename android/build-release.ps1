@@ -107,15 +107,18 @@ try {
     $verificationText = ($verification | Out-String)
     $normalized = ($verificationText -replace '[^0-9A-Fa-f]','').ToUpperInvariant()
     if (-not $normalized.Contains($expectedFingerprint)) {
-        Write-Warning 'The APK was built, but the expected Groovy certificate fingerprint was not found in apksigner output.'
+        throw "APK signing certificate does not match the fingerprint published in assetlinks.json."
     }
 
     $output = Join-Path $androidDir 'GroovyShelves-release.apk'
+    $websiteApk = Join-Path (Split-Path $androidDir -Parent) 'GroovyShelves.apk'
     Copy-Item $apk $output -Force
+    Copy-Item $apk $websiteApk -Force
 
     Write-Host ""
     Write-Host "Groovy Android release build completed."
-    Write-Host "APK: $output"
+    Write-Host "Release APK: $output"
+    Write-Host "Website APK: $websiteApk"
     Write-Host ""
     $verification | ForEach-Object { Write-Host $_ }
 }
