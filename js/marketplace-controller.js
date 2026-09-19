@@ -133,7 +133,8 @@ function create(options){
 
   function setButtonState(button,label,marketplace,state,count){View.applyButtonState(button,label,marketplace,state,count);}
 
-  function openTradera(){
+  function openTradera(openOptions){
+    openOptions=openOptions||{};
     var record=traderaRecord||getRecord(traderaAlbumIndex);
     if(!record)return false;
     View.openListingsModal({
@@ -148,7 +149,8 @@ function create(options){
       artist:getArtist(record),
       album:getTitle(record),
       locale:locale()||'en-US',
-      emptyText:'No active listings found for this album right now.'
+      emptyText:'No active listings found for this album right now.',
+      state:openOptions.state||''
     });
     return true;
   }
@@ -178,11 +180,12 @@ function create(options){
       priceFinished.tradera=true;
       refreshBestPrice(index);
     }
-    if(elements.traderaModal&&elements.traderaModal.classList&&elements.traderaModal.classList.contains('visible')&&traderaAlbumIndex===index)openTradera();
+    if(elements.traderaModal&&elements.traderaModal.classList&&elements.traderaModal.classList.contains('visible')&&traderaAlbumIndex===index)openTradera({state:result.state});
     return result;
   }
 
-  function openEbay(){
+  function openEbay(openOptions){
+    openOptions=openOptions||{};
     var record=ebayRecord||getRecord(ebayAlbumIndex);
     if(!record)return false;
     View.openListingsModal({
@@ -197,7 +200,8 @@ function create(options){
       artist:getArtist(record),
       album:getTitle(record),
       locale:'sv-SE',
-      emptyText:'No active vinyl LP listings found for this album right now.'
+      emptyText:'No active vinyl LP listings found for this album right now.',
+      state:openOptions.state||''
     });
     return true;
   }
@@ -227,7 +231,7 @@ function create(options){
       priceFinished.ebay=true;
       refreshBestPrice(index);
     }
-    if(elements.ebayModal&&elements.ebayModal.classList&&elements.ebayModal.classList.contains('visible')&&ebayAlbumIndex===index)openEbay();
+    if(elements.ebayModal&&elements.ebayModal.classList&&elements.ebayModal.classList.contains('visible')&&ebayAlbumIndex===index)openEbay({state:result.state});
     return result;
   }
 
@@ -248,14 +252,18 @@ function create(options){
     closeEbay();
     var normalized=String(marketplace||'').toLowerCase();
     if(normalized==='tradera'){
-      var traderaResult=await loadTradera(record,-2,{silentButton:true,skipPriceSummary:true});
+      var traderaPending=loadTradera(record,-2,{silentButton:true,skipPriceSummary:true});
+      openTradera({state:'loading'});
+      var traderaResult=await traderaPending;
       if(!traderaResult||traderaResult.state==='cancelled')return false;
-      return openTradera();
+      return true;
     }
     if(normalized==='ebay'&&ebayEnabled){
-      var ebayResult=await loadEbay(record,-2,{silentButton:true,skipPriceSummary:true});
+      var ebayPending=loadEbay(record,-2,{silentButton:true,skipPriceSummary:true});
+      openEbay({state:'loading'});
+      var ebayResult=await ebayPending;
       if(!ebayResult||ebayResult.state==='cancelled')return false;
-      return openEbay();
+      return true;
     }
     return false;
   }

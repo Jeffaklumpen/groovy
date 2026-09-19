@@ -544,16 +544,33 @@ Deno.serve(async(req)=>{
   if(!supabaseUrl||!serviceRole)return Response.json({error:'Server is not configured'},{status:500})
   const db=createClient(supabaseUrl,serviceRole,{auth:{persistSession:false,autoRefreshToken:false}})
 
+  let body:JsonRecord={}
+  try{body=asRecord(await req.json())}catch(error){}
+  const requestedAlertId=Math.max(0,Math.trunc(Number(firstValue(body,['alert_id','alertId'])||0)))
+  let requestUserId=''
+
+  if(requestedAlertId){
+    const authorization=req.headers.get('authorization')||req.headers.get('Authorization')||''
+    const token=authorization.replace(/^Bearer\s+/i,'').trim()
+    if(!token)return Response.json({error:'Authentication required'},{status:401})
+    const authResult=await db.auth.getUser(token)
+    const user=authResult.data&&authResult.data.user
+    if(authResult.error||!user)return Response.json({error:'Authentication required'},{status:401})
+    requestUserId=user.id
+  }
+
   // Initialize the server VAPID key pair once. Failure here must not stop the
   // marketplace scan; it only disables mobile delivery until the next run.
   try{await vapidConfig(db)}catch(error){console.warn('Could not initialize Web Push configuration',error)}
 
-  const claim=await db.rpc('claim_marketplace_alert_scan',{p_min_interval_minutes:55})
-  if(claim.error){
-    console.error('Could not claim marketplace alert scan',claim.error)
-    return Response.json({error:'Could not start scan'},{status:500})
+  if(!requestedAlertId){
+    const claim=await db.rpc('claim_marketplace_alert_scan',{p_min_interval_minutes:55})
+    if(claim.error){
+      console.error('Could not claim marketplace alert scan',claim.error)
+      return Response.json({error:'Could not start scan'},{status:500})
+    }
+    if(!claim.data)return Response.json({ok:true,skipped:true,reason:'recent_scan'})
   }
-  if(!claim.data)return Response.json({ok:true,skipped:true,reason:'recent_scan'})
 
   let processed=0
   let newMatches=0
@@ -561,12 +578,19 @@ Deno.serve(async(req)=>{
   const ebayCache=new Map<string,Promise<Listing[]>>()
 
   try{
-    const alertResult=await db.from('marketplace_alerts')
+    let alertQuery=db.from('marketplace_alerts')
       .select('id,user_id,album_id,max_price,currency,tradera_enabled,ebay_enabled,fixed_price,auction,ebay_marketplace_id,album:albums!inner(title,cover_url,artist:artists(name))')
       .eq('active',true)
+    if(requestedAlertId){
+      alertQuery=alertQuery.eq('id',requestedAlertId).eq('user_id',requestUserId)
+    }
+    const alertResult=await alertQuery
       .order('last_checked_at',{ascending:true,nullsFirst:true})
-      .limit(500)
+      .limit(requestedAlertId?1:500)
     if(alertResult.error)throw alertResult.error
+    if(requestedAlertId&&!(alertResult.data||[]).length){
+      return Response.json({error:'Price alert not found'},{status:404})
+    }
 
     for(const raw of alertResult.data||[]){
       const alert=raw as unknown as AlertRow
@@ -627,12 +651,12 @@ Deno.serve(async(req)=>{
       }
     }
 
-    await db.rpc('finish_marketplace_alert_scan',{p_error:null})
-    return Response.json({ok:true,processed,newMatches})
+    if(!requestedAlertId)await db.rpc('finish_marketplace_alert_scan',{p_error:null})
+    return Response.json({ok:true,processed,newMatches,alertId:requestedAlertId||null})
   }catch(error){
     const finalError=error instanceof Error?error.message:String(error)
     console.error('Marketplace alert scan failed',error)
-    await db.rpc('finish_marketplace_alert_scan',{p_error:finalError})
+    if(!requestedAlertId)await db.rpc('finish_marketplace_alert_scan',{p_error:finalError})
     return Response.json({error:'Marketplace alert scan failed'},{status:500})
   }
 })

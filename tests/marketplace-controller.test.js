@@ -187,3 +187,24 @@ test('opens marketplace listings for an arbitrary record from the Price Alerts p
   assert.equal(elements.ebayModal.classList.contains('visible'),true);
   assert.equal(calls.at(-1).name,'ebay-search');
 });
+
+
+test('opens the Price Alerts marketplace modal immediately while listings load',async()=>{
+  let resolveRequest;
+  const pendingResponse=new Promise(resolve=>{resolveRequest=resolve;});
+  const {controller,elements}=fixture({
+    ebayEnabled:true,
+    records:[],
+    invoke:(name)=>name==='ebay-search'?pendingResponse:{data:{listings:[]}}
+  });
+  const record={artist:'Nirvana',title:'Nevermind'};
+  const pending=controller.openMarketplaceForRecord(record,'eBay');
+  assert.equal(elements.ebayModal.classList.contains('visible'),true);
+  assert.equal(elements.ebayListingsStatus.classList.contains('loading'),false);
+  assert.equal(elements.ebayListingsStatus.className,'tradera-listings-status loading');
+  assert.match(elements.ebayListingsStatus.textContent,/Finding active listings/);
+  assert.equal(elements.ebayListingsGrid.innerHTML,'');
+  resolveRequest({data:{listings:[{title:'Nirvana Nevermind vinyl LP',buyNowPrice:250,currency:'SEK',url:'https://example.com/ebay'}]}});
+  assert.equal(await pending,true);
+  assert.match(elements.ebayListingsGrid.innerHTML,/Nirvana Nevermind vinyl LP/);
+});

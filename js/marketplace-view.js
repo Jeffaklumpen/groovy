@@ -151,8 +151,8 @@ function openListingsModal(options){
   if(options.subtitle)options.subtitle.textContent=String(options.artist||'')+' · '+String(options.album||'');
   renderListings(options.grid,options.listings,options.marketplace,options.locale);
 
-  var state='idle';
-  if(options.button&&options.button.classList){
+  var state=String(options.state||'')||'idle';
+  if(!options.state&&options.button&&options.button.classList){
     if(options.button.classList.contains('loading'))state='loading';
     else if(options.button.classList.contains('unavailable'))state='unavailable';
   }

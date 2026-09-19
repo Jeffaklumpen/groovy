@@ -37,6 +37,12 @@ function fixture(options){
   const calls=[];
   const existing=options.existing||null;
   const api={
+    functions:{
+      invoke(name,payload){
+        calls.push(['function',name,payload]);
+        return Promise.resolve({data:{ok:true},error:null});
+      }
+    },
     from(name){
       calls.push(['from',name]);
       return {
@@ -176,4 +182,24 @@ test('starts global mobile push setup when a price alert is saved',async()=>{
   elements.auctionCheckbox.checked=true;
   assert.equal(await controller.save(),true);
   assert.equal(pushCalls,1);
+});
+
+
+test('requests an immediate single-alert scan after saving',async()=>{
+  const changes=[];
+  const {controller,elements,calls}=fixture({onChanged:event=>changes.push(event)});
+  await controller.openForRecord(0);
+  controller.openModal();
+  elements.priceInput.value='425';
+  elements.currencySelect.value='SEK';
+  elements.traderaCheckbox.checked=true;
+  elements.ebayCheckbox.checked=true;
+  elements.fixedCheckbox.checked=true;
+  elements.auctionCheckbox.checked=true;
+  assert.equal(await controller.save(),true);
+  await new Promise(resolve=>setTimeout(resolve,0));
+  const scan=calls.find(entry=>entry[0]==='function'&&entry[1]==='marketplace-alert-scan');
+  assert.ok(scan);
+  assert.equal(scan[2].body.alert_id,9);
+  assert.ok(changes.some(event=>event.type==='scanned'));
 });

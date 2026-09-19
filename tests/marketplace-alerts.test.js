@@ -251,3 +251,15 @@ test('scanner initializes VAPID config without making marketplace scans depend o
   assert.match(scanner,/try\{await vapidConfig\(db\)\}catch\(error\)/);
   assert.match(scanner,/Could not initialize Web Push configuration/);
 });
+
+
+test('saved alerts request an owned immediate scan and scheduled scans retain the global lock',()=>{
+  const controller=fs.readFileSync(path.join(root,'js','marketplace-alert-controller.js'),'utf8');
+  const scanner=fs.readFileSync(path.join(root,'supabase','functions','marketplace-alert-scan','index.ts'),'utf8');
+  assert.match(controller,/functions\.invoke\('marketplace-alert-scan'/);
+  assert.match(controller,/alert_id:currentAlert\.id/);
+  assert.match(scanner,/requestedAlertId/);
+  assert.match(scanner,/auth\.getUser/);
+  assert.match(scanner,/\.eq\('user_id',requestUserId\)/);
+  assert.match(scanner,/if\(!requestedAlertId\)[\s\S]*claim_marketplace_alert_scan/);
+});

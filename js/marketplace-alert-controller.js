@@ -162,6 +162,16 @@ function create(options){
       renderTrigger();
       closeModal();
       onChanged({type:'saved',alert:currentAlert,record:record});
+      if(api.functions&&typeof api.functions.invoke==='function'&&currentAlert&&currentAlert.id){
+        api.functions.invoke('marketplace-alert-scan',{
+          body:{alert_id:currentAlert.id,source:'price-alert-save'}
+        }).then(function(scanResult){
+          if(scanResult&&scanResult.error)throw scanResult.error;
+          onChanged({type:'scanned',alert:currentAlert,record:record});
+        }).catch(function(error){
+          onLog('warn','Could not refresh marketplace state after saving alert:',error);
+        });
+      }
       if(pushSetupPromise&&typeof pushSetupPromise.catch==='function'){
         pushSetupPromise.catch(function(error){
           onLog('warn','Could not finish mobile notification setup:',error);
