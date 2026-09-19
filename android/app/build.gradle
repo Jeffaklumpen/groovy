@@ -11,6 +11,10 @@ def hasReleaseSigning = keystorePath && keystorePassword && keyPassword
 
 android {
     namespace 'com.groovyshelves.twa'
+
+    buildFeatures {
+        buildConfig true
+    }
     compileSdk 36
 
     defaultConfig {
