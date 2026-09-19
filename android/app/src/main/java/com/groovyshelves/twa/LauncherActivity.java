@@ -156,7 +156,7 @@ public class LauncherActivity extends Activity {
     };
 
     private void maybeRequestPostMessageChannel() {
-        if (!originValidated || !navigationFinished || channelRequested || session == null) {
+        if (!navigationFinished || channelRequested || session == null) {
             return;
         }
 
@@ -166,7 +166,7 @@ public class LauncherActivity extends Activity {
             Log.d(
                 TAG,
                 "PostMessage channel requested: " + channelRequested +
-                " (attempt " + channelRequestAttempts + ", validated=" + originValidated + ")"
+                " (attempt " + channelRequestAttempts + ", validation-result=" + originValidated + ")"
             );
         } catch (UnsupportedOperationException error) {
             Log.w(TAG, "Browser does not support TWA postMessage", error);
