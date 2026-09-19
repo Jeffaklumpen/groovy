@@ -1,5 +1,4 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0'
-import webpush from 'npm:web-push@3.6.7'
 
 type JsonRecord = Record<string, unknown>
 type Listing = {
@@ -35,26 +34,9 @@ type AlertRow = {
   } | null
 } 
 
-type PushSubscriptionRow = {
-  id: number
-  endpoint: string
-  p256dh: string
-  auth: string
-  failure_count: number
-}
-
-type VapidConfig = {
-  public_key: string
-  private_key: string
-  subject: string
-}
-
 let cachedEbayToken = ''
 let cachedEbayTokenExpiresAt = 0
 const fxCache = new Map<string,{rate:number,savedAt:number}>()
-const pushPreferenceCache = new Map<string,Promise<boolean>>()
-const pushSubscriptionCache = new Map<string,Promise<PushSubscriptionRow[]>>()
-let vapidConfigPromise:Promise<VapidConfig|null>|null=null
 const supportedMarketplaceIds = new Set([
   'EBAY_US','EBAY_AT','EBAY_AU','EBAY_BE','EBAY_CA','EBAY_CH','EBAY_DE',
   'EBAY_ES','EBAY_FR','EBAY_GB','EBAY_HK','EBAY_IE','EBAY_IT','EBAY_MY',
@@ -405,137 +387,6 @@ async function saveMarketplaceState(db:ReturnType<typeof createClient>,alert:Ale
 
 
 
-async function priceAlertPushEnabled(db:ReturnType<typeof createClient>,userId:string):Promise<boolean>{
-  if(!pushPreferenceCache.has(userId)){
-    pushPreferenceCache.set(userId,(async()=>{
-      const result=await db.from('notification_preferences')
-        .select('push_enabled')
-        .eq('user_id',userId)
-        .eq('notification_type','price_alert')
-        .maybeSingle()
-      if(result.error)throw result.error
-      return !result.data||result.data.push_enabled!==false
-    })())
-  }
-  return await pushPreferenceCache.get(userId)!
-}
-
-async function pushSubscriptionsForUser(db:ReturnType<typeof createClient>,userId:string):Promise<PushSubscriptionRow[]>{
-  if(!pushSubscriptionCache.has(userId)){
-    pushSubscriptionCache.set(userId,(async()=>{
-      const result=await db.from('push_subscriptions')
-        .select('id,endpoint,p256dh,auth,failure_count')
-        .eq('user_id',userId)
-      if(result.error)throw result.error
-      return (result.data||[]) as PushSubscriptionRow[]
-    })())
-  }
-  return await pushSubscriptionCache.get(userId)!
-}
-
-async function vapidConfig(db:ReturnType<typeof createClient>):Promise<VapidConfig|null>{
-  if(!vapidConfigPromise){
-    vapidConfigPromise=(async()=>{
-      var result=await db.rpc('get_web_push_vapid_config')
-      if(result.error)throw result.error
-      var value=(result.data||{}) as VapidConfig
-      if(value.public_key&&value.private_key&&value.subject)return value
-
-      const generated=webpush.generateVAPIDKeys()
-      const initialized=await db.rpc('initialize_web_push_vapid',{
-        p_public_key:generated.publicKey,
-        p_private_key:generated.privateKey,
-        p_subject:'https://groovyshelves.com/'
-      })
-      if(initialized.error)throw initialized.error
-
-      result=await db.rpc('get_web_push_vapid_config')
-      if(result.error)throw result.error
-      value=(result.data||{}) as VapidConfig
-      if(!value.public_key||!value.private_key||!value.subject)return null
-      return value
-    })()
-  }
-  return await vapidConfigPromise
-}
-
-async function latestPriceAlertMatch(db:ReturnType<typeof createClient>,alertId:number){
-  const result=await db.from('marketplace_alert_matches')
-    .select('marketplace,listing_url,sale_type,matched_price,alert_currency,first_seen_at')
-    .eq('alert_id',alertId)
-    .order('first_seen_at',{ascending:false})
-    .limit(1)
-    .maybeSingle()
-  if(result.error)throw result.error
-  return result.data||null
-}
-
-async function sendPriceAlertPush(db:ReturnType<typeof createClient>,alert:AlertRow,newCount:number){
-  if(newCount<=0)return
-  if(!(await priceAlertPushEnabled(db,alert.user_id)))return
-
-  const subscriptions=await pushSubscriptionsForUser(db,alert.user_id)
-  if(!subscriptions.length)return
-
-  const config=await vapidConfig(db)
-  if(!config)return
-
-  const latest=await latestPriceAlertMatch(db,alert.id)
-  const album=textValue(alert.album?.title)||'Record'
-  const marketplace=textValue(latest?.marketplace)
-  const matchedPrice=Number(latest?.matched_price||0)
-  const alertCurrency=textValue(latest?.alert_currency)||alert.currency
-  const saleType=textValue(latest?.sale_type)==='auction'?'Auction':'Fixed price'
-
-  const body=newCount===1&&marketplace&&matchedPrice>0
-    ?marketplace+': '+matchedPrice.toLocaleString('en-US',{maximumFractionDigits:2})+' '+alertCurrency+' · '+saleType
-    :newCount+' new listings under '+Number(alert.max_price).toLocaleString('en-US',{maximumFractionDigits:2})+' '+alert.currency
-
-  const payload=JSON.stringify({
-    title:'Groovy · Price alert · '+album,
-    body,
-    icon:'https://groovyshelves.com/assets/icons/app-icon-192.png',
-    badge:'https://groovyshelves.com/assets/icons/notification-badge.png',
-    tag:'price-alert-'+alert.id,
-    url:'/price-alerts',
-    listingUrl:textValue(latest?.listing_url)
-  })
-
-  await Promise.allSettled(subscriptions.map(async(subscription)=>{
-    try{
-      await webpush.sendNotification({
-        endpoint:subscription.endpoint,
-        keys:{p256dh:subscription.p256dh,auth:subscription.auth}
-      },payload,{
-        vapidDetails:{
-          subject:config.subject,
-          publicKey:config.public_key,
-          privateKey:config.private_key
-        },
-        TTL:21600,
-        urgency:'high',
-        topic:'price-'+alert.id
-      })
-      await db.from('push_subscriptions').update({
-        last_success_at:new Date().toISOString(),
-        failure_count:0,
-        updated_at:new Date().toISOString()
-      }).eq('id',subscription.id)
-    }catch(error){
-      const status=Number((error as {statusCode?:number})?.statusCode||0)
-      if(status===404||status===410){
-        await db.from('push_subscriptions').delete().eq('id',subscription.id)
-        return
-      }
-      await db.from('push_subscriptions').update({
-        failure_count:Math.min(100,Number(subscription.failure_count||0)+1),
-        updated_at:new Date().toISOString()
-      }).eq('id',subscription.id)
-      console.warn('Web Push delivery failed',status||'',error)
-    }
-  }))
-}
-
 Deno.serve(async(req)=>{
   if(req.method!=='POST')return Response.json({error:'Method not allowed'},{status:405})
 
@@ -558,10 +409,6 @@ Deno.serve(async(req)=>{
     if(authResult.error||!user)return Response.json({error:'Authentication required'},{status:401})
     requestUserId=user.id
   }
-
-  // Initialize the server VAPID key pair once. Failure here must not stop the
-  // marketplace scan; it only disables mobile delivery until the next run.
-  try{await vapidConfig(db)}catch(error){console.warn('Could not initialize Web Push configuration',error)}
 
   if(!requestedAlertId){
     const claim=await db.rpc('claim_marketplace_alert_scan',{p_min_interval_minutes:55})
@@ -642,13 +489,6 @@ Deno.serve(async(req)=>{
       const inserted=Number(recorded.data||0)
       processed++
       newMatches+=inserted
-      if(inserted>0){
-        try{
-          await sendPriceAlertPush(db,alert,inserted)
-        }catch(error){
-          console.warn('Could not send Price Alert push notification',error)
-        }
-      }
     }
 
     if(!requestedAlertId)await db.rpc('finish_marketplace_alert_scan',{p_error:null})

@@ -119,7 +119,7 @@
 
   if('serviceWorker' in navigator){
     window.addEventListener('load',function(){
-      navigator.serviceWorker.register('/service-worker.js?v=4',{scope:'/',updateViaCache:'none'})
+      navigator.serviceWorker.register('/service-worker.js?v=5',{scope:'/',updateViaCache:'none'})
         .catch(function(error){console.warn('Could not enable app installation:',error);});
     });
   }

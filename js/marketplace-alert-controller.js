@@ -19,7 +19,6 @@ function create(options){
   var getCurrentUser=typeof options.getCurrentUser==='function'?options.getCurrentUser:async function(){return null;};
   var getRecord=typeof options.getRecord==='function'?options.getRecord:function(){return null;};
   var recordModel=options.recordModel;
-  var pushNotifications=options.pushNotifications||null;
   var getAlbumId=typeof options.getAlbumId==='function'?options.getAlbumId:function(record){return recordModel&&recordModel.albumId?recordModel.albumId(record):null;};
   var getArtist=typeof options.getArtist==='function'?options.getArtist:function(record){return recordModel&&recordModel.artist?recordModel.artist(record)||'':'';};
   var getTitle=typeof options.getTitle==='function'?options.getTitle:function(record){return recordModel&&recordModel.title?recordModel.title(record)||'':'';};
@@ -132,17 +131,6 @@ function create(options){
     if(value.error){setStatus(value.error,'error');return false;}
     if(!activeUser||!albumId)return false;
 
-    var pushSetupPromise=null;
-    if(pushNotifications&&typeof pushNotifications.ensureForPriceAlerts==='function'){
-      try{
-        // This starts synchronously from the user's valid Save click, before
-        // the first await, so mobile browsers may show the permission prompt.
-        pushSetupPromise=pushNotifications.ensureForPriceAlerts();
-      }catch(error){
-        onLog('warn','Could not start mobile notification setup:',error);
-      }
-    }
-
     if(elements.saveButton)elements.saveButton.disabled=true;
     if(elements.deleteButton)elements.deleteButton.disabled=true;
     setStatus('Saving alert…','loading');
@@ -170,11 +158,6 @@ function create(options){
           onChanged({type:'scanned',alert:currentAlert,record:record});
         }).catch(function(error){
           onLog('warn','Could not refresh marketplace state after saving alert:',error);
-        });
-      }
-      if(pushSetupPromise&&typeof pushSetupPromise.catch==='function'){
-        pushSetupPromise.catch(function(error){
-          onLog('warn','Could not finish mobile notification setup:',error);
         });
       }
       return true;
@@ -222,9 +205,6 @@ function create(options){
     currentAlert=null;
     activeUser=await getCurrentUser();
     if(version!==requestVersion)return null;
-    if(activeUser&&pushNotifications&&typeof pushNotifications.prepare==='function'){
-      pushNotifications.prepare();
-    }
     renderTrigger();
     var record=activeRecord();
     var albumId=record?Number(getAlbumId(record)||0):0;
@@ -255,9 +235,6 @@ function create(options){
     currentAlert=alert||null;
     activeUser=await getCurrentUser();
     if(version!==requestVersion)return false;
-    if(activeUser&&pushNotifications&&typeof pushNotifications.prepare==='function'){
-      pushNotifications.prepare();
-    }
     if(!activeUser||!activeRecord()||Number(getAlbumId(activeRecord())||0)<=0){
       if(!activeUser)onRequireAuth();
       return false;
