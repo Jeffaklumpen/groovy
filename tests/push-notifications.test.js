@@ -37,6 +37,15 @@ function mobileFixture(options){
     matchMedia(){return {matches:!!options.standalone};}
   };
   const api={
+    functions:{
+      async invoke(name,payload){
+        calls.push(['function',name,payload]);
+        return {
+          data:{publicKey:'BGKCP2E6A7uTLwehpmcwmtqy2LFzHufAD-RY3LUvv9dK6OQC3_AtA0AZUPoDsxmc_GmenQaGMOlWPFFuZcWOCnk'},
+          error:null
+        };
+      }
+    },
     async rpc(name,payload){
       calls.push(['rpc',name,payload]);
       return {data:{id:1},error:null};
@@ -60,6 +69,8 @@ test('mobile Price Alerts request permission and register one push subscription'
   assert.equal(subscribe[1].userVisibleOnly,true);
   assert.ok(subscribe[1].applicationServerKey instanceof Uint8Array);
   assert.equal(subscribe[1].applicationServerKey.length,65);
+  const configCall=calls.find(call=>call[0]==='function'&&call[1]==='push-config');
+  assert.ok(configCall);
   const rpc=calls.find(call=>call[0]==='rpc'&&call[1]==='save_push_subscription');
   assert.ok(rpc);
   assert.equal(rpc[2].p_endpoint,'https://push.example/subscription-1');

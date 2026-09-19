@@ -436,9 +436,22 @@ async function pushSubscriptionsForUser(db:ReturnType<typeof createClient>,userI
 async function vapidConfig(db:ReturnType<typeof createClient>):Promise<VapidConfig|null>{
   if(!vapidConfigPromise){
     vapidConfigPromise=(async()=>{
-      const result=await db.rpc('get_web_push_vapid_config')
+      var result=await db.rpc('get_web_push_vapid_config')
       if(result.error)throw result.error
-      const value=(result.data||{}) as VapidConfig
+      var value=(result.data||{}) as VapidConfig
+      if(value.public_key&&value.private_key&&value.subject)return value
+
+      const generated=webpush.generateVAPIDKeys()
+      const initialized=await db.rpc('initialize_web_push_vapid',{
+        p_public_key:generated.publicKey,
+        p_private_key:generated.privateKey,
+        p_subject:'https://groovyshelves.com/'
+      })
+      if(initialized.error)throw initialized.error
+
+      result=await db.rpc('get_web_push_vapid_config')
+      if(result.error)throw result.error
+      value=(result.data||{}) as VapidConfig
       if(!value.public_key||!value.private_key||!value.subject)return null
       return value
     })()

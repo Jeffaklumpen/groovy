@@ -212,6 +212,9 @@ function create(options){
     currentAlert=null;
     activeUser=await getCurrentUser();
     if(version!==requestVersion)return null;
+    if(activeUser&&pushNotifications&&typeof pushNotifications.prepare==='function'){
+      pushNotifications.prepare();
+    }
     renderTrigger();
     var record=activeRecord();
     var albumId=record?Number(getAlbumId(record)||0):0;
@@ -242,6 +245,9 @@ function create(options){
     currentAlert=alert||null;
     activeUser=await getCurrentUser();
     if(version!==requestVersion)return false;
+    if(activeUser&&pushNotifications&&typeof pushNotifications.prepare==='function'){
+      pushNotifications.prepare();
+    }
     if(!activeUser||!activeRecord()||Number(getAlbumId(activeRecord())||0)<=0){
       if(!activeUser)onRequireAuth();
       return false;

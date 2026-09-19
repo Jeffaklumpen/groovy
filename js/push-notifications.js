@@ -5,8 +5,6 @@
 })(typeof window!=='undefined'?window:null,function(){
 'use strict';
 
-var VAPID_PUBLIC_KEY='BGKCP2E6A7uTLwehpmcwmtqy2LFzHufAD-RY3LUvv9dK6OQC3_AtA0AZUPoDsxmc_GmenQaGMOlWPFFuZcWOCnk';
-
 function urlBase64ToUint8Array(value){
   var padding='='.repeat((4-value.length%4)%4);
   var base64=(value+padding).replace(/-/g,'+').replace(/_/g,'/');
@@ -24,6 +22,7 @@ function create(options){
   var getCurrentUser=typeof options.getCurrentUser==='function'?options.getCurrentUser:async function(){return null;};
   var onLog=typeof options.onLog==='function'?options.onLog:function(){};
   var pending=null;
+  var publicKeyPromise=null;
 
   function userAgent(){return String(nav.userAgent||'');}
 
@@ -61,6 +60,30 @@ function create(options){
       nav&&nav.serviceWorker&&
       NotificationApi
     );
+  }
+
+  function loadPublicKey(){
+    if(publicKeyPromise)return publicKeyPromise;
+    publicKeyPromise=(async function(){
+      if(!api||!api.functions||typeof api.functions.invoke!=='function')throw new Error('Push config is unavailable');
+      var result=await api.functions.invoke('push-config',{body:{}});
+      if(result&&result.error)throw result.error;
+      var key=String(result&&result.data&&result.data.publicKey||'');
+      if(!key)throw new Error('Missing Web Push public key');
+      return key;
+    })().catch(function(error){
+      publicKeyPromise=null;
+      throw error;
+    });
+    return publicKeyPromise;
+  }
+
+  function prepare(){
+    if(!isMobile()||!supported())return Promise.resolve(false);
+    return loadPublicKey().then(function(){return true;}).catch(function(error){
+      onLog('warn','Could not prepare mobile notifications:',error);
+      return false;
+    });
   }
 
   async function registerSubscription(subscription){
@@ -107,9 +130,10 @@ function create(options){
       if(!registration||!registration.pushManager)return {enabled:false,reason:'push-manager-unavailable'};
       var subscription=await registration.pushManager.getSubscription();
       if(!subscription){
+        var publicKey=await loadPublicKey();
         subscription=await registration.pushManager.subscribe({
           userVisibleOnly:true,
-          applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+          applicationServerKey:urlBase64ToUint8Array(publicKey)
         });
       }
       var registered=await registerSubscription(subscription);
@@ -150,6 +174,7 @@ function create(options){
   }
 
   return Object.freeze({
+    prepare:prepare,
     ensureForPriceAlerts:ensureForPriceAlerts,
     status:status,
     isMobile:isMobile,
@@ -160,7 +185,6 @@ function create(options){
 
 return Object.freeze({
   create:create,
-  urlBase64ToUint8Array:urlBase64ToUint8Array,
-  VAPID_PUBLIC_KEY:VAPID_PUBLIC_KEY
+  urlBase64ToUint8Array:urlBase64ToUint8Array
 });
 });
