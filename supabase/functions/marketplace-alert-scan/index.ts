@@ -492,7 +492,7 @@ async function sendPriceAlertPush(db:ReturnType<typeof createClient>,alert:Alert
     :newCount+' new listings under '+Number(alert.max_price).toLocaleString('en-US',{maximumFractionDigits:2})+' '+alert.currency
 
   const payload=JSON.stringify({
-    title:'Price alert · '+album,
+    title:'Groovy · Price alert · '+album,
     body,
     icon:'https://groovyshelves.com/assets/icons/app-icon-192.png',
     badge:'https://groovyshelves.com/assets/icons/notification-badge.png',
