@@ -260,3 +260,13 @@ test('native Price Alerts are delivered through FCM rather than browser push',()
   assert.match(scanner,/priority:'high'/);
   assert.doesNotMatch(scanner,/webpush|push_subscriptions|VAPID/);
 });
+
+
+test('browser-triggered Price Alert scans handle CORS',()=>{
+  const scanner=fs.readFileSync(path.join(root,'supabase','functions','marketplace-alert-scan','index.ts'),'utf8');
+  assert.match(scanner,/Access-Control-Allow-Origin/);
+  assert.match(scanner,/Access-Control-Allow-Headers/);
+  assert.match(scanner,/req\.method==='OPTIONS'/);
+  assert.match(scanner,/new Response\('ok',\{headers:corsHeaders\}\)/);
+  assert.match(scanner,/Response\.json\(body,\{status,headers:corsHeaders\}\)/);
+});
