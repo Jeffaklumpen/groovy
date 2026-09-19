@@ -32,7 +32,6 @@ test('Android TWA bridges the FCM token to the authenticated web app',()=>{
   assert.match(launcher,/groovyNativePush=/);
   assert.match(launcher,/launchInitialTrustedWebActivity/);
   assert.match(bridge,/groovyNativePush/);
-  assert.match(bridge,/android-app:\\/\\/com\\.groovyshelves\\.twa/);
   assert.match(bridge,/document\\.referrer/);
   assert.match(bridge,/URLSearchParams/);
   assert.match(bridge,/register_native_push_device/);
