@@ -18,6 +18,12 @@ test('album reviews persist one review per user and album with RLS',()=>{
   assert.match(sql,/Users can delete own album reviews/);
 });
 
+test('album review identity sequence follows explicit Data API permissions',()=>{
+  const sql=fs.readFileSync('supabase/migrations/20260919022500_album_review_sequence_permissions.sql','utf8');
+  assert.match(sql,/revoke all on sequence public\.album_reviews_id_seq/i);
+  assert.match(sql,/grant usage,select on sequence public\.album_reviews_id_seq to authenticated,service_role/i);
+});
+
 test('review save keeps review text and album rating in one transaction',()=>{
   const sql=fs.readFileSync('supabase/migrations/20260919021500_album_reviews.sql','utf8');
   assert.match(sql,/create or replace function public\.save_album_review/i);
