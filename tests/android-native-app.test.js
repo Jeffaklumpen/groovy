@@ -53,3 +53,13 @@ test('Android release helper reuses Bubblewrap tooling without committing signin
   assert.match(script,/49D8D36E7E2BCDA7217DB31885343E5D79B7A92A4358D577D4AE160E7B0C46D2/);
   assert.doesNotMatch(script,/GROOVY_KEYSTORE_PASSWORD\s*=\s*['"][^'"]+['"]/);
 });
+
+
+test('web Supabase client is exposed to the native bridge',()=>{
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const bridge=fs.readFileSync(path.join(root,'js','native-app-bridge.js'),'utf8');
+  assert.match(html,/window\.supabaseClient=supabaseClient/);
+  assert.match(html,/\/js\/native-app-bridge\.js\?v=2/);
+  assert.match(bridge,/window\.supabaseClient/);
+  assert.match(bridge,/register_native_push_device/);
+});
