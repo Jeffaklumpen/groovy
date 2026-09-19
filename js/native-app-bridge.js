@@ -8,6 +8,26 @@
   var nativePort=null;
   var registering=false;
 
+  function launchPayload(){
+    var hash=String(window.location.hash||'');
+    if(hash.indexOf('groovyNativePush=')===-1)return null;
+    try{
+      var params=new URLSearchParams(hash.charAt(0)==='#'?hash.slice(1):hash);
+      var token=params.get('groovyNativePush')||'';
+      if(!token)return null;
+      return {
+        type:'groovy:native-push-token',
+        platform:'android',
+        provider:'fcm',
+        token:token,
+        appId:'com.groovyshelves.twa',
+        appVersion:params.get('groovyNativeVersion')||''
+      };
+    }catch(error){
+      return null;
+    }
+  }
+
   function parsePayload(value){
     if(!value)return null;
     if(typeof value==='object')return value;
@@ -77,6 +97,9 @@
     if(!validPayload(payload))return;
     register(payload);
   }
+
+  var payloadFromLaunch=launchPayload();
+  if(payloadFromLaunch)handlePayload(payloadFromLaunch);
 
   window.addEventListener('message',function(event){
     if(!TRUSTED_ORIGINS[event.origin])return;
