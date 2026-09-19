@@ -2073,6 +2073,7 @@ document.onkeydown=function(event){
   event=event||window.event;
 
   if(event.keyCode===27){
+    if(albumReviewController&&albumReviewController.handleEscape())return;
     if(marketplaceController.handleEscape())return;
     if(albumOverlay.className.indexOf('visible')!==-1){
       closeAlbum();
