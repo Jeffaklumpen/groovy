@@ -41,3 +41,15 @@ test('native notification service renders Price Alert pushes inside the APK',()=
   assert.match(service,/R\.drawable\.ic_notification/);
   assert.match(service,/groovyshelves\.com\/price-alerts/);
 });
+
+
+test('Android release helper reuses Bubblewrap tooling without committing signing secrets',()=>{
+  const script=fs.readFileSync(path.join(root,'android','build-release.ps1'),'utf8');
+  assert.match(script,/\.bubblewrap\\config\.json/);
+  assert.match(script,/android\.keystore/);
+  assert.match(script,/Read-Host 'Keystore password' -AsSecureString/);
+  assert.match(script,/gradlew\.bat clean assembleRelease/);
+  assert.match(script,/apksigner\.bat/);
+  assert.match(script,/49D8D36E7E2BCDA7217DB31885343E5D79B7A92A4358D577D4AE160E7B0C46D2/);
+  assert.doesNotMatch(script,/GROOVY_KEYSTORE_PASSWORD\s*=\s*['"][^'"]+['"]/);
+});
