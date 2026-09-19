@@ -92,6 +92,13 @@ public class LauncherActivity extends Activity {
                         return;
                     }
 
+                    boolean validationRequested = session.validateRelationship(
+                        CustomTabsService.RELATION_USE_AS_ORIGIN,
+                        APP_ORIGIN,
+                        null
+                    );
+                    Log.d(TAG, "PostMessage origin validation requested: " + validationRequested);
+
                     loadCurrentFcmToken();
                     launchTrustedWebActivity(resolveLaunchUrl(getIntent()));
                 }
@@ -121,6 +128,7 @@ public class LauncherActivity extends Activity {
                 APP_ORIGIN.equals(requestedOrigin)) {
                 originValidated = result;
                 Log.d(TAG, "PostMessage origin validation: " + result);
+                maybeRequestPostMessageChannel();
             }
         }
 
@@ -148,7 +156,7 @@ public class LauncherActivity extends Activity {
     };
 
     private void maybeRequestPostMessageChannel() {
-        if (!navigationFinished || channelRequested || session == null) {
+        if (!originValidated || !navigationFinished || channelRequested || session == null) {
             return;
         }
 

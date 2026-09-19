@@ -11,7 +11,8 @@ test('Android app keeps Groovy identity and Firebase configuration',()=>{
   const firebase=JSON.parse(fs.readFileSync(path.join(root,'android','app','google-services.json'),'utf8'));
 
   assert.match(gradle,/applicationId 'com\.groovyshelves\.twa'/);
-  assert.match(gradle,/versionCode 4/);
+  assert.match(gradle,/versionCode 5/);
+  assert.match(gradle,/versionName '1\.2\.2'/);
   assert.match(gradle,/firebase-bom:34\.19\.0/);
   assert.match(gradle,/firebase-messaging/);
   assert.equal(firebase.client[0].client_info.android_client_info.package_name,'com.groovyshelves.twa');
@@ -65,13 +66,16 @@ test('web Supabase client is exposed to the native bridge',()=>{
 });
 
 
-test('Android requests the postMessage channel after navigation without pre-validation gating',()=>{
+test('Android requests the postMessage channel only after origin validation and navigation',()=>{
   const launcher=fs.readFileSync(path.join(root,'android','app','src','main','java','com','groovyshelves','twa','LauncherActivity.java'),'utf8');
-  assert.match(launcher,/navigationFinished \|\| channelRequested \|\| session == null/);
+  const pwa=fs.readFileSync(path.join(root,'js','pwa.js'),'utf8');
+  assert.match(launcher,/session\.validateRelationship\(\s*CustomTabsService\.RELATION_USE_AS_ORIGIN,\s*APP_ORIGIN,\s*null\s*\)/);
+  assert.match(launcher,/originValidated = result;\s*Log\.d\(TAG, "PostMessage origin validation: " \+ result\);\s*maybeRequestPostMessageChannel\(\);/);
+  assert.match(launcher,/!originValidated \|\| !navigationFinished \|\| channelRequested \|\| session == null/);
   assert.match(launcher,/requestPostMessageChannel\(APP_ORIGIN, APP_ORIGIN/);
-  assert.doesNotMatch(launcher,/!originValidated \|\| !navigationFinished/);
   assert.match(launcher,/postDelayed\(LauncherActivity\.this::sendFcmTokenToWeb, 1000L\)/);
   assert.match(launcher,/postDelayed\(LauncherActivity\.this::sendFcmTokenToWeb, 3000L\)/);
+  assert.match(pwa,/androidApkUrl='\/GroovyShelves\.apk\?v=5'/);
 });
 
 
