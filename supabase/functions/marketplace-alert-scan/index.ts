@@ -1,5 +1,15 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+}
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return jsonResponse(body,{status,headers:corsHeaders})
+}
+
 type JsonRecord = Record<string, unknown>
 type Listing = {
   id: string
@@ -617,11 +627,12 @@ async function sendPriceAlertNativePush(
 }
 
 Deno.serve(async(req)=>{
-  if(req.method!=='POST')return Response.json({error:'Method not allowed'},{status:405})
+  if(req.method==='OPTIONS')return new Response('ok',{headers:corsHeaders})
+  if(req.method!=='POST')return jsonResponse({error:'Method not allowed'},405)
 
   const supabaseUrl=Deno.env.get('SUPABASE_URL')||''
   const serviceRole=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''
-  if(!supabaseUrl||!serviceRole)return Response.json({error:'Server is not configured'},{status:500})
+  if(!supabaseUrl||!serviceRole)return jsonResponse({error:'Server is not configured'},500)
   const db=createClient(supabaseUrl,serviceRole,{auth:{persistSession:false,autoRefreshToken:false}})
 
   let body:JsonRecord={}
@@ -632,10 +643,10 @@ Deno.serve(async(req)=>{
   if(requestedAlertId){
     const authorization=req.headers.get('authorization')||req.headers.get('Authorization')||''
     const token=authorization.replace(/^Bearer\s+/i,'').trim()
-    if(!token)return Response.json({error:'Authentication required'},{status:401})
+    if(!token)return jsonResponse({error:'Authentication required'},401)
     const authResult=await db.auth.getUser(token)
     const user=authResult.data&&authResult.data.user
-    if(authResult.error||!user)return Response.json({error:'Authentication required'},{status:401})
+    if(authResult.error||!user)return jsonResponse({error:'Authentication required'},401)
     requestUserId=user.id
   }
 
@@ -643,9 +654,9 @@ Deno.serve(async(req)=>{
     const claim=await db.rpc('claim_marketplace_alert_scan',{p_min_interval_minutes:55})
     if(claim.error){
       console.error('Could not claim marketplace alert scan',claim.error)
-      return Response.json({error:'Could not start scan'},{status:500})
+      return jsonResponse({error:'Could not start scan'},500)
     }
-    if(!claim.data)return Response.json({ok:true,skipped:true,reason:'recent_scan'})
+    if(!claim.data)return jsonResponse({ok:true,skipped:true,reason:'recent_scan'})
   }
 
   let processed=0
@@ -665,7 +676,7 @@ Deno.serve(async(req)=>{
       .limit(requestedAlertId?1:500)
     if(alertResult.error)throw alertResult.error
     if(requestedAlertId&&!(alertResult.data||[]).length){
-      return Response.json({error:'Price alert not found'},{status:404})
+      return jsonResponse({error:'Price alert not found'},404)
     }
 
     for(const raw of alertResult.data||[]){
@@ -728,11 +739,11 @@ Deno.serve(async(req)=>{
     }
 
     if(!requestedAlertId)await db.rpc('finish_marketplace_alert_scan',{p_error:null})
-    return Response.json({ok:true,processed,newMatches,alertId:requestedAlertId||null})
+    return jsonResponse({ok:true,processed,newMatches,alertId:requestedAlertId||null})
   }catch(error){
     const finalError=error instanceof Error?error.message:String(error)
     console.error('Marketplace alert scan failed',error)
     if(!requestedAlertId)await db.rpc('finish_marketplace_alert_scan',{p_error:finalError})
-    return Response.json({error:'Marketplace alert scan failed'},{status:500})
+    return jsonResponse({error:'Marketplace alert scan failed'},500)
   }
 })
