@@ -650,10 +650,10 @@
       closeMenus();
     }
 
-    function handleKeyDown(event){
-      if(event.key==='Escape'&&editor&&editor.classList.contains('open')){
-        closeEditor();
-      }
+    function handleEscape(){
+      if(!editor||!editor.classList.contains('open'))return false;
+      closeEditor();
+      return true;
     }
 
     function close(){
@@ -679,7 +679,6 @@
       bound=true;
       if(rootElement)rootElement.addEventListener('click',handleRootClick);
       if(doc)doc.addEventListener('click',handleDocumentClick);
-      if(doc)doc.addEventListener('keydown',handleKeyDown);
     }
 
     bind();
@@ -687,6 +686,7 @@
     return Object.freeze({
       openForRecord:openForRecord,
       refresh:refresh,
+      handleEscape:handleEscape,
       close:close,
       state:function(){
         return {
