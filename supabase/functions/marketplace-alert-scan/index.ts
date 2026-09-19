@@ -325,6 +325,61 @@ async function matchingRows(alert:AlertRow,listings:Listing[],marketplace:string
   return matches
 }
 
+async function marketplaceState(alert:AlertRow,listings:Listing[]){
+  let count=0
+  let lowest:number|null=null
+
+  for(const listing of listings){
+    const amounts:number[]=[]
+    if(alert.fixed_price&&listing.saleTypes.includes('fixed')&&Number(listing.buyNowPrice)>0){
+      amounts.push(Number(listing.buyNowPrice))
+    }
+    if(alert.auction&&listing.saleTypes.includes('auction')){
+      const auctionAmount=Number(listing.nextBid||listing.currentBid||listing.openingBid||0)
+      if(auctionAmount>0)amounts.push(auctionAmount)
+    }
+    if(!amounts.length)continue
+
+    let best:number|null=null
+    for(const amount of amounts){
+      try{
+        const rate=await fxRate(listing.currency,alert.currency)
+        const converted=amount*rate
+        if(Number.isFinite(converted)&&converted>0&&(best===null||converted<best))best=converted
+      }catch(error){
+        if(listing.currency.toUpperCase()===alert.currency.toUpperCase()&&(best===null||amount<best))best=amount
+      }
+    }
+
+    if(best===null)continue
+    count++
+    if(lowest===null||best<lowest)lowest=best
+  }
+
+  return {
+    listing_count:count,
+    listing_count_capped:listings.length>=60,
+    lowest_price:lowest===null?null:Math.round(lowest*100)/100,
+    currency:alert.currency,
+    checked_at:new Date().toISOString()
+  }
+}
+
+async function saveMarketplaceState(db:ReturnType<typeof createClient>,alert:AlertRow,marketplace:string,listings:Listing[]){
+  const state=await marketplaceState(alert,listings)
+  const result=await db.from('marketplace_alert_market_state').upsert({
+    alert_id:alert.id,
+    marketplace,
+    listing_count:state.listing_count,
+    listing_count_capped:state.listing_count_capped,
+    lowest_price:state.lowest_price,
+    currency:state.currency,
+    checked_at:state.checked_at
+  },{onConflict:'alert_id,marketplace'})
+  if(result.error)throw result.error
+}
+
+
 Deno.serve(async(req)=>{
   if(req.method!=='POST')return Response.json({error:'Method not allowed'},{status:405})
 
@@ -369,10 +424,14 @@ Deno.serve(async(req)=>{
       if(alert.tradera_enabled){
         try{
           if(!traderaCache.has(albumKey))traderaCache.set(albumKey,searchTradera(artist,album))
-          matches.push(...await matchingRows(alert,await traderaCache.get(albumKey)!,'Tradera'))
+          const traderaListings=await traderaCache.get(albumKey)!
+          matches.push(...await matchingRows(alert,traderaListings,'Tradera'))
+          await saveMarketplaceState(db,alert,'Tradera',traderaListings)
         }catch(error){
           errors.push('Tradera: '+(error instanceof Error?error.message:String(error)))
         }
+      }else{
+        await db.from('marketplace_alert_market_state').delete().eq('alert_id',alert.id).eq('marketplace','Tradera')
       }
 
       if(alert.ebay_enabled){
@@ -380,10 +439,14 @@ Deno.serve(async(req)=>{
           const market=supportedMarketplaceIds.has(alert.ebay_marketplace_id)?alert.ebay_marketplace_id:'EBAY_US'
           const key=albumKey+'|'+market
           if(!ebayCache.has(key))ebayCache.set(key,searchEbay(artist,album,market))
-          matches.push(...await matchingRows(alert,await ebayCache.get(key)!,'eBay'))
+          const ebayListings=await ebayCache.get(key)!
+          matches.push(...await matchingRows(alert,ebayListings,'eBay'))
+          await saveMarketplaceState(db,alert,'eBay',ebayListings)
         }catch(error){
           errors.push('eBay: '+(error instanceof Error?error.message:String(error)))
         }
+      }else{
+        await db.from('marketplace_alert_market_state').delete().eq('alert_id',alert.id).eq('marketplace','eBay')
       }
 
       const recorded=await db.rpc('record_marketplace_alert_scan',{

@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="/css/ratings-detail.css?v=8">
   <link rel="stylesheet" href="/css/detail-enhancements.css?v=18">
   <link rel="stylesheet" href="/css/reviews-detail.css?v=3">
+  <link rel="stylesheet" href="/css/price-alerts.css?v=1">
   <link rel="stylesheet" href="/css/profile.css?v=11">
   <link rel="icon" type="image/png" href="/assets/icons/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
@@ -87,6 +88,7 @@
           <button id="statisticsButton" class="menu-button" type="button">Statistics</button>
           <button id="searchUserButton" class="menu-button" type="button">Search User</button>
           <button id="followingButton" class="menu-button" type="button">Following</button>
+          <button id="priceAlertsButton" class="menu-button" type="button">Price Alerts</button>
           <button id="installAppMenuButton" class="menu-button" type="button">Install Groovy</button>
           <div class="profile-divider"></div><button id="logoutButton" type="button">Logout</button>
         </div>
@@ -190,6 +192,21 @@
 
 <section id="communityPage" class="community-page" aria-label="Community" aria-hidden="true" hidden>
   <div id="communityContent" class="community-content" aria-live="polite"></div>
+</section>
+
+<section id="priceAlertsPage" class="price-alerts-page" aria-labelledby="priceAlertsPageTitle" aria-hidden="true" hidden>
+  <div class="price-alerts-heading">
+    <div class="price-alerts-heading-copy">
+      <span class="price-alerts-kicker">YOUR WATCHLIST</span>
+      <h1 id="priceAlertsPageTitle">Price Alerts</h1>
+      <p>See what you are watching, current marketplace prices and how many matching listings are available.</p>
+    </div>
+    <div class="price-alerts-heading-actions">
+      <span id="priceAlertsCount" class="price-alerts-count">0 ACTIVE ALERTS</span>
+      <button id="priceAlertsBackButton" class="price-alerts-back" type="button">Back to My Shelf</button>
+    </div>
+  </div>
+  <div id="priceAlertsGrid" class="price-alerts-grid" aria-live="polite"></div>
 </section>
 
 <div id="selectionActionBar" class="selection-action-bar" hidden>
@@ -631,7 +648,7 @@
   </div>
 </div>
 
-<script src="/js/route-state.js?v=22"></script>
+<script src="/js/route-state.js?v=23"></script>
 <script src="/js/router.js?v=3"></script>
 <script src="/js/user-profile-core.js?v=3"></script>
 <script src="/js/record-model.js?v=8"></script>
@@ -656,7 +673,8 @@
 <script src="/js/marketplace-core.js?v=2"></script>
 <script src="/js/marketplace-view.js?v=1"></script>
 <script src="/js/marketplace-controller.js?v=3"></script>
-<script src="/js/marketplace-alert-controller.js?v=1"></script>
+<script src="/js/marketplace-alert-controller.js?v=2"></script>
+<script src="/js/price-alerts-page-controller.js?v=1"></script>
 <script src="/js/shelf-core.js?v=2"></script>
 <script src="/js/shelf-view.js?v=1"></script>
 <script src="/js/shelf-controller.js?v=3"></script>
@@ -671,7 +689,7 @@
 <script src="/js/album-search.js?v=6"></script>
 <script src="/js/wikipedia-service.js?v=1"></script>
 <script src="/js/wikipedia-about-controller.js?v=1"></script>
-<script src="/js/app.js?v=194"></script>
+<script src="/js/app.js?v=195"></script>
 <script src="/js/detail-enhancements-v2.js?v=14"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=14"></script>

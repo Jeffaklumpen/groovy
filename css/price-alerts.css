@@ -1,0 +1,127 @@
+.price-alerts-page{width:100%;max-width:1360px;margin:0 auto;padding:31px 32px 58px}
+.price-alerts-page[hidden]{display:none!important}
+body.price-alerts-page-open .library-overview,
+body.price-alerts-page-open #libraryPaginationTop,
+body.price-alerts-page-open #libraryPaginationBottom,
+body.price-alerts-page-open #collection,
+body.price-alerts-page-open #emptyCollection,
+body.price-alerts-page-open #emptyWishlist,
+body.price-alerts-page-open #emptyViewedCollection,
+body.price-alerts-page-open #loginToViewCollection,
+body.price-alerts-page-open #profileNotFound,
+body.price-alerts-page-open #scrollTopButton{display:none!important}
+.price-alerts-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px;padding-bottom:19px;border-bottom:1px solid rgba(255,255,255,.08)}
+.price-alerts-heading-copy{min-width:0}
+.price-alerts-kicker{display:block;margin-bottom:6px;color:#e85301;font-size:9px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
+.price-alerts-heading h1{margin:0;color:#f4f4f6;font-size:31px;font-weight:720;letter-spacing:-.04em}
+.price-alerts-heading p{max-width:640px;margin:7px 0 0;color:#77777e;font-size:12px;line-height:1.55}
+.price-alerts-heading-actions{display:flex;flex:0 0 auto;align-items:center;gap:10px}
+.price-alerts-count{color:#65656c;font-size:9px;font-weight:800;letter-spacing:.1em}
+.price-alerts-back{min-height:39px;padding:0 13px;border:1px solid #35353a;border-radius:9px;background:#151517;color:#bdbdc2;font:inherit;font-size:10px;font-weight:730;cursor:pointer}
+.price-alerts-back:hover{border-color:#4c4c52;background:#1b1b1e;color:#fff}
+.price-alerts-grid{display:grid;gap:12px}
+.price-alert-card{display:grid;grid-template-columns:118px minmax(0,1fr) auto;gap:18px;align-items:stretch;padding:14px;border:1px solid #29292d;border-radius:14px;background:linear-gradient(145deg,rgba(255,255,255,.025),rgba(255,255,255,.012)),#111113;box-shadow:0 10px 28px rgba(0,0,0,.16)}
+.price-alert-cover-column{width:118px}
+.price-alert-cover-wrap{width:118px;aspect-ratio:1;overflow:hidden;border-radius:8px;background:#1a1a1d;box-shadow:0 7px 18px rgba(0,0,0,.3)}
+.price-alert-cover-wrap img{display:block;width:100%;height:100%;object-fit:cover}
+.price-alert-streaming{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px}
+.price-alert-streaming a{display:flex;height:24px;min-width:0;align-items:center;justify-content:center;border-radius:6px;text-decoration:none;overflow:hidden}
+.price-alert-apple{background:#000}
+.price-alert-apple img{display:block;width:100%;height:24px;object-fit:contain}
+.price-alert-spotify{padding:0 6px;border:1px solid #303034;background:#09090a}
+.price-alert-spotify img{display:block;width:100%;max-width:62px;height:auto;object-fit:contain}
+.price-alert-card-main{display:grid;grid-template-columns:minmax(180px,1.05fr) minmax(124px,.55fr) minmax(0,1.35fr);grid-template-rows:auto auto;gap:10px 18px;min-width:0;align-content:center}
+.price-alert-identity{min-width:0}
+.price-alert-card-kicker{display:block;margin-bottom:4px;color:#e85301;font-size:8px;font-weight:850;letter-spacing:.12em}
+.price-alert-identity h2{margin:0;overflow:hidden;color:#efeff1;font-size:18px;font-weight:720;line-height:1.15;letter-spacing:-.025em;text-overflow:ellipsis;white-space:nowrap}
+.price-alert-identity p{margin:5px 0 0;overflow:hidden;color:#8a8a91;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.price-alert-rule{display:flex;min-width:0;flex-direction:column;justify-content:center;padding:10px 12px;border-left:1px solid #29292d}
+.price-alert-rule span{color:#696970;font-size:8px;font-weight:760;letter-spacing:.08em;text-transform:uppercase}
+.price-alert-rule strong{margin-top:3px;color:#ff742f;font-size:17px;font-weight:760;white-space:nowrap}
+.price-alert-meta{grid-column:1/3;display:flex;min-width:0;align-items:center;gap:8px;color:#73737a;font-size:9px;font-weight:650}
+.price-alert-meta i{width:3px;height:3px;flex:0 0 3px;border-radius:50%;background:#414146}
+.price-alert-market-grid{grid-column:3;grid-row:1/3;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.price-alert-market{min-width:0;padding:10px 11px;border:1px solid #2e2e32;border-radius:10px;background:#151517}
+.price-alert-market-head{display:flex;align-items:center;gap:7px;min-width:0}
+.price-alert-market-head>strong{overflow:hidden;color:#cfcfd3;font-size:10px;font-weight:730;text-overflow:ellipsis;white-space:nowrap}
+.price-alert-market-head>span:last-child{margin-left:auto;color:#696970;font-size:8px;font-weight:650;white-space:nowrap}
+.price-alert-market-brand{display:flex;width:23px;height:23px;flex:0 0 23px;align-items:center;justify-content:center;border-radius:7px;font-size:11px;font-weight:850}
+.price-alert-market.tradera .price-alert-market-brand{background:#e85301;color:#fff}
+.price-alert-market.ebay .price-alert-market-brand{background:#f2f2f3;color:#18181a;font-size:15px}
+.price-alert-market-price{display:flex;align-items:baseline;gap:6px;margin-top:9px;min-width:0}
+.price-alert-market-price strong{overflow:hidden;color:#f1f1f3;font-size:15px;font-weight:740;text-overflow:ellipsis;white-space:nowrap}
+.price-alert-market-price span{color:#616168;font-size:8px;white-space:nowrap}
+.price-alert-market>small{display:block;margin-top:5px;color:#55555c;font-size:8px}
+.price-alert-card-actions{display:flex;width:76px;flex-direction:column;justify-content:center;gap:7px;border-left:1px solid #29292d;padding-left:13px}
+.price-alert-card-actions>button{min-height:34px;padding:0 10px;border-radius:8px;font:inherit;font-size:9px;font-weight:740;cursor:pointer}
+.price-alert-edit{border:1px solid rgba(232,83,1,.45);background:rgba(232,83,1,.09);color:#ff742f}
+.price-alert-edit:hover{border-color:#e85301;background:rgba(232,83,1,.15)}
+.price-alert-remove{border:1px solid #343439;background:#171719;color:#85858c}
+.price-alert-remove:hover{border-color:rgba(215,76,76,.45);color:#e58686}
+.price-alert-delete-confirm{display:flex;flex-direction:column;gap:6px}
+.price-alert-delete-confirm[hidden]{display:none!important}
+.price-alert-delete-confirm span{color:#9b9ba1;font-size:8px;line-height:1.35;text-align:center}
+.price-alert-delete-confirm button{min-height:30px;padding:0 6px;border:1px solid #35353a;border-radius:7px;background:#18181b;color:#a9a9ae;font:inherit;font-size:8px;font-weight:730;cursor:pointer}
+.price-alert-delete-confirm button.danger{border-color:rgba(211,69,69,.45);background:rgba(198,40,40,.09);color:#ef8989}
+.price-alert-delete-confirm button:disabled{opacity:.55;cursor:wait}
+.price-alert-loading,.price-alert-empty{display:flex;min-height:260px;align-items:center;justify-content:center;flex-direction:column;padding:36px;border:1px dashed #303034;border-radius:14px;background:#111113;color:#8b8b91;text-align:center}
+.price-alert-loading>span{width:27px;height:27px;margin-bottom:12px;border:2px solid #343438;border-top-color:#e85301;border-radius:50%;animation:price-alert-spin .75s linear infinite}
+.price-alert-loading strong,.price-alert-empty strong{color:#d7d7da;font-size:14px}
+.price-alert-empty p{max-width:390px;margin:7px 0 15px;color:#696970;font-size:11px;line-height:1.5}
+.price-alert-empty button{min-height:38px;padding:0 13px;border:1px solid rgba(232,83,1,.42);border-radius:9px;background:rgba(232,83,1,.08);color:#ff742f;font:inherit;font-size:10px;font-weight:730;cursor:pointer}
+.price-alert-empty.error strong{color:#e58b8b}
+@keyframes price-alert-spin{to{transform:rotate(360deg)}}
+
+@media(max-width:980px){
+.price-alert-card{grid-template-columns:104px minmax(0,1fr)}
+.price-alert-cover-column{width:104px}
+.price-alert-cover-wrap{width:104px}
+.price-alert-card-main{grid-template-columns:minmax(160px,1fr) minmax(120px,.65fr);grid-template-rows:auto auto auto}
+.price-alert-meta{grid-column:1/3}
+.price-alert-market-grid{grid-column:1/3;grid-row:3}
+.price-alert-card-actions{grid-column:1/3;width:auto;flex-direction:row;justify-content:flex-end;border-left:0;border-top:1px solid #29292d;padding:10px 0 0}
+.price-alert-card-actions>button{min-width:70px}
+.price-alert-delete-confirm{flex-direction:row;align-items:center;margin-left:auto}
+}
+
+@media(max-width:600px){
+.price-alerts-page{padding:20px 12px calc(82px + env(safe-area-inset-bottom))}
+.price-alerts-heading{align-items:flex-start;display:block;margin-bottom:15px;padding-bottom:15px}
+.price-alerts-heading h1{font-size:25px}
+.price-alerts-heading p{font-size:10px}
+.price-alerts-heading-actions{justify-content:space-between;margin-top:13px}
+.price-alert-card{grid-template-columns:86px minmax(0,1fr);gap:11px;padding:11px;border-radius:12px}
+.price-alert-cover-column{width:86px}
+.price-alert-cover-wrap{width:86px;border-radius:7px}
+.price-alert-streaming{grid-template-columns:1fr;gap:4px;margin-top:5px}
+.price-alert-streaming a{height:21px}
+.price-alert-apple img{height:21px}
+.price-alert-spotify{padding:0 5px}
+.price-alert-spotify img{max-width:53px}
+.price-alert-card-main{display:block}
+.price-alert-card-kicker{font-size:7px}
+.price-alert-identity h2{font-size:15px}
+.price-alert-identity p{margin-top:3px;font-size:9px}
+.price-alert-rule{margin-top:9px;padding:8px 0 0;border-left:0;border-top:1px solid #29292d}
+.price-alert-rule span{font-size:7px}
+.price-alert-rule strong{font-size:15px}
+.price-alert-meta{margin-top:6px;gap:6px;font-size:8px;line-height:1.35}
+.price-alert-market-grid{grid-column:auto;grid-row:auto;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:9px}
+.price-alert-market{padding:8px;border-radius:8px}
+.price-alert-market-head{gap:5px}
+.price-alert-market-brand{width:20px;height:20px;flex-basis:20px;border-radius:6px;font-size:9px}
+.price-alert-market.ebay .price-alert-market-brand{font-size:13px}
+.price-alert-market-head>strong{font-size:8px}
+.price-alert-market-head>span:last-child{font-size:7px}
+.price-alert-market-price{display:block;margin-top:7px}
+.price-alert-market-price strong{display:block;font-size:12px}
+.price-alert-market-price span{display:block;margin-top:1px;font-size:7px}
+.price-alert-market>small{font-size:7px}
+.price-alert-card-actions{grid-column:1/3;gap:6px;padding-top:9px}
+.price-alert-card-actions>button{flex:1;min-height:35px}
+.price-alert-delete-confirm{width:100%;margin-left:0}
+.price-alert-delete-confirm span{margin-right:auto}
+.price-alert-delete-confirm button{min-width:64px}
+}
+
+@media(prefers-reduced-motion:reduce){.price-alert-loading>span{animation-duration:1.5s}}

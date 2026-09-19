@@ -23,9 +23,11 @@ function create(options){
   var getArtist=typeof options.getArtist==='function'?options.getArtist:function(record){return recordModel&&recordModel.artist?recordModel.artist(record)||'':'';};
   var getTitle=typeof options.getTitle==='function'?options.getTitle:function(record){return recordModel&&recordModel.title?recordModel.title(record)||'':'';};
   var onRequireAuth=typeof options.onRequireAuth==='function'?options.onRequireAuth:function(){};
+  var onChanged=typeof options.onChanged==='function'?options.onChanged:function(){};
   var onLog=typeof options.onLog==='function'?options.onLog:function(){};
   var currencyStorageKey='groovy-marketplace-currency-v1';
   var activeIndex=-1;
+  var activeRecordOverride=null;
   var activeUser=null;
   var currentAlert=null;
   var requestVersion=0;
@@ -41,7 +43,7 @@ function create(options){
     return Core.displayCurrency(preference,Core.regionCurrency(locale()||'',timezone()));
   }
   function ebayMarketplace(){return Core.ebayMarketplaceId(locale()||'');}
-  function activeRecord(){return getRecord(activeIndex);}
+  function activeRecord(){return activeRecordOverride||getRecord(activeIndex);}
   function formatAmount(amount,currency){return Core.formatMoney(Number(amount),currency,locale())||String(amount)+' '+String(currency||'');}
 
   function setStatus(message,state){
@@ -147,6 +149,7 @@ function create(options){
       currentAlert=Array.isArray(result.data)?result.data[0]||null:result.data;
       renderTrigger();
       closeModal();
+      onChanged({type:'saved',alert:currentAlert,record:record});
       return true;
     }catch(error){
       onLog('error','Could not save marketplace price alert:',error);
@@ -169,9 +172,11 @@ function create(options){
     try{
       var result=await api.rpc('delete_marketplace_alert',{p_album_id:albumId});
       if(result.error)throw result.error;
+      var removedAlert=currentAlert;
       currentAlert=null;
       renderTrigger();
       closeModal();
+      onChanged({type:'removed',alert:removedAlert,record:record});
       return true;
     }catch(error){
       onLog('error','Could not remove marketplace price alert:',error);
@@ -186,6 +191,7 @@ function create(options){
   async function openForRecord(index){
     var version=++requestVersion;
     activeIndex=index;
+    activeRecordOverride=null;
     currentAlert=null;
     activeUser=await getCurrentUser();
     if(version!==requestVersion)return null;
@@ -212,9 +218,25 @@ function create(options){
     return currentAlert;
   }
 
+  async function openForRecordData(record,alert){
+    var version=++requestVersion;
+    activeIndex=-1;
+    activeRecordOverride=record||null;
+    currentAlert=alert||null;
+    activeUser=await getCurrentUser();
+    if(version!==requestVersion)return false;
+    if(!activeUser||!activeRecord()||Number(getAlbumId(activeRecord())||0)<=0){
+      if(!activeUser)onRequireAuth();
+      return false;
+    }
+    renderTrigger();
+    return openModal();
+  }
+
   function close(){
     requestVersion++;
     activeIndex=-1;
+    activeRecordOverride=null;
     activeUser=null;
     currentAlert=null;
     closeModal();
@@ -249,6 +271,7 @@ function create(options){
 
   return Object.freeze({
     openForRecord:openForRecord,
+    openForRecordData:openForRecordData,
     openModal:openModal,
     closeModal:closeModal,
     save:save,

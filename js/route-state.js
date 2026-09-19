@@ -38,6 +38,10 @@
     }
   }
 
+  function priceAlertsFromPath(pathname){
+    return /^\/price-alerts\/?$/.test(String(pathname||''));
+  }
+
   function statisticsFromSearch(search){
     try{
       return new URLSearchParams(String(search||'')).get('stats')==='1';
@@ -61,6 +65,7 @@
     resolveProfileView:resolveProfileView,
     libraryViewFromSearch:libraryViewFromSearch,
     statisticsFromSearch:statisticsFromSearch,
+    priceAlertsFromPath:priceAlertsFromPath,
     albumIdentityKey:albumIdentityKey
   };
 });

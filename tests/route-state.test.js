@@ -5,6 +5,7 @@ const {
   resolveProfileView,
   libraryViewFromSearch,
   statisticsFromSearch,
+  priceAlertsFromPath,
   albumIdentityKey
 }=require('../js/route-state.js');
 
@@ -31,6 +32,13 @@ test('recognises a directly linked statistics view',function(){
   assert.equal(statisticsFromSearch('?stats=1'),true);
   assert.equal(statisticsFromSearch('?view=wishlist&stats=1'),true);
   assert.equal(statisticsFromSearch('?view=wishlist'),false);
+});
+
+test('recognises the Price Alerts route',function(){
+  assert.equal(priceAlertsFromPath('/price-alerts'),true);
+  assert.equal(priceAlertsFromPath('/price-alerts/'),true);
+  assert.equal(priceAlertsFromPath('/price-alert'),false);
+  assert.equal(priceAlertsFromPath('/'),false);
 });
 
 test('matches the same album across formatting and edition suffixes',function(){

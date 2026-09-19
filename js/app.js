@@ -69,6 +69,7 @@ const registerButton=document.getElementById('registerButton');
 const authSwitchButton=document.getElementById('authSwitchButton');
 const viewedUserFollowButton=document.getElementById('viewedUserFollowButton');
 var communityController=null;
+var priceAlertsController=null;
 
 // A blurred header becomes a containing block for fixed descendants in mobile
 // browsers. Put the dialog at body level after capturing its controls, so it
@@ -577,6 +578,7 @@ var RatingCore=window.GroovyRatingCore;
 var AlbumRatingController=window.GroovyAlbumRatingController;
 var MarketplaceController=window.GroovyMarketplaceController;
 var MarketplaceAlertController=window.GroovyMarketplaceAlertController;
+var PriceAlertsPageController=window.GroovyPriceAlertsPageController;
 var ShelfCore=window.GroovyShelfCore;
 var ShelfView=window.GroovyShelfView;
 var ShelfController=window.GroovyShelfController;
@@ -598,6 +600,7 @@ if(!RatingCore)throw new Error('GroovyRatingCore must load before app.js');
 if(!AlbumRatingController)throw new Error('GroovyAlbumRatingController must load before app.js');
 if(!MarketplaceController)throw new Error('GroovyMarketplaceController must load before app.js');
 if(!MarketplaceAlertController)throw new Error('GroovyMarketplaceAlertController must load before app.js');
+if(!PriceAlertsPageController)throw new Error('GroovyPriceAlertsPageController must load before app.js');
 if(!ShelfCore)throw new Error('GroovyShelfCore must load before app.js');
 if(!ShelfView)throw new Error('GroovyShelfView must load before app.js');
 if(!ShelfController)throw new Error('GroovyShelfController must load before app.js');
@@ -1356,6 +1359,43 @@ var marketplaceAlertController=MarketplaceAlertController.create({
   getArtist:function(record){return Record.artist(record);},
   getTitle:function(record){return Record.title(record);},
   onRequireAuth:function(){openAuthPanel('login');},
+  onChanged:function(){
+    if(priceAlertsController)priceAlertsController.refreshIfOpen();
+  },
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
+
+priceAlertsController=PriceAlertsPageController.create({
+  api:supabaseClient,
+  window:window,
+  document:document,
+  navigator:navigator,
+  elements:{
+    menuButton:document.getElementById('priceAlertsButton'),
+    profileMenu:profileMenu,
+    page:document.getElementById('priceAlertsPage'),
+    grid:document.getElementById('priceAlertsGrid'),
+    count:document.getElementById('priceAlertsCount'),
+    backButton:document.getElementById('priceAlertsBackButton')
+  },
+  getCurrentUser:currentSessionUser,
+  onOpenRoute:function(){profileMenu.classList.remove('open');return Router.navigate('/price-alerts');},
+  onBackHome:function(){return Router.navigate('/');},
+  onRequireAuth:function(){openAuthPanel('login');return Router.replace('/',{}, {render:false});},
+  onEdit:function(alert,album){
+    var record=Record.fromSearchPreview({
+      artist:album.artist,
+      title:album.title,
+      coverUrl:album.coverUrl,
+      albumId:album.id,
+      appleUrl:album.appleUrl
+    });
+    marketplaceAlertController.openForRecordData(record,alert);
+  },
   onLog:function(level,message,error){
     if(level==='error')console.error(message,error||'');
     else if(level==='warn')console.warn(message,error||'');
@@ -2644,12 +2684,20 @@ async function renderCurrentRoute(){
     if(!routeUser){
         communityController.hidePage();
         socialController.hideFollowingPage();
+        if(priceAlertsController)priceAlertsController.hidePage();
         viewedUserId=null;
         window.loginRequiredForViewedCollection=false;
         window.profileNotFound=false;
         await window.loadCollection();
         return;
     }
+    if(GroovyRouteState.priceAlertsFromPath(window.location.pathname)){
+        communityController.hidePage();
+        socialController.hideFollowingPage();
+        await priceAlertsController.renderPage();
+        return;
+    }
+    if(priceAlertsController)priceAlertsController.hidePage();
     if(/^\/community\/?$/.test(window.location.pathname)){
         socialController.hideFollowingPage();
         await communityController.renderPage();

@@ -62,7 +62,8 @@ function fixture(options){
     api,elements,storage:{getItem(){return 'SEK';}},
     navigator:options.navigator||{languages:['sv-SE'],language:'sv-SE'},
     Intl,getCurrentUser:async()=>({id:'user-1'}),getRecord:()=>record,
-    getAlbumId:r=>r.id,getArtist:r=>r.artist,getTitle:r=>r.title,onLog:()=>{}
+    getAlbumId:r=>r.id,getArtist:r=>r.artist,getTitle:r=>r.title,
+    onChanged:options.onChanged||(()=>{}),onLog:()=>{}
   });
   return {controller,elements,calls};
 }
@@ -134,4 +135,22 @@ test('removes an existing alert and Escape closes the custom modal',async()=>{
   assert.equal(await controller.remove(),true);
   assert.ok(calls.some(entry=>entry[0]==='rpc'&&entry[1]==='delete_marketplace_alert'));
   assert.equal(elements.button.attributes['aria-pressed'],'false');
+});
+
+
+test('opens an existing alert directly from the Price Alerts page and refreshes after save',async()=>{
+  const changes=[];
+  const {controller,elements}=fixture({onChanged:event=>changes.push(event)});
+  const record={id:77,artist:'Nirvana',title:'Nevermind'};
+  const existing={id:10,album_id:77,max_price:1000,currency:'SEK',tradera_enabled:true,ebay_enabled:true,fixed_price:true,auction:true};
+  assert.equal(await controller.openForRecordData(record,existing),true);
+  assert.equal(elements.modal.classList.contains('visible'),true);
+  assert.equal(elements.priceInput.value,'1000');
+  assert.equal(elements.subtitle.textContent,'Nirvana · Nevermind');
+
+  elements.priceInput.value='850';
+  assert.equal(await controller.save(),true);
+  assert.equal(changes.length,1);
+  assert.equal(changes[0].type,'saved');
+  assert.equal(changes[0].record,record);
 });

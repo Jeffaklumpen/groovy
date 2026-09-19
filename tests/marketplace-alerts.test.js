@@ -94,3 +94,36 @@ test('price alert uses the shared modal scroll shell for inner spacing',()=>{
   assert.match(css,/\.tradera-modal-scroll\{[^}]*padding:32px/);
   assert.match(css,/@media screen and \(max-width:600px\)[\s\S]*\.tradera-modal-scroll\{[^}]*padding:25px 15px/);
 });
+
+
+test('stores current marketplace snapshots for the Price Alerts page',()=>{
+  const sql=fs.readFileSync(path.join(root,'supabase','migrations','20260919103500_marketplace_alert_overview.sql'),'utf8');
+  const source=fs.readFileSync(path.join(root,'supabase','functions','marketplace-alert-scan','index.ts'),'utf8');
+  assert.match(sql,/create table if not exists public\.marketplace_alert_market_state/);
+  assert.match(sql,/listing_count integer/);
+  assert.match(sql,/listing_count_capped boolean/);
+  assert.match(sql,/lowest_price numeric/);
+  assert.match(sql,/marketplace_alert_market_state_select_own/);
+  assert.match(source,/async function marketplaceState/);
+  assert.match(source,/marketplace_alert_market_state/);
+  assert.match(source,/listing_count_capped:listings\.length>=60/);
+  assert.match(source,/saveMarketplaceState\(db,alert,'Tradera'/);
+  assert.match(source,/saveMarketplaceState\(db,alert,'eBay'/);
+});
+
+test('Price Alerts page is routed, editable and keeps streaming attribution beneath covers',()=>{
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const page=fs.readFileSync(path.join(root,'js','price-alerts-page-controller.js'),'utf8');
+  assert.match(html,/id="priceAlertsButton"[^>]*>Price Alerts</);
+  assert.match(html,/id="priceAlertsPage"/);
+  assert.match(html,/\/js\/price-alerts-page-controller\.js/);
+  assert.match(app,/GroovyRouteState\.priceAlertsFromPath/);
+  assert.match(app,/priceAlertsController\.renderPage\(\)/);
+  assert.match(app,/marketplaceAlertController\.openForRecordData/);
+  assert.match(page,/apple-music-badge-small\.svg/);
+  assert.match(page,/spotify-full-logo-green\.svg/);
+  assert.match(page,/data-price-alert-edit/);
+  assert.match(page,/data-price-alert-remove/);
+  assert.match(page,/listing_count_capped/);
+});
