@@ -125,6 +125,14 @@ function normalizeListing(value: unknown) {
   const currentBid = asRecord(item.currentBidPrice)
   const thumbnails = Array.isArray(item.thumbnailImages) ? item.thumbnailImages : []
   const thumbnail = asRecord(thumbnails[0])
+  const buyingOptions = Array.isArray(item.buyingOptions)
+    ? item.buyingOptions.map((option) => textValue(option).toUpperCase()).filter(Boolean)
+    : []
+  const isAuction = buyingOptions.includes('AUCTION')
+  const isFixed = buyingOptions.includes('FIXED_PRICE') || (!isAuction && numberValue(price.value) !== null)
+  const saleTypes: string[] = []
+  if (isFixed) saleTypes.push('fixed')
+  if (isAuction) saleTypes.push('auction')
 
   return {
     id: textValue(item.itemId),
@@ -133,10 +141,11 @@ function normalizeListing(value: unknown) {
     imageUrl: textValue(image.imageUrl) || textValue(thumbnail.imageUrl),
     endDate: textValue(item.itemEndDate),
     openingBid: null,
-    currentBid: numberValue(currentBid.value),
+    currentBid: isAuction ? (numberValue(currentBid.value) ?? numberValue(price.value)) : null,
     nextBid: null,
-    buyNowPrice: numberValue(price.value),
+    buyNowPrice: isFixed ? numberValue(price.value) : null,
     bidCount: numberValue(item.bidCount) || 0,
+    saleTypes,
     currency: textValue(price.currency) || textValue(currentBid.currency) || 'EUR'
   }
 }

@@ -9,6 +9,15 @@
     });
   }
 
+  function safeExternalUrl(value){
+    try{
+      var url=new URL(String(value||''));
+      return url.protocol==='https:'||url.protocol==='http:'?url.href:'';
+    }catch(error){
+      return '';
+    }
+  }
+
   function relativeTime(value,now){
     var time=new Date(value).getTime();
     if(!time)return '';
@@ -61,8 +70,20 @@
       }
       return '<strong>'+escapeHtml(actor)+'</strong> liked your album review.';
     }
+    if(item.notification_type==='price_alert'){
+      var matchCount=Math.max(1,parseInt(item.item_count,10)||1);
+      var albumTitle=payload.album_title||'A record';
+      var amount=Number(payload.matched_price);
+      var amountLabel=isFinite(amount)&&amount>0?(Math.round(amount*100)/100)+' '+String(payload.alert_currency||''):'a price below your limit';
+      var marketplace=payload.marketplace?String(payload.marketplace):'a marketplace';
+      var saleType=payload.sale_type==='auction'?'Auction':'Fixed price';
+      if(matchCount===1){
+        return '<em>'+escapeHtml(albumTitle)+'</em> matched your price alert at <strong>'+escapeHtml(amountLabel)+'</strong> on '+escapeHtml(marketplace)+'. <b class="notification-shared">'+saleType+'</b>';
+      }
+      return '<strong>'+matchCount+' new listings</strong> matched your price alert for <em>'+escapeHtml(albumTitle)+'</em>. Latest: '+escapeHtml(amountLabel)+' on '+escapeHtml(marketplace)+'.';
+    }
     return '<strong>'+escapeHtml(actor)+'</strong> has new activity.';
   }
 
-  return Object.freeze({escapeHtml:escapeHtml,relativeTime:relativeTime,copy:copy});
+  return Object.freeze({escapeHtml:escapeHtml,safeExternalUrl:safeExternalUrl,relativeTime:relativeTime,copy:copy});
 });

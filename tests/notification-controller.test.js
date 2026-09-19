@@ -158,3 +158,43 @@ test('notification click marks read, closes the panel and delegates navigation',
   assert.equal(elements.panel.classList.contains('open'),false);
   assert.equal(controller.state().notifications[0].read_at?true:false,true);
 });
+
+
+test('price alert notification opens the marketplace URL without collector navigation',async function(){
+  const events=[];
+  const elements=makeElements();
+  const user={id:'user-1'};
+  const external=[];
+  const navigations=[];
+  const api=makeApi([
+    {id:8,notification_type:'price_alert',read_at:null,created_at:new Date().toISOString(),actor:null,payload:{album_title:'Animals',listing_url:'https://example.com/listing',matched_price:249,alert_currency:'SEK',marketplace:'Tradera',sale_type:'fixed'}}
+  ],events);
+  const controller=Controller.create({
+    elements:elements,
+    api:api,
+    getCurrentUser:async function(){return user;},
+    onNavigate:function(username,view){navigations.push([username,view]);},
+    onOpenExternal:function(url){external.push(url);}
+  });
+  await controller.syncUser(user);
+  assert.match(elements.list.innerHTML,/notification-system-icon/);
+  const button={
+    getAttribute:function(name){
+      return {
+        'data-notification-id':'8',
+        'data-username':'',
+        'data-type':'price_alert',
+        'data-url':'https://example.com/listing'
+      }[name]||null;
+    }
+  };
+  await elements.list.listeners.click({
+    target:{closest:function(){return button;}},
+    preventDefault:function(){},
+    stopPropagation:function(){}
+  });
+
+  assert.deepEqual(external,['https://example.com/listing']);
+  assert.deepEqual(navigations,[]);
+  assert.equal(controller.state().notifications[0].read_at?true:false,true);
+});

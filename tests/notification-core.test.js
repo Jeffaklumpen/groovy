@@ -56,6 +56,21 @@ test('builds review like notification copy safely',function(){
   );
 });
 
+test('builds system price alert copy and validates external URLs',function(){
+  const html=Notifications.copy({
+    notification_type:'price_alert',
+    item_count:1,
+    actor:null,
+    payload:{album_title:'Animals',matched_price:'249',alert_currency:'SEK',marketplace:'Tradera',sale_type:'auction'}
+  });
+  assert.match(html,/Animals/);
+  assert.match(html,/249 SEK/);
+  assert.match(html,/Tradera/);
+  assert.match(html,/Auction/);
+  assert.equal(Notifications.safeExternalUrl('https://www.tradera.com/item/1'),'https://www.tradera.com/item/1');
+  assert.equal(Notifications.safeExternalUrl('javascript:alert(1)'),'');
+});
+
 test('notification core and controller load before app and keep responsibilities separated',function(){
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');

@@ -251,6 +251,7 @@ var notificationController=NotificationController.create({
   api:supabaseClient,
   getCurrentUser:currentSessionUser,
   onNavigate:function(username,view){openCollectorRoute(username,view);},
+  onOpenExternal:function(url){window.open(url,'_blank','noopener,noreferrer');},
   onBeforeOpen:function(){profileMenu.classList.remove('open');},
   onLog:function(level,message,error){
     if(level==='error')console.error(message,error||'');
@@ -575,6 +576,7 @@ var PressingCore=window.GroovyPressingCore;
 var RatingCore=window.GroovyRatingCore;
 var AlbumRatingController=window.GroovyAlbumRatingController;
 var MarketplaceController=window.GroovyMarketplaceController;
+var MarketplaceAlertController=window.GroovyMarketplaceAlertController;
 var ShelfCore=window.GroovyShelfCore;
 var ShelfView=window.GroovyShelfView;
 var ShelfController=window.GroovyShelfController;
@@ -595,6 +597,7 @@ if(!PressingCore)throw new Error('GroovyPressingCore must load before app.js');
 if(!RatingCore)throw new Error('GroovyRatingCore must load before app.js');
 if(!AlbumRatingController)throw new Error('GroovyAlbumRatingController must load before app.js');
 if(!MarketplaceController)throw new Error('GroovyMarketplaceController must load before app.js');
+if(!MarketplaceAlertController)throw new Error('GroovyMarketplaceAlertController must load before app.js');
 if(!ShelfCore)throw new Error('GroovyShelfCore must load before app.js');
 if(!ShelfView)throw new Error('GroovyShelfView must load before app.js');
 if(!ShelfController)throw new Error('GroovyShelfController must load before app.js');
@@ -897,6 +900,24 @@ var marketplaceLowestPrice=document.getElementById('marketplaceLowestPrice');
 var marketplaceLowestMeta=document.getElementById('marketplaceLowestMeta');
 var marketplacePriceStatus=document.getElementById('marketplacePriceStatus');
 var marketplacePriceNote=document.getElementById('marketplacePriceNote');
+var marketplaceAlertButton=document.getElementById('marketplaceAlertButton');
+var marketplaceAlertButtonTitle=document.getElementById('marketplaceAlertButtonTitle');
+var marketplaceAlertButtonSummary=document.getElementById('marketplaceAlertButtonSummary');
+var marketplaceAlertModal=document.getElementById('marketplaceAlertModal');
+var marketplaceAlertForm=document.getElementById('marketplaceAlertForm');
+var closeMarketplaceAlert=document.getElementById('closeMarketplaceAlert');
+var marketplaceAlertTitle=document.getElementById('marketplaceAlertTitle');
+var marketplaceAlertSubtitle=document.getElementById('marketplaceAlertSubtitle');
+var marketplaceAlertPrice=document.getElementById('marketplaceAlertPrice');
+var marketplaceAlertCurrency=document.getElementById('marketplaceAlertCurrency');
+var marketplaceAlertTradera=document.getElementById('marketplaceAlertTradera');
+var marketplaceAlertEbay=document.getElementById('marketplaceAlertEbay');
+var marketplaceAlertFixed=document.getElementById('marketplaceAlertFixed');
+var marketplaceAlertAuction=document.getElementById('marketplaceAlertAuction');
+var marketplaceAlertStatus=document.getElementById('marketplaceAlertStatus');
+var deleteMarketplaceAlert=document.getElementById('deleteMarketplaceAlert');
+var cancelMarketplaceAlert=document.getElementById('cancelMarketplaceAlert');
+var saveMarketplaceAlert=document.getElementById('saveMarketplaceAlert');
 var copyDetails=document.getElementById('copyDetails');
 var copyDetailsTitle=document.getElementById('copyDetailsTitle');
 var copyDetailsContent=document.getElementById('copyDetailsContent');
@@ -1303,6 +1324,45 @@ var marketplaceController=MarketplaceController.create({
   }
 });
 
+var marketplaceAlertController=MarketplaceAlertController.create({
+  elements:{
+    button:marketplaceAlertButton,
+    buttonTitle:marketplaceAlertButtonTitle,
+    buttonSummary:marketplaceAlertButtonSummary,
+    modal:marketplaceAlertModal,
+    form:marketplaceAlertForm,
+    closeButton:closeMarketplaceAlert,
+    title:marketplaceAlertTitle,
+    subtitle:marketplaceAlertSubtitle,
+    priceInput:marketplaceAlertPrice,
+    currencySelect:marketplaceAlertCurrency,
+    traderaCheckbox:marketplaceAlertTradera,
+    ebayCheckbox:marketplaceAlertEbay,
+    fixedCheckbox:marketplaceAlertFixed,
+    auctionCheckbox:marketplaceAlertAuction,
+    status:marketplaceAlertStatus,
+    deleteButton:deleteMarketplaceAlert,
+    cancelButton:cancelMarketplaceAlert,
+    saveButton:saveMarketplaceAlert
+  },
+  api:supabaseClient,
+  storage:localStorage,
+  navigator:navigator,
+  Intl:Intl,
+  recordModel:Record,
+  getCurrentUser:currentSessionUser,
+  getRecord:detailRecordAt,
+  getAlbumId:function(record){return Record.albumId(record);},
+  getArtist:function(record){return Record.artist(record);},
+  getTitle:function(record){return Record.title(record);},
+  onRequireAuth:function(){openAuthPanel('login');},
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
+
 var pressingController=PressingController.create({
   api:supabaseClient,
   recordModel:Record,
@@ -1537,6 +1597,7 @@ function renderAlbumDetail(record,index,options){
   var searchPreview=!!options.searchPreview;
   detailOpenRecordIndex=index;
   marketplaceController.openForRecord(index);
+  marketplaceAlertController.openForRecord(index);
   pressingController.resetRecord();
 
   var isWishlist=!searchPreview&&window.libraryView==='wishlist';
@@ -1672,6 +1733,7 @@ window.groovyOpenSearchAlbumPreview=openSearchAlbumPreview;
 function closeAlbum(){
   wikipediaAboutController.close();
   marketplaceController.close();
+  marketplaceAlertController.close();
   albumOverlay.className='album-overlay';
   document.body.style.overflow='';
   pressingController.closeDetails();
@@ -2075,6 +2137,7 @@ document.onkeydown=function(event){
 
   if(event.keyCode===27){
     if(albumReviewController&&albumReviewController.handleEscape())return;
+    if(marketplaceAlertController&&marketplaceAlertController.handleEscape())return;
     if(marketplaceController.handleEscape())return;
     if(albumOverlay.className.indexOf('visible')!==-1){
       closeAlbum();

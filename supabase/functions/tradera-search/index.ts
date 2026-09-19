@@ -198,6 +198,19 @@ function normalizeListing(value: unknown) {
     'detailedImageLinks', 'DetailedImageLinks', 'imageLinks', 'ImageLinks',
     'thumbnailLink', 'ThumbnailLink', 'imageUrl', 'ImageUrl'
   ]))
+  const openingBid = numericValue(firstValue(item, ['openingBid', 'OpeningBid']))
+  const currentBid = numericValue(firstValue(item, ['maxBid', 'MaxBid', 'currentBid', 'CurrentBid']))
+  const nextBid = numericValue(firstValue(item, ['nextBid', 'NextBid']))
+  const buyNowPrice = numericValue(firstValue(item, ['buyItNowPrice', 'BuyItNowPrice']))
+  const bidCount = numericValue(firstValue(item, ['totalBids', 'TotalBids'])) || 0
+  const saleTypes: string[] = []
+  if (buyNowPrice && buyNowPrice > 0) saleTypes.push('fixed')
+  if (
+    (openingBid && openingBid > 0) ||
+    (currentBid && currentBid > 0) ||
+    (nextBid && nextBid > 0) ||
+    bidCount > 0
+  ) saleTypes.push('auction')
 
   return {
     id,
@@ -205,11 +218,12 @@ function normalizeListing(value: unknown) {
     url: listingUrl(item, id, title),
     imageUrl,
     endDate,
-    openingBid: numericValue(firstValue(item, ['openingBid', 'OpeningBid'])),
-    currentBid: numericValue(firstValue(item, ['maxBid', 'MaxBid', 'currentBid', 'CurrentBid'])),
-    nextBid: numericValue(firstValue(item, ['nextBid', 'NextBid'])),
-    buyNowPrice: numericValue(firstValue(item, ['buyItNowPrice', 'BuyItNowPrice'])),
-    bidCount: numericValue(firstValue(item, ['totalBids', 'TotalBids'])) || 0,
+    openingBid,
+    currentBid,
+    nextBid,
+    buyNowPrice,
+    bidCount,
+    saleTypes,
     currency: textValue(firstValue(item, ['currency', 'Currency'])) || 'SEK'
   }
 }

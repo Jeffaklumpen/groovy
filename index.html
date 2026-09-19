@@ -25,11 +25,11 @@
   <title>GroovyShelves – Track Your Vinyl Collection</title>
   <link rel="stylesheet" href="/css/base-library.css?v=3">
   <link rel="stylesheet" href="/css/search-modals.css?v=4">
-  <link rel="stylesheet" href="/css/copy-marketplace.css?v=3">
+  <link rel="stylesheet" href="/css/copy-marketplace.css?v=4">
   <link rel="stylesheet" href="/css/library-shell.css?v=8">
   <link rel="stylesheet" href="/css/shelves-streaming.css?v=3">
   <link rel="stylesheet" href="/css/album-detail-extras.css?v=2">
-  <link rel="stylesheet" href="/css/landing-social.css?v=3">
+  <link rel="stylesheet" href="/css/landing-social.css?v=4">
   <link rel="stylesheet" href="/css/community.css?v=6">
   <link rel="stylesheet" href="/css/ratings-detail.css?v=8">
   <link rel="stylesheet" href="/css/detail-enhancements.css?v=18">
@@ -329,6 +329,11 @@
       <span class="tradera-trigger-arrow" aria-hidden="true">&#8599;</span>
     </button>
   </div>
+  <button id="marketplaceAlertButton" class="marketplace-alert-trigger" type="button" aria-haspopup="dialog" aria-pressed="false" hidden>
+    <span class="marketplace-alert-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></span>
+    <span class="marketplace-alert-copy"><strong id="marketplaceAlertButtonTitle">Set price alert</strong><small id="marketplaceAlertButtonSummary">Notify me when this record drops below a price.</small></span>
+    <span class="marketplace-alert-chevron" aria-hidden="true">›</span>
+  </button>
 </section>
 
   </div>
@@ -362,6 +367,53 @@
       <div id="ebayListingsGrid" class="tradera-listings-grid"></div>
     </div>
   </div>
+</div>
+
+<div id="marketplaceAlertModal" class="tradera-modal marketplace-alert-modal" role="dialog" aria-modal="true" aria-labelledby="marketplaceAlertTitle" aria-hidden="true">
+  <form id="marketplaceAlertForm" class="tradera-modal-panel marketplace-alert-panel">
+    <button id="closeMarketplaceAlert" class="tradera-modal-close" type="button" aria-label="Close">×</button>
+    <div class="tradera-modal-heading marketplace-alert-heading">
+      <span class="search-modal-kicker">PRICE WATCHER</span>
+      <h2 id="marketplaceAlertTitle">Notify me under</h2>
+      <p id="marketplaceAlertSubtitle"></p>
+    </div>
+
+    <label class="marketplace-alert-price-field" for="marketplaceAlertPrice">
+      <span>Notify me under</span>
+      <span class="marketplace-alert-price-control">
+        <input id="marketplaceAlertPrice" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="300" autocomplete="off">
+        <select id="marketplaceAlertCurrency" aria-label="Alert currency">
+          <option value="SEK">SEK</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="NOK">NOK</option><option value="DKK">DKK</option><option value="CHF">CHF</option><option value="CAD">CAD</option><option value="AUD">AUD</option><option value="JPY">JPY</option><option value="PLN">PLN</option><option value="CZK">CZK</option>
+        </select>
+      </span>
+    </label>
+
+    <fieldset class="marketplace-alert-options">
+      <legend>Marketplaces</legend>
+      <div class="marketplace-alert-choice-grid">
+        <label><input id="marketplaceAlertTradera" type="checkbox" checked><span><b>T</b><strong>Tradera</strong></span></label>
+        <label><input id="marketplaceAlertEbay" type="checkbox" checked><span><b class="ebay">e</b><strong>eBay</strong></span></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="marketplace-alert-options">
+      <legend>Listing type</legend>
+      <div class="marketplace-alert-choice-grid">
+        <label><input id="marketplaceAlertFixed" type="checkbox" checked><span><b class="type">✓</b><strong>Fixed price</strong></span></label>
+        <label><input id="marketplaceAlertAuction" type="checkbox" checked><span><b class="type">↗</b><strong>Auction</strong></span></label>
+      </div>
+    </fieldset>
+
+    <p class="marketplace-alert-note">Auction alerts use the current or next bid when available. Prices exclude shipping and may change after the alert is sent.</p>
+    <div id="marketplaceAlertStatus" class="marketplace-alert-status" aria-live="polite"></div>
+
+    <div class="marketplace-alert-actions">
+      <button id="deleteMarketplaceAlert" class="marketplace-alert-delete" type="button" hidden>Remove alert</button>
+      <span></span>
+      <button id="cancelMarketplaceAlert" class="marketplace-alert-secondary" type="button">Cancel</button>
+      <button id="saveMarketplaceAlert" class="marketplace-alert-save" type="submit">Save alert</button>
+    </div>
+  </form>
 </div>
 
 <div id="pressingModal" class="add-album-modal pressing-modal" role="dialog" aria-modal="true" aria-labelledby="pressingModalTitle">
@@ -569,8 +621,8 @@
 <script src="/js/user-profile-core.js?v=3"></script>
 <script src="/js/record-model.js?v=8"></script>
 <script src="/js/streaming-links.js?v=1"></script>
-<script src="/js/notification-core.js?v=2"></script>
-<script src="/js/notification-controller.js?v=2"></script>
+<script src="/js/notification-core.js?v=3"></script>
+<script src="/js/notification-controller.js?v=3"></script>
 <script src="/js/social-controller.js?v=3"></script>
 <script src="/js/community-core.js?v=1"></script>
 <script src="/js/community-view.js?v=5"></script>
@@ -588,7 +640,8 @@
 <script src="/js/album-review-controller.js?v=3"></script>
 <script src="/js/marketplace-core.js?v=2"></script>
 <script src="/js/marketplace-view.js?v=1"></script>
-<script src="/js/marketplace-controller.js?v=2"></script>
+<script src="/js/marketplace-controller.js?v=3"></script>
+<script src="/js/marketplace-alert-controller.js?v=1"></script>
 <script src="/js/shelf-core.js?v=2"></script>
 <script src="/js/shelf-view.js?v=1"></script>
 <script src="/js/shelf-controller.js?v=3"></script>
@@ -603,7 +656,7 @@
 <script src="/js/album-search.js?v=6"></script>
 <script src="/js/wikipedia-service.js?v=1"></script>
 <script src="/js/wikipedia-about-controller.js?v=1"></script>
-<script src="/js/app.js?v=193"></script>
+<script src="/js/app.js?v=194"></script>
 <script src="/js/detail-enhancements-v2.js?v=14"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=14"></script>
