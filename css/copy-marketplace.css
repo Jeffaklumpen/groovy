@@ -178,7 +178,7 @@
 .marketplace-alert-trigger.active .marketplace-alert-copy strong{color:#ff762e}
 .marketplace-alert-chevron{flex:0 0 auto;color:#66666d;font-size:22px;line-height:1}
 
-.marketplace-alert-panel{width:min(520px,100%);padding:30px 30px 24px}
+.marketplace-alert-panel{width:min(520px,100%);padding:0}
 .marketplace-alert-heading .search-modal-kicker{display:block;margin-bottom:7px}
 .marketplace-alert-heading h2{font-size:26px}
 .marketplace-alert-heading p{margin-top:6px}
@@ -227,7 +227,7 @@
 @media screen and (max-width:600px){
 .marketplace-alert-trigger{margin-top:10px;padding:9px 10px}
 .marketplace-alert-copy small{white-space:normal}
-.marketplace-alert-panel{width:100%;max-width:none;padding:25px 16px calc(18px + env(safe-area-inset-bottom))}
+.marketplace-alert-panel{width:100%;max-width:none;padding:0}
 .marketplace-alert-price-control{grid-template-columns:minmax(0,1fr) 94px}
 .marketplace-alert-price-control input{font-size:17px}
 .marketplace-alert-choice-grid{grid-template-columns:1fr;gap:7px}

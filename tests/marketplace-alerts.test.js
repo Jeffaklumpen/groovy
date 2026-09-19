@@ -81,3 +81,16 @@ test('price alert footer keeps compact actions when remove is hidden',()=>{
   assert.match(css,/\.marketplace-alert-actions\{display:flex/);
   assert.match(css,/\.marketplace-alert-delete\{margin-right:auto/);
 });
+
+
+test('price alert uses the shared modal scroll shell for inner spacing',()=>{
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const css=fs.readFileSync(path.join(root,'css','library-shell.css'),'utf8');
+  const start=html.indexOf('id="marketplaceAlertForm"');
+  const end=html.indexOf('</form>',start);
+  const markup=html.slice(start,end);
+  assert.match(markup,/class="tradera-modal-scroll marketplace-alert-scroll"/);
+  assert.match(css,/\.tradera-modal-panel\{padding:0;overflow:hidden\}/);
+  assert.match(css,/\.tradera-modal-scroll\{[^}]*padding:32px/);
+  assert.match(css,/@media screen and \(max-width:600px\)[\s\S]*\.tradera-modal-scroll\{[^}]*padding:25px 15px/);
+});
