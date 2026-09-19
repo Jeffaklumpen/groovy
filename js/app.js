@@ -794,6 +794,7 @@ var detailLayoutController=DetailLayoutController.create({
     tracksPanel:albumOverlay?albumOverlay.querySelector('.album-tracks'):null,
     marketplacePanel:albumOverlay?albumOverlay.querySelector('.marketplace-panel'):null,
     about:detailAboutAlbum,
+    reviews:detailReviews,
     infoCard:detailInfoCard
   }
 });

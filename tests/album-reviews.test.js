@@ -41,6 +41,25 @@ test('helpful votes are separate from reviews and cannot target your own review'
   assert.match(sql,/Users can remove own review likes/);
 });
 
+test('review activity creates follower and review-like notifications in the database',()=>{
+  const sql=fs.readFileSync('supabase/migrations/20260919023500_review_notifications.sql','utf8');
+  assert.match(sql,/album_review/);
+  assert.match(sql,/review_like/);
+  assert.match(sql,/create or replace function public\.notify_followers_album_review/i);
+  assert.match(sql,/from public\.user_follows uf/i);
+  assert.match(sql,/uf\.followed_id = new\.user_id/i);
+  assert.match(sql,/create trigger album_reviews_notify_followers_after_insert/i);
+  assert.match(sql,/create or replace function public\.notify_review_owner_like/i);
+  assert.match(sql,/create trigger album_review_likes_notify_owner_after_insert/i);
+});
+
+test('About This Album uses the same card treatment on desktop',()=>{
+  const css=fs.readFileSync('css/album-detail-extras.css','utf8');
+  assert.match(css,/\.album-about\{[^}]*border:1px solid var\(--groovy-line\)/);
+  assert.match(css,/\.album-about\{[^}]*border-radius:10px/);
+  assert.match(css,/\.album-about\{[^}]*background:linear-gradient/);
+});
+
 test('album detail mounts reviews between About and Marketplace',()=>{
   const html=fs.readFileSync('index.html','utf8');
   const about=html.indexOf('id="detailAboutAlbum"');
@@ -64,6 +83,8 @@ test('review controller owns loading writing editing deleting and helpful votes'
   assert.match(source,/data-review-like/);
   assert.match(source,/maxlength="2000"/);
   assert.match(source,/UserProfileCore\.avatarMarkup/);
+  assert.match(source,/album-review-delete-dialog/);
+  assert.doesNotMatch(source,/win\.confirm/);
 });
 
 test('review layout has dedicated desktop tablet and mobile placement',()=>{
@@ -75,12 +96,15 @@ test('review layout has dedicated desktop tablet and mobile placement',()=>{
   assert.match(css,/grid-row:7!important/);
   assert.match(css,/\.marketplace-panel\{grid-row:8!important\}/);
   assert.match(css,/\.album-review-editor\{align-items:flex-end;padding:0\}/);
+  assert.match(css,/\.album-review-delete-dialog/);
+  assert.match(css,/\.album-review-delete-confirm/);
 });
 
-test('Escape closes the review editor before it can close the album overlay',()=>{
+test('Escape closes review dialogs before it can close the album overlay',()=>{
   const controller=fs.readFileSync('js/album-review-controller.js','utf8');
   const app=fs.readFileSync('js/app.js','utf8');
   assert.match(controller,/function handleEscape\(\)/);
+  assert.match(controller,/deleteDialog&&deleteDialog\.classList\.contains\('open'\)/);
   assert.match(controller,/return true/);
   assert.doesNotMatch(controller,/addEventListener\('keydown',handleKeyDown\)/);
   const reviewEscape=app.indexOf('albumReviewController&&albumReviewController.handleEscape()');
@@ -97,4 +121,5 @@ test('app opens reviews with album detail and closes them with the overlay',()=>
   assert.match(app,/albumReviewController\.openForRecord\(record,SEARCH_PREVIEW_INDEX\)/);
   assert.match(app,/albumReviewController\.close\(\)/);
   assert.match(app,/ratingController\.loadData\(\[detail\.albumId\],user\.id\)/);
+  assert.match(app,/reviews:detailReviews/);
 });

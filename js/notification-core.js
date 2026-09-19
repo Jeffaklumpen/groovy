@@ -49,6 +49,18 @@
       }
       return '<strong>'+escapeHtml(actor)+'</strong> added '+wishlistCount+' records to their wishlist that you already own. <b class="notification-shared">Collection match</b>';
     }
+    if(item.notification_type==='album_review'){
+      if(payload.album_title){
+        return '<strong>'+escapeHtml(actor)+'</strong> reviewed <em>'+escapeHtml(payload.album_title)+'</em>.';
+      }
+      return '<strong>'+escapeHtml(actor)+'</strong> left a new album review.';
+    }
+    if(item.notification_type==='review_like'){
+      if(payload.album_title){
+        return '<strong>'+escapeHtml(actor)+'</strong> liked your review of <em>'+escapeHtml(payload.album_title)+'</em>.';
+      }
+      return '<strong>'+escapeHtml(actor)+'</strong> liked your album review.';
+    }
     return '<strong>'+escapeHtml(actor)+'</strong> has new activity.';
   }
 

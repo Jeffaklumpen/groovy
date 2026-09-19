@@ -9,6 +9,8 @@ function makeNode(className){
     children:[],
     style:{},
     _height:0,
+    _top:0,
+    hidden:false,
     _queries:{},
     appendChild(child){
       if(child.parentNode)child.parentNode.removeChild(child);
@@ -31,7 +33,7 @@ function makeNode(className){
       return child;
     },
     querySelector(selector){return this._queries[selector]||null;},
-    getBoundingClientRect(){return {height:this._height};}
+    getBoundingClientRect(){return {height:this._height,top:this._top,bottom:this._top+this._height};}
   };
   Object.defineProperty(node,'nextSibling',{
     get(){
@@ -50,6 +52,7 @@ function fixture(width){
   const cover=makeNode('album-detail-cover');
   const tracks=makeNode('album-tracks');
   const about=makeNode('detail-about');
+  const reviews=makeNode('album-reviews');
   const marketplace=makeNode('marketplace-panel');
   const info=makeNode('detail-info-card');
   detail._queries['.album-detail-main']=main;
@@ -58,6 +61,7 @@ function fixture(width){
   detail.appendChild(cover);
   detail.appendChild(tracks);
   detail.appendChild(about);
+  detail.appendChild(reviews);
   detail.appendChild(marketplace);
 
   const listeners={};
@@ -78,9 +82,10 @@ function fixture(width){
   const controller=Controller.create({
     window:win,
     document:doc,
-    elements:{detail,tracksPanel:tracks,marketplacePanel:marketplace,about,infoCard:info}
+    elements:{detail,tracksPanel:tracks,marketplacePanel:marketplace,about,reviews,infoCard:info}
   });
-  return {controller,win,detail,main,cover,tracks,about,marketplace,info,listeners,viewportListeners,frames};
+  while(frames.length)frames.shift()();
+  return {controller,win,detail,main,cover,tracks,about,reviews,marketplace,info,listeners,viewportListeners,frames};
 }
 
 test('moves tracks and marketplace into a desktop right column and restores mobile order',()=>{
@@ -121,6 +126,21 @@ test('matches mobile info-card height to the cover and clears it off mobile',()=
   f.win.innerWidth=900;
   f.controller.syncMobilePairHeight();
   assert.equal(f.info.style.height,'');
+});
+
+test('aligns collapsed reviews with the bottom of Marketplace on desktop only',()=>{
+  const f=fixture(1400);
+  f.reviews._top=410;
+  f.reviews._height=120;
+  f.marketplace._top=500;
+  f.marketplace._height=220;
+
+  f.controller.syncReviewMarketplaceHeight();
+  assert.equal(f.reviews.style.minHeight,'310px');
+
+  f.win.innerWidth=900;
+  f.controller.syncReviewMarketplaceHeight();
+  assert.equal(f.reviews.style.minHeight,'');
 });
 
 test('installs responsive listeners and preserves the two-frame open sync',()=>{

@@ -48,6 +48,8 @@
     var editor=null;
     var editorRating=0;
     var editorReviewId=0;
+    var deleteDialog=null;
+    var pendingDeleteReview=null;
     var bound=false;
 
     if(!api||typeof api.from!=='function')throw new Error('Album review controller requires Supabase');
@@ -378,6 +380,96 @@
       return editor;
     }
 
+    function ensureDeleteDialog(){
+      if(deleteDialog||!doc)return deleteDialog;
+
+      deleteDialog=doc.createElement('div');
+      deleteDialog.className='album-review-delete-dialog';
+      deleteDialog.setAttribute('aria-hidden','true');
+      deleteDialog.innerHTML=
+        '<div class="album-review-delete-backdrop" data-review-delete-cancel></div>'+
+        '<section class="album-review-delete-panel" role="dialog" aria-modal="true" aria-labelledby="albumReviewDeleteTitle">'+
+          '<span class="album-review-delete-kicker">REVIEW SETTINGS</span>'+
+          '<h2 id="albumReviewDeleteTitle">Delete Review?</h2>'+
+          '<p>Remove your review of <strong data-review-delete-album></strong>? Your album rating will stay.</p>'+
+          '<div class="album-review-delete-status" data-review-delete-status aria-live="polite"></div>'+
+          '<div class="album-review-delete-actions">'+
+            '<button class="album-review-delete-cancel" type="button" data-review-delete-cancel>Cancel</button>'+
+            '<button class="album-review-delete-confirm" type="button" data-review-delete-confirm>Delete Review</button>'+
+          '</div>'+
+        '</section>';
+
+      doc.body.appendChild(deleteDialog);
+      deleteDialog.addEventListener('click',function(event){
+        if(event.target.closest('[data-review-delete-cancel]')){
+          event.preventDefault();
+          closeDeleteDialog();
+          return;
+        }
+        if(event.target.closest('[data-review-delete-confirm]')){
+          event.preventDefault();
+          confirmDeleteReview();
+        }
+      });
+      return deleteDialog;
+    }
+
+    function openDeleteDialog(review){
+      if(!review)return;
+      var modal=ensureDeleteDialog();
+      if(!modal)return;
+      pendingDeleteReview=review;
+
+      var album=modal.querySelector('[data-review-delete-album]');
+      var status=modal.querySelector('[data-review-delete-status]');
+      var confirm=modal.querySelector('[data-review-delete-confirm]');
+      if(album)album.textContent=String(recordModel.title(currentRecord)||'this album');
+      if(status)status.textContent='';
+      if(confirm){confirm.disabled=false;confirm.textContent='Delete Review';}
+
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden','false');
+      if(confirm&&typeof confirm.focus==='function')confirm.focus();
+    }
+
+    function closeDeleteDialog(){
+      if(!deleteDialog)return;
+      deleteDialog.classList.remove('open');
+      deleteDialog.setAttribute('aria-hidden','true');
+      pendingDeleteReview=null;
+      var status=deleteDialog.querySelector('[data-review-delete-status]');
+      var confirm=deleteDialog.querySelector('[data-review-delete-confirm]');
+      if(status)status.textContent='';
+      if(confirm){confirm.disabled=false;confirm.textContent='Delete Review';}
+    }
+
+    async function confirmDeleteReview(){
+      var review=pendingDeleteReview;
+      if(!review||!currentUser||!deleteDialog)return false;
+
+      var status=deleteDialog.querySelector('[data-review-delete-status]');
+      var confirm=deleteDialog.querySelector('[data-review-delete-confirm]');
+      if(confirm){confirm.disabled=true;confirm.textContent='Deleting…';}
+      if(status)status.textContent='';
+
+      var result=await api
+        .from('album_reviews')
+        .delete()
+        .eq('id',review.id)
+        .eq('user_id',currentUser.id);
+
+      if(result.error){
+        log('error','Could not delete album review:',result.error);
+        if(status)status.textContent='Could not delete the review. Try again.';
+        if(confirm){confirm.disabled=false;confirm.textContent='Delete Review';}
+        return false;
+      }
+
+      closeDeleteDialog();
+      await openForRecord(currentRecord,currentIndex);
+      return true;
+    }
+
     function paintEditorRating(value){
       if(!editor)return;
       var stars=editor.querySelectorAll('[data-review-rating]');
@@ -488,24 +580,6 @@
         await openForRecord(record,index);
       }
       return true;
-    }
-
-    async function deleteReview(review){
-      if(!review||!currentUser)return;
-      if(win&&typeof win.confirm==='function'&&!win.confirm('Delete your review? Your album rating will stay.'))return;
-
-      var result=await api
-        .from('album_reviews')
-        .delete()
-        .eq('id',review.id)
-        .eq('user_id',currentUser.id);
-
-      if(result.error){
-        log('error','Could not delete album review:',result.error);
-        return;
-      }
-
-      await openForRecord(currentRecord,currentIndex);
     }
 
     async function toggleLike(review){
@@ -619,7 +693,7 @@
       if(remove){
         event.preventDefault();
         closeMenus();
-        deleteReview(reviewById(remove.getAttribute('data-review-delete')));
+        openDeleteDialog(reviewById(remove.getAttribute('data-review-delete')));
       }
     }
 
@@ -651,6 +725,10 @@
     }
 
     function handleEscape(){
+      if(deleteDialog&&deleteDialog.classList.contains('open')){
+        closeDeleteDialog();
+        return true;
+      }
       if(!editor||!editor.classList.contains('open'))return false;
       closeEditor();
       return true;
@@ -665,6 +743,7 @@
       reviews=[];
       totalCount=0;
       showAll=false;
+      closeDeleteDialog();
       closeEditor();
       hide();
     }

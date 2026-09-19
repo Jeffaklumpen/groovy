@@ -42,6 +42,20 @@ test('builds grouped wishlist match copy',function(){
   );
 });
 
+test('builds followed review notification copy safely',function(){
+  assert.equal(
+    Notifications.copy({notification_type:'album_review',actor:{username:'Anna'},payload:{album_title:'I <Robot>'}}),
+    '<strong>Anna</strong> reviewed <em>I &lt;Robot&gt;</em>.'
+  );
+});
+
+test('builds review like notification copy safely',function(){
+  assert.equal(
+    Notifications.copy({notification_type:'review_like',actor:{username:'Bob & Sue'},payload:{album_title:'The Wall'}}),
+    '<strong>Bob &amp; Sue</strong> liked your review of <em>The Wall</em>.'
+  );
+});
+
 test('notification core and controller load before app and keep responsibilities separated',function(){
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');

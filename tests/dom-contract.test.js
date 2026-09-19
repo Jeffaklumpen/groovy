@@ -11,3 +11,8 @@ test('app.js static DOM references exist in index.html',()=>{
   const missing=[...new Set(requested)].filter(id=>!ids.has(id)&&!dynamic.has(id)).sort();
   assert.deepEqual(missing,[]);
 });
+
+test('index.html does not leak escaped newline text into the page',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  assert.equal(html.includes('\\n'),false);
+});
