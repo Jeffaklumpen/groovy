@@ -157,9 +157,10 @@ test('opens an existing alert directly from the Price Alerts page and refreshes 
 
   elements.priceInput.value='850';
   assert.equal(await controller.save(),true);
-  assert.equal(changes.length,1);
+  await new Promise(resolve=>setTimeout(resolve,0));
   assert.equal(changes[0].type,'saved');
   assert.equal(changes[0].record,record);
+  assert.ok(changes.some(event=>event.type==='scanned'));
 });
 
 
