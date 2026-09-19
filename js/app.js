@@ -1386,7 +1386,9 @@ priceAlertsController=PriceAlertsPageController.create({
     backButton:document.getElementById('priceAlertsBackButton'),
     traderaToggle:document.getElementById('priceAlertsShowTradera'),
     ebayToggle:document.getElementById('priceAlertsShowEbay'),
-    currencySelect:document.getElementById('priceAlertsCurrencySelect')
+    currencySelect:document.getElementById('priceAlertsCurrencySelect'),
+    selectButton:document.getElementById('priceAlertsSelectButton'),
+    deleteSelectedButton:document.getElementById('priceAlertsDeleteSelectedButton')
   },
   getCurrentUser:currentSessionUser,
   onOpenRoute:function(){profileMenu.classList.remove('open');return Router.navigate('/price-alerts');},
@@ -1401,6 +1403,11 @@ priceAlertsController=PriceAlertsPageController.create({
       appleUrl:album.appleUrl
     });
     marketplaceAlertController.openForRecordData(record,alert);
+  },
+  onOpenAlbum:function(alert,album){
+    if(album&&album.id&&typeof communityAlbumPreviewHandler==='function'){
+      return communityAlbumPreviewHandler(album.id);
+    }
   },
   onOpenMarketplace:function(alert,album,marketplace){
     var record=Record.fromSearchPreview({

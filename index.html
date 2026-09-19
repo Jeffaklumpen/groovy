@@ -34,7 +34,7 @@
   <link rel="stylesheet" href="/css/ratings-detail.css?v=8">
   <link rel="stylesheet" href="/css/detail-enhancements.css?v=18">
   <link rel="stylesheet" href="/css/reviews-detail.css?v=3">
-  <link rel="stylesheet" href="/css/price-alerts.css?v=3">
+  <link rel="stylesheet" href="/css/price-alerts.css?v=4">
   <link rel="stylesheet" href="/css/profile.css?v=11">
   <link rel="icon" type="image/png" href="/assets/icons/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
@@ -207,13 +207,15 @@
       </div>
     </div>
     <div class="price-alerts-heading-actions">
+      <span id="priceAlertsCount" class="price-alerts-count">0 ACTIVE ALERTS</span>
       <label class="price-alerts-currency-field" for="priceAlertsCurrencySelect"><span>Currency</span>
         <select id="priceAlertsCurrencySelect" aria-label="Price Alerts currency">
           <option value="auto">Auto</option>
           <option value="SEK">SEK</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="NOK">NOK</option><option value="DKK">DKK</option><option value="CHF">CHF</option><option value="CAD">CAD</option><option value="AUD">AUD</option><option value="JPY">JPY</option><option value="PLN">PLN</option><option value="CZK">CZK</option>
         </select>
       </label>
-      <span id="priceAlertsCount" class="price-alerts-count">0 ACTIVE ALERTS</span>
+      <button id="priceAlertsDeleteSelectedButton" class="price-alerts-delete-selected" type="button" hidden disabled>Delete selected</button>
+      <button id="priceAlertsSelectButton" class="price-alerts-select" type="button" aria-pressed="false">Select</button>
       <button id="priceAlertsBackButton" class="price-alerts-back" type="button">Back to My Shelf</button>
     </div>
   </div>
@@ -685,7 +687,7 @@
 <script src="/js/marketplace-view.js?v=1"></script>
 <script src="/js/marketplace-controller.js?v=4"></script>
 <script src="/js/marketplace-alert-controller.js?v=2"></script>
-<script src="/js/price-alerts-page-controller.js?v=3"></script>
+<script src="/js/price-alerts-page-controller.js?v=4"></script>
 <script src="/js/shelf-core.js?v=2"></script>
 <script src="/js/shelf-view.js?v=1"></script>
 <script src="/js/shelf-controller.js?v=3"></script>
@@ -700,7 +702,7 @@
 <script src="/js/album-search.js?v=6"></script>
 <script src="/js/wikipedia-service.js?v=1"></script>
 <script src="/js/wikipedia-about-controller.js?v=1"></script>
-<script src="/js/app.js?v=197"></script>
+<script src="/js/app.js?v=198"></script>
 <script src="/js/detail-enhancements-v2.js?v=14"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=14"></script>

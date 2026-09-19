@@ -136,3 +136,29 @@ test('renders eBay before Tradera and makes the whole marketplace card interacti
   assert.match(source,/role="button" tabindex="0" data-price-alert-market/);
   assert.match(source,/closest\('\.price-alert-lowest-link'\)/);
 });
+
+
+test('opens album previews and supports bulk selection controls',()=>{
+  const fs=require('fs'),path=require('path');
+  const source=fs.readFileSync(path.join(__dirname,'..','js','price-alerts-page-controller.js'),'utf8');
+  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+  const app=fs.readFileSync(path.join(__dirname,'..','js','app.js'),'utf8');
+  assert.match(source,/data-price-alert-album/);
+  assert.match(source,/onOpenAlbum\(albumAlert,albumOf\(albumAlert\)\)/);
+  assert.match(source,/selectedAlertIds=new Set\(\)/);
+  assert.match(source,/data-price-alert-select/);
+  assert.match(source,/async function deleteSelected/);
+  assert.match(html,/id="priceAlertsSelectButton"/);
+  assert.match(html,/id="priceAlertsDeleteSelectedButton"/);
+  assert.match(app,/communityAlbumPreviewHandler\(album\.id\)/);
+});
+
+test('active alert count sits before currency and Select sits before Back to My Shelf',()=>{
+  const fs=require('fs'),path=require('path');
+  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+  const start=html.indexOf('class="price-alerts-heading-actions"');
+  const end=html.indexOf('</div>',start);
+  const block=html.slice(start,end);
+  assert.ok(block.indexOf('id="priceAlertsCount"')<block.indexOf('id="priceAlertsCurrencySelect"'));
+  assert.ok(block.indexOf('id="priceAlertsSelectButton"')<block.indexOf('id="priceAlertsBackButton"'));
+});

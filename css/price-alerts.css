@@ -35,13 +35,23 @@ body.price-alerts-page-open #scrollTopButton{display:none!important}
 .price-alerts-currency-field>span{color:#66666d;font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 .price-alerts-currency-field select{height:39px;min-width:104px;padding:0 30px 0 10px;border:1px solid #35353a;border-radius:9px;background:#151517;color:#c7c7cc;font:inherit;font-size:10px;font-weight:720;cursor:pointer;outline:none;color-scheme:dark}
 .price-alerts-currency-field select:hover,.price-alerts-currency-field select:focus{border-color:rgba(232,83,1,.55);color:#fff}
-.price-alerts-count{color:#65656c;font-size:9px;font-weight:800;letter-spacing:.1em}
+.price-alerts-count{align-self:center;color:#65656c;font-size:9px;font-weight:800;letter-spacing:.1em;white-space:nowrap}
+.price-alerts-select,.price-alerts-delete-selected{min-height:39px;padding:0 13px;border:1px solid #35353a;border-radius:9px;background:#151517;color:#bdbdc2;font:inherit;font-size:10px;font-weight:730;cursor:pointer}
+.price-alerts-select:hover{border-color:rgba(232,83,1,.5);color:#fff}
+.price-alerts-select[aria-pressed="true"]{border-color:rgba(232,83,1,.58);background:rgba(232,83,1,.1);color:#ff7a35}
+.price-alerts-delete-selected{border-color:rgba(205,65,65,.38);background:rgba(190,45,45,.07);color:#e68d8d}
+.price-alerts-delete-selected:hover:not(:disabled){border-color:rgba(224,80,80,.58);background:rgba(190,45,45,.12);color:#ffaaaa}
+.price-alerts-delete-selected:disabled{opacity:.45;cursor:default}
+.price-alerts-delete-selected[hidden]{display:none!important}
 .price-alerts-back{min-height:39px;padding:0 13px;border:1px solid #35353a;border-radius:9px;background:#151517;color:#bdbdc2;font:inherit;font-size:10px;font-weight:730;cursor:pointer}
 .price-alerts-back:hover{border-color:#4c4c52;background:#1b1b1e;color:#fff}
 .price-alerts-grid{display:grid;gap:12px}
-.price-alert-card{display:grid;grid-template-columns:118px minmax(0,1fr) auto;gap:18px;align-items:stretch;padding:14px;border:1px solid #29292d;border-radius:14px;background:linear-gradient(145deg,rgba(255,255,255,.025),rgba(255,255,255,.012)),#111113;box-shadow:0 10px 28px rgba(0,0,0,.16)}
+.price-alert-card{position:relative;display:grid;grid-template-columns:118px minmax(0,1fr) auto;gap:18px;align-items:stretch;padding:14px;border:1px solid #29292d;border-radius:14px;background:linear-gradient(145deg,rgba(255,255,255,.025),rgba(255,255,255,.012)),#111113;box-shadow:0 10px 28px rgba(0,0,0,.16)}
 .price-alert-cover-column{width:118px}
-.price-alert-cover-wrap{width:118px;aspect-ratio:1;overflow:hidden;border-radius:8px;background:#1a1a1d;box-shadow:0 7px 18px rgba(0,0,0,.3)}
+.price-alert-cover-button{display:block;width:118px;padding:0;border:0;background:transparent;cursor:pointer;text-align:left}
+.price-alert-cover-wrap{display:block;width:118px;aspect-ratio:1;overflow:hidden;border-radius:8px;background:#1a1a1d;box-shadow:0 7px 18px rgba(0,0,0,.3);transition:transform .15s ease,box-shadow .15s ease}
+.price-alert-cover-button:hover .price-alert-cover-wrap{transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,0,0,.38)}
+.price-alert-cover-button:focus-visible{outline:2px solid rgba(232,83,1,.6);outline-offset:3px;border-radius:8px}
 .price-alert-cover-wrap img{display:block;width:100%;height:100%;object-fit:cover}
 .price-alert-streaming{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px}
 .price-alert-streaming a{display:flex;height:24px;min-width:0;align-items:center;justify-content:center;border-radius:6px;text-decoration:none;overflow:hidden}
@@ -53,6 +63,9 @@ body.price-alerts-page-open #scrollTopButton{display:none!important}
 .price-alert-identity{min-width:0}
 .price-alert-card-kicker{display:block;margin-bottom:4px;color:#e85301;font-size:8px;font-weight:850;letter-spacing:.12em}
 .price-alert-identity h2{margin:0;overflow:hidden;color:#efeff1;font-size:18px;font-weight:720;line-height:1.15;letter-spacing:-.025em;text-overflow:ellipsis;white-space:nowrap}
+.price-alert-title-button{max-width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;letter-spacing:inherit;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.price-alert-title-button:hover{color:#ff7a35}
+.price-alert-title-button:focus-visible{outline:1px solid rgba(232,83,1,.65);outline-offset:3px;border-radius:3px}
 .price-alert-identity p{margin:5px 0 0;overflow:hidden;color:#8a8a91;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
 .price-alert-rule{display:flex;min-width:0;flex-direction:column;justify-content:center;padding:10px 12px;border-left:1px solid #29292d}
 .price-alert-rule span{color:#696970;font-size:8px;font-weight:760;letter-spacing:.08em;text-transform:uppercase}
@@ -117,12 +130,15 @@ body.price-alerts-page-open #scrollTopButton{display:none!important}
 .price-alerts-market-filters>span{width:100%;margin:0 0 1px}
 .price-alerts-market-toggle{min-height:29px;padding:0 8px}
 .price-alerts-heading-actions{align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-top:13px}
-.price-alerts-currency-field{order:1}
-.price-alerts-count{order:2}
-.price-alerts-back{order:3}
+.price-alerts-count{order:1}
+.price-alerts-currency-field{order:2}
+.price-alerts-delete-selected{order:3}
+.price-alerts-select{order:4}
+.price-alerts-back{order:5}
 .price-alerts-currency-field select{height:37px;min-width:94px}
 .price-alert-card{grid-template-columns:86px minmax(0,1fr);gap:11px;padding:11px;border-radius:12px}
 .price-alert-cover-column{width:86px}
+.price-alert-cover-button{width:86px}
 .price-alert-cover-wrap{width:86px;border-radius:7px}
 .price-alert-streaming{grid-template-columns:1fr;gap:4px;margin-top:5px}
 .price-alert-streaming a{height:21px}
@@ -156,3 +172,11 @@ body.price-alerts-page-open #scrollTopButton{display:none!important}
 }
 
 @media(prefers-reduced-motion:reduce){.price-alert-loading>span{animation-duration:1.5s}}
+
+.price-alert-select-control{position:absolute;z-index:3;left:8px;top:8px;display:flex;width:28px;height:28px;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.16);border-radius:8px;background:rgba(10,10,12,.9);box-shadow:0 4px 12px rgba(0,0,0,.28);cursor:pointer}
+.price-alert-select-control input{position:absolute;opacity:0;pointer-events:none}
+.price-alert-select-control span{position:relative;width:16px;height:16px;border:1.5px solid #707078;border-radius:4px;background:#111113}
+.price-alert-select-control input:checked+span{border-color:#e85301;background:#e85301}
+.price-alert-select-control input:checked+span:after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(42deg)}
+.price-alert-card.selection-mode{cursor:default}
+.price-alert-card.selected{border-color:rgba(232,83,1,.48);background:linear-gradient(145deg,rgba(232,83,1,.075),rgba(255,255,255,.012)),#111113}

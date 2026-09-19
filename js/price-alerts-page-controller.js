@@ -21,6 +21,7 @@ function create(options){
   var onOpenRoute=typeof options.onOpenRoute==='function'?options.onOpenRoute:function(){};
   var onBackHome=typeof options.onBackHome==='function'?options.onBackHome:function(){};
   var onEdit=typeof options.onEdit==='function'?options.onEdit:function(){};
+  var onOpenAlbum=typeof options.onOpenAlbum==='function'?options.onOpenAlbum:function(){};
   var onOpenMarketplace=typeof options.onOpenMarketplace==='function'?options.onOpenMarketplace:function(){};
   var onRequireAuth=typeof options.onRequireAuth==='function'?options.onRequireAuth:function(){};
   var onLog=typeof options.onLog==='function'?options.onLog:function(){};
@@ -33,6 +34,8 @@ function create(options){
   var marketVisibility=loadVisibility();
   var currencyPreference=loadCurrencyPreference();
   var fxCache=new Map();
+  var selectionMode=false;
+  var selectedAlertIds=new Set();
 
   if(!api||typeof api.from!=='function')throw new Error('Price alerts page requires Supabase');
   if(!MarketplaceCore)throw new Error('Price alerts page requires marketplace core');
@@ -247,9 +250,11 @@ function create(options){
     var spotify=Streaming.spotifySearchUrl(album.artist,album.title);
     var cover=album.coverUrl||'/assets/images/avatar-placeholder.png';
 
-    return '<article class="price-alert-card" data-alert-id="'+esc(alert.id)+'">'+
+    var selected=selectedAlertIds.has(String(alert.id));
+    return '<article class="price-alert-card'+(selectionMode?' selection-mode':'')+(selected?' selected':'')+'" data-alert-id="'+esc(alert.id)+'">'+
+      (selectionMode?'<label class="price-alert-select-control" aria-label="Select '+esc(album.title)+'"><input type="checkbox" data-price-alert-select="'+esc(alert.id)+'"'+(selected?' checked':'')+'><span aria-hidden="true"></span></label>':'')+
       '<div class="price-alert-cover-column">'+
-        '<div class="price-alert-cover-wrap"><img src="'+esc(cover)+'" alt="'+esc(album.artist+' - '+album.title)+'" loading="lazy" decoding="async"></div>'+
+        '<button class="price-alert-album-open price-alert-cover-button" type="button" data-price-alert-album="'+esc(alert.id)+'" aria-label="Open '+esc(album.title)+'"><span class="price-alert-cover-wrap"><img src="'+esc(cover)+'" alt="'+esc(album.artist+' - '+album.title)+'" loading="lazy" decoding="async"></span></button>'+
         '<div class="price-alert-streaming" aria-label="Streaming links">'+
           '<a class="price-alert-apple" href="'+esc(apple)+'" target="_blank" rel="noopener noreferrer" aria-label="Listen on Apple Music"><img src="/assets/brands/apple-music-badge-small.svg" alt="Listen on Apple Music"></a>'+
           '<a class="price-alert-spotify" href="'+esc(spotify)+'" target="_blank" rel="noopener noreferrer" aria-label="Find on Spotify"><img src="/assets/brands/spotify-full-logo-green.svg" alt="Spotify"></a>'+
@@ -258,7 +263,7 @@ function create(options){
       '<div class="price-alert-card-main">'+
         '<div class="price-alert-identity">'+
           '<span class="price-alert-card-kicker">PRICE ALERT</span>'+
-          '<h2>'+esc(album.title)+'</h2>'+
+          '<h2><button class="price-alert-album-open price-alert-title-button" type="button" data-price-alert-album="'+esc(alert.id)+'">'+esc(album.title)+'</button></h2>'+
           '<p>'+esc(album.artist)+'</p>'+
         '</div>'+
         '<div class="price-alert-rule">'+
@@ -289,6 +294,7 @@ function create(options){
   async function render(){
     var version=++renderVersion;
     if(elements.count)elements.count.textContent=alerts.length+' ACTIVE '+(alerts.length===1?'ALERT':'ALERTS');
+    syncSelectionControls();
     if(!elements.grid)return;
     syncCurrencyControl();
     if(!alerts.length){
@@ -325,6 +331,64 @@ function create(options){
     }
     alerts=Array.isArray(result.data)?result.data:[];
     await render();
+  }
+
+  function syncSelectionControls(){
+    if(elements.selectButton){
+      elements.selectButton.textContent=selectionMode?'Cancel':'Select';
+      elements.selectButton.setAttribute('aria-pressed',selectionMode?'true':'false');
+      elements.selectButton.disabled=!alerts.length;
+    }
+    if(elements.deleteSelectedButton){
+      var count=selectedAlertIds.size;
+      elements.deleteSelectedButton.hidden=!selectionMode;
+      elements.deleteSelectedButton.disabled=!count;
+      elements.deleteSelectedButton.textContent=count?'Delete selected ('+count+')':'Delete selected';
+    }
+  }
+
+  function setSelectionMode(active){
+    selectionMode=!!active;
+    if(!selectionMode)selectedAlertIds.clear();
+    syncSelectionControls();
+    render();
+  }
+
+  function toggleSelected(id,checked){
+    id=String(id||'');
+    if(!id)return;
+    if(checked)selectedAlertIds.add(id);
+    else selectedAlertIds.delete(id);
+    syncSelectionControls();
+    var cardElement=elements.grid&&elements.grid.querySelector('[data-alert-id="'+id.replace(/"/g,'')+'"]');
+    if(cardElement)cardElement.classList.toggle('selected',selectedAlertIds.has(id));
+  }
+
+  async function deleteSelected(){
+    if(!selectionMode||!selectedAlertIds.size)return false;
+    var ids=Array.from(selectedAlertIds);
+    var selectedAlerts=alerts.filter(function(alert){return ids.indexOf(String(alert.id))>=0;});
+    if(elements.deleteSelectedButton){
+      elements.deleteSelectedButton.disabled=true;
+      elements.deleteSelectedButton.textContent='Deleting…';
+    }
+
+    var removed={};
+    for(var i=0;i<selectedAlerts.length;i++){
+      try{
+        var result=await api.rpc('delete_marketplace_alert',{p_album_id:selectedAlerts[i].album_id});
+        if(result.error)throw result.error;
+        removed[String(selectedAlerts[i].id)]=true;
+      }catch(error){
+        onLog('error','Could not remove selected price alert:',error);
+      }
+    }
+
+    alerts=alerts.filter(function(alert){return !removed[String(alert.id)];});
+    selectedAlertIds=new Set(Array.from(selectedAlertIds).filter(function(id){return !removed[id];}));
+    if(!selectedAlertIds.size)selectionMode=false;
+    await render();
+    return Object.keys(removed).length>0;
   }
 
   function findAlert(id){
@@ -370,6 +434,8 @@ function create(options){
       onOpenRoute();
     });
     if(elements.backButton)elements.backButton.addEventListener('click',onBackHome);
+    if(elements.selectButton)elements.selectButton.addEventListener('click',function(){setSelectionMode(!selectionMode);});
+    if(elements.deleteSelectedButton)elements.deleteSelectedButton.addEventListener('click',deleteSelected);
     if(elements.traderaToggle)elements.traderaToggle.addEventListener('change',function(){setVisibility('Tradera',this.checked);});
     if(elements.ebayToggle)elements.ebayToggle.addEventListener('change',function(){setVisibility('eBay',this.checked);});
     if(elements.currencySelect)elements.currencySelect.addEventListener('change',function(){
@@ -381,8 +447,34 @@ function create(options){
     syncCurrencyControl();
     if(elements.grid)elements.grid.addEventListener('click',function(event){
       var target=event.target;
+      var selectInput=target.closest&&target.closest('[data-price-alert-select]');
+      if(selectInput){
+        toggleSelected(selectInput.getAttribute('data-price-alert-select'),!!selectInput.checked);
+        return;
+      }
       var back=target.closest&&target.closest('[data-price-alert-back]');
       if(back){onBackHome();return;}
+      if(selectionMode){
+        var selectionCard=target.closest&&target.closest('.price-alert-card');
+        if(selectionCard){
+          var selectionCardId=selectionCard.getAttribute('data-alert-id');
+          toggleSelected(selectionCardId,!selectedAlertIds.has(String(selectionCardId)));
+          render();
+          return;
+        }
+      }
+      var albumButton=target.closest&&target.closest('[data-price-alert-album]');
+      if(albumButton){
+        if(selectionMode){
+          var selectionId=albumButton.getAttribute('data-price-alert-album');
+          toggleSelected(selectionId,!selectedAlertIds.has(String(selectionId)));
+          render();
+          return;
+        }
+        var albumAlert=findAlert(albumButton.getAttribute('data-price-alert-album'));
+        if(albumAlert)onOpenAlbum(albumAlert,albumOf(albumAlert));
+        return;
+      }
       var lowestLink=target.closest&&target.closest('.price-alert-lowest-link');
       if(lowestLink)return;
       var market=target.closest&&target.closest('[data-price-alert-market]');
@@ -422,11 +514,15 @@ function create(options){
     elements.page.setAttribute('aria-hidden','false');
     if(doc&&doc.body)doc.body.classList.add('price-alerts-page-open');
     if(elements.profileMenu)elements.profileMenu.classList.remove('open');
+    selectionMode=false;
+    selectedAlertIds.clear();
     await load();
   }
 
   function hidePage(){
     loadVersion++;
+    selectionMode=false;
+    selectedAlertIds.clear();
     if(elements.page){
       elements.page.hidden=true;
       elements.page.setAttribute('aria-hidden','true');
@@ -445,7 +541,7 @@ function create(options){
     renderPage:renderPage,
     hidePage:hidePage,
     refreshIfOpen:refreshIfOpen,
-    state:function(){return {alerts:alerts.slice(),marketVisibility:{Tradera:marketVisibility.Tradera,eBay:marketVisibility.eBay},currencyPreference:currencyPreference,displayCurrency:displayCurrency(),open:!!(elements.page&&!elements.page.hidden)};}
+    state:function(){return {alerts:alerts.slice(),marketVisibility:{Tradera:marketVisibility.Tradera,eBay:marketVisibility.eBay},currencyPreference:currencyPreference,displayCurrency:displayCurrency(),selectionMode:selectionMode,selectedAlertIds:Array.from(selectedAlertIds),open:!!(elements.page&&!elements.page.hidden)};}
   });
 }
 

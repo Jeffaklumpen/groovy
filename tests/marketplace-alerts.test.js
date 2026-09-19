@@ -186,3 +186,10 @@ test('Price Alerts profile-menu icon is a bell mask',()=>{
   const css=fs.readFileSync(path.join(root,'css','library-shell.css'),'utf8');
   assert.match(css,/#profileMenu #priceAlertsButton:before\{content:"";[^}]*mask:url/);
 });
+
+
+test('same marketplace listing only notifies once per alert',()=>{
+  const sql=fs.readFileSync(path.join(root,'supabase','migrations','20260919095000_marketplace_price_alerts.sql'),'utf8');
+  assert.match(sql,/marketplace_alert_matches_unique unique \(alert_id,marketplace,listing_id\)/);
+  assert.match(sql,/on conflict \(alert_id,marketplace,listing_id\) do nothing/);
+});
