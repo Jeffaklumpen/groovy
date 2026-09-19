@@ -57,3 +57,27 @@ test('price alert UI exposes currency, marketplace and listing-type choices',()=
   assert.match(app,/marketplaceAlertController\.openForRecord\(index\)/);
   assert.match(app,/marketplaceAlertController\.handleEscape\(\)/);
 });
+
+
+test('price alert choices use explicit checkbox controls instead of full selected cards',()=>{
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const css=fs.readFileSync(path.join(root,'css','copy-marketplace.css'),'utf8');
+  for(const id of ['marketplaceAlertTradera','marketplaceAlertEbay','marketplaceAlertFixed','marketplaceAlertAuction']){
+    assert.match(html,new RegExp('id="'+id+'" class="marketplace-alert-checkbox" type="checkbox"'));
+  }
+  assert.match(html,/marketplace-alert-brand-mark tradera/);
+  assert.match(html,/marketplace-alert-brand-mark ebay/);
+  assert.match(css,/\.marketplace-alert-checkbox\{[^}]*width:19px/);
+  assert.match(css,/\.marketplace-alert-checkbox:checked\{/);
+  assert.match(css,/\.marketplace-alert-checkbox:checked:after\{/);
+  assert.doesNotMatch(css,/\.marketplace-alert-choice-grid input\{position:absolute;opacity:0/);
+});
+
+test('price alert footer keeps compact actions when remove is hidden',()=>{
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const css=fs.readFileSync(path.join(root,'css','copy-marketplace.css'),'utf8');
+  const actions=html.slice(html.indexOf('class="marketplace-alert-actions"'),html.indexOf('</div>',html.indexOf('class="marketplace-alert-actions"')));
+  assert.doesNotMatch(actions,/<span><\/span>/);
+  assert.match(css,/\.marketplace-alert-actions\{display:flex/);
+  assert.match(css,/\.marketplace-alert-delete\{margin-right:auto/);
+});

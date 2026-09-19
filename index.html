@@ -25,7 +25,7 @@
   <title>GroovyShelves – Track Your Vinyl Collection</title>
   <link rel="stylesheet" href="/css/base-library.css?v=3">
   <link rel="stylesheet" href="/css/search-modals.css?v=4">
-  <link rel="stylesheet" href="/css/copy-marketplace.css?v=4">
+  <link rel="stylesheet" href="/css/copy-marketplace.css?v=5">
   <link rel="stylesheet" href="/css/library-shell.css?v=8">
   <link rel="stylesheet" href="/css/shelves-streaming.css?v=3">
   <link rel="stylesheet" href="/css/album-detail-extras.css?v=2">
@@ -379,7 +379,7 @@
     </div>
 
     <label class="marketplace-alert-price-field" for="marketplaceAlertPrice">
-      <span>Notify me under</span>
+      <span>Price limit</span>
       <span class="marketplace-alert-price-control">
         <input id="marketplaceAlertPrice" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="300" autocomplete="off">
         <select id="marketplaceAlertCurrency" aria-label="Alert currency">
@@ -391,16 +391,30 @@
     <fieldset class="marketplace-alert-options">
       <legend>Marketplaces</legend>
       <div class="marketplace-alert-choice-grid">
-        <label><input id="marketplaceAlertTradera" type="checkbox" checked><span><b>T</b><strong>Tradera</strong></span></label>
-        <label><input id="marketplaceAlertEbay" type="checkbox" checked><span><b class="ebay">e</b><strong>eBay</strong></span></label>
+        <label class="marketplace-alert-choice">
+          <input id="marketplaceAlertTradera" class="marketplace-alert-checkbox" type="checkbox" checked>
+          <span class="marketplace-alert-brand-mark tradera" aria-hidden="true">T</span>
+          <span class="marketplace-alert-choice-copy"><strong>Tradera</strong><small>Swedish marketplace</small></span>
+        </label>
+        <label class="marketplace-alert-choice">
+          <input id="marketplaceAlertEbay" class="marketplace-alert-checkbox" type="checkbox" checked>
+          <span class="marketplace-alert-brand-mark ebay" aria-hidden="true">e</span>
+          <span class="marketplace-alert-choice-copy"><strong>eBay</strong><small>International marketplace</small></span>
+        </label>
       </div>
     </fieldset>
 
     <fieldset class="marketplace-alert-options">
       <legend>Listing type</legend>
       <div class="marketplace-alert-choice-grid">
-        <label><input id="marketplaceAlertFixed" type="checkbox" checked><span><b class="type">✓</b><strong>Fixed price</strong></span></label>
-        <label><input id="marketplaceAlertAuction" type="checkbox" checked><span><b class="type">↗</b><strong>Auction</strong></span></label>
+        <label class="marketplace-alert-choice">
+          <input id="marketplaceAlertFixed" class="marketplace-alert-checkbox" type="checkbox" checked>
+          <span class="marketplace-alert-choice-copy"><strong>Fixed price</strong><small>Buy Now listings</small></span>
+        </label>
+        <label class="marketplace-alert-choice">
+          <input id="marketplaceAlertAuction" class="marketplace-alert-checkbox" type="checkbox" checked>
+          <span class="marketplace-alert-choice-copy"><strong>Auction</strong><small>Current or next bid</small></span>
+        </label>
       </div>
     </fieldset>
 
@@ -409,7 +423,6 @@
 
     <div class="marketplace-alert-actions">
       <button id="deleteMarketplaceAlert" class="marketplace-alert-delete" type="button" hidden>Remove alert</button>
-      <span></span>
       <button id="cancelMarketplaceAlert" class="marketplace-alert-secondary" type="button">Cancel</button>
       <button id="saveMarketplaceAlert" class="marketplace-alert-save" type="submit">Save alert</button>
     </div>

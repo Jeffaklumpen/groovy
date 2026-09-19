@@ -178,41 +178,50 @@
 .marketplace-alert-trigger.active .marketplace-alert-copy strong{color:#ff762e}
 .marketplace-alert-chevron{flex:0 0 auto;color:#66666d;font-size:22px;line-height:1}
 
-.marketplace-alert-panel{width:min(520px,100%);padding:29px}
+.marketplace-alert-panel{width:min(520px,100%);padding:30px 30px 24px}
+.marketplace-alert-heading .search-modal-kicker{display:block;margin-bottom:7px}
 .marketplace-alert-heading h2{font-size:26px}
-.marketplace-alert-price-field{display:block;margin-top:24px;color:#8d8d94;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+.marketplace-alert-heading p{margin-top:6px}
+.marketplace-alert-price-field{display:block;margin-top:23px;color:#8d8d94;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
 .marketplace-alert-price-field>span:first-child{display:block;margin:0 0 8px 2px}
 .marketplace-alert-price-control{display:grid;grid-template-columns:minmax(0,1fr) 105px;gap:8px}
-.marketplace-alert-price-control input,.marketplace-alert-price-control select{box-sizing:border-box;width:100%;height:49px;border:1px solid #35353a;border-radius:11px;background:#0e0e10;color:#fff;font:inherit;outline:none;transition:border-color .15s ease,box-shadow .15s ease}
-.marketplace-alert-price-control input{padding:0 13px;font-size:18px;font-weight:720}
+.marketplace-alert-price-control input,.marketplace-alert-price-control select{box-sizing:border-box;width:100%;height:49px;border:1px solid #35353a;border-radius:11px;background:#0e0e10;color:#fff;font:inherit;outline:none;transition:border-color .15s ease,box-shadow .15s ease,border-color .15s ease}
+.marketplace-alert-price-control input{padding:0 13px;font-size:18px;font-weight:720;appearance:textfield;-moz-appearance:textfield}
+.marketplace-alert-price-control input::-webkit-outer-spin-button,.marketplace-alert-price-control input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .marketplace-alert-price-control select{padding:0 34px 0 12px;font-size:12px;font-weight:750;cursor:pointer;color-scheme:dark}
 .marketplace-alert-price-control input:focus,.marketplace-alert-price-control select:focus{border-color:#e85301;box-shadow:0 0 0 3px rgba(232,83,1,.13)}
+
 .marketplace-alert-options{min-width:0;margin:20px 0 0;padding:0;border:0}
 .marketplace-alert-options legend{margin:0 0 9px 2px;color:#8d8d94;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
 .marketplace-alert-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.marketplace-alert-choice-grid label{display:block;min-width:0;cursor:pointer}
-.marketplace-alert-choice-grid input{position:absolute;opacity:0;pointer-events:none}
-.marketplace-alert-choice-grid label>span{display:flex;min-height:46px;align-items:center;gap:9px;padding:8px 10px;border:1px solid #333338;border-radius:11px;background:#141416;color:#aaaab0;transition:border-color .15s ease,background .15s ease,color .15s ease,box-shadow .15s ease}
-.marketplace-alert-choice-grid b{display:flex;width:27px;height:27px;flex:0 0 27px;align-items:center;justify-content:center;border-radius:8px;background:#343438;color:#b7b7bc;font-size:12px;font-weight:850}
-.marketplace-alert-choice-grid b.ebay{background:#f5f5f5;color:#1d1d20;font-size:17px}
-.marketplace-alert-choice-grid b.type{font-size:13px}
-.marketplace-alert-choice-grid strong{overflow:hidden;font-size:11px;font-weight:720;text-overflow:ellipsis;white-space:nowrap}
-.marketplace-alert-choice-grid input:checked+span{border-color:rgba(232,83,1,.5);background:rgba(232,83,1,.1);color:#fff;box-shadow:inset 0 1px rgba(255,255,255,.025)}
-.marketplace-alert-choice-grid input:checked+span b:not(.ebay){background:#e85301;color:#fff}
-.marketplace-alert-choice-grid input:focus-visible+span{box-shadow:0 0 0 3px rgba(232,83,1,.15)}
+.marketplace-alert-choice{display:flex;min-width:0;min-height:54px;align-items:center;gap:10px;padding:9px 11px;border:1px solid #303034;border-radius:11px;background:#141416;color:#aaaab0;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.marketplace-alert-choice:hover{border-color:#414147;background:#18181b}
+.marketplace-alert-checkbox{position:relative;width:19px;height:19px;flex:0 0 19px;margin:0;border:1.5px solid #5a5a61;border-radius:5px;background:#0d0d0f;appearance:none;-webkit-appearance:none;cursor:pointer;transition:border-color .14s ease,background .14s ease,box-shadow .14s ease}
+.marketplace-alert-checkbox:checked{border-color:#e85301;background:#e85301}
+.marketplace-alert-checkbox:checked:after{content:"";position:absolute;left:5px;top:2px;width:5px;height:9px;border-right:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(42deg)}
+.marketplace-alert-checkbox:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(232,83,1,.18)}
+.marketplace-alert-choice:has(.marketplace-alert-checkbox:checked){border-color:#3a3a40;background:#171719}
+.marketplace-alert-brand-mark{display:flex;width:28px;height:28px;flex:0 0 28px;align-items:center;justify-content:center;border-radius:8px;font-size:12px;font-weight:850}
+.marketplace-alert-brand-mark.tradera{background:#e85301;color:#fff}
+.marketplace-alert-brand-mark.ebay{background:#f5f5f5;color:#1d1d20;font-size:17px}
+.marketplace-alert-choice-copy{display:flex;min-width:0;flex-direction:column;gap:2px}
+.marketplace-alert-choice-copy strong{overflow:hidden;color:#e2e2e5;font-size:11px;font-weight:720;text-overflow:ellipsis;white-space:nowrap}
+.marketplace-alert-choice-copy small{overflow:hidden;color:#707077;font-size:9px;font-weight:600;line-height:1.3;text-overflow:ellipsis;white-space:nowrap}
+.marketplace-alert-choice:has(.marketplace-alert-checkbox:checked) .marketplace-alert-choice-copy strong{color:#fff}
+
 .marketplace-alert-note{margin:17px 2px 0;color:#68686f;font-size:9px;line-height:1.5}
 .marketplace-alert-status{min-height:18px;margin:9px 2px 0;color:#818188;font-size:10px;line-height:1.4}
 .marketplace-alert-status.error{color:#ff8b8b}
 .marketplace-alert-status.loading{color:#aaaab0}
-.marketplace-alert-actions{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:8px;margin-top:8px;padding-top:15px;border-top:1px solid rgba(255,255,255,.07)}
-.marketplace-alert-actions button{min-height:40px;padding:0 13px;border-radius:9px;font-family:inherit;font-size:10px;font-weight:760;cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease}
+.marketplace-alert-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px;padding-top:15px;border-top:1px solid rgba(255,255,255,.07)}
+.marketplace-alert-actions button{min-height:40px;padding:0 14px;border-radius:9px;font-family:inherit;font-size:10px;font-weight:760;cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease}
 .marketplace-alert-actions button:disabled{opacity:.55;cursor:wait}
-.marketplace-alert-delete{border:1px solid rgba(214,60,60,.26);background:rgba(214,60,60,.06);color:#e77f7f}
+.marketplace-alert-delete{margin-right:auto;border:1px solid rgba(214,60,60,.26);background:rgba(214,60,60,.06);color:#e77f7f}
 .marketplace-alert-delete:hover{border-color:rgba(229,78,78,.55);background:rgba(214,60,60,.12);color:#ffaaaa}
 .marketplace-alert-delete[hidden]{display:none!important}
 .marketplace-alert-secondary{border:1px solid #35353a;background:#18181b;color:#aaaab0}
 .marketplace-alert-secondary:hover{background:#222226;color:#fff}
-.marketplace-alert-save{border:1px solid #e85301;background:#e85301;color:#fff}
+.marketplace-alert-save{min-width:90px;border:1px solid #e85301;background:#e85301;color:#fff}
 .marketplace-alert-save:hover{background:#ff6418}
 
 @media screen and (max-width:600px){
@@ -221,11 +230,10 @@
 .marketplace-alert-panel{width:100%;max-width:none;padding:25px 16px calc(18px + env(safe-area-inset-bottom))}
 .marketplace-alert-price-control{grid-template-columns:minmax(0,1fr) 94px}
 .marketplace-alert-price-control input{font-size:17px}
-.marketplace-alert-choice-grid{gap:7px}
-.marketplace-alert-choice-grid label>span{padding:8px;min-height:44px}
-.marketplace-alert-choice-grid strong{font-size:10px}
-.marketplace-alert-actions{grid-template-columns:1fr 1fr;margin-top:7px}
-.marketplace-alert-actions>span{display:none}
-.marketplace-alert-delete{grid-column:1/-1;grid-row:2}
-.marketplace-alert-secondary,.marketplace-alert-save{grid-row:1}
+.marketplace-alert-choice-grid{grid-template-columns:1fr;gap:7px}
+.marketplace-alert-choice{min-height:50px;padding:8px 10px}
+.marketplace-alert-choice-copy small{white-space:normal}
+.marketplace-alert-actions{flex-wrap:wrap;margin-top:7px}
+.marketplace-alert-delete{width:100%;margin-right:0;order:3}
+.marketplace-alert-secondary,.marketplace-alert-save{flex:1}
 }
