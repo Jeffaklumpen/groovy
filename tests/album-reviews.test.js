@@ -71,6 +71,18 @@ test('review layout has dedicated desktop tablet and mobile placement',()=>{
   assert.match(css,/\.album-review-editor\{align-items:flex-end;padding:0\}/);
 });
 
+test('Escape closes the review editor before it can close the album overlay',()=>{
+  const controller=fs.readFileSync('js/album-review-controller.js','utf8');
+  const app=fs.readFileSync('js/app.js','utf8');
+  assert.match(controller,/function handleEscape\(\)/);
+  assert.match(controller,/return true/);
+  assert.doesNotMatch(controller,/addEventListener\('keydown',handleKeyDown\)/);
+  const reviewEscape=app.indexOf('albumReviewController&&albumReviewController.handleEscape()');
+  const marketEscape=app.indexOf('marketplaceController.handleEscape()',reviewEscape);
+  const closeAlbum=app.indexOf("albumOverlay.className.indexOf('visible')",marketEscape);
+  assert.ok(reviewEscape>=0&&marketEscape>reviewEscape&&closeAlbum>marketEscape);
+});
+
 test('app opens reviews with album detail and closes them with the overlay',()=>{
   const app=fs.readFileSync('js/app.js','utf8');
   assert.match(app,/var AlbumReviewController=window\.GroovyAlbumReviewController/);
