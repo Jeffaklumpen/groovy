@@ -159,3 +159,11 @@ test('Price Alerts page can open marketplace listing modals and toggle visible m
   assert.match(page,/groovy-price-alert-marketplace-visibility-v1/);
   assert.match(marketplace,/async function openMarketplaceForRecord/);
 });
+
+
+test('interactive marketplace listing modals are not capped at 60 results',()=>{
+  const tradera=fs.readFileSync(path.join(root,'supabase','functions','tradera-search','index.ts'),'utf8');
+  const ebay=fs.readFileSync(path.join(root,'supabase','functions','ebay-search','index.ts'),'utf8');
+  assert.doesNotMatch(tradera,/\.slice\(0,\s*60\)/);
+  assert.doesNotMatch(ebay,/\.slice\(0,\s*60\)/);
+});

@@ -200,7 +200,6 @@ export default {
         .filter((listing) => isVinylLpListing(listing.title))
         .filter((listing) => isAlbumListing(listing.title, artist, album))
         .filter((listing, index, all) => all.findIndex((candidate) => candidate.id === listing.id) === index)
-        .slice(0, 60)
 
       return Response.json(
         { listings, count: listings.length, marketplaceId },

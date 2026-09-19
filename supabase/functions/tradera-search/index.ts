@@ -280,7 +280,6 @@ export default {
           const key = listing.id || listing.url
           return all.findIndex((candidate) => (candidate.id || candidate.url) === key) === index
         })
-        .slice(0, 60)
 
       return Response.json(
         { listings, count: listings.length },
