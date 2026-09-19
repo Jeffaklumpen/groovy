@@ -18,7 +18,7 @@
   var isStandalone=window.matchMedia('(display-mode: standalone)').matches||
     window.navigator.standalone===true||
     isTwa;
-  var androidApkUrl='/GroovyShelves.apk?v=6';
+  var androidApkUrl='/GroovyShelves.apk?v=7';
 
   function setInstallCopy(){
     installMenuButton.textContent='Get the App';
