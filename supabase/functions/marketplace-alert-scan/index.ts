@@ -7,7 +7,7 @@ const corsHeaders = {
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
-  return jsonResponse(body,{status,headers:corsHeaders})
+  return Response.json(body,{status,headers:corsHeaders})
 }
 
 type JsonRecord = Record<string, unknown>
