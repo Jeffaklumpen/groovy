@@ -162,3 +162,23 @@ test('active alert count sits before currency and Select sits before Back to My 
   assert.ok(block.indexOf('id="priceAlertsCount"')<block.indexOf('id="priceAlertsCurrencySelect"'));
   assert.ok(block.indexOf('id="priceAlertsSelectButton"')<block.indexOf('id="priceAlertsBackButton"'));
 });
+
+
+test('mobile Price Alerts keeps primary controls in a clean two-column layout',()=>{
+  const fs=require('fs'),path=require('path');
+  const css=fs.readFileSync(path.join(__dirname,'..','css','price-alerts.css'),'utf8');
+  const mobile=css.slice(css.indexOf('@media(max-width:600px)'));
+  assert.match(mobile,/\.price-alerts-heading-actions\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/);
+  assert.match(mobile,/\.price-alerts-select\{grid-column:1;grid-row:3;width:100%\}/);
+  assert.match(mobile,/\.price-alerts-back\{grid-column:2;grid-row:3;width:100%\}/);
+  assert.match(mobile,/\.price-alerts-delete-selected\[hidden\]\+\.price-alerts-select\{grid-row:2\}/);
+  assert.match(mobile,/\.price-alerts-delete-selected\[hidden\]~\.price-alerts-back\{grid-row:2\}/);
+});
+
+test('mobile marketplace cards use brand marks without cramped marketplace names',()=>{
+  const fs=require('fs'),path=require('path');
+  const css=fs.readFileSync(path.join(__dirname,'..','css','price-alerts.css'),'utf8');
+  const mobile=css.slice(css.indexOf('@media(max-width:600px)'));
+  assert.match(mobile,/\.price-alert-market-head>strong\{display:none\}/);
+  assert.match(mobile,/\.price-alert-market-brand\{width:22px;height:22px/);
+});

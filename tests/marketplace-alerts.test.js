@@ -193,3 +193,13 @@ test('same marketplace listing only notifies once per alert',()=>{
   assert.match(sql,/marketplace_alert_matches_unique unique \(alert_id,marketplace,listing_id\)/);
   assert.match(sql,/on conflict \(alert_id,marketplace,listing_id\) do nothing/);
 });
+
+
+test('mobile Price Alerts hides marketplace names and keeps Select with Back',()=>{
+  const css=fs.readFileSync(path.join(root,'css','price-alerts.css'),'utf8');
+  const mobile=css.slice(css.indexOf('@media(max-width:600px)'));
+  assert.match(mobile,/\.price-alert-market-head>strong\{display:none\}/);
+  assert.match(mobile,/\.price-alerts-heading-actions\{display:grid/);
+  assert.match(mobile,/\.price-alerts-select\{grid-column:1/);
+  assert.match(mobile,/\.price-alerts-back\{grid-column:2/);
+});
