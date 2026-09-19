@@ -11,8 +11,8 @@ test('Android app keeps Groovy identity and Firebase configuration',()=>{
   const firebase=JSON.parse(fs.readFileSync(path.join(root,'android','app','google-services.json'),'utf8'));
 
   assert.match(gradle,/applicationId 'com\.groovyshelves\.twa'/);
-  assert.match(gradle,/versionCode 5/);
-  assert.match(gradle,/versionName '1\.2\.2'/);
+  assert.match(gradle,/versionCode 6/);
+  assert.match(gradle,/versionName '1\.2\.3'/);
   assert.match(gradle,/firebase-bom:34\.19\.0/);
   assert.match(gradle,/firebase-messaging/);
   assert.equal(firebase.client[0].client_info.android_client_info.package_name,'com.groovyshelves.twa');
@@ -31,6 +31,7 @@ test('Android TWA bridges the FCM token to the authenticated web app',()=>{
   assert.match(launcher,/groovy:native-push-token/);
   assert.match(bridge,/register_native_push_device/);
   assert.match(bridge,/android:\/\/com\.groovyshelves\.twa/);
+  assert.match(bridge,/android-app:\/\/com\.groovyshelves\.twa/);
   assert.ok(assetlinks[0].relation.includes('delegate_permission/common.handle_all_urls'));
   assert.ok(assetlinks[0].relation.includes('delegate_permission/common.use_as_origin'));
 });
@@ -60,22 +61,23 @@ test('web Supabase client is exposed to the native bridge',()=>{
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const bridge=fs.readFileSync(path.join(root,'js','native-app-bridge.js'),'utf8');
   assert.match(html,/window\.supabaseClient=supabaseClient/);
-  assert.match(html,/\/js\/native-app-bridge\.js\?v=2/);
+  assert.match(html,/\/js\/native-app-bridge\.js\?v=3/);
   assert.match(bridge,/window\.supabaseClient/);
   assert.match(bridge,/register_native_push_device/);
 });
 
 
-test('Android requests the postMessage channel only after origin validation and navigation',()=>{
+test('Android requests the postMessage channel after navigation without blocking on the separate validation callback',()=>{
   const launcher=fs.readFileSync(path.join(root,'android','app','src','main','java','com','groovyshelves','twa','LauncherActivity.java'),'utf8');
   const pwa=fs.readFileSync(path.join(root,'js','pwa.js'),'utf8');
   assert.match(launcher,/session\.validateRelationship\(\s*CustomTabsService\.RELATION_USE_AS_ORIGIN,\s*APP_ORIGIN,\s*null\s*\)/);
   assert.match(launcher,/originValidated = result;\s*Log\.d\(TAG, "PostMessage origin validation: " \+ result\);\s*maybeRequestPostMessageChannel\(\);/);
-  assert.match(launcher,/!originValidated \|\| !navigationFinished \|\| channelRequested \|\| session == null/);
+  assert.match(launcher,/!navigationFinished \|\| channelRequested \|\| session == null/);
+  assert.doesNotMatch(launcher,/!originValidated \|\| !navigationFinished/);
   assert.match(launcher,/requestPostMessageChannel\(APP_ORIGIN, APP_ORIGIN/);
   assert.match(launcher,/postDelayed\(LauncherActivity\.this::sendFcmTokenToWeb, 1000L\)/);
   assert.match(launcher,/postDelayed\(LauncherActivity\.this::sendFcmTokenToWeb, 3000L\)/);
-  assert.match(pwa,/androidApkUrl='\/GroovyShelves\.apk\?v=5'/);
+  assert.match(pwa,/androidApkUrl='\/GroovyShelves\.apk\?v=6'/);
 });
 
 
