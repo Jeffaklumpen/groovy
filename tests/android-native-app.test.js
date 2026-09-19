@@ -73,3 +73,23 @@ test('Android requests the postMessage channel after navigation without pre-vali
   assert.match(launcher,/postDelayed\(LauncherActivity\.this::sendFcmTokenToWeb, 1000L\)/);
   assert.match(launcher,/postDelayed\(LauncherActivity\.this::sendFcmTokenToWeb, 3000L\)/);
 });
+
+
+test('Android launcher icon uses adaptive masking and comfortable safe-area padding',()=>{
+  const manifest=fs.readFileSync(path.join(root,'android','app','src','main','AndroidManifest.xml'),'utf8');
+  const foreground=fs.readFileSync(path.join(root,'android','app','src','main','res','drawable','ic_launcher_foreground.xml'),'utf8');
+  const adaptive=fs.readFileSync(path.join(root,'android','app','src','main','res','mipmap-anydpi-v26','ic_launcher.xml'),'utf8');
+  const adaptiveRound=fs.readFileSync(path.join(root,'android','app','src','main','res','mipmap-anydpi-v26','ic_launcher_round.xml'),'utf8');
+  const legacy=fs.readFileSync(path.join(root,'android','app','src','main','res','mipmap-anydpi','ic_launcher.xml'),'utf8');
+
+  assert.match(manifest,/android:icon="@mipmap\/ic_launcher"/);
+  assert.match(manifest,/android:roundIcon="@mipmap\/ic_launcher_round"/);
+  assert.match(foreground,/android:width="64dp"/);
+  assert.match(foreground,/android:height="64dp"/);
+  assert.match(foreground,/@drawable\/app_icon/);
+  assert.match(adaptive,/<adaptive-icon/);
+  assert.match(adaptive,/android:drawable="@color\/groovy_background"/);
+  assert.match(adaptive,/android:drawable="@drawable\/ic_launcher_foreground"/);
+  assert.match(adaptiveRound,/<adaptive-icon/);
+  assert.match(legacy,/android:radius="18dp"/);
+});
