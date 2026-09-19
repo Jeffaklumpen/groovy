@@ -203,3 +203,27 @@ test('mobile Price Alerts hides marketplace names and keeps Select with Back',()
   assert.match(mobile,/\.price-alerts-select\{grid-column:1/);
   assert.match(mobile,/\.price-alerts-back\{grid-column:2/);
 });
+
+
+test('Web Push infrastructure is global and Price Alerts are enabled by default',()=>{
+  const sql=fs.readFileSync(path.join(root,'supabase','migrations','20260919114000_web_push_notifications.sql'),'utf8');
+  const scanner=fs.readFileSync(path.join(root,'supabase','functions','marketplace-alert-scan','index.ts'),'utf8');
+  const serviceWorker=fs.readFileSync(path.join(root,'service-worker.js'),'utf8');
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const pwa=fs.readFileSync(path.join(root,'js','pwa.js'),'utf8');
+  assert.match(sql,/create table if not exists public\.push_subscriptions/);
+  assert.match(sql,/create table if not exists public\.notification_preferences/);
+  assert.match(sql,/push_enabled boolean not null default true/);
+  assert.match(sql,/save_push_subscription/);
+  assert.match(sql,/get_web_push_vapid_config/);
+  assert.match(scanner,/sendPriceAlertPush/);
+  assert.match(scanner,/notification_type','price_alert'/);
+  assert.match(scanner,/webpush\.sendNotification/);
+  assert.match(serviceWorker,/addEventListener\('push'/);
+  assert.match(serviceWorker,/addEventListener\('notificationclick'/);
+  assert.match(pwa,/service-worker\.js\?v=3/);
+  const pushPos=html.indexOf('/js/push-notifications.js');
+  const alertPos=html.indexOf('/js/marketplace-alert-controller.js');
+  const appPos=html.indexOf('/js/app.js');
+  assert.ok(pushPos>=0&&alertPos>pushPos&&appPos>alertPos);
+});

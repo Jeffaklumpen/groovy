@@ -62,6 +62,7 @@ function fixture(options){
     api,elements,storage:{getItem(){return 'SEK';}},
     navigator:options.navigator||{languages:['sv-SE'],language:'sv-SE'},
     Intl,getCurrentUser:async()=>({id:'user-1'}),getRecord:()=>record,
+    pushNotifications:options.pushNotifications||null,
     getAlbumId:r=>r.id,getArtist:r=>r.artist,getTitle:r=>r.title,
     onChanged:options.onChanged||(()=>{}),onLog:()=>{}
   });
@@ -153,4 +154,26 @@ test('opens an existing alert directly from the Price Alerts page and refreshes 
   assert.equal(changes.length,1);
   assert.equal(changes[0].type,'saved');
   assert.equal(changes[0].record,record);
+});
+
+
+test('starts global mobile push setup when a price alert is saved',async()=>{
+  let pushCalls=0;
+  const pushNotifications={
+    ensureForPriceAlerts(){
+      pushCalls++;
+      return Promise.resolve({enabled:true});
+    }
+  };
+  const {controller,elements}=fixture({pushNotifications});
+  await controller.openForRecord(0);
+  controller.openModal();
+  elements.priceInput.value='500';
+  elements.currencySelect.value='SEK';
+  elements.traderaCheckbox.checked=true;
+  elements.ebayCheckbox.checked=true;
+  elements.fixedCheckbox.checked=true;
+  elements.auctionCheckbox.checked=true;
+  assert.equal(await controller.save(),true);
+  assert.equal(pushCalls,1);
 });

@@ -578,6 +578,7 @@ var RatingCore=window.GroovyRatingCore;
 var AlbumRatingController=window.GroovyAlbumRatingController;
 var MarketplaceController=window.GroovyMarketplaceController;
 var MarketplaceAlertController=window.GroovyMarketplaceAlertController;
+var PushNotifications=window.GroovyPushNotifications;
 var PriceAlertsPageController=window.GroovyPriceAlertsPageController;
 var ShelfCore=window.GroovyShelfCore;
 var ShelfView=window.GroovyShelfView;
@@ -600,6 +601,7 @@ if(!RatingCore)throw new Error('GroovyRatingCore must load before app.js');
 if(!AlbumRatingController)throw new Error('GroovyAlbumRatingController must load before app.js');
 if(!MarketplaceController)throw new Error('GroovyMarketplaceController must load before app.js');
 if(!MarketplaceAlertController)throw new Error('GroovyMarketplaceAlertController must load before app.js');
+if(!PushNotifications)throw new Error('GroovyPushNotifications must load before app.js');
 if(!PriceAlertsPageController)throw new Error('GroovyPriceAlertsPageController must load before app.js');
 if(!ShelfCore)throw new Error('GroovyShelfCore must load before app.js');
 if(!ShelfView)throw new Error('GroovyShelfView must load before app.js');
@@ -1327,6 +1329,18 @@ var marketplaceController=MarketplaceController.create({
   }
 });
 
+var pushNotifications=PushNotifications.create({
+  api:supabaseClient,
+  window:window,
+  navigator:navigator,
+  getCurrentUser:currentSessionUser,
+  onLog:function(level,message,error){
+    if(level==='error')console.error(message,error||'');
+    else if(level==='warn')console.warn(message,error||'');
+    else console.log(message,error||'');
+  }
+});
+
 var marketplaceAlertController=MarketplaceAlertController.create({
   elements:{
     button:marketplaceAlertButton,
@@ -1353,6 +1367,7 @@ var marketplaceAlertController=MarketplaceAlertController.create({
   navigator:navigator,
   Intl:Intl,
   recordModel:Record,
+  pushNotifications:pushNotifications,
   getCurrentUser:currentSessionUser,
   getRecord:detailRecordAt,
   getAlbumId:function(record){return Record.albumId(record);},
