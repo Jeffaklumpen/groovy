@@ -8,6 +8,8 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -36,6 +38,8 @@ public class LauncherActivity extends Activity {
     private boolean navigationFinished = false;
     private boolean channelRequested = false;
     private boolean channelReady = false;
+    private int channelRequestAttempts = 0;
+    private final Handler handler = new Handler(Looper.getMainLooper());
     private String currentFcmToken = "";
 
     @Override
@@ -88,12 +92,6 @@ public class LauncherActivity extends Activity {
                         return;
                     }
 
-                    session.validateRelationship(
-                        CustomTabsService.RELATION_USE_AS_ORIGIN,
-                        APP_ORIGIN,
-                        null
-                    );
-
                     loadCurrentFcmToken();
                     launchTrustedWebActivity(resolveLaunchUrl(getIntent()));
                 }
@@ -123,7 +121,6 @@ public class LauncherActivity extends Activity {
                 APP_ORIGIN.equals(requestedOrigin)) {
                 originValidated = result;
                 Log.d(TAG, "PostMessage origin validation: " + result);
-                maybeRequestPostMessageChannel();
             }
         }
 
@@ -138,7 +135,10 @@ public class LauncherActivity extends Activity {
         @Override
         public void onMessageChannelReady(@Nullable Bundle extras) {
             channelReady = true;
+            Log.d(TAG, "PostMessage channel ready");
             sendFcmTokenToWeb();
+            handler.postDelayed(LauncherActivity.this::sendFcmTokenToWeb, 1000L);
+            handler.postDelayed(LauncherActivity.this::sendFcmTokenToWeb, 3000L);
         }
 
         @Override
@@ -148,11 +148,26 @@ public class LauncherActivity extends Activity {
     };
 
     private void maybeRequestPostMessageChannel() {
-        if (!originValidated || !navigationFinished || channelRequested || session == null) {
+        if (!navigationFinished || channelRequested || session == null) {
             return;
         }
-        channelRequested = session.requestPostMessageChannel(APP_ORIGIN, APP_ORIGIN, new Bundle());
-        Log.d(TAG, "PostMessage channel requested: " + channelRequested);
+
+        channelRequestAttempts++;
+        try {
+            channelRequested = session.requestPostMessageChannel(APP_ORIGIN, APP_ORIGIN, new Bundle());
+            Log.d(
+                TAG,
+                "PostMessage channel requested: " + channelRequested +
+                " (attempt " + channelRequestAttempts + ", validated=" + originValidated + ")"
+            );
+        } catch (UnsupportedOperationException error) {
+            Log.w(TAG, "Browser does not support TWA postMessage", error);
+            channelRequested = false;
+        }
+
+        if (!channelRequested && channelRequestAttempts < 3) {
+            handler.postDelayed(this::maybeRequestPostMessageChannel, 1000L);
+        }
     }
 
     private void loadCurrentFcmToken() {
@@ -203,6 +218,10 @@ public class LauncherActivity extends Activity {
             openFallback(url);
             return;
         }
+        navigationFinished = false;
+        channelRequested = false;
+        channelReady = false;
+        channelRequestAttempts = 0;
         new TrustedWebActivityIntentBuilder(url)
             .build(session)
             .launchTrustedWebActivity(this);

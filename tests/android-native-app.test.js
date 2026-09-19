@@ -11,7 +11,7 @@ test('Android app keeps Groovy identity and Firebase configuration',()=>{
   const firebase=JSON.parse(fs.readFileSync(path.join(root,'android','app','google-services.json'),'utf8'));
 
   assert.match(gradle,/applicationId 'com\.groovyshelves\.twa'/);
-  assert.match(gradle,/versionCode 3/);
+  assert.match(gradle,/versionCode 4/);
   assert.match(gradle,/firebase-bom:34\.19\.0/);
   assert.match(gradle,/firebase-messaging/);
   assert.equal(firebase.client[0].client_info.android_client_info.package_name,'com.groovyshelves.twa');
@@ -62,4 +62,14 @@ test('web Supabase client is exposed to the native bridge',()=>{
   assert.match(html,/\/js\/native-app-bridge\.js\?v=2/);
   assert.match(bridge,/window\.supabaseClient/);
   assert.match(bridge,/register_native_push_device/);
+});
+
+
+test('Android requests the postMessage channel after navigation without pre-validation gating',()=>{
+  const launcher=fs.readFileSync(path.join(root,'android','app','src','main','java','com','groovyshelves','twa','LauncherActivity.java'),'utf8');
+  assert.match(launcher,/navigationFinished \|\| channelRequested \|\| session == null/);
+  assert.match(launcher,/requestPostMessageChannel\(APP_ORIGIN, APP_ORIGIN/);
+  assert.doesNotMatch(launcher,/!originValidated \|\| !navigationFinished/);
+  assert.match(launcher,/postDelayed\(LauncherActivity\.this::sendFcmTokenToWeb, 1000L\)/);
+  assert.match(launcher,/postDelayed\(LauncherActivity\.this::sendFcmTokenToWeb, 3000L\)/);
 });
