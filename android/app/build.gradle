@@ -5,7 +5,7 @@ plugins {
 
 def keystorePath = System.getenv('GROOVY_KEYSTORE_PATH')
 def keystorePassword = System.getenv('GROOVY_KEYSTORE_PASSWORD')
-def keyPassword = System.getenv('GROOVY_KEY_PASSWORD')
+def keyPassword = System.getenv('GROOVY_KEY_PASSWORD') ?: keystorePassword
 def keyAliasValue = System.getenv('GROOVY_KEY_ALIAS') ?: 'groovy'
 def hasReleaseSigning = keystorePath && keystorePassword && keyPassword
 
