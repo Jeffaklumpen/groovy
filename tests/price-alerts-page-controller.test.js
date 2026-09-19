@@ -14,7 +14,7 @@ function classListMock(){
 function element(){
   const listeners={};
   return {
-    hidden:true,innerHTML:'',textContent:'',attributes:{},listeners,
+    hidden:true,innerHTML:'',textContent:'',checked:false,attributes:{},listeners,
     classList:classListMock(),
     addEventListener(type,fn){listeners[type]=fn;},
     setAttribute(name,value){this.attributes[name]=String(value);}
@@ -22,15 +22,15 @@ function element(){
 }
 
 test('renders active alerts with marketplace state and streaming badges',async()=>{
-  const page=element();const grid=element();const count=element();const menu=element();const back=element();
+  const page=element();const grid=element();const count=element();const menu=element();const back=element();const traderaToggle=element();const ebayToggle=element();
   const body={classList:classListMock()};
   const rows=[{
     id:1,album_id:99,max_price:1000,currency:'SEK',
     tradera_enabled:true,ebay_enabled:true,fixed_price:true,auction:true,
     albums:{id:99,title:'Abbey Road',cover_url:'https://example.com/cover.jpg',apple_collection_url:'https://music.apple.com/album/1',artists:{name:'The Beatles'}},
     marketplace_alert_market_state:[
-      {marketplace:'Tradera',listing_count:8,listing_count_capped:false,lowest_price:349,currency:'SEK',checked_at:new Date().toISOString()},
-      {marketplace:'eBay',listing_count:60,listing_count_capped:true,lowest_price:412,currency:'SEK',checked_at:new Date().toISOString()}
+      {marketplace:'Tradera',listing_count:8,listing_count_capped:false,lowest_price:349,lowest_listing_url:'https://tradera.example/lowest',currency:'SEK',checked_at:new Date().toISOString()},
+      {marketplace:'eBay',listing_count:60,listing_count_capped:true,lowest_price:412,lowest_listing_url:'https://ebay.example/lowest',currency:'SEK',checked_at:new Date().toISOString()}
     ]
   }];
   const query={
@@ -39,7 +39,7 @@ test('renders active alerts with marketplace state and streaming badges',async()
   };
   const controller=Controller.create({
     api:{from(){return query;}},
-    elements:{page,grid,count,menuButton:menu,backButton:back,profileMenu:{classList:classListMock()}},
+    elements:{page,grid,count,menuButton:menu,backButton:back,traderaToggle,ebayToggle,profileMenu:{classList:classListMock()}},
     document:{body},
     navigator:{languages:['sv-SE']},
     getCurrentUser:async()=>({id:'user-1'})
@@ -52,7 +52,40 @@ test('renders active alerts with marketplace state and streaming badges',async()
   assert.match(grid.innerHTML,/The Beatles/);
   assert.match(grid.innerHTML,/8 listings/);
   assert.match(grid.innerHTML,/60\+ listings/);
+  assert.match(grid.innerHTML,/https:\/\/tradera\.example\/lowest/);
+  assert.match(grid.innerHTML,/data-price-alert-market="Tradera"/);
+  assert.equal(traderaToggle.checked,true);
+  assert.equal(ebayToggle.checked,true);
   assert.match(grid.innerHTML,/apple-music-badge-small\.svg/);
   assert.match(grid.innerHTML,/spotify-full-logo-green\.svg/);
   assert.equal(count.textContent,'1 ACTIVE ALERT');
+});
+
+
+test('persists marketplace visibility and never hides both marketplaces',async()=>{
+  const page=element();const grid=element();const count=element();const traderaToggle=element();const ebayToggle=element();
+  const data=new Map();
+  const storage={getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,String(value))};
+  const query={select(){return this;},eq(){return this;},async order(){return {data:[],error:null};}};
+  const controller=Controller.create({
+    api:{from(){return query;}},
+    elements:{page,grid,count,traderaToggle,ebayToggle,profileMenu:{classList:classListMock()}},
+    document:{body:{classList:classListMock()}},
+    navigator:{languages:['en-US'],language:'en-US'},
+    storage,
+    getCurrentUser:async()=>({id:'user-1'})
+  });
+  await controller.renderPage();
+  assert.equal(traderaToggle.checked,false);
+  assert.equal(ebayToggle.checked,true);
+
+  ebayToggle.checked=false;
+  ebayToggle.listeners.change.call(ebayToggle);
+  assert.equal(ebayToggle.checked,true);
+  assert.equal(controller.state().marketVisibility.eBay,true);
+
+  traderaToggle.checked=true;
+  traderaToggle.listeners.change.call(traderaToggle);
+  assert.equal(controller.state().marketVisibility.Tradera,true);
+  assert.match(data.get('groovy-price-alert-marketplace-visibility-v1'),/"Tradera":true/);
 });

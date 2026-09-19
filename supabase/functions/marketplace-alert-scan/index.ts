@@ -328,6 +328,7 @@ async function matchingRows(alert:AlertRow,listings:Listing[],marketplace:string
 async function marketplaceState(alert:AlertRow,listings:Listing[]){
   let count=0
   let lowest:number|null=null
+  let lowestListingUrl=''
 
   for(const listing of listings){
     const amounts:number[]=[]
@@ -353,13 +354,17 @@ async function marketplaceState(alert:AlertRow,listings:Listing[]){
 
     if(best===null)continue
     count++
-    if(lowest===null||best<lowest)lowest=best
+    if(lowest===null||best<lowest){
+      lowest=best
+      lowestListingUrl=listing.url||''
+    }
   }
 
   return {
     listing_count:count,
     listing_count_capped:count>0&&listings.length>=60,
     lowest_price:lowest===null?null:Math.round(lowest*100)/100,
+    lowest_listing_url:lowestListingUrl||null,
     currency:alert.currency,
     checked_at:new Date().toISOString()
   }
@@ -373,6 +378,7 @@ async function saveMarketplaceState(db:ReturnType<typeof createClient>,alert:Ale
     listing_count:state.listing_count,
     listing_count_capped:state.listing_count_capped,
     lowest_price:state.lowest_price,
+    lowest_listing_url:state.lowest_listing_url,
     currency:state.currency,
     checked_at:state.checked_at
   },{onConflict:'alert_id,marketplace'})

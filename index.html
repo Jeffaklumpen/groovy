@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="/css/base-library.css?v=3">
   <link rel="stylesheet" href="/css/search-modals.css?v=4">
   <link rel="stylesheet" href="/css/copy-marketplace.css?v=6">
-  <link rel="stylesheet" href="/css/library-shell.css?v=8">
+  <link rel="stylesheet" href="/css/library-shell.css?v=9">
   <link rel="stylesheet" href="/css/shelves-streaming.css?v=3">
   <link rel="stylesheet" href="/css/album-detail-extras.css?v=2">
   <link rel="stylesheet" href="/css/landing-social.css?v=4">
@@ -34,7 +34,7 @@
   <link rel="stylesheet" href="/css/ratings-detail.css?v=8">
   <link rel="stylesheet" href="/css/detail-enhancements.css?v=18">
   <link rel="stylesheet" href="/css/reviews-detail.css?v=3">
-  <link rel="stylesheet" href="/css/price-alerts.css?v=1">
+  <link rel="stylesheet" href="/css/price-alerts.css?v=2">
   <link rel="stylesheet" href="/css/profile.css?v=11">
   <link rel="icon" type="image/png" href="/assets/icons/favicon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
@@ -200,6 +200,11 @@
       <span class="price-alerts-kicker">YOUR WATCHLIST</span>
       <h1 id="priceAlertsPageTitle">Price Alerts</h1>
       <p>See what you are watching, current marketplace prices and how many matching listings are available.</p>
+      <div class="price-alerts-market-filters" aria-label="Marketplace visibility">
+        <span>Show marketplaces</span>
+        <label class="price-alerts-market-toggle tradera"><input id="priceAlertsShowTradera" type="checkbox"><span class="price-alerts-toggle-switch" aria-hidden="true"></span><b>T</b><strong>Tradera</strong></label>
+        <label class="price-alerts-market-toggle ebay"><input id="priceAlertsShowEbay" type="checkbox"><span class="price-alerts-toggle-switch" aria-hidden="true"></span><b>e</b><strong>eBay</strong></label>
+      </div>
     </div>
     <div class="price-alerts-heading-actions">
       <span id="priceAlertsCount" class="price-alerts-count">0 ACTIVE ALERTS</span>
@@ -672,9 +677,9 @@
 <script src="/js/album-review-controller.js?v=3"></script>
 <script src="/js/marketplace-core.js?v=2"></script>
 <script src="/js/marketplace-view.js?v=1"></script>
-<script src="/js/marketplace-controller.js?v=3"></script>
+<script src="/js/marketplace-controller.js?v=4"></script>
 <script src="/js/marketplace-alert-controller.js?v=2"></script>
-<script src="/js/price-alerts-page-controller.js?v=1"></script>
+<script src="/js/price-alerts-page-controller.js?v=2"></script>
 <script src="/js/shelf-core.js?v=2"></script>
 <script src="/js/shelf-view.js?v=1"></script>
 <script src="/js/shelf-controller.js?v=3"></script>
@@ -689,7 +694,7 @@
 <script src="/js/album-search.js?v=6"></script>
 <script src="/js/wikipedia-service.js?v=1"></script>
 <script src="/js/wikipedia-about-controller.js?v=1"></script>
-<script src="/js/app.js?v=195"></script>
+<script src="/js/app.js?v=196"></script>
 <script src="/js/detail-enhancements-v2.js?v=14"></script>
 <script src="/js/statistics-core.js?v=4"></script>
 <script src="/js/statistics.js?v=14"></script>

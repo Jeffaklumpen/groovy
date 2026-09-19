@@ -171,3 +171,19 @@ test('eBay request targets the browser marketplace instead of a fixed German sit
   const gbCall=british.calls.find(call=>call.name==='ebay-search');
   assert.equal(gbCall.payload.body.marketplaceId,'EBAY_GB');
 });
+
+
+test('opens marketplace listings for an arbitrary record from the Price Alerts page',async()=>{
+  const {controller,elements,calls}=fixture({ebayEnabled:true,records:[]});
+  const record={artist:'Nirvana',title:'Nevermind'};
+
+  assert.equal(await controller.openMarketplaceForRecord(record,'Tradera'),true);
+  assert.equal(elements.traderaModal.classList.contains('visible'),true);
+  assert.equal(calls.at(-1).name,'tradera-search');
+  assert.equal(calls.at(-1).payload.body.artist,'Nirvana');
+
+  controller.closeTradera();
+  assert.equal(await controller.openMarketplaceForRecord(record,'eBay'),true);
+  assert.equal(elements.ebayModal.classList.contains('visible'),true);
+  assert.equal(calls.at(-1).name,'ebay-search');
+});

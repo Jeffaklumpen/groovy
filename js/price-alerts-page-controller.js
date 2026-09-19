@@ -14,15 +14,20 @@ function create(options){
   var win=options.window||(typeof window!=='undefined'?window:null);
   var doc=options.document||(typeof document!=='undefined'?document:null);
   var nav=options.navigator||(win&&win.navigator)||{};
+  var storage=options.storage||(win&&win.localStorage)||null;
+  var IntlApi=options.Intl||(typeof Intl!=='undefined'?Intl:null);
   var getCurrentUser=typeof options.getCurrentUser==='function'?options.getCurrentUser:async function(){return null;};
   var onOpenRoute=typeof options.onOpenRoute==='function'?options.onOpenRoute:function(){};
   var onBackHome=typeof options.onBackHome==='function'?options.onBackHome:function(){};
   var onEdit=typeof options.onEdit==='function'?options.onEdit:function(){};
+  var onOpenMarketplace=typeof options.onOpenMarketplace==='function'?options.onOpenMarketplace:function(){};
   var onRequireAuth=typeof options.onRequireAuth==='function'?options.onRequireAuth:function(){};
   var onLog=typeof options.onLog==='function'?options.onLog:function(){};
   var loadVersion=0;
   var alerts=[];
   var bound=false;
+  var visibilityStorageKey='groovy-price-alert-marketplace-visibility-v1';
+  var marketVisibility=loadVisibility();
 
   if(!api||typeof api.from!=='function')throw new Error('Price alerts page requires Supabase');
   if(!MarketplaceCore)throw new Error('Price alerts page requires marketplace core');
@@ -35,6 +40,61 @@ function create(options){
   }
 
   function locale(){return (nav.languages&&nav.languages[0])||nav.language||undefined;}
+
+  function timezone(){
+    try{return IntlApi&&IntlApi.DateTimeFormat?IntlApi.DateTimeFormat().resolvedOptions().timeZone||'':'';}catch(error){return '';}
+  }
+
+  function defaultVisibility(){
+    return {
+      Tradera:MarketplaceCore.regionCurrency(locale()||'',timezone())==='SEK',
+      eBay:true
+    };
+  }
+
+  function loadVisibility(){
+    var fallback=defaultVisibility();
+    try{
+      var saved=storage&&storage.getItem?JSON.parse(storage.getItem(visibilityStorageKey)||'null'):null;
+      if(saved&&typeof saved==='object'){
+        var tradera=saved.Tradera!==false;
+        var ebay=saved.eBay!==false;
+        if(!tradera&&!ebay)return fallback;
+        return {Tradera:tradera,eBay:ebay};
+      }
+    }catch(error){}
+    return fallback;
+  }
+
+  function saveVisibility(){
+    try{
+      if(storage&&storage.setItem)storage.setItem(visibilityStorageKey,JSON.stringify(marketVisibility));
+    }catch(error){}
+  }
+
+  function safeExternalUrl(value){
+    try{
+      var parsed=new URL(String(value||''),win&&win.location?win.location.href:undefined);
+      return parsed.protocol==='https:'||parsed.protocol==='http:'?parsed.href:'';
+    }catch(error){
+      return '';
+    }
+  }
+
+  function syncVisibilityControls(){
+    if(elements.traderaToggle)elements.traderaToggle.checked=!!marketVisibility.Tradera;
+    if(elements.ebayToggle)elements.ebayToggle.checked=!!marketVisibility.eBay;
+  }
+
+  function setVisibility(marketplace,visible){
+    marketVisibility[marketplace]=!!visible;
+    if(!marketVisibility.Tradera&&!marketVisibility.eBay){
+      marketVisibility[marketplace]=true;
+    }
+    saveVisibility();
+    syncVisibilityControls();
+    render();
+  }
 
   function one(value){
     return Array.isArray(value)?(value[0]||null):(value||null);
@@ -81,13 +141,16 @@ function create(options){
     return 'Checked '+days+'d ago';
   }
 
-  function serviceMarkup(name,state,enabled,currency){
-    if(!enabled)return '';
+  function serviceMarkup(name,state,enabled,currency,alertId){
+    if(!enabled||!marketVisibility[name])return '';
     var marketClass=name==='Tradera'?'tradera':'ebay';
     var brand=name==='Tradera'?'T':'e';
+    var marketAttr=esc(name);
     if(!state){
       return '<div class="price-alert-market '+marketClass+'">'+
-        '<div class="price-alert-market-head"><span class="price-alert-market-brand">'+brand+'</span><strong>'+name+'</strong></div>'+
+        '<button class="price-alert-market-open" type="button" data-price-alert-market="'+marketAttr+'" data-price-alert-market-id="'+esc(alertId)+'" aria-label="View active '+marketAttr+' listings">'+
+          '<span class="price-alert-market-brand">'+brand+'</span><strong>'+name+'</strong><span>—</span>'+
+        '</button>'+
         '<div class="price-alert-market-price"><strong>—</strong><span>Waiting for scan</span></div>'+
         '<small>Current marketplace data is not available yet.</small>'+
       '</div>';
@@ -95,9 +158,17 @@ function create(options){
     var count=Math.max(0,parseInt(state.listing_count,10)||0);
     var countLabel=String(count)+(state.listing_count_capped?'+':'');
     var lowest=state.lowest_price==null?null:Number(state.lowest_price);
+    var lowestUrl=safeExternalUrl(state.lowest_listing_url);
+    var lowestMarkup=lowest&&lowest>0
+      ?(lowestUrl
+        ?'<a class="price-alert-lowest-link" href="'+esc(lowestUrl)+'" target="_blank" rel="noopener noreferrer" title="Open lowest-priced listing">'+esc(money(lowest,currency))+'</a>'
+        :'<strong>'+esc(money(lowest,currency))+'</strong>')
+      :'<strong>No price</strong>';
     return '<div class="price-alert-market '+marketClass+'">'+
-      '<div class="price-alert-market-head"><span class="price-alert-market-brand">'+brand+'</span><strong>'+name+'</strong><span>'+countLabel+' '+(count===1&&!state.listing_count_capped?'listing':'listings')+'</span></div>'+
-      '<div class="price-alert-market-price"><strong>'+(lowest&&lowest>0?esc(money(lowest,currency)):'No price')+'</strong><span>Lowest current</span></div>'+
+      '<button class="price-alert-market-open" type="button" data-price-alert-market="'+marketAttr+'" data-price-alert-market-id="'+esc(alertId)+'" aria-label="View '+countLabel+' active '+marketAttr+' listings">'+
+        '<span class="price-alert-market-brand">'+brand+'</span><strong>'+name+'</strong><span>'+countLabel+' '+(count===1&&!state.listing_count_capped?'listing':'listings')+'</span>'+
+      '</button>'+
+      '<div class="price-alert-market-price">'+lowestMarkup+'<span>Lowest current</span></div>'+
       '<small>'+esc(relative(state.checked_at))+'</small>'+
     '</div>';
   }
@@ -138,8 +209,8 @@ function create(options){
           '<span>'+esc(types.join(' + '))+'</span>'+
         '</div>'+
         '<div class="price-alert-market-grid">'+
-          serviceMarkup('Tradera',states.Tradera,!!alert.tradera_enabled,alert.currency)+
-          serviceMarkup('eBay',states.eBay,!!alert.ebay_enabled,alert.currency)+
+          serviceMarkup('Tradera',states.Tradera,!!alert.tradera_enabled,alert.currency,alert.id)+
+          serviceMarkup('eBay',states.eBay,!!alert.ebay_enabled,alert.currency,alert.id)+
         '</div>'+
       '</div>'+
       '<div class="price-alert-card-actions">'+
@@ -176,7 +247,7 @@ function create(options){
     }
 
     var result=await api.from('marketplace_alerts')
-      .select('id,album_id,max_price,currency,tradera_enabled,ebay_enabled,fixed_price,auction,ebay_marketplace_id,active,last_checked_at,last_error,created_at,updated_at,albums(id,title,cover_url,apple_collection_url,artists(name)),marketplace_alert_market_state(marketplace,listing_count,listing_count_capped,lowest_price,currency,checked_at)')
+      .select('id,album_id,max_price,currency,tradera_enabled,ebay_enabled,fixed_price,auction,ebay_marketplace_id,active,last_checked_at,last_error,created_at,updated_at,albums(id,title,cover_url,apple_collection_url,artists(name)),marketplace_alert_market_state(marketplace,listing_count,listing_count_capped,lowest_price,lowest_listing_url,currency,checked_at)')
       .eq('user_id',user.id)
       .eq('active',true)
       .order('created_at',{ascending:false});
@@ -234,10 +305,19 @@ function create(options){
       onOpenRoute();
     });
     if(elements.backButton)elements.backButton.addEventListener('click',onBackHome);
+    if(elements.traderaToggle)elements.traderaToggle.addEventListener('change',function(){setVisibility('Tradera',this.checked);});
+    if(elements.ebayToggle)elements.ebayToggle.addEventListener('change',function(){setVisibility('eBay',this.checked);});
+    syncVisibilityControls();
     if(elements.grid)elements.grid.addEventListener('click',function(event){
       var target=event.target;
       var back=target.closest&&target.closest('[data-price-alert-back]');
       if(back){onBackHome();return;}
+      var market=target.closest&&target.closest('[data-price-alert-market]');
+      if(market){
+        var marketAlert=findAlert(market.getAttribute('data-price-alert-market-id'));
+        if(marketAlert)onOpenMarketplace(marketAlert,albumOf(marketAlert),market.getAttribute('data-price-alert-market'));
+        return;
+      }
       var edit=target.closest&&target.closest('[data-price-alert-edit]');
       if(edit){
         var alert=findAlert(edit.getAttribute('data-price-alert-edit'));
@@ -282,7 +362,7 @@ function create(options){
     renderPage:renderPage,
     hidePage:hidePage,
     refreshIfOpen:refreshIfOpen,
-    state:function(){return {alerts:alerts.slice(),open:!!(elements.page&&!elements.page.hidden)};}
+    state:function(){return {alerts:alerts.slice(),marketVisibility:{Tradera:marketVisibility.Tradera,eBay:marketVisibility.eBay},open:!!(elements.page&&!elements.page.hidden)};}
   });
 }
 

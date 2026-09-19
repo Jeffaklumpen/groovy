@@ -127,3 +127,35 @@ test('Price Alerts page is routed, editable and keeps streaming attribution bene
   assert.match(page,/data-price-alert-remove/);
   assert.match(page,/listing_count_capped/);
 });
+
+
+test('Price Alerts snapshots keep the lowest listing URL for direct navigation',()=>{
+  const sql=fs.readFileSync(path.join(root,'supabase','migrations','20260919105000_marketplace_alert_lowest_url.sql'),'utf8');
+  const source=fs.readFileSync(path.join(root,'supabase','functions','marketplace-alert-scan','index.ts'),'utf8');
+  const page=fs.readFileSync(path.join(root,'js','price-alerts-page-controller.js'),'utf8');
+  assert.match(sql,/lowest_listing_url text/);
+  assert.match(source,/lowestListingUrl=listing\.url/);
+  assert.match(source,/lowest_listing_url:state\.lowest_listing_url/);
+  assert.match(page,/price-alert-lowest-link/);
+  assert.match(page,/target="_blank"/);
+});
+
+test('Price Alerts menu item uses the shared profile-menu button styling',()=>{
+  const css=fs.readFileSync(path.join(root,'css','library-shell.css'),'utf8');
+  assert.match(css,/#profileMenu #priceAlertsButton/);
+  assert.match(css,/#profileMenu #priceAlertsButton:before/);
+  assert.match(css,/#profileMenu #priceAlertsButton:hover/);
+});
+
+test('Price Alerts page can open marketplace listing modals and toggle visible marketplaces',()=>{
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const app=fs.readFileSync(path.join(root,'js','app.js'),'utf8');
+  const page=fs.readFileSync(path.join(root,'js','price-alerts-page-controller.js'),'utf8');
+  const marketplace=fs.readFileSync(path.join(root,'js','marketplace-controller.js'),'utf8');
+  assert.match(html,/id="priceAlertsShowTradera"/);
+  assert.match(html,/id="priceAlertsShowEbay"/);
+  assert.match(app,/marketplaceController\.openMarketplaceForRecord/);
+  assert.match(page,/data-price-alert-market/);
+  assert.match(page,/groovy-price-alert-marketplace-visibility-v1/);
+  assert.match(marketplace,/async function openMarketplaceForRecord/);
+});

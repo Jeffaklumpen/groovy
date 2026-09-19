@@ -47,14 +47,15 @@
 .profile-header{gap:11px;margin-bottom:7px;padding:7px 7px 13px;border-bottom:1px solid rgba(255,255,255,.075)}
 .profile-avatar{width:39px;height:39px;flex-basis:39px;border:1px solid rgba(232,83,1,.38);box-shadow:0 5px 15px rgba(0,0,0,.3)}
 #profileUsername{font-size:13px;font-weight:700;color:#f3f3f5}
-#profileMenu #searchUserButton,#profileMenu #myCollectionButton,#profileMenu #statisticsButton,#profileMenu #installAppMenuButton,#logoutButton{position:relative;display:flex;align-items:center;width:100%;min-height:42px;padding:9px 11px 9px 39px;border:0;border-radius:9px;background:none;color:#c4c4c9;text-align:left;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:background .14s ease,color .14s ease}
-#profileMenu #searchUserButton:before,#profileMenu #myCollectionButton:before,#profileMenu #statisticsButton:before,#profileMenu #installAppMenuButton:before,#logoutButton:before{position:absolute;left:12px;top:50%;width:16px;color:#85858c;font-size:16px;font-weight:400;line-height:1;text-align:center;transform:translateY(-50%)}
+#profileMenu #searchUserButton,#profileMenu #myCollectionButton,#profileMenu #statisticsButton,#profileMenu #priceAlertsButton,#profileMenu #installAppMenuButton,#logoutButton{position:relative;display:flex;align-items:center;width:100%;min-height:42px;padding:9px 11px 9px 39px;border:0;border-radius:9px;background:none;color:#c4c4c9;text-align:left;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:background .14s ease,color .14s ease}
+#profileMenu #searchUserButton:before,#profileMenu #myCollectionButton:before,#profileMenu #statisticsButton:before,#profileMenu #priceAlertsButton:before,#profileMenu #installAppMenuButton:before,#logoutButton:before{position:absolute;left:12px;top:50%;width:16px;color:#85858c;font-size:16px;font-weight:400;line-height:1;text-align:center;transform:translateY(-50%)}
 #profileMenu #myCollectionButton:before{content:"◉";color:#e85301}
 #profileMenu #statisticsButton:before{content:"▥";color:#e85301;font-size:15px}
+#profileMenu #priceAlertsButton:before{content:"↘";color:#e85301;font-size:17px;font-weight:700}
 #profileMenu #searchUserButton:before{content:"⌕";font-size:20px}
 #profileMenu #installAppMenuButton:before{content:"⇩";color:#e85301;font-size:18px}
 #logoutButton:before{content:"↗";transform:translateY(-50%) rotate(45deg)}
-#profileMenu #searchUserButton:hover,#profileMenu #myCollectionButton:hover,#profileMenu #statisticsButton:hover,#profileMenu #installAppMenuButton:hover,#logoutButton:hover{background:rgba(255,255,255,.06);color:#fff}
+#profileMenu #searchUserButton:hover,#profileMenu #myCollectionButton:hover,#profileMenu #statisticsButton:hover,#profileMenu #priceAlertsButton:hover,#profileMenu #installAppMenuButton:hover,#logoutButton:hover{background:rgba(255,255,255,.06);color:#fff}
 .profile-divider{height:1px;margin:7px 5px;background:rgba(255,255,255,.075)}
 .library-tabs{margin:0 auto 27px;padding:4px;border:1px solid rgba(255,255,255,.085);border-radius:13px;background:#131315;box-shadow:0 9px 25px rgba(0,0,0,.2)}
 .library-tab{min-height:38px;padding:9px 17px;border-radius:9px;font-size:12px;color:#77777e}

@@ -1374,13 +1374,17 @@ priceAlertsController=PriceAlertsPageController.create({
   window:window,
   document:document,
   navigator:navigator,
+  storage:localStorage,
+  Intl:Intl,
   elements:{
     menuButton:document.getElementById('priceAlertsButton'),
     profileMenu:profileMenu,
     page:document.getElementById('priceAlertsPage'),
     grid:document.getElementById('priceAlertsGrid'),
     count:document.getElementById('priceAlertsCount'),
-    backButton:document.getElementById('priceAlertsBackButton')
+    backButton:document.getElementById('priceAlertsBackButton'),
+    traderaToggle:document.getElementById('priceAlertsShowTradera'),
+    ebayToggle:document.getElementById('priceAlertsShowEbay')
   },
   getCurrentUser:currentSessionUser,
   onOpenRoute:function(){profileMenu.classList.remove('open');return Router.navigate('/price-alerts');},
@@ -1395,6 +1399,16 @@ priceAlertsController=PriceAlertsPageController.create({
       appleUrl:album.appleUrl
     });
     marketplaceAlertController.openForRecordData(record,alert);
+  },
+  onOpenMarketplace:function(alert,album,marketplace){
+    var record=Record.fromSearchPreview({
+      artist:album.artist,
+      title:album.title,
+      coverUrl:album.coverUrl,
+      albumId:album.id,
+      appleUrl:album.appleUrl
+    });
+    marketplaceController.openMarketplaceForRecord(record,marketplace);
   },
   onLog:function(level,message,error){
     if(level==='error')console.error(message,error||'');

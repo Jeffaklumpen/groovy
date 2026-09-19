@@ -15,6 +15,21 @@ body.price-alerts-page-open #scrollTopButton{display:none!important}
 .price-alerts-kicker{display:block;margin-bottom:6px;color:#e85301;font-size:9px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
 .price-alerts-heading h1{margin:0;color:#f4f4f6;font-size:31px;font-weight:720;letter-spacing:-.04em}
 .price-alerts-heading p{max-width:640px;margin:7px 0 0;color:#77777e;font-size:12px;line-height:1.55}
+.price-alerts-market-filters{display:flex;align-items:center;gap:8px;margin-top:14px}
+.price-alerts-market-filters>span{margin-right:2px;color:#66666d;font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.price-alerts-market-toggle{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 9px;border:1px solid #303034;border-radius:8px;background:#141416;color:#8d8d94;cursor:pointer;transition:border-color .14s ease,background .14s ease,color .14s ease}
+.price-alerts-market-toggle:hover{border-color:#414147;background:#18181b;color:#c9c9ce}
+.price-alerts-market-toggle input{position:absolute;opacity:0;pointer-events:none}
+.price-alerts-toggle-switch{position:relative;width:24px;height:14px;flex:0 0 24px;border:1px solid #45454b;border-radius:999px;background:#0d0d0f;transition:background .14s ease,border-color .14s ease}
+.price-alerts-toggle-switch:after{content:"";position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:#6b6b72;transition:transform .14s ease,background .14s ease}
+.price-alerts-market-toggle input:checked+.price-alerts-toggle-switch{border-color:#e85301;background:rgba(232,83,1,.22)}
+.price-alerts-market-toggle input:checked+.price-alerts-toggle-switch:after{background:#ff6b22;transform:translateX(10px)}
+.price-alerts-market-toggle b{display:flex;width:18px;height:18px;align-items:center;justify-content:center;border-radius:5px;font-size:10px;font-weight:850}
+.price-alerts-market-toggle.tradera b{background:#e85301;color:#fff}
+.price-alerts-market-toggle.ebay b{background:#f3f3f4;color:#19191b;font-size:12px}
+.price-alerts-market-toggle strong{font-size:9px;font-weight:720}
+.price-alerts-market-toggle input:focus-visible+.price-alerts-toggle-switch{box-shadow:0 0 0 3px rgba(232,83,1,.16)}
+
 .price-alerts-heading-actions{display:flex;flex:0 0 auto;align-items:center;gap:10px}
 .price-alerts-count{color:#65656c;font-size:9px;font-weight:800;letter-spacing:.1em}
 .price-alerts-back{min-height:39px;padding:0 13px;border:1px solid #35353a;border-radius:9px;background:#151517;color:#bdbdc2;font:inherit;font-size:10px;font-weight:730;cursor:pointer}
@@ -42,14 +57,18 @@ body.price-alerts-page-open #scrollTopButton{display:none!important}
 .price-alert-meta i{width:3px;height:3px;flex:0 0 3px;border-radius:50%;background:#414146}
 .price-alert-market-grid{grid-column:3;grid-row:1/3;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .price-alert-market{min-width:0;padding:10px 11px;border:1px solid #2e2e32;border-radius:10px;background:#151517}
-.price-alert-market-head{display:flex;align-items:center;gap:7px;min-width:0}
-.price-alert-market-head>strong{overflow:hidden;color:#cfcfd3;font-size:10px;font-weight:730;text-overflow:ellipsis;white-space:nowrap}
-.price-alert-market-head>span:last-child{margin-left:auto;color:#696970;font-size:8px;font-weight:650;white-space:nowrap}
+.price-alert-market-open{display:flex;width:100%;min-width:0;align-items:center;gap:7px;padding:0;border:0;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}
+.price-alert-market-open:hover strong{color:#fff}
+.price-alert-market-open:focus-visible{outline:1px solid rgba(232,83,1,.55);outline-offset:4px;border-radius:6px}
+.price-alert-market-open>strong{overflow:hidden;color:#cfcfd3;font-size:10px;font-weight:730;text-overflow:ellipsis;white-space:nowrap}
+.price-alert-market-open>span:last-child{margin-left:auto;color:#696970;font-size:8px;font-weight:650;white-space:nowrap}
 .price-alert-market-brand{display:flex;width:23px;height:23px;flex:0 0 23px;align-items:center;justify-content:center;border-radius:7px;font-size:11px;font-weight:850}
 .price-alert-market.tradera .price-alert-market-brand{background:#e85301;color:#fff}
 .price-alert-market.ebay .price-alert-market-brand{background:#f2f2f3;color:#18181a;font-size:15px}
 .price-alert-market-price{display:flex;align-items:baseline;gap:6px;margin-top:9px;min-width:0}
-.price-alert-market-price strong{overflow:hidden;color:#f1f1f3;font-size:15px;font-weight:740;text-overflow:ellipsis;white-space:nowrap}
+.price-alert-market-price strong,.price-alert-lowest-link{overflow:hidden;color:#f1f1f3;font-size:15px;font-weight:740;text-overflow:ellipsis;white-space:nowrap}
+.price-alert-lowest-link{text-decoration:none;border-bottom:1px solid rgba(232,83,1,.42);transition:color .14s ease,border-color .14s ease}
+.price-alert-lowest-link:hover{color:#ff7a35;border-color:#ff7a35}
 .price-alert-market-price span{color:#616168;font-size:8px;white-space:nowrap}
 .price-alert-market>small{display:block;margin-top:5px;color:#55555c;font-size:8px}
 .price-alert-card-actions{display:flex;width:76px;flex-direction:column;justify-content:center;gap:7px;border-left:1px solid #29292d;padding-left:13px}
@@ -89,6 +108,9 @@ body.price-alerts-page-open #scrollTopButton{display:none!important}
 .price-alerts-heading{align-items:flex-start;display:block;margin-bottom:15px;padding-bottom:15px}
 .price-alerts-heading h1{font-size:25px}
 .price-alerts-heading p{font-size:10px}
+.price-alerts-market-filters{flex-wrap:wrap;gap:6px;margin-top:11px}
+.price-alerts-market-filters>span{width:100%;margin:0 0 1px}
+.price-alerts-market-toggle{min-height:29px;padding:0 8px}
 .price-alerts-heading-actions{justify-content:space-between;margin-top:13px}
 .price-alert-card{grid-template-columns:86px minmax(0,1fr);gap:11px;padding:11px;border-radius:12px}
 .price-alert-cover-column{width:86px}
@@ -108,13 +130,13 @@ body.price-alerts-page-open #scrollTopButton{display:none!important}
 .price-alert-meta{margin-top:6px;gap:6px;font-size:8px;line-height:1.35}
 .price-alert-market-grid{grid-column:auto;grid-row:auto;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:9px}
 .price-alert-market{padding:8px;border-radius:8px}
-.price-alert-market-head{gap:5px}
+.price-alert-market-open{gap:5px}
 .price-alert-market-brand{width:20px;height:20px;flex-basis:20px;border-radius:6px;font-size:9px}
 .price-alert-market.ebay .price-alert-market-brand{font-size:13px}
-.price-alert-market-head>strong{font-size:8px}
-.price-alert-market-head>span:last-child{font-size:7px}
+.price-alert-market-open>strong{font-size:8px}
+.price-alert-market-open>span:last-child{font-size:7px}
 .price-alert-market-price{display:block;margin-top:7px}
-.price-alert-market-price strong{display:block;font-size:12px}
+.price-alert-market-price strong,.price-alert-lowest-link{display:block;font-size:12px}
 .price-alert-market-price span{display:block;margin-top:1px;font-size:7px}
 .price-alert-market>small{font-size:7px}
 .price-alert-card-actions{grid-column:1/3;gap:6px;padding-top:9px}

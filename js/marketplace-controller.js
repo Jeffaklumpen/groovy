@@ -26,10 +26,12 @@ function create(options){
   var ebayEnabled=!!(elements.ebayButton&&elements.ebayButton.getAttribute&&elements.ebayButton.getAttribute('data-enabled')==='true');
 
   var traderaAlbumIndex=-1;
+  var traderaRecord=null;
   var traderaRequestVersion=0;
   var traderaListings=[];
   var traderaListingCache=new Map();
   var ebayAlbumIndex=-1;
+  var ebayRecord=null;
   var ebayRequestVersion=0;
   var ebayListings=[];
   var ebayListingCache=new Map();
@@ -132,7 +134,7 @@ function create(options){
   function setButtonState(button,label,marketplace,state,count){View.applyButtonState(button,label,marketplace,state,count);}
 
   function openTradera(){
-    var record=getRecord(traderaAlbumIndex);
+    var record=traderaRecord||getRecord(traderaAlbumIndex);
     if(!record)return false;
     View.openListingsModal({
       modal:elements.traderaModal,
@@ -153,29 +155,35 @@ function create(options){
 
   function closeTradera(){View.closeListingsModal(elements.traderaModal);}
 
-  async function loadTradera(record,index){
+  async function loadTradera(record,index,loadOptions){
+    loadOptions=loadOptions||{};
     traderaAlbumIndex=index;
+    traderaRecord=record||null;
     traderaListings=[];
     var requestVersion=++traderaRequestVersion;
     var result=loadTraderaData({
       key:cacheKey(record),
       record:record,
       isCancelled:function(){return requestVersion!==traderaRequestVersion;},
-      onLoading:function(){setButtonState(elements.traderaButton,elements.traderaButtonLabel,'Tradera','loading',0);}
+      onLoading:function(){
+        if(!loadOptions.silentButton)setButtonState(elements.traderaButton,elements.traderaButtonLabel,'Tradera','loading',0);
+      }
     });
     if(result&&typeof result.then==='function')result=await result;
     if(!result||result.state==='cancelled')return result;
     traderaListings=result.listings||[];
     if(result.state==='unavailable')report('error','Could not load Tradera listings:',result.error);
-    setButtonState(elements.traderaButton,elements.traderaButtonLabel,'Tradera',result.state,traderaListings.length);
-    priceFinished.tradera=true;
-    refreshBestPrice(index);
+    if(!loadOptions.silentButton)setButtonState(elements.traderaButton,elements.traderaButtonLabel,'Tradera',result.state,traderaListings.length);
+    if(!loadOptions.skipPriceSummary){
+      priceFinished.tradera=true;
+      refreshBestPrice(index);
+    }
     if(elements.traderaModal&&elements.traderaModal.classList&&elements.traderaModal.classList.contains('visible')&&traderaAlbumIndex===index)openTradera();
     return result;
   }
 
   function openEbay(){
-    var record=getRecord(ebayAlbumIndex);
+    var record=ebayRecord||getRecord(ebayAlbumIndex);
     if(!record)return false;
     View.openListingsModal({
       modal:elements.ebayModal,
@@ -196,23 +204,29 @@ function create(options){
 
   function closeEbay(){View.closeListingsModal(elements.ebayModal);}
 
-  async function loadEbay(record,index){
+  async function loadEbay(record,index,loadOptions){
+    loadOptions=loadOptions||{};
     ebayAlbumIndex=index;
+    ebayRecord=record||null;
     ebayListings=[];
     var requestVersion=++ebayRequestVersion;
     var result=loadEbayData({
       key:cacheKey(record)+'|'+ebayMarketplace(),
       record:record,
       isCancelled:function(){return requestVersion!==ebayRequestVersion;},
-      onLoading:function(){setButtonState(elements.ebayButton,elements.ebayButtonLabel,'eBay','loading',0);}
+      onLoading:function(){
+        if(!loadOptions.silentButton)setButtonState(elements.ebayButton,elements.ebayButtonLabel,'eBay','loading',0);
+      }
     });
     if(result&&typeof result.then==='function')result=await result;
     if(!result||result.state==='cancelled')return result;
     ebayListings=result.listings||[];
     if(result.state==='unavailable')report('error','Could not load eBay listings:',result.error);
-    setButtonState(elements.ebayButton,elements.ebayButtonLabel,'eBay',result.state,ebayListings.length);
-    priceFinished.ebay=true;
-    refreshBestPrice(index);
+    if(!loadOptions.silentButton)setButtonState(elements.ebayButton,elements.ebayButtonLabel,'eBay',result.state,ebayListings.length);
+    if(!loadOptions.skipPriceSummary){
+      priceFinished.ebay=true;
+      refreshBestPrice(index);
+    }
     if(elements.ebayModal&&elements.ebayModal.classList&&elements.ebayModal.classList.contains('visible')&&ebayAlbumIndex===index)openEbay();
     return result;
   }
@@ -228,11 +242,31 @@ function create(options){
     return Promise.all(pending);
   }
 
+  async function openMarketplaceForRecord(record,marketplace){
+    if(!record)return false;
+    closeTradera();
+    closeEbay();
+    var normalized=String(marketplace||'').toLowerCase();
+    if(normalized==='tradera'){
+      var traderaResult=await loadTradera(record,-2,{silentButton:true,skipPriceSummary:true});
+      if(!traderaResult||traderaResult.state==='cancelled')return false;
+      return openTradera();
+    }
+    if(normalized==='ebay'&&ebayEnabled){
+      var ebayResult=await loadEbay(record,-2,{silentButton:true,skipPriceSummary:true});
+      if(!ebayResult||ebayResult.state==='cancelled')return false;
+      return openEbay();
+    }
+    return false;
+  }
+
   function close(){
     closeTradera();
     closeEbay();
     traderaRequestVersion++;
     ebayRequestVersion++;
+    traderaRecord=null;
+    ebayRecord=null;
     clearPriceSummary();
   }
 
@@ -273,6 +307,7 @@ function create(options){
   bind();
   return Object.freeze({
     openForRecord:openForRecord,
+    openMarketplaceForRecord:openMarketplaceForRecord,
     close:close,
     openTradera:openTradera,
     closeTradera:closeTradera,
