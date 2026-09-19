@@ -5,10 +5,13 @@
     'https://groovyshelves.com':true
   };
   var STORAGE_KEY='groovy-native-push-device-v1';
+  var APP_REFERRER_PREFIX='android-app://com.groovyshelves.twa';
   var nativePort=null;
   var registering=false;
 
   function launchPayload(){
+    var referrer=String(document.referrer||'');
+    if(referrer.indexOf(APP_REFERRER_PREFIX)!==0)return null;
     var hash=String(window.location.hash||'');
     if(hash.indexOf('groovyNativePush=')===-1)return null;
     try{
