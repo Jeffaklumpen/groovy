@@ -59,6 +59,8 @@ test('Android release helper reuses Bubblewrap tooling without committing signin
   assert.match(script,/gradlew\.bat clean assembleRelease/);
   assert.match(script,/apksigner\.bat/);
   assert.match(script,/49D8D36E7E2BCDA7217DB31885343E5D79B7A92A4358D577D4AE160E7B0C46D2/);
+  assert.match(script,/throw "APK signing certificate does not match/);
+  assert.match(script,/GroovyShelves\.apk/);
   assert.doesNotMatch(script,/GROOVY_KEYSTORE_PASSWORD\s*=\s*['"][^'"]+['"]/);
 });
 
