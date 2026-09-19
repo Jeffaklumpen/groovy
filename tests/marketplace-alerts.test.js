@@ -106,7 +106,7 @@ test('stores current marketplace snapshots for the Price Alerts page',()=>{
   assert.match(sql,/marketplace_alert_market_state_select_own/);
   assert.match(source,/async function marketplaceState/);
   assert.match(source,/marketplace_alert_market_state/);
-  assert.match(source,/listing_count_capped:listings\.length>=60/);
+  assert.match(source,/listing_count_capped:count>0&&listings\.length>=60/);
   assert.match(source,/saveMarketplaceState\(db,alert,'Tradera'/);
   assert.match(source,/saveMarketplaceState\(db,alert,'eBay'/);
 });

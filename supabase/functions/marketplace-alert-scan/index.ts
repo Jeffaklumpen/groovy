@@ -358,7 +358,7 @@ async function marketplaceState(alert:AlertRow,listings:Listing[]){
 
   return {
     listing_count:count,
-    listing_count_capped:listings.length>=60,
+    listing_count_capped:count>0&&listings.length>=60,
     lowest_price:lowest===null?null:Math.round(lowest*100)/100,
     currency:alert.currency,
     checked_at:new Date().toISOString()
