@@ -67,7 +67,7 @@ test('web Supabase client is exposed to the native bridge',()=>{
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const bridge=fs.readFileSync(path.join(root,'js','native-app-bridge.js'),'utf8');
   assert.match(html,/window\.supabaseClient=supabaseClient/);
-  assert.match(html,/\/js\/native-app-bridge\.js\?v=4/);
+  assert.match(html,/\/js\/native-app-bridge\.js\?v=5/);
   assert.match(bridge,/window\.supabaseClient/);
   assert.match(bridge,/register_native_push_device/);
 });
