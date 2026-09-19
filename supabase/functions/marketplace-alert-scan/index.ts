@@ -387,6 +387,235 @@ async function saveMarketplaceState(db:ReturnType<typeof createClient>,alert:Ale
 
 
 
+
+type NativePushDeviceRow = {
+  id: number
+  device_token: string
+  failure_count: number
+}
+
+type FirebaseServiceAccount = {
+  project_id: string
+  client_email: string
+  private_key: string
+  token_uri?: string
+}
+
+const pushPreferenceCache = new Map<string,Promise<boolean>>()
+const nativePushDeviceCache = new Map<string,Promise<NativePushDeviceRow[]>>()
+let firebaseAccessTokenValue=''
+let firebaseAccessTokenExpiresAt=0
+
+function base64UrlBytes(bytes:Uint8Array):string{
+  let binary=''
+  for(let index=0;index<bytes.length;index++)binary+=String.fromCharCode(bytes[index])
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')
+}
+
+function base64UrlText(value:string):string{
+  return base64UrlBytes(new TextEncoder().encode(value))
+}
+
+function serviceAccountConfig():FirebaseServiceAccount{
+  const raw=Deno.env.get('FIREBASE_SERVICE_ACCOUNT_JSON')||''
+  if(!raw)throw new Error('Firebase service account is not configured')
+  const parsed=JSON.parse(raw) as FirebaseServiceAccount
+  if(!parsed.project_id||!parsed.client_email||!parsed.private_key){
+    throw new Error('Firebase service account is incomplete')
+  }
+  return parsed
+}
+
+async function firebaseAccessToken():Promise<{token:string,projectId:string}>{
+  const config=serviceAccountConfig()
+  if(firebaseAccessTokenValue&&Date.now()<firebaseAccessTokenExpiresAt-60_000){
+    return {token:firebaseAccessTokenValue,projectId:config.project_id}
+  }
+
+  const now=Math.floor(Date.now()/1000)
+  const header=base64UrlText(JSON.stringify({alg:'RS256',typ:'JWT'}))
+  const claims=base64UrlText(JSON.stringify({
+    iss:config.client_email,
+    scope:'https://www.googleapis.com/auth/firebase.messaging',
+    aud:config.token_uri||'https://oauth2.googleapis.com/token',
+    iat:now,
+    exp:now+3600
+  }))
+  const unsigned=header+'.'+claims
+  const cleanPem=config.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/g,'')
+    .replace(/-----END PRIVATE KEY-----/g,'')
+    .replace(/\s+/g,'')
+  const keyBytes=Uint8Array.from(atob(cleanPem),(char)=>char.charCodeAt(0))
+  const key=await crypto.subtle.importKey(
+    'pkcs8',
+    keyBytes,
+    {name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},
+    false,
+    ['sign']
+  )
+  const signature=new Uint8Array(await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    key,
+    new TextEncoder().encode(unsigned)
+  ))
+  const assertion=unsigned+'.'+base64UrlBytes(signature)
+  const response=await fetch(config.token_uri||'https://oauth2.googleapis.com/token',{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({
+      grant_type:'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion
+    })
+  })
+  if(!response.ok)throw new Error('Firebase OAuth failed: '+response.status)
+  const payload=asRecord(await response.json())
+  const token=textValue(payload.access_token)
+  const expiresIn=Math.max(300,numberValue(payload.expires_in)||3600)
+  if(!token)throw new Error('Firebase OAuth returned no access token')
+  firebaseAccessTokenValue=token
+  firebaseAccessTokenExpiresAt=Date.now()+expiresIn*1000
+  return {token,projectId:config.project_id}
+}
+
+async function priceAlertPushEnabled(db:ReturnType<typeof createClient>,userId:string):Promise<boolean>{
+  if(!pushPreferenceCache.has(userId)){
+    pushPreferenceCache.set(userId,(async()=>{
+      const result=await db.from('notification_preferences')
+        .select('push_enabled')
+        .eq('user_id',userId)
+        .eq('notification_type','price_alert')
+        .maybeSingle()
+      if(result.error)throw result.error
+      return !result.data||result.data.push_enabled!==false
+    })())
+  }
+  return await pushPreferenceCache.get(userId)!
+}
+
+async function nativePushDevicesForUser(
+  db:ReturnType<typeof createClient>,
+  userId:string
+):Promise<NativePushDeviceRow[]>{
+  if(!nativePushDeviceCache.has(userId)){
+    nativePushDeviceCache.set(userId,(async()=>{
+      const result=await db.from('native_push_devices')
+        .select('id,device_token,failure_count')
+        .eq('user_id',userId)
+        .eq('platform','android')
+        .eq('provider','fcm')
+        .eq('active',true)
+      if(result.error)throw result.error
+      return (result.data||[]) as NativePushDeviceRow[]
+    })())
+  }
+  return await nativePushDeviceCache.get(userId)!
+}
+
+async function latestPriceAlertMatch(db:ReturnType<typeof createClient>,alertId:number){
+  const result=await db.from('marketplace_alert_matches')
+    .select('marketplace,listing_url,sale_type,matched_price,alert_currency,first_seen_at')
+    .eq('alert_id',alertId)
+    .order('first_seen_at',{ascending:false})
+    .limit(1)
+    .maybeSingle()
+  if(result.error)throw result.error
+  return result.data||null
+}
+
+async function sendFcmToDevice(
+  db:ReturnType<typeof createClient>,
+  device:NativePushDeviceRow,
+  access:{token:string,projectId:string},
+  data:Record<string,string>
+){
+  const response=await fetch(
+    'https://fcm.googleapis.com/v1/projects/'+encodeURIComponent(access.projectId)+'/messages:send',
+    {
+      method:'POST',
+      headers:{
+        Authorization:'Bearer '+access.token,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        message:{
+          token:device.device_token,
+          data,
+          android:{
+            priority:'high',
+            ttl:'21600s'
+          }
+        }
+      })
+    }
+  )
+
+  const responseText=await response.text()
+  const now=new Date().toISOString()
+  if(response.ok){
+    await db.from('native_push_devices').update({
+      last_success_at:now,
+      failure_count:0,
+      updated_at:now,
+      active:true
+    }).eq('id',device.id)
+    return
+  }
+
+  if(response.status===404||response.status===410||/UNREGISTERED|registration-token-not-registered/i.test(responseText)){
+    await db.from('native_push_devices').delete().eq('id',device.id)
+    return
+  }
+
+  await db.from('native_push_devices').update({
+    failure_count:Math.min(100,Number(device.failure_count||0)+1),
+    updated_at:now
+  }).eq('id',device.id)
+
+  throw new Error('FCM delivery failed: '+response.status)
+}
+
+async function sendPriceAlertNativePush(
+  db:ReturnType<typeof createClient>,
+  alert:AlertRow,
+  newCount:number
+){
+  if(newCount<=0)return
+  if(!(await priceAlertPushEnabled(db,alert.user_id)))return
+
+  const devices=await nativePushDevicesForUser(db,alert.user_id)
+  if(!devices.length)return
+
+  const access=await firebaseAccessToken()
+  const latest=await latestPriceAlertMatch(db,alert.id)
+  const album=textValue(alert.album?.title)||'Record'
+  const marketplace=textValue(latest?.marketplace)
+  const matchedPrice=Number(latest?.matched_price||0)
+  const alertCurrency=textValue(latest?.alert_currency)||alert.currency
+  const saleType=textValue(latest?.sale_type)==='auction'?'Auction':'Fixed price'
+  const body=newCount===1&&marketplace&&matchedPrice>0
+    ?marketplace+': '+matchedPrice.toLocaleString('en-US',{maximumFractionDigits:2})+' '+alertCurrency+' · '+saleType
+    :newCount+' new listings under '+Number(alert.max_price).toLocaleString('en-US',{maximumFractionDigits:2})+' '+alert.currency
+
+  const data={
+    type:'price_alert',
+    title:'Groovy · Price Alert · '+album,
+    body,
+    tag:'price-alert-'+alert.id,
+    url:'https://groovyshelves.com/price-alerts',
+    listingUrl:textValue(latest?.listing_url),
+    alertId:String(alert.id)
+  }
+
+  await Promise.allSettled(devices.map(async(device)=>{
+    try{
+      await sendFcmToDevice(db,device,access,data)
+    }catch(error){
+      console.warn('Native FCM delivery failed',error)
+    }
+  }))
+}
+
 Deno.serve(async(req)=>{
   if(req.method!=='POST')return Response.json({error:'Method not allowed'},{status:405})
 
@@ -489,6 +718,13 @@ Deno.serve(async(req)=>{
       const inserted=Number(recorded.data||0)
       processed++
       newMatches+=inserted
+      if(inserted>0){
+        try{
+          await sendPriceAlertNativePush(db,alert,inserted)
+        }catch(error){
+          console.warn('Could not send native Price Alert notification',error)
+        }
+      }
     }
 
     if(!requestedAlertId)await db.rpc('finish_marketplace_alert_scan',{p_error:null})

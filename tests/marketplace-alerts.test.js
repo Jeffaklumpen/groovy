@@ -248,3 +248,15 @@ test('saved alerts request an owned immediate scan and scheduled scans retain th
   assert.match(scanner,/\.eq\('user_id',requestUserId\)/);
   assert.match(scanner,/if\(!requestedAlertId\)[\s\S]*claim_marketplace_alert_scan/);
 });
+
+
+test('native Price Alerts are delivered through FCM rather than browser push',()=>{
+  const scanner=fs.readFileSync(path.join(root,'supabase','functions','marketplace-alert-scan','index.ts'),'utf8');
+  assert.match(scanner,/FIREBASE_SERVICE_ACCOUNT_JSON/);
+  assert.match(scanner,/native_push_devices/);
+  assert.match(scanner,/fcm\.googleapis\.com\/v1\/projects\//);
+  assert.match(scanner,/sendPriceAlertNativePush/);
+  assert.match(scanner,/notification_type','price_alert'/);
+  assert.match(scanner,/priority:'high'/);
+  assert.doesNotMatch(scanner,/webpush|push_subscriptions|VAPID/);
+});

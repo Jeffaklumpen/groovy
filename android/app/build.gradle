@@ -1,0 +1,58 @@
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+}
+
+def keystorePath = System.getenv('GROOVY_KEYSTORE_PATH')
+def keystorePassword = System.getenv('GROOVY_KEYSTORE_PASSWORD')
+def keyPassword = System.getenv('GROOVY_KEY_PASSWORD')
+def keyAliasValue = System.getenv('GROOVY_KEY_ALIAS') ?: 'groovy'
+def hasReleaseSigning = keystorePath && keystorePassword && keyPassword
+
+android {
+    namespace 'com.groovyshelves.twa'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.groovyshelves.twa'
+        minSdk 23
+        targetSdk 36
+        versionCode 3
+        versionName '1.2.0'
+    }
+
+    if (hasReleaseSigning) {
+        signingConfigs {
+            release {
+                storeFile file(keystorePath)
+                storePassword keystorePassword
+                keyAlias keyAliasValue
+                keyPassword keyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            versionNameSuffix '-debug'
+        }
+        release {
+            minifyEnabled false
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.browser:browser:1.10.0'
+    implementation 'androidx.core:core:1.17.0'
+    implementation platform('com.google.firebase:firebase-bom:34.19.0')
+    implementation 'com.google.firebase:firebase-messaging'
+}

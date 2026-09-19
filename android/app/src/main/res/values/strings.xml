@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Groovy</string>
+    <string name="price_alert_channel_id">price_alerts</string>
+    <string name="price_alert_channel_name">Price Alerts</string>
+    <string name="price_alert_channel_description">New vinyl listings that match your Groovy price alerts.</string>
+</resources>

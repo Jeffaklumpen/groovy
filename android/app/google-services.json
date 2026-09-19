@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "162993875743",
+    "project_id": "groovyshelves",
+    "storage_bucket": "groovyshelves.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:162993875743:android:a78da42f1e124628181e2a",
+        "android_client_info": {
+          "package_name": "com.groovyshelves.twa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXQrE9Qrry-5fm-SRE1l6olbfmvmxPjqk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
